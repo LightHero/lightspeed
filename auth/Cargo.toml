@@ -14,3 +14,9 @@ log = "0.4"
 structopt = "0.2"
 
 ls_core = { version = "0.1", package = "lightspeed_core", path = "../core" }
+
+[dev-dependencies]
+actix-service = "0.4"
+coreutils_logger = "0.5"
+jsonwebtoken = "6.0"
+lazy_static = "1.0"
