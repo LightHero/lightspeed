@@ -396,64 +396,6 @@ version = "0.1.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 
 [[package]]
-name = "coreutils_auth"
-version = "0.5.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-dependencies = [
- "err-derive 0.1.5 (registry+https://github.com/rust-lang/crates.io-index)",
- "serde 1.0.92 (registry+https://github.com/rust-lang/crates.io-index)",
- "serde_derive 1.0.92 (registry+https://github.com/rust-lang/crates.io-index)",
- "serde_json 1.0.39 (registry+https://github.com/rust-lang/crates.io-index)",
-]
-
-[[package]]
-name = "coreutils_json"
-version = "0.5.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-dependencies = [
- "log 0.4.6 (registry+https://github.com/rust-lang/crates.io-index)",
- "serde 1.0.92 (registry+https://github.com/rust-lang/crates.io-index)",
- "serde_derive 1.0.92 (registry+https://github.com/rust-lang/crates.io-index)",
- "serde_json 1.0.39 (registry+https://github.com/rust-lang/crates.io-index)",
-]
-
-[[package]]
-name = "coreutils_jwt"
-version = "0.5.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-dependencies = [
- "chrono 0.4.6 (registry+https://github.com/rust-lang/crates.io-index)",
- "err-derive 0.1.5 (registry+https://github.com/rust-lang/crates.io-index)",
- "jsonwebtoken 6.0.1 (registry+https://github.com/rust-lang/crates.io-index)",
- "log 0.4.6 (registry+https://github.com/rust-lang/crates.io-index)",
- "serde 1.0.92 (registry+https://github.com/rust-lang/crates.io-index)",
- "serde_derive 1.0.92 (registry+https://github.com/rust-lang/crates.io-index)",
- "serde_json 1.0.39 (registry+https://github.com/rust-lang/crates.io-index)",
- "structopt 0.2.16 (registry+https://github.com/rust-lang/crates.io-index)",
-]
-
-[[package]]
-name = "coreutils_logger"
-version = "0.5.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-dependencies = [
- "chrono 0.4.6 (registry+https://github.com/rust-lang/crates.io-index)",
- "err-derive 0.1.5 (registry+https://github.com/rust-lang/crates.io-index)",
- "fern 0.5.8 (registry+https://github.com/rust-lang/crates.io-index)",
- "log 0.4.6 (registry+https://github.com/rust-lang/crates.io-index)",
- "structopt 0.2.16 (registry+https://github.com/rust-lang/crates.io-index)",
-]
-
-[[package]]
-name = "coreutils_module"
-version = "0.5.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-dependencies = [
- "err-derive 0.1.5 (registry+https://github.com/rust-lang/crates.io-index)",
- "log 0.4.6 (registry+https://github.com/rust-lang/crates.io-index)",
-]
-
-[[package]]
 name = "crc"
 version = "1.8.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -801,14 +743,11 @@ version = "0.1.0"
 dependencies = [
  "actix-service 0.4.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "actix-web 1.0.2 (registry+https://github.com/rust-lang/crates.io-index)",
- "coreutils_auth 0.5.1 (registry+https://github.com/rust-lang/crates.io-index)",
- "coreutils_jwt 0.5.1 (registry+https://github.com/rust-lang/crates.io-index)",
- "coreutils_logger 0.5.1 (registry+https://github.com/rust-lang/crates.io-index)",
- "coreutils_module 0.5.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "err-derive 0.1.5 (registry+https://github.com/rust-lang/crates.io-index)",
  "jsonwebtoken 6.0.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "lazy_static 1.3.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "lightspeed_core 0.1.0",
+ "lightspeed_logger 0.1.0",
  "log 0.4.6 (registry+https://github.com/rust-lang/crates.io-index)",
  "structopt 0.2.16 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
@@ -818,10 +757,24 @@ name = "lightspeed_core"
 version = "0.1.0"
 dependencies = [
  "actix-web 1.0.2 (registry+https://github.com/rust-lang/crates.io-index)",
- "coreutils_json 0.5.1 (registry+https://github.com/rust-lang/crates.io-index)",
- "coreutils_jwt 0.5.1 (registry+https://github.com/rust-lang/crates.io-index)",
- "coreutils_logger 0.5.1 (registry+https://github.com/rust-lang/crates.io-index)",
- "coreutils_module 0.5.1 (registry+https://github.com/rust-lang/crates.io-index)",
+ "chrono 0.4.6 (registry+https://github.com/rust-lang/crates.io-index)",
+ "err-derive 0.1.5 (registry+https://github.com/rust-lang/crates.io-index)",
+ "jsonwebtoken 6.0.1 (registry+https://github.com/rust-lang/crates.io-index)",
+ "lightspeed_logger 0.1.0",
+ "log 0.4.6 (registry+https://github.com/rust-lang/crates.io-index)",
+ "serde 1.0.92 (registry+https://github.com/rust-lang/crates.io-index)",
+ "serde_derive 1.0.92 (registry+https://github.com/rust-lang/crates.io-index)",
+ "serde_json 1.0.39 (registry+https://github.com/rust-lang/crates.io-index)",
+ "structopt 0.2.16 (registry+https://github.com/rust-lang/crates.io-index)",
+]
+
+[[package]]
+name = "lightspeed_logger"
+version = "0.1.0"
+dependencies = [
+ "chrono 0.4.6 (registry+https://github.com/rust-lang/crates.io-index)",
+ "err-derive 0.1.5 (registry+https://github.com/rust-lang/crates.io-index)",
+ "fern 0.5.8 (registry+https://github.com/rust-lang/crates.io-index)",
  "log 0.4.6 (registry+https://github.com/rust-lang/crates.io-index)",
  "structopt 0.2.16 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
@@ -1790,11 +1743,6 @@ dependencies = [
 "checksum clap 2.33.0 (registry+https://github.com/rust-lang/crates.io-index)" = "5067f5bb2d80ef5d68b4c87db81601f0b75bca627bc2ef76b141d7b846a3c6d9"
 "checksum cloudabi 0.0.3 (registry+https://github.com/rust-lang/crates.io-index)" = "ddfc5b9aa5d4507acaf872de71051dfd0e309860e88966e1051e462a077aac4f"
 "checksum copyless 0.1.3 (registry+https://github.com/rust-lang/crates.io-index)" = "f8ffa29b14f03d473f1558c789d020fe41bb7790774f429ff818f4ed9a6f9a0e"
-"checksum coreutils_auth 0.5.1 (registry+https://github.com/rust-lang/crates.io-index)" = "1aadf2aa8280817f87c9a74f6f86a9911761c3ba5c364cc9d6200c52c7c46e40"
-"checksum coreutils_json 0.5.1 (registry+https://github.com/rust-lang/crates.io-index)" = "934afedd5e258b3c871d32a8b6feeae1883a69112812e4647585c96cb623c0f3"
-"checksum coreutils_jwt 0.5.1 (registry+https://github.com/rust-lang/crates.io-index)" = "9b52c949b00ae151feb8c245967c37a18d4bc880c4bf639733e761ed4838f502"
-"checksum coreutils_logger 0.5.1 (registry+https://github.com/rust-lang/crates.io-index)" = "9d8fc0ce8f05663786b50d5d34b022af80bb318e169f0e74c4fb8d6847e86529"
-"checksum coreutils_module 0.5.1 (registry+https://github.com/rust-lang/crates.io-index)" = "eb49a73313646c7f564a411e0ba995f44416a9f164c2c02224a054d4685e6168"
 "checksum crc 1.8.1 (registry+https://github.com/rust-lang/crates.io-index)" = "d663548de7f5cca343f1e0a48d14dcfb0e9eb4e079ec58883b7251539fa10aeb"
 "checksum crc32fast 1.2.0 (registry+https://github.com/rust-lang/crates.io-index)" = "ba125de2af0df55319f41944744ad91c71113bf74a4646efff39afe1f6842db1"
 "checksum crossbeam-utils 0.6.5 (registry+https://github.com/rust-lang/crates.io-index)" = "f8306fcef4a7b563b76b7dd949ca48f52bc1141aa067d2ea09565f3e2652aa5c"

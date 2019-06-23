@@ -1,4 +1,3 @@
-pub mod error;
 pub mod service;
 
 #[cfg(test)]
@@ -6,8 +5,8 @@ pub mod test_root {
 
     use lazy_static::lazy_static;
     use std::sync::Mutex;
-    use coreutils_logger::config::LoggerConfig;
-    use coreutils_logger::setup_logger;
+    use ls_logger::config::LoggerConfig;
+    use ls_logger::setup_logger;
 
     lazy_static! {
         static ref INITIALIZED: Mutex<bool> = Mutex::new(false);

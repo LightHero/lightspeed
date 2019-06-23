@@ -1,10 +1,8 @@
 use actix_web::HttpRequest;
-use coreutils_auth::{AuthService, InMemoryRolesProvider, AuthContext};
-use coreutils_auth::model::Auth;
-use coreutils_jwt::JwtService;
+use ls_core::service::auth::{Auth, AuthService, InMemoryRolesProvider, AuthContext};
+use ls_core::error::LightSpeedError;
+use ls_core::service::jwt::JwtService;
 use log::*;
-
-use crate::error::AuthError;
 
 pub const JWT_TOKEN_HEADER: &str = "Authorization";
 pub const JWT_TOKEN_HEADER_SUFFIX: &str = "Bearer ";
@@ -19,27 +17,27 @@ pub struct JwtAuthService {
 
 impl JwtAuthService {
 
-    pub fn token_string_from_request(req: &HttpRequest) -> Result<&str, AuthError> {
+    pub fn token_string_from_request(req: &HttpRequest) -> Result<&str, LightSpeedError> {
         if let Some(header) = req.headers().get(JWT_TOKEN_HEADER) {
             return header.to_str()
-                .map_err(|err| AuthError::ParseAuthHeaderError {message: format!("{}", err)})
+                .map_err(|err| LightSpeedError::ParseAuthHeaderError {message: format!("{}", err)})
                 .and_then(|header| {
                     debug!("Token found in request: [{}]", header);
                     if header.len() > JWT_TOKEN_HEADER_SUFFIX_LEN {
                         Ok(&header[JWT_TOKEN_HEADER_SUFFIX_LEN..])
                     } else {
-                        Err(AuthError::ParseAuthHeaderError { message: format!("Unexpected auth header: {}", header) })
+                        Err(LightSpeedError::ParseAuthHeaderError { message: format!("Unexpected auth header: {}", header) })
                     }
                 });
         };
-        Err(AuthError::MissingAuthTokenError)
+        Err(LightSpeedError::MissingAuthTokenError)
     }
 
-    pub fn token_from_auth(&self, auth: &Auth) -> Result<String, AuthError> {
+    pub fn token_from_auth(&self, auth: &Auth) -> Result<String, LightSpeedError> {
         Ok(self.jwt_service.generate_from_payload(auth)?)
     }
 
-    pub fn auth_from_request(&self, req: &HttpRequest) -> Result<AuthContext, AuthError> {
+    pub fn auth_from_request(&self, req: &HttpRequest) -> Result<AuthContext, LightSpeedError> {
         JwtAuthService::token_string_from_request(req)
             .and_then(|token| {
                 let auth = self.jwt_service.parse_payload::<Auth>(token)?;
@@ -56,10 +54,10 @@ mod test {
     use actix_service::Service;
     use actix_web::{http::{ StatusCode}, web, App};
     use actix_web::test::{block_on, init_service, TestRequest};
-    use coreutils_auth::model::Role;
-    use coreutils_jwt::config::JwtConfig;
+    use ls_core::service::auth::Role;
+    use ls_core::config::JwtConfig;
     use jsonwebtoken::Algorithm;
-    use coreutils_jwt::Token;
+    use ls_core::service::jwt::Token;
 
     #[test]
     fn access_protected_url_should_return_unauthorized_if_no_token() {

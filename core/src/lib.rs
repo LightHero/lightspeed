@@ -1,12 +1,14 @@
 pub mod config;
+pub mod error;
+pub mod module;
+pub mod service;
 
 use log::info;
-use coreutils_module::ModuleError;
+use crate::error::{LightSpeedError};
 
 #[derive(Clone)]
 pub struct CoreModule {
-    pub json: coreutils_json::JsonService,
-    pub jwt: coreutils_jwt::JwtService,
+    pub jwt: service::jwt::JwtService,
 }
 
 impl CoreModule {
@@ -14,18 +16,17 @@ impl CoreModule {
         println!("Creating CoreModule with configuration:\n{:#?}", config);
         info!("Creating CoreModule with configuration:\n{:#?}", config);
 
-        let jwt = coreutils_jwt::JwtService::new(&config.jwt);
+        let jwt = service::jwt::JwtService::new(&config.jwt);
 
         CoreModule {
-            json: coreutils_json::new(),
             jwt,
         }
     }
 }
 
-impl coreutils_module::Module for CoreModule {
+impl module::Module for CoreModule {
 
-    fn start(&mut self) -> Result<(), ModuleError> {
+    fn start(&mut self) -> Result<(), LightSpeedError> {
         info!("Core start");
         Ok(())
     }

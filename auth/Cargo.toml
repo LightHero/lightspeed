@@ -1,14 +1,12 @@
 [package]
 name = "lightspeed_auth"
+license = "MIT"
 version = "0.1.0"
 authors = ["Francesco Cina <ufoscout@gmail.com>"]
 edition = "2018"
 
 [dependencies]
 actix-web = "1.0"
-coreutils_auth = "0.5"
-coreutils_jwt = "0.5"
-coreutils_module = "0.5"
 err-derive = "0.1"
 log = "0.4"
 structopt = "0.2"
@@ -17,6 +15,7 @@ ls_core = { version = "0.1", package = "lightspeed_core", path = "../core" }
 
 [dev-dependencies]
 actix-service = "0.4"
-coreutils_logger = "0.5"
 jsonwebtoken = "6.0"
 lazy_static = "1.0"
+
+ls_logger = { version = "0.1", package = "lightspeed_logger", path = "../logger" }

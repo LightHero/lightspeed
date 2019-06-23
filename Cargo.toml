@@ -3,6 +3,7 @@
 members = [
     "auth",
     "core",
+    "logger",
     "app",
 ]
 
