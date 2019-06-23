@@ -1,7 +1,7 @@
+use crate::error::LightSpeedError;
 use serde_derive::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::sync::Arc;
-use crate::error::LightSpeedError;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -26,9 +26,7 @@ pub struct AuthService<T: RolesProvider> {
     roles_provider: T,
 }
 
-
-impl <T: RolesProvider> AuthService<T> {
-
+impl<T: RolesProvider> AuthService<T> {
     pub fn new(roles_provider: T) -> AuthService<T> {
         AuthService { roles_provider }
     }
@@ -44,7 +42,6 @@ pub struct AuthContext<'a> {
 }
 
 impl<'a> AuthContext<'a> {
-
     pub fn new<T: RolesProvider>(auth: Auth, roles_provider: &T) -> AuthContext {
         let permissions = roles_provider.get_permissions_by_role_name(&auth.roles);
         AuthContext { auth, permissions }
@@ -52,7 +49,7 @@ impl<'a> AuthContext<'a> {
 
     pub fn is_authenticated(&self) -> Result<&AuthContext, LightSpeedError> {
         if self.auth.username.is_empty() {
-            return Err(LightSpeedError::UnAuthenticatedError {});
+            return Err(LightSpeedError::UnauthenticatedError {});
         };
         Ok(&self)
     }
@@ -60,7 +57,7 @@ impl<'a> AuthContext<'a> {
     pub fn has_role(&self, role: &str) -> Result<&AuthContext, LightSpeedError> {
         self.is_authenticated()?;
         if !self.has_role_bool(&role) {
-            return Err(LightSpeedError::UnAuthorizedError {
+            return Err(LightSpeedError::ForbiddenError {
                 message: format!(
                     "User [{}] does not have the required role [{}]",
                     self.auth.id, role
@@ -77,7 +74,7 @@ impl<'a> AuthContext<'a> {
                 return Ok(&self);
             };
         }
-        Err(LightSpeedError::UnAuthorizedError {
+        Err(LightSpeedError::ForbiddenError {
             message: format!("User [{}] does not have the required role", self.auth.id),
         })
     }
@@ -86,7 +83,7 @@ impl<'a> AuthContext<'a> {
         self.is_authenticated()?;
         for role in roles {
             if !self.has_role_bool(*role) {
-                return Err(LightSpeedError::UnAuthorizedError {
+                return Err(LightSpeedError::ForbiddenError {
                     message: format!(
                         "User [{}] does not have the required role [{}]",
                         self.auth.id, role
@@ -101,7 +98,7 @@ impl<'a> AuthContext<'a> {
         self.is_authenticated()?.has_permission_bool(&permission);
 
         if !self.has_permission_bool(&permission) {
-            return Err(LightSpeedError::UnAuthorizedError {
+            return Err(LightSpeedError::ForbiddenError {
                 message: format!(
                     "User [{}] does not have the required permission [{}]",
                     self.auth.id, permission
@@ -111,14 +108,17 @@ impl<'a> AuthContext<'a> {
         Ok(&self)
     }
 
-    pub fn has_any_permission(&self, permissions: &[&str]) -> Result<&AuthContext, LightSpeedError> {
+    pub fn has_any_permission(
+        &self,
+        permissions: &[&str],
+    ) -> Result<&AuthContext, LightSpeedError> {
         self.is_authenticated()?;
         for permission in permissions {
             if self.has_permission_bool(*permission) {
                 return Ok(&self);
             };
         }
-        Err(LightSpeedError::UnAuthorizedError {
+        Err(LightSpeedError::ForbiddenError {
             message: format!(
                 "User [{}] does not have the required permission",
                 self.auth.id
@@ -126,11 +126,14 @@ impl<'a> AuthContext<'a> {
         })
     }
 
-    pub fn has_all_permissions(&self, permissions: &[&str]) -> Result<&AuthContext, LightSpeedError> {
+    pub fn has_all_permissions(
+        &self,
+        permissions: &[&str],
+    ) -> Result<&AuthContext, LightSpeedError> {
         self.is_authenticated()?;
         for permission in permissions {
             if !self.has_permission_bool(*permission) {
-                return Err(LightSpeedError::UnAuthorizedError {
+                return Err(LightSpeedError::ForbiddenError {
                     message: format!(
                         "User [{}] does not have the required permission [{}]",
                         self.auth.id, permission
@@ -145,7 +148,7 @@ impl<'a> AuthContext<'a> {
         if self.auth.id == obj.get_owner_id() {
             Ok(&self)
         } else {
-            Err(LightSpeedError::UnAuthorizedError {
+            Err(LightSpeedError::ForbiddenError {
                 message: format!(
                     "User [{}] is not the owner. User id [{}], owner id: [{}]",
                     self.auth.id,
@@ -164,7 +167,7 @@ impl<'a> AuthContext<'a> {
         if (self.auth.id == obj.get_owner_id()) || self.has_role_bool(role) {
             Ok(&self)
         } else {
-            Err(LightSpeedError::UnAuthorizedError { message: format!("User [{}] is not the owner and does not have role [{}]. User id [{}], owner id: [{}]", self.auth.id, role, self.auth.id, obj.get_owner_id() ) })
+            Err(LightSpeedError::ForbiddenError { message: format!("User [{}] is not the owner and does not have role [{}]. User id [{}], owner id: [{}]", self.auth.id, role, self.auth.id, obj.get_owner_id() ) })
         }
     }
 
@@ -176,7 +179,7 @@ impl<'a> AuthContext<'a> {
         if (self.auth.id == obj.get_owner_id()) || self.has_permission_bool(permission) {
             Ok(&self)
         } else {
-            Err(LightSpeedError::UnAuthorizedError { message: format!("User [{}] is not the owner and does not have permission [{}]. User id [{}], owner id: [{}]", self.auth.id, permission, self.auth.id, obj.get_owner_id() ) })
+            Err(LightSpeedError::ForbiddenError { message: format!("User [{}] is not the owner and does not have permission [{}]. User id [{}], owner id: [{}]", self.auth.id, permission, self.auth.id, obj.get_owner_id() ) })
         }
     }
 
@@ -185,7 +188,7 @@ impl<'a> AuthContext<'a> {
     }
 
     fn has_permission_bool(&self, permission: &str) -> bool {
-        self.permissions.contains(&permission )
+        self.permissions.contains(&permission)
     }
 }
 
@@ -195,7 +198,6 @@ pub trait RolesProvider: Send + Sync + Clone {
     fn get_by_name(&self, names: &[String]) -> Vec<&Role>;
 
     fn get_permissions_by_role_name(&self, role_names: &[String]) -> Vec<&str>;
-
 }
 
 #[derive(Clone)]
@@ -205,14 +207,11 @@ pub struct InMemoryRolesProvider {
 }
 
 impl InMemoryRolesProvider {
-
     pub fn new(all_roles: Vec<Role>) -> InMemoryRolesProvider {
-
         let mut roles_by_name = HashMap::new();
 
         for role in all_roles.iter() {
-            roles_by_name
-                .insert(role.name.clone(), role.clone());
+            roles_by_name.insert(role.name.clone(), role.clone());
         }
 
         InMemoryRolesProvider {
@@ -220,7 +219,6 @@ impl InMemoryRolesProvider {
             roles_by_name: Arc::new(roles_by_name),
         }
     }
-
 }
 
 impl RolesProvider for InMemoryRolesProvider {

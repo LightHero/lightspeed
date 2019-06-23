@@ -3,8 +3,8 @@ pub mod error;
 pub mod module;
 pub mod service;
 
+use crate::error::LightSpeedError;
 use log::info;
-use crate::error::{LightSpeedError};
 
 #[derive(Clone)]
 pub struct CoreModule {
@@ -18,14 +18,11 @@ impl CoreModule {
 
         let jwt = service::jwt::JwtService::new(&config.jwt);
 
-        CoreModule {
-            jwt,
-        }
+        CoreModule { jwt }
     }
 }
 
 impl module::Module for CoreModule {
-
     fn start(&mut self) -> Result<(), LightSpeedError> {
         info!("Core start");
         Ok(())

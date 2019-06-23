@@ -1,9 +1,8 @@
+use actix_web::{HttpResponse, ResponseError};
 use err_derive::Error;
-use actix_web::{ResponseError, HttpResponse};
 
 #[derive(Error, Debug)]
 pub enum LightSpeedError {
-
     // JWT
     #[error(display = "InvalidTokenError: [{}]", message)]
     InvalidTokenError { message: String },
@@ -23,22 +22,22 @@ pub enum LightSpeedError {
     ModuleStartError { message: String },
 
     // Auth
-    #[error(display = "UnAuthenticatedError")]
-    UnAuthenticatedError,
-    #[error(display = "UnAuthorizedError [{}]", message)]
-    UnAuthorizedError { message: String },
+    #[error(display = "UnauthenticatedError")]
+    UnauthenticatedError,
+    #[error(display = "ForbiddenError [{}]", message)]
+    ForbiddenError { message: String },
 }
 
 impl ResponseError for LightSpeedError {
     fn error_response(&self) -> HttpResponse {
         match *self {
-            LightSpeedError::InvalidTokenError{..} |
-            LightSpeedError::ExpiredTokenError{..} |
-            LightSpeedError::GenerateTokenError{..} |
-            LightSpeedError::MissingAuthTokenError{..} |
-            LightSpeedError::ParseAuthHeaderError{..} |
-            LightSpeedError::UnAuthenticatedError |
-            LightSpeedError::UnAuthorizedError{..}  => HttpResponse::Unauthorized().finish(),
+            LightSpeedError::InvalidTokenError { .. }
+            | LightSpeedError::ExpiredTokenError { .. }
+            | LightSpeedError::GenerateTokenError { .. }
+            | LightSpeedError::MissingAuthTokenError { .. }
+            | LightSpeedError::ParseAuthHeaderError { .. }
+            | LightSpeedError::UnauthenticatedError => HttpResponse::Unauthorized().finish(),
+            LightSpeedError::ForbiddenError { .. } => HttpResponse::Forbidden().finish(),
             _ => HttpResponse::InternalServerError().finish(),
         }
     }

@@ -1,11 +1,10 @@
-use structopt::StructOpt;
 use ls_logger::config::LoggerConfig;
+use structopt::StructOpt;
 
 /// Defines the JSON Web Token configuration.
 #[derive(Debug, Clone, StructOpt)]
 #[structopt(rename_all = "kebab-case")]
 pub struct JwtConfig {
-
     /// The secret key used to encode and decode the JWT
     #[structopt(long)]
     pub secret: String,
@@ -21,7 +20,7 @@ pub struct JwtConfig {
     /// - RS256 -> RSASSA-PKCS1-v1_5 using SHA-256,
     /// - RS384 -> RSASSA-PKCS1-v1_5 using SHA-384,
     /// - RS512 -> RSASSA-PKCS1-v1_5 using SHA-512,
-    */
+     */
     #[structopt(long, default_value = "HS256")]
     pub signature_algorithm: jsonwebtoken::Algorithm,
 
@@ -29,7 +28,6 @@ pub struct JwtConfig {
     #[structopt(long, default_value = "60")]
     pub token_validity_minutes: u32,
 }
-
 
 /// Defines the Logger configuration.
 #[derive(Debug, Clone, StructOpt)]

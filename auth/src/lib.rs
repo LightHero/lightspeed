@@ -4,9 +4,9 @@ pub mod service;
 pub mod test_root {
 
     use lazy_static::lazy_static;
-    use std::sync::Mutex;
     use ls_logger::config::LoggerConfig;
     use ls_logger::setup_logger;
+    use std::sync::Mutex;
 
     lazy_static! {
         static ref INITIALIZED: Mutex<bool> = Mutex::new(false);

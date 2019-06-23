@@ -1,7 +1,7 @@
-use chrono::prelude::Local;
-use serde_derive::{Deserialize, Serialize};
 use crate::config::JwtConfig;
 use crate::error::LightSpeedError;
+use chrono::prelude::Local;
+use serde_derive::{Deserialize, Serialize};
 
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -26,7 +26,6 @@ pub struct JwtService {
 }
 
 impl JwtService {
-
     pub fn new(jwt_config: &JwtConfig) -> JwtService {
         //let alg = alg_from_str(&jwt_config.signature_algorithm);
 

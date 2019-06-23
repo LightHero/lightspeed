@@ -1,5 +1,5 @@
-use log::info;
 use crate::error::LightSpeedError;
+use log::info;
 
 pub trait ModuleBuilder<T: Module> {
     fn build(&self) -> Result<T, LightSpeedError>;
@@ -20,13 +20,12 @@ pub fn start(modules: &mut [&mut dyn Module]) -> Result<(), LightSpeedError> {
 #[cfg(test)]
 mod test {
 
-    use std::sync::Mutex;
     use crate::LightSpeedError;
     use std::rc::Rc;
+    use std::sync::Mutex;
 
     #[test]
     fn should_start_all() {
-
         let output = Rc::new(Mutex::new(vec![]));
 
         let mut mod1 = SimpleModOne {
@@ -36,7 +35,7 @@ mod test {
         let mut mod2 = SimpleModTwo {
             output: output.clone(),
             name: "two".to_string(),
-            fail: false
+            fail: false,
         };
 
         let mut modules: Vec<&mut dyn super::Module> = vec![&mut mod1, &mut mod2];
@@ -57,7 +56,6 @@ mod test {
 
     #[test]
     fn should_fail_on_start() {
-
         let output = Rc::new(Mutex::new(vec![]));
 
         let mut mod1 = SimpleModOne {
@@ -67,7 +65,7 @@ mod test {
         let mut mod2 = SimpleModTwo {
             output: output.clone(),
             name: "two".to_string(),
-            fail: true
+            fail: true,
         };
 
         let mut modules: Vec<&mut dyn super::Module> = vec![&mut mod1, &mut mod2];
@@ -78,10 +76,12 @@ mod test {
 
         match result {
             Err(err) => match err {
-                LightSpeedError::ModuleStartError {message} => assert_eq!("test_failure", message),
-                _ => assert!(false)
+                LightSpeedError::ModuleStartError { message } => {
+                    assert_eq!("test_failure", message)
+                }
+                _ => assert!(false),
             },
-            _ => assert!(false)
+            _ => assert!(false),
         }
 
         assert_eq!(1, output.lock().unwrap().len());
@@ -89,7 +89,6 @@ mod test {
             &"one-start".to_string(),
             output.lock().unwrap().get(0).unwrap()
         );
-
     }
 
     #[derive(Clone)]
@@ -117,7 +116,9 @@ mod test {
     impl super::Module for SimpleModTwo {
         fn start(&mut self) -> Result<(), LightSpeedError> {
             if self.fail {
-                return Err(LightSpeedError::ModuleStartError {message: "test_failure".to_owned()})
+                return Err(LightSpeedError::ModuleStartError {
+                    message: "test_failure".to_owned(),
+                });
             }
 
             let mut owned = self.name.to_owned();
