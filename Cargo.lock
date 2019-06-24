@@ -741,10 +741,8 @@ version = "0.1.0"
 name = "lightspeed_auth"
 version = "0.1.0"
 dependencies = [
- "actix-service 0.4.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "actix-web 1.0.2 (registry+https://github.com/rust-lang/crates.io-index)",
  "err-derive 0.1.5 (registry+https://github.com/rust-lang/crates.io-index)",
- "jsonwebtoken 6.0.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "lazy_static 1.3.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "lightspeed_core 0.1.0",
  "lightspeed_logger 0.1.0",
@@ -756,10 +754,12 @@ dependencies = [
 name = "lightspeed_core"
 version = "0.1.0"
 dependencies = [
+ "actix-service 0.4.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "actix-web 1.0.2 (registry+https://github.com/rust-lang/crates.io-index)",
  "chrono 0.4.6 (registry+https://github.com/rust-lang/crates.io-index)",
  "err-derive 0.1.5 (registry+https://github.com/rust-lang/crates.io-index)",
  "jsonwebtoken 6.0.1 (registry+https://github.com/rust-lang/crates.io-index)",
+ "lazy_static 1.3.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "lightspeed_logger 0.1.0",
  "log 0.4.6 (registry+https://github.com/rust-lang/crates.io-index)",
  "serde 1.0.92 (registry+https://github.com/rust-lang/crates.io-index)",
