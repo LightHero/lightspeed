@@ -1,4 +1,3 @@
-use ls_logger::config::LoggerConfig;
 use structopt::StructOpt;
 
 /// Defines the JSON Web Token configuration.
@@ -33,8 +32,6 @@ pub struct JwtConfig {
 #[derive(Debug, Clone, StructOpt)]
 #[structopt(rename_all = "kebab-case")]
 pub struct CoreConfig {
-    #[structopt(flatten)]
-    pub logger: LoggerConfig,
 
     #[structopt(flatten)]
     pub jwt: JwtConfig,
