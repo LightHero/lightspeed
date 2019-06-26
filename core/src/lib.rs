@@ -24,7 +24,7 @@ impl CoreModule {
 
 impl module::Module for CoreModule {
     fn start(&mut self) -> Result<(), LightSpeedError> {
-        info!("Core start");
+        info!("Starting CoreModule");
         Ok(())
     }
 }
