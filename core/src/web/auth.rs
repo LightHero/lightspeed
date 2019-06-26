@@ -1,21 +1,46 @@
 use actix_web::HttpRequest;
 use log::*;
-use ls_core::error::LightSpeedError;
-use ls_core::service::auth::{Auth, AuthContext, AuthService, InMemoryRolesProvider};
-use ls_core::service::jwt::JwtService;
+use crate::error::LightSpeedError;
+use crate::service::auth::{Auth, AuthContext, AuthService, InMemoryRolesProvider};
+use crate::service::jwt::JwtService;
 
 pub const JWT_TOKEN_HEADER: &str = "Authorization";
 pub const JWT_TOKEN_HEADER_SUFFIX: &str = "Bearer ";
 // This must be equal to JWT_TOKEN_HEADER_SUFFIX.len()
 pub const JWT_TOKEN_HEADER_SUFFIX_LEN: usize = 7;
 
+/*
+impl FromRequest for AuthContext<'static> {
+
+    type Error = LightSpeedError;
+    type Future = Result<Self, Self::Error>;
+    type Config = ();
+
+    fn from_request(req: &HttpRequest, payload: &mut Payload) -> Self::Future {
+        if let Some(core) = req.get_app_data::<CoreModule>() {
+            auth_from_request(req, &core.jwt, &core.auth)
+        } else {
+            log::debug!(
+                "Failed to construct App-level Data extractor. \
+                 Request path: {:?}",
+                req.path()
+            );
+            Err(LightSpeedError::InternalServerError {
+                message: "App data is not configured, to configure use App::data()",
+            })
+        }
+    }
+
+}
+*/
+
 #[derive(Clone)]
-pub struct JwtAuthService {
+pub struct WebAuthService {
     auth_service: AuthService<InMemoryRolesProvider>,
     jwt_service: JwtService,
 }
 
-impl JwtAuthService {
+impl WebAuthService {
     pub fn token_string_from_request(req: &HttpRequest) -> Result<&str, LightSpeedError> {
         if let Some(header) = req.headers().get(JWT_TOKEN_HEADER) {
             return header
@@ -42,7 +67,7 @@ impl JwtAuthService {
     }
 
     pub fn auth_from_request(&self, req: &HttpRequest) -> Result<AuthContext, LightSpeedError> {
-        JwtAuthService::token_string_from_request(req).and_then(|token| {
+        WebAuthService::token_string_from_request(req).and_then(|token| {
             let auth = self.jwt_service.parse_payload::<Auth>(token)?;
             Ok(self.auth_service.auth(auth))
         })
@@ -57,9 +82,9 @@ mod test {
     use actix_web::test::{block_on, init_service, TestRequest};
     use actix_web::{http::StatusCode, web, App};
     use jsonwebtoken::Algorithm;
-    use ls_core::config::JwtConfig;
-    use ls_core::service::auth::Role;
-    use ls_core::service::jwt::Token;
+    use crate::config::JwtConfig;
+    use crate::service::auth::Role;
+    use crate::service::jwt::Token;
 
     #[test]
     fn access_protected_url_should_return_unauthorized_if_no_token() {
@@ -183,8 +208,8 @@ mod test {
         Ok(auth_context.auth.username)
     }
 
-    fn new_service() -> JwtAuthService {
-        JwtAuthService {
+    fn new_service() -> WebAuthService {
+        WebAuthService {
             auth_service: AuthService::new(InMemoryRolesProvider::new(vec![Role {
                 name: "admin".to_owned(),
                 permissions: vec![],

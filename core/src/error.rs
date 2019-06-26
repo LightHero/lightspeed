@@ -26,6 +26,10 @@ pub enum LightSpeedError {
     UnauthenticatedError,
     #[error(display = "ForbiddenError [{}]", message)]
     ForbiddenError { message: String },
+
+    #[error(display = "InternalServerError [{}]", message)]
+    InternalServerError { message: &'static str },
+
 }
 
 impl ResponseError for LightSpeedError {
@@ -38,6 +42,7 @@ impl ResponseError for LightSpeedError {
             | LightSpeedError::ParseAuthHeaderError { .. }
             | LightSpeedError::UnauthenticatedError => HttpResponse::Unauthorized().finish(),
             LightSpeedError::ForbiddenError { .. } => HttpResponse::Forbidden().finish(),
+            LightSpeedError::InternalServerError{ ..} => HttpResponse::InternalServerError().finish(),
             _ => HttpResponse::InternalServerError().finish(),
         }
     }
