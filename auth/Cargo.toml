@@ -8,7 +8,9 @@ edition = "2018"
 [dependencies]
 actix-web = "1.0"
 c3p0 = { version = "0.5.1", features = ["pg"] }
+c3p0_migrate = { version = "0.5.1", features = ["pg"] }
 err-derive = "0.1"
+include_dir="0.2"
 log = "0.4"
 structopt = "0.2"
 
