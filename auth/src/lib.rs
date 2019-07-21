@@ -1,5 +1,33 @@
+use c3p0::C3p0Builder;
+use log::*;
+use ls_core::error::LightSpeedError;
+
 pub mod config;
 pub mod service;
+
+#[derive(Clone)]
+pub struct AuthModule {
+    pub db: service::db::AuthDbService
+}
+
+impl AuthModule {
+    pub fn new(c3p0: C3p0Builder) -> Self {
+        println!("Creating AuthModule");
+        info!("Creating AuthModule");
+
+        let db = service::db::AuthDbService::new(c3p0);
+
+        AuthModule { db }
+    }
+}
+
+impl ls_core::module::Module for AuthModule {
+    fn start(&mut self) -> Result<(), LightSpeedError> {
+        info!("Starting AuthModule");
+        self.db.start()?;
+        Ok(())
+    }
+}
 
 #[cfg(test)]
 pub mod test_root {
