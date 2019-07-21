@@ -41,7 +41,7 @@ fn init() -> (
     (auth_module, node)
 }
 
-pub fn test<F: FnOnce(&AuthModule)>(callback: F) {
+pub fn test(callback: fn(&AuthModule)) {
     SINGLETON.get(|(auth_module, _)| {
         callback(&auth_module);
     });
