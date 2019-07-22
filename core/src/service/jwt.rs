@@ -5,7 +5,7 @@ use serde_derive::{Deserialize, Serialize};
 
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
-pub struct Token<T> {
+pub struct JWT<T> {
     pub payload: T,
     // The subject of the token
     pub sub: String,
@@ -47,7 +47,7 @@ impl JwtService {
         payload: &T,
     ) -> Result<String, LightSpeedError> {
         let issued_at = Local::now().timestamp();
-        let token = Token {
+        let token = JWT {
             payload,
             sub: "".to_string(),
             exp: issued_at + self.token_validity_seconds,
@@ -58,7 +58,7 @@ impl JwtService {
 
     pub fn generate_from_token<T: serde::ser::Serialize>(
         &self,
-        token: &Token<T>,
+        token: &JWT<T>,
     ) -> Result<String, LightSpeedError> {
         let result = jsonwebtoken::encode(&self.header_default, &token, &self.secret.as_ref());
         match result {
@@ -86,8 +86,8 @@ impl JwtService {
     pub fn parse_token<T: serde::de::DeserializeOwned>(
         &self,
         jwt_string: &str,
-    ) -> Result<Token<T>, LightSpeedError> {
-        let result: Result<jsonwebtoken::TokenData<Token<T>>, jsonwebtoken::errors::Error> =
+    ) -> Result<JWT<T>, LightSpeedError> {
+        let result: Result<jsonwebtoken::TokenData<JWT<T>>, jsonwebtoken::errors::Error> =
             jsonwebtoken::decode(jwt_string, &self.secret.as_ref(), &self.validation_default);
         match result {
             Ok(t) => Ok(t.claims),
@@ -126,7 +126,7 @@ mod test {
             name: "Red".to_string(),
         };
 
-        let token = super::Token {
+        let token = super::JWT {
             payload,
             sub: "".to_string(),
             exp: Local::now().timestamp() + 3600,
@@ -179,7 +179,7 @@ mod test {
         let jwt_string = jwt.generate_from_payload(&payload).unwrap();
         let time_after = Local::now().timestamp();
 
-        let token: super::Token<MyTestClaym> = jwt.parse_token(&jwt_string).unwrap();
+        let token: super::JWT<MyTestClaym> = jwt.parse_token(&jwt_string).unwrap();
 
         assert_eq!(payload.id, token.payload.id);
         assert_eq!(&payload.name, &token.payload.name);
@@ -205,7 +205,7 @@ mod test {
         let mut jwt_string = jwt.generate_from_payload(&payload).unwrap();
         jwt_string.push_str("1");
 
-        let result: Result<super::Token<MyTestClaym>, super::LightSpeedError> =
+        let result: Result<super::JWT<MyTestClaym>, super::LightSpeedError> =
             jwt.parse_token(&jwt_string);
         let mut is_invalid = false;
         match result {
@@ -225,7 +225,7 @@ mod test {
     fn should_fail_parsing_expired_token() {
         let jwt = new();
 
-        let token = super::Token {
+        let token = super::JWT {
             payload: MyTestClaym {
                 id: Local::now().timestamp(),
                 name: "Red".to_string(),
