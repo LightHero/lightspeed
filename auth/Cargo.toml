@@ -7,11 +7,13 @@ edition = "2018"
 
 [dependencies]
 actix-web = "1.0"
-#c3p0 = { version = "0.8.2", features = ["pg"] }
-c3p0 = { version = "0.8.2", features = ["pg"], path = "../../../github_ufoscout/c3p0/c3p0"}
+#c3p0 = { version = "0.9", features = ["pg"] }
+c3p0 = { version = "0.9", features = ["pg"], path = "../../../github_ufoscout/c3p0/c3p0"}
 err-derive = "0.1"
 include_dir="0.2"
 log = "0.4"
+serde = "1"
+serde_derive = "1"
 structopt = "0.2"
 
 ls_core = { version = "0.1", package = "lightspeed_core", path = "../core" }

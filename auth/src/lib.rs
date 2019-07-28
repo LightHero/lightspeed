@@ -1,9 +1,12 @@
-use c3p0::C3p0Builder;
+use c3p0::*;
 use log::*;
 use ls_core::error::LightSpeedError;
 
 pub mod config;
+pub mod repository;
 pub mod service;
+
+pub type PoolManager = PgPoolManager;
 
 #[derive(Clone)]
 pub struct AuthModule {
@@ -11,7 +14,7 @@ pub struct AuthModule {
 }
 
 impl AuthModule {
-    pub fn new(c3p0: C3p0Builder) -> Self {
+    pub fn new(c3p0: C3p0Pool<PoolManager>) -> Self {
         println!("Creating AuthModule");
         info!("Creating AuthModule");
 
