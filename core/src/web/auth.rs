@@ -84,7 +84,7 @@ mod test {
     use jsonwebtoken::Algorithm;
     use crate::config::JwtConfig;
     use crate::service::auth::Role;
-    use crate::service::jwt::Token;
+    use crate::service::jwt::JWT;
 
     #[test]
     fn access_protected_url_should_return_unauthorized_if_no_token() {
@@ -105,7 +105,7 @@ mod test {
         crate::test_root::init_context();
 
         // Arrange
-        let token = Token {
+        let token = JWT {
             payload: Auth {
                 username: "Amelia".to_owned(),
                 id: 100,

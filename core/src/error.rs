@@ -26,6 +26,8 @@ pub enum LightSpeedError {
     UnauthenticatedError,
     #[error(display = "ForbiddenError [{}]", message)]
     ForbiddenError { message: String },
+    #[error(display = "PasswordEncryptionError [{}]", message)]
+    PasswordEncryptionError { message: String },
 
     #[error(display = "InternalServerError [{}]", message)]
     InternalServerError { message: &'static str },
