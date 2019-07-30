@@ -2,19 +2,18 @@ use c3p0::*;
 use include_dir::*;
 use ls_core::error::LightSpeedError;
 use std::convert::TryInto;
-use crate::PoolManager;
 
 const MIGRATIONS: Dir = include_dir!("./src_resources/db/migrations");
 
 #[derive(Clone)]
-pub struct AuthDbService {
-    c3p0: C3p0Pool<PoolManager>
+pub struct AuthDbRepository {
+    c3p0: C3p0Pool<PgPoolManager>
 }
 
-impl AuthDbService {
+impl AuthDbRepository {
 
-    pub fn new(c3p0: C3p0Pool<PoolManager>) -> Self {
-        AuthDbService {
+    pub fn new(c3p0: C3p0Pool<PgPoolManager>) -> Self {
+        AuthDbRepository {
             c3p0
         }
     }
