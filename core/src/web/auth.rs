@@ -1,8 +1,8 @@
-use actix_web::HttpRequest;
-use log::*;
 use crate::error::LightSpeedError;
 use crate::service::auth::{Auth, AuthContext, AuthService, InMemoryRolesProvider};
 use crate::service::jwt::JwtService;
+use actix_web::HttpRequest;
+use log::*;
 
 pub const JWT_TOKEN_HEADER: &str = "Authorization";
 pub const JWT_TOKEN_HEADER_SUFFIX: &str = "Bearer ";
@@ -78,13 +78,13 @@ impl WebAuthService {
 mod test {
 
     use super::*;
+    use crate::config::JwtConfig;
+    use crate::service::auth::Role;
+    use crate::service::jwt::JWT;
     use actix_service::Service;
     use actix_web::test::{block_on, init_service, TestRequest};
     use actix_web::{http::StatusCode, web, App};
     use jsonwebtoken::Algorithm;
-    use crate::config::JwtConfig;
-    use crate::service::auth::Role;
-    use crate::service::jwt::JWT;
 
     #[test]
     fn access_protected_url_should_return_unauthorized_if_no_token() {

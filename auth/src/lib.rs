@@ -10,7 +10,12 @@ pub type PoolManager = PgPoolManager;
 
 #[derive(Clone)]
 pub struct AuthModule {
-    pub repo_db: repository::db::AuthDbRepository
+    pub c3p0: C3p0Pool<PoolManager>,
+
+    pub db_repo: repository::db::AuthDbRepository,
+    pub token_repo: repository::token::TokenRepository,
+
+    pub token_service: service::token::TokenService,
 }
 
 impl AuthModule {
@@ -18,16 +23,25 @@ impl AuthModule {
         println!("Creating AuthModule");
         info!("Creating AuthModule");
 
-        let repo_db = repository::db::AuthDbRepository::new(c3p0);
+        let db_repo = repository::db::AuthDbRepository::new(c3p0.clone());
+        let token_repo = repository::token::TokenRepository::new();
+        let token_service = service::token::TokenService::new(c3p0.clone(), token_repo.clone());
 
-        AuthModule { repo_db }
+        AuthModule {
+            c3p0,
+
+            db_repo,
+            token_repo,
+
+            token_service,
+        }
     }
 }
 
 impl ls_core::module::Module for AuthModule {
     fn start(&mut self) -> Result<(), LightSpeedError> {
         info!("Starting AuthModule");
-        self.repo_db.start()?;
+        self.db_repo.start()?;
         Ok(())
     }
 }

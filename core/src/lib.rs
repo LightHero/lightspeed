@@ -5,8 +5,8 @@ pub mod service;
 pub mod web;
 
 use crate::error::LightSpeedError;
-use log::info;
 use crate::service::auth::InMemoryRolesProvider;
+use log::info;
 
 #[derive(Clone)]
 pub struct CoreModule {
@@ -20,9 +20,7 @@ impl CoreModule {
         info!("Creating CoreModule with configuration:\n{:#?}", config);
 
         let jwt = service::jwt::JwtService::new(&config.jwt);
-        let auth = service::auth::AuthService::new(InMemoryRolesProvider::new(
-            vec![]
-        ));
+        let auth = service::auth::AuthService::new(InMemoryRolesProvider::new(vec![]));
         CoreModule { jwt, auth }
     }
 }

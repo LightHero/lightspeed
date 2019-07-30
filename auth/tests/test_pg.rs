@@ -1,5 +1,5 @@
-use c3p0::*;
 use c3p0::pg::r2d2::{Pool, PostgresConnectionManager, TlsMode};
+use c3p0::*;
 use lazy_static::lazy_static;
 use maybe_single::MaybeSingle;
 use testcontainers::*;
@@ -39,8 +39,8 @@ fn init() -> (
     (auth_module, node)
 }
 
-pub fn test(callback: fn(&AuthModule)) {
+pub fn test(callback: fn(&AuthModule) -> Result<(), Box<std::error::Error>>) {
     SINGLETON.get(|(auth_module, _)| {
-        callback(&auth_module);
+        callback(&auth_module).unwrap();
     });
 }

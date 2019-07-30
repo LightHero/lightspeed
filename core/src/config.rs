@@ -32,7 +32,6 @@ pub struct JwtConfig {
 #[derive(Debug, Clone, StructOpt)]
 #[structopt(rename_all = "kebab-case")]
 pub struct CoreConfig {
-
     #[structopt(flatten)]
     pub jwt: JwtConfig,
 }

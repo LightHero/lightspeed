@@ -1044,6 +1044,7 @@ version = "0.1.0"
 dependencies = [
  "actix-service 0.4.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "actix-web 1.0.2 (registry+https://github.com/rust-lang/crates.io-index)",
+ "c3p0_common 0.9.0",
  "chrono 0.4.6 (registry+https://github.com/rust-lang/crates.io-index)",
  "err-derive 0.1.5 (registry+https://github.com/rust-lang/crates.io-index)",
  "jsonwebtoken 6.0.1 (registry+https://github.com/rust-lang/crates.io-index)",

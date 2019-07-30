@@ -1,4 +1,5 @@
 use actix_web::{HttpResponse, ResponseError};
+use c3p0_common::error::C3p0Error;
 use err_derive::Error;
 
 #[derive(Error, Debug)]
@@ -32,6 +33,8 @@ pub enum LightSpeedError {
     #[error(display = "InternalServerError [{}]", message)]
     InternalServerError { message: &'static str },
 
+    #[error(display = "RepositoryError [{}]", message)]
+    RepositoryError { message: String },
 }
 
 impl ResponseError for LightSpeedError {
@@ -44,8 +47,18 @@ impl ResponseError for LightSpeedError {
             | LightSpeedError::ParseAuthHeaderError { .. }
             | LightSpeedError::UnauthenticatedError => HttpResponse::Unauthorized().finish(),
             LightSpeedError::ForbiddenError { .. } => HttpResponse::Forbidden().finish(),
-            LightSpeedError::InternalServerError{ ..} => HttpResponse::InternalServerError().finish(),
+            LightSpeedError::InternalServerError { .. } => {
+                HttpResponse::InternalServerError().finish()
+            }
             _ => HttpResponse::InternalServerError().finish(),
+        }
+    }
+}
+
+impl From<C3p0Error> for LightSpeedError {
+    fn from(err: C3p0Error) -> Self {
+        LightSpeedError::RepositoryError {
+            message: format!("{}", err),
         }
     }
 }
