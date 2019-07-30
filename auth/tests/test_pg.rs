@@ -33,9 +33,7 @@ fn init() -> (
     .unwrap();
     let pool = Pool::builder().min_idle(Some(10)).build(manager).unwrap();
 
-    let pool = C3p0Builder::new(pool);
-
-    let mut auth_module = AuthModule::new(pool);
+    let mut auth_module = AuthModule::new(C3p0Pool::new(pool));
     auth_module.start().unwrap();
 
     (auth_module, node)
