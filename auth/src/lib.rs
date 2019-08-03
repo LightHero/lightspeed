@@ -1,8 +1,10 @@
 use c3p0::*;
 use log::*;
-use ls_core::error::LightSpeedError;
+use ls_core::{config::UIConfig, error::LightSpeedError};
+use crate::config::AuthConfig;
 
 pub mod config;
+pub mod model;
 pub mod repository;
 pub mod service;
 
@@ -10,6 +12,9 @@ pub type PoolManager = PgPoolManager;
 
 #[derive(Clone)]
 pub struct AuthModule {
+    pub ui_config: UIConfig,
+    pub auth_config: AuthConfig,
+
     pub c3p0: C3p0Pool<PoolManager>,
 
     pub db_repo: repository::db::AuthDbRepository,
@@ -19,15 +24,18 @@ pub struct AuthModule {
 }
 
 impl AuthModule {
-    pub fn new(c3p0: C3p0Pool<PoolManager>) -> Self {
+    pub fn new(auth_config: AuthConfig, ui_config: UIConfig, c3p0: C3p0Pool<PoolManager>) -> Self {
         println!("Creating AuthModule");
         info!("Creating AuthModule");
 
         let db_repo = repository::db::AuthDbRepository::new(c3p0.clone());
         let token_repo = repository::token::TokenRepository::new();
-        let token_service = service::token::TokenService::new(c3p0.clone(), token_repo.clone());
+        let token_service = service::token::TokenService::new(auth_config.clone(), ui_config.clone(), token_repo.clone());
 
         AuthModule {
+            ui_config,
+            auth_config,
+
             c3p0,
 
             db_repo,

@@ -2,6 +2,7 @@ pub mod config;
 pub mod error;
 pub mod module;
 pub mod service;
+pub mod utils;
 pub mod web;
 
 use crate::error::LightSpeedError;

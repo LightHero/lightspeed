@@ -1,7 +1,7 @@
 use crate::config::JwtConfig;
 use crate::error::LightSpeedError;
-use chrono::prelude::Local;
 use serde_derive::{Deserialize, Serialize};
+use crate::utils::current_epoch_seconds;
 
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -46,7 +46,7 @@ impl JwtService {
         &self,
         payload: &T,
     ) -> Result<String, LightSpeedError> {
-        let issued_at = Local::now().timestamp();
+        let issued_at = current_epoch_seconds();
         let token = JWT {
             payload,
             sub: "".to_string(),
@@ -108,6 +108,7 @@ impl JwtService {
 #[cfg(test)]
 mod test {
 
+    use chrono::prelude::Local;
     use super::*;
 
     #[test]

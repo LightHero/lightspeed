@@ -1,22 +1,7 @@
 use c3p0::*;
-use serde::{Deserialize, Serialize};
 use std::ops::Deref;
+use crate::model::token::{TokenData, TokenModel};
 
-pub type TokenModel = Model<TokenData>;
-
-#[derive(Clone, Serialize, Deserialize)]
-pub struct TokenData {
-    pub token: String,
-    pub username: String,
-    pub token_type: TokenType,
-    pub expire_at_epoch: i64,
-}
-
-#[derive(Clone, Serialize, Deserialize)]
-pub enum TokenType {
-    AccountActivation,
-    ResetPassword,
-}
 
 #[derive(Clone)]
 pub struct TokenRepository {

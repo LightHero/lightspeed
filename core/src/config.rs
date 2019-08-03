@@ -1,5 +1,14 @@
 use structopt::StructOpt;
 
+/// Global Web configuration.
+#[derive(Debug, Clone, StructOpt)]
+#[structopt(rename_all = "kebab-case")]
+pub struct UIConfig {
+    /// The public site URL
+    #[structopt(long, default_value = "http://127.0.0.1")]
+    pub public_domain: String
+}
+
 /// Defines the JSON Web Token configuration.
 #[derive(Debug, Clone, StructOpt)]
 #[structopt(rename_all = "kebab-case")]

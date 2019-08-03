@@ -1,6 +1,6 @@
 use crate::test;
 use c3p0::NewModel;
-use lightspeed_auth::repository::token::{TokenData, TokenType};
+use lightspeed_auth::model::token::{TokenType, TokenData};
 
 #[test]
 fn should_delete_token() {
