@@ -31,8 +31,8 @@ impl TokenRepository {
         token_string: &str,
     ) -> Result<Option<TokenModel>, C3p0Error> {
         let sql = r#"
-            select from AUTH_TOKEN
-            where DATA_JSON ->> 'token' = ?
+            select * from AUTH_TOKEN
+            where AUTH_TOKEN.DATA_JSON ->> 'token' = $1
             limit 1
         "#;
         conn.fetch_one_option(sql, &[&token_string], |row| self.repo.json().to_model(row))

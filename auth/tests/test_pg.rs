@@ -5,8 +5,8 @@ use maybe_single::MaybeSingle;
 use testcontainers::*;
 
 use lightspeed_auth::AuthModule;
-use ls_core::config::UIConfig;
-use ls_core::module::Module;
+use lightspeed_core::config::UIConfig;
+use lightspeed_core::module::Module;
 use lightspeed_auth::config::AuthConfig;
 
 mod tests;

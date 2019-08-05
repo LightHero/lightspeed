@@ -1,6 +1,6 @@
 use c3p0::*;
 use log::*;
-use ls_core::{config::UIConfig, error::LightSpeedError};
+use lightspeed_core::{config::UIConfig, error::LightSpeedError};
 use crate::config::AuthConfig;
 use crate::service::password_codec::PasswordCodec;
 
@@ -52,7 +52,7 @@ impl AuthModule {
     }
 }
 
-impl ls_core::module::Module for AuthModule {
+impl lightspeed_core::module::Module for AuthModule {
     fn start(&mut self) -> Result<(), LightSpeedError> {
         info!("Starting AuthModule");
         self.db_repo.start()?;

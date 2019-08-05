@@ -1,9 +1,9 @@
 use crate::model::token::{TokenModel, TokenType, TokenData};
 use crate::repository::token::{TokenRepository};
 use c3p0::*;
-use ls_core::config::UIConfig;
-use ls_core::error::LightSpeedError;
-use ls_core::utils::*;
+use lightspeed_core::config::UIConfig;
+use lightspeed_core::error::LightSpeedError;
+use lightspeed_core::utils::*;
 use crate::config::AuthConfig;
 
 #[derive(Clone)]

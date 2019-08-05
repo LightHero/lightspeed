@@ -1,6 +1,6 @@
 use c3p0::*;
 use include_dir::*;
-use ls_core::error::LightSpeedError;
+use lightspeed_core::error::LightSpeedError;
 use std::convert::TryInto;
 
 const MIGRATIONS: Dir = include_dir!("./src_resources/db/migrations");

@@ -1,5 +1,5 @@
 use bcrypt::{hash, verify};
-use ls_core::error::LightSpeedError;
+use lightspeed_core::error::LightSpeedError;
 
 #[derive(Clone)]
 pub struct PasswordCodec {
