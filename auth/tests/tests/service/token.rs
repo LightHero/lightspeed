@@ -22,7 +22,7 @@ fn should_delete_token() {
         assert!(auth_module
             .token_repo
             .exists_by_id(&c3p0.connection()?, &saved_token.id)?);
-        assert_eq!(1, auth_module.token_service.delete(saved_token.clone())?);
+        assert_eq!(1, auth_module.token_service.delete(&c3p0.connection()?, saved_token.clone())?);
         assert!(!auth_module
             .token_repo
             .exists_by_id(&c3p0.connection()?, &saved_token.id)?);

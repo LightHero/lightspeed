@@ -5,7 +5,9 @@ use maybe_single::MaybeSingle;
 use testcontainers::*;
 
 use lightspeed_auth::AuthModule;
+use ls_core::config::UIConfig;
 use ls_core::module::Module;
+use lightspeed_auth::config::AuthConfig;
 
 mod tests;
 
@@ -33,7 +35,11 @@ fn init() -> (
     .unwrap();
     let pool = Pool::builder().min_idle(Some(10)).build(manager).unwrap();
 
-    let mut auth_module = AuthModule::new(C3p0Pool::new(pool));
+    let mut auth_config = AuthConfig::build();
+    auth_config.bcrypt_password_hash_cost = 4;
+
+    let ui_config = UIConfig::build();
+    let mut auth_module = AuthModule::new(auth_config, ui_config, C3p0Pool::new(pool));
     auth_module.start().unwrap();
 
     (auth_module, node)

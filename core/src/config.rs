@@ -9,6 +9,13 @@ pub struct UIConfig {
     pub public_domain: String
 }
 
+impl UIConfig {
+    pub fn build() -> Self {
+        let app = Self::clap().setting(structopt::clap::AppSettings::AllowExternalSubcommands);
+        Self::from_clap(&app.get_matches())
+    }
+}
+
 /// Defines the JSON Web Token configuration.
 #[derive(Debug, Clone, StructOpt)]
 #[structopt(rename_all = "kebab-case")]
@@ -47,7 +54,8 @@ pub struct CoreConfig {
 
 impl CoreConfig {
     pub fn build() -> Self {
-        CoreConfig::from_args()
+        let app = Self::clap().setting(structopt::clap::AppSettings::AllowExternalSubcommands);
+        Self::from_clap(&app.get_matches())
     }
 }
 

@@ -79,7 +79,8 @@ pub mod test {
             reset_password_token_ui_url: "".to_owned(),
             activation_token_ui_url: token_ui_url.clone(),
             auth_email_account_created_recipient: "".to_owned(),
-            token_activation_validity_minutes: 1
+            token_activation_validity_minutes: 1,
+            bcrypt_password_hash_cost: 0,
         };
 
         let ui_config = UIConfig {
@@ -114,7 +115,8 @@ pub mod test {
             reset_password_token_ui_url: token_ui_url.clone(),
             activation_token_ui_url: "".to_owned(),
             auth_email_account_created_recipient: "".to_owned(),
-            token_activation_validity_minutes: 1
+            token_activation_validity_minutes: 1,
+            bcrypt_password_hash_cost: 0,
         };
 
         let ui_config = UIConfig {

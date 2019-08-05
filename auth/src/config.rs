@@ -15,12 +15,16 @@ pub struct AuthConfig {
     pub reset_password_token_ui_url: String,
 
     #[structopt(long, default_value = "test@test.com")]
-    pub auth_email_account_created_recipient: String
+    pub auth_email_account_created_recipient: String,
+
+    #[structopt(long, default_value = "10")]
+    pub bcrypt_password_hash_cost: u32,
 
 }
 
 impl AuthConfig {
     pub fn build() -> Self {
-        AuthConfig::from_args()
+        let app = Self::clap().setting(structopt::clap::AppSettings::AllowExternalSubcommands);
+        Self::from_clap(&app.get_matches())
     }
 }
