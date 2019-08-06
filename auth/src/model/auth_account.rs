@@ -1,4 +1,7 @@
 use serde::{Deserialize, Serialize};
+use c3p0::Model;
+
+pub type AuthAccountModel = Model<AuthAccountData>;
 
 #[derive(Clone, Serialize, Deserialize)]
 pub struct AuthAccountData {

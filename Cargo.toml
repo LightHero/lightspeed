@@ -1,9 +1,10 @@
 [workspace]
 
 members = [
-    "auth",
-    "core",
     "logger",
+    "core",
+    "email",
+    "auth",
     "app",
 ]
 

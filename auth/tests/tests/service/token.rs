@@ -11,7 +11,7 @@ fn should_delete_token() {
         let token = NewModel {
             version: 0,
             data: TokenData {
-                token: "123454678".to_owned(),
+                token: new_hyphenated_uuid(),
                 expire_at_epoch: 9999999999999,
                 token_type: TokenType::ResetPassword,
                 username: "test@test.com".to_owned(),
@@ -73,14 +73,14 @@ fn should_validate_token_on_fetch() {
             let token = NewModel {
                 version: 0,
                 data: TokenData {
-                    token: "123454678".to_owned(),
+                    token: new_hyphenated_uuid(),
                     expire_at_epoch: current_epoch_seconds() - 1,
                     token_type: TokenType::ResetPassword,
                     username: "test@test.com".to_owned(),
                 },
             };
 
-            let saved_token = auth_module.token_repo.save(&c3p0.connection()?, token)?;
+            let saved_token = auth_module.token_repo.save(conn, token)?;
 
             assert!(auth_module.token_service.fetch_by_token(conn, &saved_token.data.token, true).is_err());
 

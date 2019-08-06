@@ -21,6 +21,8 @@ pub enum LightSpeedError {
     ModuleBuilderError { message: String },
     #[error(display = "ModuleStartError: [{}]", message)]
     ModuleStartError { message: String },
+    #[error(display = "ConfigurationError: [{}]", message)]
+    ConfigurationError { message: String },
 
     // Auth
     #[error(display = "UnauthenticatedError")]
@@ -31,7 +33,7 @@ pub enum LightSpeedError {
     PasswordEncryptionError { message: String },
 
     #[error(display = "InternalServerError [{}]", message)]
-    InternalServerError { message: &'static str },
+    InternalServerError { message: String },
 
     #[error(display = "RepositoryError [{}]", message)]
     RepositoryError { message: String },

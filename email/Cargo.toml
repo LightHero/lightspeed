@@ -1,0 +1,28 @@
+[package]
+name = "lightspeed_email"
+license = "MIT"
+version = "0.1.0"
+authors = ["Francesco Cina <ufoscout@gmail.com>"]
+edition = "2018"
+
+[dependencies]
+lightspeed_core = { version = "0.1", path = "../core" }
+#c3p0 = { version = "0.9", features = ["pg"] }
+c3p0 = { version = "0.9", features = ["pg"], path = "../../../github_ufoscout/c3p0/c3p0"}
+err-derive = "0.1"
+include_dir="0.2"
+lettre = "0.9"
+lettre_email = "0.9"
+log = "0.4"
+serde = "1"
+serde_derive = "1"
+structopt = "0.2"
+
+
+[dev-dependencies]
+lazy_static = "1.3"
+maybe-single = "0.4"
+testcontainers = "0.6"
+rand = "0.7"
+
+ls_logger = { version = "0.1", package = "lightspeed_logger", path = "../logger" }

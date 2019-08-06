@@ -31,7 +31,7 @@ impl TokenRepository {
         token_string: &str,
     ) -> Result<Option<TokenModel>, C3p0Error> {
         let sql = r#"
-            select * from AUTH_TOKEN
+            select id, version, data_json from AUTH_TOKEN
             where AUTH_TOKEN.DATA_JSON ->> 'token' = $1
             limit 1
         "#;
