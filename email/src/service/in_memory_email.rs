@@ -1,19 +1,18 @@
-use lightspeed_core::error::LightSpeedError;
-use crate::config::{EmailConfig};
 use crate::model::email::EmailMessage;
 use crate::service::email::EmailService;
+use lightspeed_core::error::LightSpeedError;
 use log::warn;
 use std::sync::{Arc, Mutex};
 
 #[derive(Clone)]
 pub struct InMemoryEmailService {
-    pub emails: Arc<Mutex<Vec<EmailMessage>>>
+    pub emails: Arc<Mutex<Vec<EmailMessage>>>,
 }
 
 impl InMemoryEmailService {
     pub fn new() -> Self {
         InMemoryEmailService {
-            emails: Arc::new(Mutex::new(vec![]))
+            emails: Arc::new(Mutex::new(vec![])),
         }
     }
 }
@@ -22,11 +21,15 @@ impl EmailService for InMemoryEmailService {
     fn send(&self, email_message: EmailMessage) -> Result<(), LightSpeedError> {
         warn!("InMemoryEmailService - Received an email. The email is NOT going to be sent but kept in memory");
 
-        let mut lock = self.emails.lock().map_err(|err| {
-            LightSpeedError::InternalServerError {
-                message: format!("InMemoryEmailService.send - Cannot obtain lock. Err: [{}]", err)
-            }
-        })?;
+        let mut lock = self
+            .emails
+            .lock()
+            .map_err(|err| LightSpeedError::InternalServerError {
+                message: format!(
+                    "InMemoryEmailService.send - Cannot obtain lock. Err: [{}]",
+                    err
+                ),
+            })?;
 
         lock.push(email_message);
         Ok(())
@@ -34,18 +37,20 @@ impl EmailService for InMemoryEmailService {
 }
 
 impl InMemoryEmailService {
-
     pub fn emails(&self) -> Arc<Mutex<Vec<EmailMessage>>> {
         self.emails.clone()
     }
 
     pub fn clear_emails(&self) -> Result<(), LightSpeedError> {
-
-        let mut lock = self.emails.lock().map_err(|err| {
-            LightSpeedError::InternalServerError {
-                message: format!("InMemoryEmailService.clear_emails - Cannot obtain lock . Err: [{}]", err)
-            }
-        })?;
+        let mut lock = self
+            .emails
+            .lock()
+            .map_err(|err| LightSpeedError::InternalServerError {
+                message: format!(
+                    "InMemoryEmailService.clear_emails - Cannot obtain lock . Err: [{}]",
+                    err
+                ),
+            })?;
         lock.clear();
         Ok(())
     }

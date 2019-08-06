@@ -1,7 +1,7 @@
+use crate::config::EmailConfig;
 use c3p0::*;
+use lightspeed_core::error::LightSpeedError;
 use log::*;
-use lightspeed_core::{error::LightSpeedError};
-use crate::config::{EmailConfig};
 use std::sync::Arc;
 
 pub mod config;
@@ -20,11 +20,14 @@ pub struct EmailModule {
 }
 
 impl EmailModule {
-    pub fn new(email_config: EmailConfig, c3p0: C3p0Pool<PoolManager>) -> Result<Self, LightSpeedError> {
+    pub fn new(
+        email_config: EmailConfig,
+        c3p0: C3p0Pool<PoolManager>,
+    ) -> Result<Self, LightSpeedError> {
         println!("Creating EmailModule");
         info!("Creating EmailModule");
 
-        let email_service = Arc::new(service::email::new(email_config.clone()));
+        let email_service = Arc::new(service::email::new(email_config.clone())?);
 
         Ok(EmailModule {
             email_config,

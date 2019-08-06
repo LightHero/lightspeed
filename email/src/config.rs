@@ -1,10 +1,9 @@
-use structopt::StructOpt;
 use crate::service::email::EmailServiceType;
+use structopt::StructOpt;
 
 #[derive(Debug, Clone, StructOpt)]
 #[structopt(rename_all = "kebab-case")]
 pub struct EmailConfig {
-
     #[structopt(long, default_value = "Full")]
     pub service_type: EmailServiceType,
 

@@ -1,20 +1,20 @@
-use lightspeed_core::error::LightSpeedError;
-use crate::config::{EmailConfig};
+use crate::config::EmailConfig;
 use crate::model::email::EmailMessage;
 use crate::service::full_email::FullEmailService;
-use std::str::FromStr;
-use crate::service::no_ops_email::NoOpsEmailService;
 use crate::service::in_memory_email::InMemoryEmailService;
+use crate::service::no_ops_email::NoOpsEmailService;
+use lightspeed_core::error::LightSpeedError;
+use std::str::FromStr;
 
 pub trait EmailService {
     fn send(&self, email_message: EmailMessage) -> Result<(), LightSpeedError>;
 }
 
-pub fn new(email_config: EmailConfig) -> Box<EmailService> {
+pub fn new(email_config: EmailConfig) -> Result<Box<EmailService>, LightSpeedError> {
     match &email_config.service_type {
-        EmailServiceType::Full => Box::new(FullEmailService::new(email_config)),
-        EmailServiceType::InMemory => Box::new( InMemoryEmailService::new() ),
-        EmailServiceType::NoOps => Box::new( NoOpsEmailService::new() )
+        EmailServiceType::Full => Ok(Box::new(FullEmailService::new(email_config)?)),
+        EmailServiceType::InMemory => Ok(Box::new(InMemoryEmailService::new())),
+        EmailServiceType::NoOps => Ok(Box::new(NoOpsEmailService::new())),
     }
 }
 
@@ -22,7 +22,7 @@ pub fn new(email_config: EmailConfig) -> Box<EmailService> {
 pub enum EmailServiceType {
     Full,
     InMemory,
-    NoOps
+    NoOps,
 }
 
 impl FromStr for EmailServiceType {
@@ -33,8 +33,8 @@ impl FromStr for EmailServiceType {
             "Full" => Ok(EmailServiceType::Full),
             "InMemory" => Ok(EmailServiceType::InMemory),
             "NoOps" => Ok(EmailServiceType::NoOps),
-            _ => Err(LightSpeedError::ConfigurationError{
-                message: format!("Unknown Email service_type [{}]", s)
+            _ => Err(LightSpeedError::ConfigurationError {
+                message: format!("Unknown Email service_type [{}]", s),
             }),
         }
     }

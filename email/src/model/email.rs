@@ -24,22 +24,20 @@ pub struct EmailMessage {
 
 impl Default for EmailMessage {
     fn default() -> Self {
-        EmailMessage{
+        EmailMessage {
             from: None,
             to: vec![],
             cc: vec![],
             bcc: vec![],
             subject: None,
             text: None,
-            html: None
+            html: None,
         }
     }
 }
 
 impl EmailMessage {
-
     pub fn new() -> Self {
         EmailMessage::default()
     }
-
 }
