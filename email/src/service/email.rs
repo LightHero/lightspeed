@@ -8,6 +8,8 @@ use std::str::FromStr;
 
 pub trait EmailService {
     fn send(&self, email_message: EmailMessage) -> Result<(), LightSpeedError>;
+    fn get_emails(&self) -> Result<Vec<EmailMessage>, LightSpeedError>;
+    fn clear_emails(&self) -> Result<(), LightSpeedError>;
 }
 
 pub fn new(email_config: EmailConfig) -> Result<Box<EmailService>, LightSpeedError> {

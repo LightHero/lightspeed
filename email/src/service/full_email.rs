@@ -25,7 +25,7 @@ impl FullEmailService {
         )
         .map_err(|err| LightSpeedError::InternalServerError {
             message: format!(
-                "EmailService.send - Cannot connect to the SMTP server. Err: {}",
+                "FullEmailService.new - Cannot connect to the SMTP server. Err: {}",
                 err
             ),
         })?;
@@ -77,7 +77,7 @@ impl EmailService for FullEmailService {
         let email = builder
             .build()
             .map_err(|err| LightSpeedError::InternalServerError {
-                message: format!("EmailService.send - Cannot build the email. Err: {}", err),
+                message: format!("FullEmailService.send - Cannot build the email. Err: {}", err),
             })?;
 
         let mut client =
@@ -85,7 +85,7 @@ impl EmailService for FullEmailService {
                 .lock()
                 .map_err(|err| LightSpeedError::InternalServerError {
                     message: format!(
-                        "EmailService.send - Cannot obtain SMTP client lock. Err: {}",
+                        "FullEmailService.send - Cannot obtain SMTP client lock. Err: {}",
                         err
                     ),
                 })?;
@@ -95,15 +95,28 @@ impl EmailService for FullEmailService {
                 .send(email.into())
                 .map_err(|err| LightSpeedError::InternalServerError {
                     message: format!(
-                        "EmailService.send - Cannot send email to the SMTP server. Err: {}",
+                        "FullEmailService.send - Cannot send email to the SMTP server. Err: {}",
                         err
                     ),
                 })?;
 
         debug!(
-            "EmailService.send - Email sent. Response code: {}",
+            "FullEmailService.send - Email sent. Response code: {}",
             response.code
         );
         Ok(())
     }
+
+    fn get_emails(&self) -> Result<Vec<EmailMessage>, LightSpeedError> {
+        Err(LightSpeedError::InternalServerError {
+            message: "FullEmailService.get_emails - Cannot return sent email".to_owned()
+        })
+    }
+
+    fn clear_emails(&self) -> Result<(), LightSpeedError> {
+        Err(LightSpeedError::InternalServerError {
+            message: "FullEmailService.clear_emails - Cannot clear_emails".to_owned()
+        })
+    }
+
 }

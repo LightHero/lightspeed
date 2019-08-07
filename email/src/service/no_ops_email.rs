@@ -14,7 +14,18 @@ impl NoOpsEmailService {
 
 impl EmailService for NoOpsEmailService {
     fn send(&self, _email_message: EmailMessage) -> Result<(), LightSpeedError> {
-        warn!("NoOpsEmailService - Received an email but the email is NOT going to be sent");
+        warn!("NoOpsEmailService.send - Received an email but the email is NOT going to be sent");
+        Ok(())
+    }
+
+    fn get_emails(&self) -> Result<Vec<EmailMessage>, LightSpeedError> {
+        warn!("NoOpsEmailService.get_emails - This is a no ops");
+
+        Ok(vec![])
+    }
+
+    fn clear_emails(&self) -> Result<(), LightSpeedError> {
+        warn!("NoOpsEmailService.clear_emails - This is a no ops");
         Ok(())
     }
 }

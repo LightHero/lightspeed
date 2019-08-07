@@ -6,7 +6,7 @@ use std::sync::{Arc, Mutex};
 
 #[derive(Clone)]
 pub struct InMemoryEmailService {
-    pub emails: Arc<Mutex<Vec<EmailMessage>>>,
+    emails: Arc<Mutex<Vec<EmailMessage>>>,
 }
 
 impl InMemoryEmailService {
@@ -34,14 +34,21 @@ impl EmailService for InMemoryEmailService {
         lock.push(email_message);
         Ok(())
     }
-}
 
-impl InMemoryEmailService {
-    pub fn emails(&self) -> Arc<Mutex<Vec<EmailMessage>>> {
-        self.emails.clone()
+    fn get_emails(&self) -> Result<Vec<EmailMessage>, LightSpeedError> {
+        let lock = self
+            .emails
+            .lock()
+            .map_err(|err| LightSpeedError::InternalServerError {
+                message: format!(
+                    "InMemoryEmailService.clear_emails - Cannot obtain lock . Err: [{}]",
+                    err
+                ),
+            })?;
+        Ok(lock.clone())
     }
 
-    pub fn clear_emails(&self) -> Result<(), LightSpeedError> {
+    fn clear_emails(&self) -> Result<(), LightSpeedError> {
         let mut lock = self
             .emails
             .lock()
@@ -79,7 +86,7 @@ pub mod test {
         email_service.send(email_1.clone()).unwrap();
 
         // Assert
-        let emails = email_service.emails.lock().unwrap();
+        let emails = email_service.get_emails().unwrap();
         assert_eq!(3, emails.len());
         assert_eq!(email_1.subject, emails[0].subject);
         assert_eq!(email_2.subject, emails[1].subject);
@@ -98,13 +105,13 @@ pub mod test {
         email_service.send(email_1.clone()).unwrap();
         email_service.send(email_1.clone()).unwrap();
         {
-            let emails = email_service.emails.lock().unwrap();
+            let emails = email_service.get_emails().unwrap();
             assert!(!emails.is_empty());
         }
         email_service.clear_emails().unwrap();
 
         // Assert
-        let emails = email_service.emails.lock().unwrap();
+        let emails = email_service.get_emails().unwrap();
         assert!(emails.is_empty());
     }
 }
