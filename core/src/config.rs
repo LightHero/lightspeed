@@ -6,7 +6,7 @@ use structopt::StructOpt;
 pub struct UIConfig {
     /// The public site URL
     #[structopt(long, default_value = "http://127.0.0.1")]
-    pub public_domain: String
+    pub public_domain: String,
 }
 
 impl UIConfig {

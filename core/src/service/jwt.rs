@@ -1,7 +1,7 @@
 use crate::config::JwtConfig;
 use crate::error::LightSpeedError;
-use serde_derive::{Deserialize, Serialize};
 use crate::utils::current_epoch_seconds;
+use serde_derive::{Deserialize, Serialize};
 
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -108,8 +108,8 @@ impl JwtService {
 #[cfg(test)]
 mod test {
 
-    use chrono::prelude::Local;
     use super::*;
+    use chrono::prelude::Local;
 
     #[test]
     fn service_should_be_send_and_sync() {

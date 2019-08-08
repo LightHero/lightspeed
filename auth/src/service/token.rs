@@ -5,6 +5,7 @@ use lightspeed_core::config::UIConfig;
 use lightspeed_core::error::LightSpeedError;
 use lightspeed_core::utils::*;
 use crate::config::AuthConfig;
+use lightspeed_core::service::validator::Validator;
 
 #[derive(Clone)]
 pub struct TokenService {
@@ -38,12 +39,12 @@ impl TokenService {
 
     pub fn fetch_by_token(&self, conn: &PgConnection, token: &str, validate: bool) -> Result<Option<TokenModel>, LightSpeedError> {
         let token_model = self.token_repo.fetch_by_token(conn, token)?;
-        /*
+
         if validate {
-            return tokenValidator
-            .validateThrowException(tokenRepository.fetchByToken(dsl, token))
+            if let Some(token) = &token_model {
+                Validator::validate(&token.data)?;
             }
-        */
+        }
         return Ok(token_model)
     }
 

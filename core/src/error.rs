@@ -1,11 +1,10 @@
 use c3p0_common::error::C3p0Error;
 use err_derive::Error;
-use std::collections::HashMap;
 use std::collections::hash_map::Entry;
+use std::collections::HashMap;
 
 #[derive(Error, Debug)]
 pub enum LightSpeedError {
-
     // JWT
     #[error(display = "InvalidTokenError: [{}]", message)]
     InvalidTokenError { message: String },
@@ -44,10 +43,10 @@ pub enum LightSpeedError {
     ValidationError { details: ErrorDetails },
 }
 
-#[derive(Default, Debug)]
+#[derive(Default, Debug, Clone)]
 pub struct ErrorDetails {
     pub message: Option<String>,
-    pub details: HashMap<String, Vec<String>>
+    pub details: HashMap<String, Vec<String>>,
 }
 
 impl ErrorDetails {
@@ -55,7 +54,7 @@ impl ErrorDetails {
         match self.details.entry(key.into()) {
             Entry::Occupied(mut entry) => {
                 entry.get_mut().push(value.into());
-            },
+            }
             Entry::Vacant(entry) => {
                 entry.insert(vec![value.into()]);
             }
@@ -78,7 +77,6 @@ pub mod test {
 
     #[test]
     pub fn error_details_should_add_entries() {
-
         let mut err = ErrorDetails::default();
         assert!(err.details.is_empty());
 
@@ -87,7 +85,10 @@ pub mod test {
         err.add_detail("baby", "asta la vista");
 
         assert_eq!(2, err.details.len());
-        assert_eq!(vec!["world_1".to_owned(), "world_2".to_owned()], err.details["hello"]);
+        assert_eq!(
+            vec!["world_1".to_owned(), "world_2".to_owned()],
+            err.details["hello"]
+        );
         assert_eq!(vec!["asta la vista".to_owned()], err.details["baby"]);
     }
 
