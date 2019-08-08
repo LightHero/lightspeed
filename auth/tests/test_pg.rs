@@ -4,10 +4,10 @@ use lazy_static::lazy_static;
 use maybe_single::MaybeSingle;
 use testcontainers::*;
 
+use lightspeed_auth::config::AuthConfig;
 use lightspeed_auth::AuthModule;
 use lightspeed_core::config::UIConfig;
 use lightspeed_core::module::Module;
-use lightspeed_auth::config::AuthConfig;
 
 mod tests;
 

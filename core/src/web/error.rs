@@ -1,4 +1,4 @@
-use crate::error::{ErrorDetails, LightSpeedError};
+use crate::error::{ErrorDetails, LightSpeedError, ErrorDetail};
 use actix_web::dev::HttpResponseBuilder;
 use actix_web::{HttpResponse, ResponseError};
 use serde_derive::Serialize;
@@ -8,7 +8,7 @@ use std::collections::HashMap;
 pub struct WebErrorDetails<'a> {
     pub code: u16,
     pub message: &'a Option<String>,
-    pub details: &'a HashMap<String, Vec<String>>,
+    pub details: &'a HashMap<String, Vec<ErrorDetail>>,
 }
 
 impl<'a> WebErrorDetails<'a> {

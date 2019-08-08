@@ -3,7 +3,6 @@ use structopt::StructOpt;
 #[derive(Debug, Clone, StructOpt)]
 #[structopt(rename_all = "kebab-case")]
 pub struct AuthConfig {
-
     /// Determines the token validity minutes
     #[structopt(long, default_value = "120")]
     pub token_activation_validity_minutes: i64,
@@ -19,7 +18,6 @@ pub struct AuthConfig {
 
     #[structopt(long, default_value = "10")]
     pub bcrypt_password_hash_cost: u32,
-
 }
 
 impl AuthConfig {

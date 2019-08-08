@@ -77,7 +77,10 @@ impl EmailService for FullEmailService {
         let email = builder
             .build()
             .map_err(|err| LightSpeedError::InternalServerError {
-                message: format!("FullEmailService.send - Cannot build the email. Err: {}", err),
+                message: format!(
+                    "FullEmailService.send - Cannot build the email. Err: {}",
+                    err
+                ),
             })?;
 
         let mut client =
@@ -109,14 +112,13 @@ impl EmailService for FullEmailService {
 
     fn get_emails(&self) -> Result<Vec<EmailMessage>, LightSpeedError> {
         Err(LightSpeedError::InternalServerError {
-            message: "FullEmailService.get_emails - Cannot return sent email".to_owned()
+            message: "FullEmailService.get_emails - Cannot return sent email".to_owned(),
         })
     }
 
     fn clear_emails(&self) -> Result<(), LightSpeedError> {
         Err(LightSpeedError::InternalServerError {
-            message: "FullEmailService.clear_emails - Cannot clear_emails".to_owned()
+            message: "FullEmailService.clear_emails - Cannot clear_emails".to_owned(),
         })
     }
-
 }

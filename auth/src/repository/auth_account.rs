@@ -1,5 +1,5 @@
-use c3p0::*;
 use crate::model::auth_account::{AuthAccountData, AuthAccountModel};
+use c3p0::*;
 
 pub struct AuthAccountRepository {
     repo: C3p0Json<
@@ -12,7 +12,9 @@ pub struct AuthAccountRepository {
 impl AuthAccountRepository {
     pub fn new() -> Self {
         AuthAccountRepository {
-            repo: C3p0JsonBuilder::new("AUTH_ACCOUNT").with_data_field_name("data_json").build(),
+            repo: C3p0JsonBuilder::new("AUTH_ACCOUNT")
+                .with_data_field_name("data_json")
+                .build(),
         }
     }
 
@@ -28,5 +30,4 @@ impl AuthAccountRepository {
         "#;
         conn.fetch_one_option(sql, &[&token_string], |row| self.repo.json().to_model(row))
     }
-
 }

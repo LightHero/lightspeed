@@ -1,5 +1,12 @@
 use crate::error::{ErrorDetails, LightSpeedError};
 
+pub mod contains;
+pub mod email;
+pub mod ip;
+pub mod must_match;
+pub mod traits;
+pub mod urls;
+
 pub trait Validable {
     fn validate(&self, error_details: &mut ErrorDetails) -> Result<(), LightSpeedError>;
 }

@@ -1,5 +1,5 @@
-use serde::{Deserialize, Serialize};
 use c3p0::Model;
+use serde::{Deserialize, Serialize};
 
 pub type AuthAccountModel = Model<AuthAccountData>;
 

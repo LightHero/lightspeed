@@ -1,8 +1,8 @@
-use c3p0::*;
-use log::*;
-use lightspeed_core::{config::UIConfig, error::LightSpeedError};
 use crate::config::AuthConfig;
 use crate::service::password_codec::PasswordCodec;
+use c3p0::*;
+use lightspeed_core::{config::UIConfig, error::LightSpeedError};
+use log::*;
 
 pub mod config;
 pub mod model;
@@ -34,8 +34,11 @@ impl AuthModule {
         let token_repo = repository::token::TokenRepository::new();
 
         let password_codec = PasswordCodec::new(auth_config.bcrypt_password_hash_cost);
-        let token_service = service::token::TokenService::new(auth_config.clone(), ui_config.clone(), token_repo.clone());
-
+        let token_service = service::token::TokenService::new(
+            auth_config.clone(),
+            ui_config.clone(),
+            token_repo.clone(),
+        );
 
         AuthModule {
             ui_config,

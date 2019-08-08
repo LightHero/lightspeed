@@ -1,11 +1,11 @@
-use crate::model::token::{TokenModel, TokenType, TokenData};
-use crate::repository::token::{TokenRepository};
+use crate::config::AuthConfig;
+use crate::model::token::{TokenData, TokenModel, TokenType};
+use crate::repository::token::TokenRepository;
 use c3p0::*;
 use lightspeed_core::config::UIConfig;
 use lightspeed_core::error::LightSpeedError;
-use lightspeed_core::utils::*;
-use crate::config::AuthConfig;
 use lightspeed_core::service::validator::Validator;
+use lightspeed_core::utils::*;
 
 #[derive(Clone)]
 pub struct TokenService {
@@ -15,19 +15,27 @@ pub struct TokenService {
 }
 
 impl TokenService {
-
     pub fn new(auth_config: AuthConfig, ui_config: UIConfig, token_repo: TokenRepository) -> Self {
-        TokenService { auth_config, ui_config, token_repo }
+        TokenService {
+            auth_config,
+            ui_config,
+            token_repo,
+        }
     }
 
-    pub fn generate_and_save_token(&self, conn: &PgConnection, username: String, token_type: TokenType) -> Result<TokenModel, LightSpeedError> {
+    pub fn generate_and_save_token(
+        &self,
+        conn: &PgConnection,
+        username: String,
+        token_type: TokenType,
+    ) -> Result<TokenModel, LightSpeedError> {
         let issued_at = current_epoch_seconds();
         let expire_at_epoch = issued_at + (self.auth_config.token_activation_validity_minutes * 60);
-        let token = NewModel::new(TokenData{
+        let token = NewModel::new(TokenData {
             token: new_hyphenated_uuid(),
             token_type,
             username,
-            expire_at_epoch
+            expire_at_epoch,
         });
         Ok(self.token_repo.save(conn, token)?)
     }
@@ -36,8 +44,12 @@ impl TokenService {
         generate_public_token_url(&self.auth_config, &self.ui_config, token)
     }
 
-
-    pub fn fetch_by_token(&self, conn: &PgConnection, token: &str, validate: bool) -> Result<Option<TokenModel>, LightSpeedError> {
+    pub fn fetch_by_token(
+        &self,
+        conn: &PgConnection,
+        token: &str,
+        validate: bool,
+    ) -> Result<Option<TokenModel>, LightSpeedError> {
         let token_model = self.token_repo.fetch_by_token(conn, token)?;
 
         if validate {
@@ -45,23 +57,32 @@ impl TokenService {
                 Validator::validate(&token.data)?;
             }
         }
-        return Ok(token_model)
+        return Ok(token_model);
     }
 
-    pub fn delete(&self, conn: &PgConnection, token_model: TokenModel) -> Result<u64, LightSpeedError> {
+    pub fn delete(
+        &self,
+        conn: &PgConnection,
+        token_model: TokenModel,
+    ) -> Result<u64, LightSpeedError> {
         Ok(self.token_repo.delete(conn, &token_model)?)
     }
-
 }
 
-fn generate_public_token_url(auth_config: &AuthConfig, ui_config: &UIConfig, token: &TokenModel) -> String {
+fn generate_public_token_url(
+    auth_config: &AuthConfig,
+    ui_config: &UIConfig,
+    token: &TokenModel,
+) -> String {
     match &token.data.token_type {
-        TokenType::AccountActivation => {
-            format!("{}{}{}", ui_config.public_domain, auth_config.activation_token_ui_url, token.data.token)
-        }
-        TokenType::ResetPassword => {
-            format!("{}{}{}", ui_config.public_domain, auth_config.reset_password_token_ui_url, token.data.token)
-        }
+        TokenType::AccountActivation => format!(
+            "{}{}{}",
+            ui_config.public_domain, auth_config.activation_token_ui_url, token.data.token
+        ),
+        TokenType::ResetPassword => format!(
+            "{}{}{}",
+            ui_config.public_domain, auth_config.reset_password_token_ui_url, token.data.token
+        ),
     }
 }
 
@@ -85,25 +106,28 @@ pub mod test {
         };
 
         let ui_config = UIConfig {
-            public_domain: domain.clone()
+            public_domain: domain.clone(),
         };
 
-        let token = Model{
+        let token = Model {
             id: 0,
             version: 0,
             data: TokenData {
                 token: new_hyphenated_uuid(),
                 token_type: TokenType::AccountActivation,
                 username: "ufoscout".to_owned(),
-                expire_at_epoch: 1
-            }
+                expire_at_epoch: 1,
+            },
         };
 
         // Act
         let url = generate_public_token_url(&auth_config, &ui_config, &token);
 
         // Assert
-        assert_eq!(format!("{}{}{}", domain, token_ui_url, token.data.token), url);
+        assert_eq!(
+            format!("{}{}{}", domain, token_ui_url, token.data.token),
+            url
+        );
     }
 
     #[test]
@@ -121,26 +145,28 @@ pub mod test {
         };
 
         let ui_config = UIConfig {
-            public_domain: domain.clone()
+            public_domain: domain.clone(),
         };
 
-        let token = Model{
+        let token = Model {
             id: 0,
             version: 0,
             data: TokenData {
                 token: new_hyphenated_uuid(),
                 token_type: TokenType::ResetPassword,
                 username: "ufoscout".to_owned(),
-                expire_at_epoch: 1
-            }
+                expire_at_epoch: 1,
+            },
         };
 
         // Act
         let url = generate_public_token_url(&auth_config, &ui_config, &token);
 
         // Assert
-        assert_eq!(format!("{}{}{}", domain, token_ui_url, token.data.token), url);
-
+        assert_eq!(
+            format!("{}{}{}", domain, token_ui_url, token.data.token),
+            url
+        );
     }
 
 }

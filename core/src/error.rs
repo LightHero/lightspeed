@@ -2,6 +2,7 @@ use c3p0_common::error::C3p0Error;
 use err_derive::Error;
 use std::collections::hash_map::Entry;
 use std::collections::HashMap;
+use serde::Serialize;
 
 #[derive(Error, Debug)]
 pub enum LightSpeedError {
@@ -43,14 +44,59 @@ pub enum LightSpeedError {
     ValidationError { details: ErrorDetails },
 }
 
-#[derive(Default, Debug, Clone)]
+#[derive(Default, Debug, PartialEq, Clone)]
 pub struct ErrorDetails {
     pub message: Option<String>,
-    pub details: HashMap<String, Vec<String>>,
+    pub details: HashMap<String, Vec<ErrorDetail>>,
+}
+
+#[derive(Default, Debug, Clone, PartialEq, Serialize)]
+pub struct ErrorDetail {
+    error: String,
+    params: Vec<String>
+}
+
+impl ErrorDetail {
+    pub fn new<S: Into<String>>(error: S, params: Vec<String>) -> Self {
+        ErrorDetail{
+            error: error.into(),
+            params
+        }
+    }
+}
+
+impl From<String> for ErrorDetail {
+    fn from(error: String) -> Self {
+        ErrorDetail{
+            error,
+            params: vec![]
+        }
+    }
+}
+
+impl From<&str> for ErrorDetail {
+    fn from(error: &str) -> Self {
+        ErrorDetail{
+            error: error.to_string(),
+            params: vec![]
+        }
+    }
+}
+
+impl PartialEq<ErrorDetail> for &str {
+    fn eq(&self, other: &ErrorDetail) -> bool {
+        other.params.is_empty() && other.error.eq(self)
+    }
+}
+
+impl PartialEq<ErrorDetail> for String {
+    fn eq(&self, other: &ErrorDetail) -> bool {
+        other.params.is_empty() && other.error.eq(self)
+    }
 }
 
 impl ErrorDetails {
-    pub fn add_detail<K: Into<String>, V: Into<String>>(&mut self, key: K, value: V) {
+    pub fn add_detail<K: Into<String>, V: Into<ErrorDetail>>(&mut self, key: K, value: V) {
         match self.details.entry(key.into()) {
             Entry::Occupied(mut entry) => {
                 entry.get_mut().push(value.into());

@@ -1,7 +1,6 @@
+use crate::model::token::{TokenData, TokenModel};
 use c3p0::*;
 use std::ops::Deref;
-use crate::model::token::{TokenData, TokenModel};
-
 
 #[derive(Clone)]
 pub struct TokenRepository {

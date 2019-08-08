@@ -1,8 +1,8 @@
 use c3p0::Model;
-use serde::{Deserialize, Serialize};
+use lightspeed_core::error::{ErrorDetails, LightSpeedError};
 use lightspeed_core::service::validator::Validable;
-use lightspeed_core::error::{LightSpeedError, ErrorDetails};
 use lightspeed_core::utils::current_epoch_seconds;
+use serde::{Deserialize, Serialize};
 
 pub type TokenModel = Model<TokenData>;
 
@@ -41,7 +41,7 @@ pub mod test {
             token: "".to_owned(),
             token_type: TokenType::AccountActivation,
             username: "".to_owned(),
-            expire_at_epoch: current_epoch_seconds() + 1000
+            expire_at_epoch: current_epoch_seconds() + 1000,
         };
 
         assert!(Validator::validate(&token).is_ok())
@@ -53,17 +53,17 @@ pub mod test {
             token: "".to_owned(),
             token_type: TokenType::AccountActivation,
             username: "".to_owned(),
-            expire_at_epoch: current_epoch_seconds() - 1000
+            expire_at_epoch: current_epoch_seconds() - 1000,
         };
 
         let result = Validator::validate(&token);
 
         assert!(result.is_err());
         match result {
-            Err(LightSpeedError::ValidationError {details}) => {
+            Err(LightSpeedError::ValidationError { details }) => {
                 assert_eq!("expired", details.details["expire_at_epoch"][0])
-            },
-            _ => assert!(false)
+            }
+            _ => assert!(false),
         }
     }
 }
