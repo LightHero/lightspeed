@@ -3,12 +3,12 @@ use crate::service::email::EmailService;
 use lightspeed_core::error::LightSpeedError;
 use log::warn;
 
-#[derive(Clone)]
+#[derive(Clone, Default)]
 pub struct NoOpsEmailService {}
 
 impl NoOpsEmailService {
     pub fn new() -> Self {
-        NoOpsEmailService {}
+        Self::default()
     }
 }
 

@@ -15,7 +15,7 @@ pub struct AuthAccountData {
 
 #[derive(Clone, Serialize, Deserialize)]
 pub enum AuthAccountStatus {
-    ACTIVE,
-    PENDING_ACTIVATION,
-    DISABLED,
+    Active,
+    PendingActivation,
+    Disabled,
 }

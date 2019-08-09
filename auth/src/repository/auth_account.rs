@@ -9,13 +9,19 @@ pub struct AuthAccountRepository {
     >,
 }
 
-impl AuthAccountRepository {
-    pub fn new() -> Self {
+impl Default for AuthAccountRepository {
+    fn default() -> Self {
         AuthAccountRepository {
             repo: C3p0JsonBuilder::new("AUTH_ACCOUNT")
                 .with_data_field_name("data_json")
                 .build(),
         }
+    }
+}
+
+impl AuthAccountRepository {
+    pub fn new() -> Self {
+        AuthAccountRepository::default()
     }
 
     pub fn fetch_by_username(

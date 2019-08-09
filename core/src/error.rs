@@ -1,8 +1,8 @@
 use c3p0_common::error::C3p0Error;
 use err_derive::Error;
+use serde::Serialize;
 use std::collections::hash_map::Entry;
 use std::collections::HashMap;
-use serde::Serialize;
 
 #[derive(Error, Debug)]
 pub enum LightSpeedError {
@@ -53,32 +53,32 @@ pub struct ErrorDetails {
 #[derive(Default, Debug, Clone, PartialEq, Serialize)]
 pub struct ErrorDetail {
     error: String,
-    params: Vec<String>
+    params: Vec<String>,
 }
 
 impl ErrorDetail {
     pub fn new<S: Into<String>>(error: S, params: Vec<String>) -> Self {
-        ErrorDetail{
+        ErrorDetail {
             error: error.into(),
-            params
+            params,
         }
     }
 }
 
 impl From<String> for ErrorDetail {
     fn from(error: String) -> Self {
-        ErrorDetail{
+        ErrorDetail {
             error,
-            params: vec![]
+            params: vec![],
         }
     }
 }
 
 impl From<&str> for ErrorDetail {
     fn from(error: &str) -> Self {
-        ErrorDetail{
+        ErrorDetail {
             error: error.to_string(),
-            params: vec![]
+            params: vec![],
         }
     }
 }

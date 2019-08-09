@@ -4,7 +4,6 @@ pub mod contains;
 pub mod email;
 pub mod ip;
 pub mod must_match;
-pub mod traits;
 pub mod urls;
 
 pub trait Validable {

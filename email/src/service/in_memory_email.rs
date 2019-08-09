@@ -4,16 +4,14 @@ use lightspeed_core::error::LightSpeedError;
 use log::warn;
 use std::sync::{Arc, Mutex};
 
-#[derive(Clone)]
+#[derive(Clone, Default)]
 pub struct InMemoryEmailService {
     emails: Arc<Mutex<Vec<EmailMessage>>>,
 }
 
 impl InMemoryEmailService {
     pub fn new() -> Self {
-        InMemoryEmailService {
-            emails: Arc::new(Mutex::new(vec![])),
-        }
+        Self::default()
     }
 }
 

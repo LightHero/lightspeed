@@ -58,10 +58,8 @@ impl EmailService for FullEmailService {
             } else {
                 builder = builder.html(html);
             }
-        } else {
-            if let Some(text) = email_message.text {
-                builder = builder.text(text)
-            }
+        } else if let Some(text) = email_message.text {
+            builder = builder.text(text)
         }
 
         for to in email_message.to {

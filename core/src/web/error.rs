@@ -1,4 +1,4 @@
-use crate::error::{ErrorDetails, LightSpeedError, ErrorDetail};
+use crate::error::{ErrorDetail, ErrorDetails, LightSpeedError};
 use actix_web::dev::HttpResponseBuilder;
 use actix_web::{HttpResponse, ResponseError};
 use serde_derive::Serialize;

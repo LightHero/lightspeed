@@ -57,7 +57,7 @@ impl TokenService {
                 Validator::validate(&token.data)?;
             }
         }
-        return Ok(token_model);
+        Ok(token_model)
     }
 
     pub fn delete(

@@ -15,13 +15,19 @@ impl Deref for TokenRepository {
     }
 }
 
-impl TokenRepository {
-    pub fn new() -> Self {
+impl Default for TokenRepository {
+    fn default() -> Self {
         TokenRepository {
             repo: C3p0JsonBuilder::new("AUTH_TOKEN")
                 .with_data_field_name("data_json")
                 .build(),
         }
+    }
+}
+
+impl TokenRepository {
+    pub fn new() -> Self {
+        TokenRepository::default()
     }
 
     pub fn fetch_by_token(
