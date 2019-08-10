@@ -6,28 +6,28 @@ An in-process scheduler for periodic jobs. Schedule lets you run Rust functions 
 ## Usage
 
 ```rust
-extern crate schedule;
-extern crate chrono;
-
 use schedule::Agenda;
-use chrono::UTC;
+use chrono::Utc;
 
 fn main() {
     let mut a = Agenda::new();
 
     // Run every second
     a.add(|| {
-        println!("at second     :: {}", UTC::now());
+        println!("at second     :: {}", Utc::now());
+        Ok(())
     }).schedule("* * * * * *").unwrap();
 
     // Run every minute
     a.add(|| {
-        println!("at minute     :: {}", UTC::now());
+        println!("at minute     :: {}", Utc::now());
+        Ok(())
     }).schedule("0 * * * * *").unwrap();
 
     // Run every hour
     a.add(|| {
-        println!("at hour       :: {}", UTC::now());
+        println!("at hour       :: {}", Utc::now());
+        Ok(())
     }).schedule("0 0 * * * *").unwrap();
 
     // Check and run pending jobs in agenda every 500 milliseconds
@@ -39,12 +39,29 @@ fn main() {
 }
 ```
 
-## License
+## Cron schedule format
+Creating a schedule for a job is done using the `FromStr` impl for the
+`Schedule` type of the [cron](https://github.com/zslayton/cron) library.
 
-Schedule is primarily distributed under the terms of both the MIT license and the Apache License (Version 2.0).
+The scheduling format is as follows:
 
-See LICENSE-APACHE and LICENSE-MIT for details.
+```text
+sec   min   hour   day of month   month   day of week   year
+*     *     *      *              *       *             *
+```
 
+Time is specified for `UTC` and not your local timezone. Note that the year may
+be omitted.
+
+Comma separated values such as `5,8,10` represent more than one time value. So
+for example, a schedule of `0 2,14,26 * * * *` would execute on the 2nd, 14th,
+and 26th minute of every hour.
+
+Ranges can be specified with a dash. A schedule of `0 0 * 5-10 * *` would
+execute once per hour but only on day 5 through 10 of the month.
+
+Day of the week can be specified as an abbreviation or the full name. A
+schedule of `0 0 6 * * Sun,Sat` would execute at 6am on Sunday and Saturday.
 
 ## Credits
 
