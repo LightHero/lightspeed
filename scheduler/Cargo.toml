@@ -1,0 +1,15 @@
+[package]
+name = "lightspeed_scheduler"
+license = "MIT"
+version = "0.1.0"
+authors = ["Francesco Cina <ufoscout@gmail.com>"]
+description = "An in-process scheduler for periodic jobs. Schedule lets you run Rust functions on a cron-like schedule."
+edition = "2018"
+keywords = ["schedule", "cron", "job", "periodic"]
+
+[dependencies]
+cron = "0.6"
+chrono = "0.4"
+err-derive= "0.1"
+log = "0.4"
+time = "0.1"

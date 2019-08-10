@@ -2,6 +2,7 @@
 
 members = [
     "logger",
+    "scheduler",
     "core",
     "email",
     "auth",
