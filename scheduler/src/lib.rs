@@ -4,10 +4,11 @@ pub mod schedule;
 
 use crate::job::Job;
 use log::*;
+use std::sync::Arc;
 
 #[derive(Default)]
 pub struct Scheduler {
-    jobs: Vec<Job>,
+    jobs: Vec<Arc<Job>>,
 }
 
 impl Scheduler {
@@ -42,32 +43,49 @@ impl Scheduler {
 
     /// Run pending jobs in the Scheduler.
     pub fn run_pending(&mut self) {
-        for job in &mut self.jobs {
+        for job in &self.jobs {
             if job.is_pending() {
-                info!("Start execution of Job [{}/{}]", job.group(), job.name());
-                match job.run() {
-                    Ok(()) => {
-                        info!(
-                            "Execution of Job [{}/{}] completed successfully",
-                            job.group(),
-                            job.name()
-                        );
-                    }
-                    Err(err) => {
-                        error!(
-                            "Execution of Job [{}/{}] completed with errors. Err: {}",
-                            job.group(),
-                            job.name(),
-                            err
-                        );
-                    }
+                match job.is_running() {
+                    Ok(is_running) => {
+                        if !is_running {
+                            let job_clone = job.clone();
+                            std::thread::spawn(move || {
+                                info!("Start execution of Job [{}/{}]", job_clone.group(), job_clone.name());
+                                match job_clone.run() {
+                                    Ok(()) => {
+                                        info!(
+                                            "Execution of Job [{}/{}] completed successfully",
+                                            job_clone.group(),
+                                            job_clone.name()
+                                        );
+                                    }
+                                    Err(err) => {
+                                        error!(
+                                            "Execution of Job [{}/{}] completed with errors. Err: {}",
+                                            job_clone.group(),
+                                            job_clone.name(),
+                                            err
+                                        );
+                                    }
+                                }
+                            });
+                        } else {
+                            debug!("Job [{}/{}] is pending but already running. It will not be executed.", job.group(), job.name())
+                        }
+                    },
+                    Err(err) => error!(
+                        "Cannot start execution of Job [{}/{}] because status is unknown. Err: {}",
+                        job.group(),
+                        job.name(),
+                        err
+                    )
                 }
             }
-        }
+        };
     }
 
     /// Adds a job to the Scheduler.
     pub fn add_job(&mut self, job: Job) {
-        self.jobs.push(job);
+        self.jobs.push(Arc::new(job));
     }
 }

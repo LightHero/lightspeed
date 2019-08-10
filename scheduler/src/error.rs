@@ -4,4 +4,6 @@ use err_derive::Error;
 pub enum SchedulerError {
     #[error(display = "ScheduleDefinitionError: [{}]", message)]
     ScheduleDefinitionError { message: String },
+    #[error(display = "JobLockError: [{}]", message)]
+    JobLockError { message: String },
 }

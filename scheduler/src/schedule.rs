@@ -17,7 +17,7 @@ pub enum Schedule {
 
 impl Schedule {
     // Determine the next time we should execute (from a reference point)
-    pub fn next(&self, after: Option<DateTime<Utc>>) -> Option<DateTime<Utc>> {
+    pub fn next(&self, after: &Option<DateTime<Utc>>) -> Option<DateTime<Utc>> {
         let after = after.unwrap_or_else(Utc::now);
 
         match *self {
