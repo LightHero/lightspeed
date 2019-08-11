@@ -103,6 +103,7 @@ pub mod test {
     use std::sync::atomic::{AtomicUsize, Ordering};
     use std::sync::mpsc::channel;
     use std::time::Duration;
+    use chrono::Utc;
 
     #[test]
     fn should_not_run_an_already_running_job() {
@@ -121,7 +122,7 @@ pub mod test {
                 std::thread::sleep(Duration::new(1, 0));
                 Ok(())
             })
-            .unwrap(),
+                .unwrap(),
         );
 
         for i in 0..100 {
@@ -133,12 +134,73 @@ pub mod test {
         println!("run_pending completed");
         rx.recv().unwrap();
 
-        let job_executions = count.load(Ordering::Relaxed);
-        assert_eq!(job_executions, 1);
+        assert_eq!(count.load(Ordering::Relaxed), 1);
     }
 
     #[test]
-    fn a_runnig_job_should_not_block_the_scheduler() {
-        assert!(false)
+    fn a_running_job_should_not_block_the_scheduler() {
+        let mut scheduler = Scheduler::new();
+
+
+        let (tx, rx) = channel();
+
+        let count_1 = Arc::new(AtomicUsize::new(0));
+        let count_clone_1 = count_1.clone();
+        let tx_1 = tx.clone();
+        scheduler.add_job(
+            Job::new("g", "n", Duration::new(0, 1), move || {
+                tx_1.send("").unwrap();
+                println!("job 1 - started");
+                count_clone_1.fetch_add(1, Ordering::SeqCst);
+                std::thread::sleep(Duration::new(1, 0));
+                Ok(())
+            })
+                .unwrap(),
+        );
+
+        let count_2 = Arc::new(AtomicUsize::new(0));
+        let count_2_clone = count_2.clone();
+        let tx_2 = tx.clone();
+        scheduler.add_job(
+            Job::new("g", "n", Duration::new(0, 1), move || {
+                tx_2.send("").unwrap();
+                println!("job 2 - started");
+                count_2_clone.fetch_add(1, Ordering::SeqCst);
+                std::thread::sleep(Duration::new(1, 0));
+                Ok(())
+            }).unwrap(),
+        );
+
+        let count_3 = Arc::new(AtomicUsize::new(0));
+        let count_3_clone = count_3.clone();
+        let tx_3 = tx.clone();
+        scheduler.add_job(
+            Job::new("g", "n", Duration::new(0, 1), move || {
+                tx_3.send("").unwrap();
+                println!("job 3 - started");
+                count_3_clone.fetch_add(1, Ordering::SeqCst);
+                std::thread::sleep(Duration::new(1, 0));
+                Ok(())
+            })
+                .unwrap(),
+        );
+
+
+        let before_millis = Utc::now().timestamp_millis();
+        for i in 0..100 {
+            println!("run_pending {}", i);
+            scheduler.run_pending();
+            std::thread::sleep(Duration::new(0, 1_000_000));
+        }
+        let after_millis = Utc::now().timestamp_millis();
+
+        assert!((after_millis - before_millis) >= 100);
+        assert!((after_millis - before_millis) < 1000);
+
+        rx.recv().unwrap();
+
+        assert_eq!(count_1.load(Ordering::SeqCst), 1);
+        assert_eq!(count_2.load(Ordering::SeqCst), 1);
+        assert_eq!(count_3.load(Ordering::SeqCst), 1);
     }
 }
