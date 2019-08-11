@@ -49,7 +49,7 @@ where
 
         // Check if NOW is on or after next_run_at
         if let Some(next_run_at) = self.next_run_at.lock().unwrap().as_ref() {
-            &Utc::now().with_timezone(&self.timezone) >= next_run_at
+            *next_run_at < Utc::now().with_timezone(&self.timezone)
         } else {
             false
         }
