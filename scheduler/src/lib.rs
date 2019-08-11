@@ -2,15 +2,18 @@ pub mod error;
 pub mod job;
 pub mod schedule;
 
-use crate::job::{Job, JobScheduler};
-use log::*;
-use std::sync::{Arc};
-use std::convert::TryInto;
-use crate::schedule::Scheduler;
 use crate::error::SchedulerError;
-use chrono::{TimeZone, Local, Utc};
+use crate::job::{Job, JobScheduler};
+use crate::schedule::Scheduler;
+use chrono::{Local, TimeZone, Utc};
+use log::*;
+use std::convert::TryInto;
+use std::sync::Arc;
 
-pub struct JobExecutor<T: TimeZone + Send + Sync + 'static> where <T as chrono::offset::TimeZone>::Offset: std::marker::Send{
+pub struct JobExecutor<T: TimeZone + Send + Sync + 'static>
+where
+    <T as chrono::offset::TimeZone>::Offset: std::marker::Send,
+{
     timezone: T,
     jobs: Vec<Arc<JobScheduler<T>>>,
 }
@@ -30,16 +33,19 @@ pub fn new_executor_with_utc_tz() -> JobExecutor<Utc> {
 /// Creates a new Executor that uses a custom time zone for the execution times evaluation.
 /// For example, the cron expressions will refer to the specified time zone.
 pub fn new_executor_with_tz<T: TimeZone + Send + Sync + 'static>(timezone: T) -> JobExecutor<T>
-    where <T as chrono::offset::TimeZone>::Offset: std::marker::Send
+where
+    <T as chrono::offset::TimeZone>::Offset: std::marker::Send,
 {
-    JobExecutor{
+    JobExecutor {
         timezone,
-        jobs: vec![]
+        jobs: vec![],
     }
 }
 
-impl <T: TimeZone + Send + Sync + 'static> JobExecutor<T> where <T as chrono::offset::TimeZone>::Offset: std::marker::Send{
-
+impl<T: TimeZone + Send + Sync + 'static> JobExecutor<T>
+where
+    <T as chrono::offset::TimeZone>::Offset: std::marker::Send,
+{
     /// Returns true if the JobExecutor contains no jobs.
     pub fn is_empty(&self) -> bool {
         self.jobs.is_empty()
@@ -115,10 +121,19 @@ impl <T: TimeZone + Send + Sync + 'static> JobExecutor<T> where <T as chrono::of
     }
 
     /// Adds a job to the JobExecutor.
-    pub fn add_job<S: TryInto<Scheduler>>(&mut self, schedule: S, job: Job) -> Result<(), SchedulerError>
+    pub fn add_job<S: TryInto<Scheduler>>(
+        &mut self,
+        schedule: S,
+        job: Job,
+    ) -> Result<(), SchedulerError>
     where
-    SchedulerError: std::convert::From<<S as std::convert::TryInto<Scheduler>>::Error> {
-        self.jobs.push(Arc::new(JobScheduler::new(schedule, self.timezone.clone(), job)?));
+        SchedulerError: std::convert::From<<S as std::convert::TryInto<Scheduler>>::Error>,
+    {
+        self.jobs.push(Arc::new(JobScheduler::new(
+            schedule,
+            self.timezone.clone(),
+            job,
+        )?));
         Ok(())
     }
 }
@@ -127,7 +142,7 @@ impl <T: TimeZone + Send + Sync + 'static> JobExecutor<T> where <T as chrono::of
 pub mod test {
 
     use super::*;
-    use chrono::{Utc};
+    use chrono::Utc;
     use std::sync::atomic::{AtomicUsize, Ordering};
     use std::sync::mpsc::channel;
     use std::time::Duration;
@@ -141,16 +156,18 @@ pub mod test {
 
         let (tx, rx) = channel();
 
-        executor.add_job(
-            Duration::new(0, 1),
-            Job::new("g", "n", move || {
-                tx.send("").unwrap();
-                println!("job - started");
-                count_clone.fetch_add(1, Ordering::SeqCst);
-                std::thread::sleep(Duration::new(1, 0));
-                Ok(())
-            })
-        ).unwrap();
+        executor
+            .add_job(
+                Duration::new(0, 1),
+                Job::new("g", "n", move || {
+                    tx.send("").unwrap();
+                    println!("job - started");
+                    count_clone.fetch_add(1, Ordering::SeqCst);
+                    std::thread::sleep(Duration::new(1, 0));
+                    Ok(())
+                }),
+            )
+            .unwrap();
 
         for i in 0..100 {
             println!("run_pending {}", i);
@@ -173,44 +190,50 @@ pub mod test {
         let count_1 = Arc::new(AtomicUsize::new(0));
         let count_clone_1 = count_1.clone();
         let tx_1 = tx.clone();
-        executor.add_job(
-            Duration::new(0, 1),
-            Job::new("g", "n", move || {
-                tx_1.send("").unwrap();
-                println!("job 1 - started");
-                count_clone_1.fetch_add(1, Ordering::SeqCst);
-                std::thread::sleep(Duration::new(1, 0));
-                Ok(())
-            })
-        ).unwrap();
+        executor
+            .add_job(
+                Duration::new(0, 1),
+                Job::new("g", "n", move || {
+                    tx_1.send("").unwrap();
+                    println!("job 1 - started");
+                    count_clone_1.fetch_add(1, Ordering::SeqCst);
+                    std::thread::sleep(Duration::new(1, 0));
+                    Ok(())
+                }),
+            )
+            .unwrap();
 
         let count_2 = Arc::new(AtomicUsize::new(0));
         let count_2_clone = count_2.clone();
         let tx_2 = tx.clone();
-        executor.add_job(
-            Duration::new(0, 1),
-            Job::new("g", "n", move || {
-                tx_2.send("").unwrap();
-                println!("job 2 - started");
-                count_2_clone.fetch_add(1, Ordering::SeqCst);
-                std::thread::sleep(Duration::new(1, 0));
-                Ok(())
-            })
-        ).unwrap();
+        executor
+            .add_job(
+                Duration::new(0, 1),
+                Job::new("g", "n", move || {
+                    tx_2.send("").unwrap();
+                    println!("job 2 - started");
+                    count_2_clone.fetch_add(1, Ordering::SeqCst);
+                    std::thread::sleep(Duration::new(1, 0));
+                    Ok(())
+                }),
+            )
+            .unwrap();
 
         let count_3 = Arc::new(AtomicUsize::new(0));
         let count_3_clone = count_3.clone();
         let tx_3 = tx.clone();
-        executor.add_job(
-            Duration::new(0, 1),
-            Job::new("g", "n", move || {
-                tx_3.send("").unwrap();
-                println!("job 3 - started");
-                count_3_clone.fetch_add(1, Ordering::SeqCst);
-                std::thread::sleep(Duration::new(1, 0));
-                Ok(())
-            })
-        ).unwrap();
+        executor
+            .add_job(
+                Duration::new(0, 1),
+                Job::new("g", "n", move || {
+                    tx_3.send("").unwrap();
+                    println!("job 3 - started");
+                    count_3_clone.fetch_add(1, Ordering::SeqCst);
+                    std::thread::sleep(Duration::new(1, 0));
+                    Ok(())
+                }),
+            )
+            .unwrap();
 
         let before_millis = Utc::now().timestamp_millis();
         for i in 0..100 {
@@ -236,19 +259,21 @@ pub mod test {
 
         let schedule = "0 58 15 * * *";
 
-        executor.add_job(
-            schedule,
-            Job::new("g", "n", move || {
-                println!("job 1 - started");
-                std::thread::sleep(Duration::new(1, 0));
-                Ok(())
-            })
-        ).unwrap();
+        executor
+            .add_job(
+                schedule,
+                Job::new("g", "n", move || {
+                    println!("job 1 - started");
+                    std::thread::sleep(Duration::new(1, 0));
+                    Ok(())
+                }),
+            )
+            .unwrap();
 
         println!("start loop");
         loop {
             executor.run_pending();
-            std::thread::sleep(Duration::new(1,0))
+            std::thread::sleep(Duration::new(1, 0))
         }
     }
 }

@@ -1,11 +1,12 @@
 use crate::error::SchedulerError;
 use crate::schedule::Scheduler;
-use chrono::{DateTime, Utc, TimeZone};
+use chrono::{DateTime, TimeZone, Utc};
 use std::convert::TryInto;
 use std::sync::{Mutex, RwLock};
 
 pub struct JobScheduler<T: TimeZone + Send + Sync + 'static>
-    where <T as chrono::offset::TimeZone>::Offset: std::marker::Send
+where
+    <T as chrono::offset::TimeZone>::Offset: std::marker::Send,
 {
     pub job: Job,
     schedule: Scheduler,
@@ -14,16 +15,17 @@ pub struct JobScheduler<T: TimeZone + Send + Sync + 'static>
     last_run_at: Mutex<Option<DateTime<T>>>,
 }
 
-impl <T: TimeZone + Send + Sync + 'static> JobScheduler<T> where <T as chrono::offset::TimeZone>::Offset: std::marker::Send{
-    pub fn new<
-        S: TryInto<Scheduler>
-    >(
+impl<T: TimeZone + Send + Sync + 'static> JobScheduler<T>
+where
+    <T as chrono::offset::TimeZone>::Offset: std::marker::Send,
+{
+    pub fn new<S: TryInto<Scheduler>>(
         schedule: S,
         timezone: T,
         job: Job,
     ) -> Result<Self, SchedulerError>
-        where
-            SchedulerError: std::convert::From<<S as std::convert::TryInto<Scheduler>>::Error>,
+    where
+        SchedulerError: std::convert::From<<S as std::convert::TryInto<Scheduler>>::Error>,
     {
         // Determine the next time it should run
         let schedule = schedule.try_into()?;
@@ -91,7 +93,7 @@ impl Job {
         function: F,
     ) -> Self
     where
-        F: 'static
+        F: 'static,
     {
         Job {
             function: Mutex::new(Box::new(function)),
@@ -188,16 +190,18 @@ pub mod test {
         let tx_clone = tx.clone();
 
         let job_scheduler = Arc::new(
-                JobScheduler::new(Duration::new(1, 0),
-            Utc,
-            Job::new("g", "n", move || {
-                println!("job - started");
-                tx_clone.send("").unwrap();
-                println!("job - Trying to get the lock");
-                let _lock = lock_clone.lock().unwrap();
-                println!("job - lock acquired");
-                Ok(())
-            }))
+            JobScheduler::new(
+                Duration::new(1, 0),
+                Utc,
+                Job::new("g", "n", move || {
+                    println!("job - started");
+                    tx_clone.send("").unwrap();
+                    println!("job - Trying to get the lock");
+                    let _lock = lock_clone.lock().unwrap();
+                    println!("job - lock acquired");
+                    Ok(())
+                }),
+            )
             .unwrap(),
         );
 
