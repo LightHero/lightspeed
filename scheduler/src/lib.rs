@@ -44,11 +44,11 @@ impl Scheduler {
     /// Run pending jobs in the Scheduler.
     pub fn run_pending(&mut self) {
         for job in &self.jobs {
-            println!("check JOB IS PENDING: {}", job.is_pending());
+            //println!("check JOB IS PENDING: {}", job.is_pending());
             if job.is_pending() {
                 match job.is_running() {
                     Ok(is_running) => {
-                        println!("JOB IS RUNNING? {}", is_running);
+                        //println!("JOB IS RUNNING? {}", is_running);
                         if !is_running {
                             let job_clone = job.clone();
                             std::thread::spawn(move || {
@@ -130,19 +130,6 @@ pub mod test {
         let job_executions = count.load(Ordering::Relaxed);
         assert_eq!(job_executions, 1);
 
-/*
-        {
-            let _lock = count.lock().unwrap();
-            let job_clone = job.clone();
-            std::thread::spawn(move || {
-                println!("starting job");
-                job_clone.run().unwrap();
-                println!("end job execution");
-                tx.send("").unwrap();
-            });
-            assert!(job.is_running().unwrap());
-        }
-        */
     }
 
     #[test]
