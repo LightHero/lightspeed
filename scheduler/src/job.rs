@@ -2,9 +2,10 @@ use crate::schedule::Schedule;
 use chrono::{DateTime, Utc};
 use std::sync::{Mutex, RwLock};
 use crate::error::SchedulerError;
+use std::convert::TryInto;
 
 pub struct Job {
-    function: Mutex<Box<Fn() -> Result<(), Box<std::error::Error>> + Send + Sync>>,
+    function: Mutex<Box<Fn() -> Result<(), Box<std::error::Error>> + Send>>,
     group: String,
     name: String,
     schedule: Schedule,
@@ -18,27 +19,28 @@ impl Job {
     pub fn new<
         G: Into<String>,
         N: Into<String>,
-        S: Into<Schedule>,
-        F: Fn() -> Result<(), Box<std::error::Error>> + Send + Sync,
+        S: TryInto<Schedule>,
+        F: Fn() -> Result<(), Box<std::error::Error>> + Send,
     >(
         group: G,
         name: N,
         schedule: S,
         function: F,
-    ) -> Self
+    ) -> Result<Self, SchedulerError>
     where
         F: 'static,
+        SchedulerError: std::convert::From<<S as std::convert::TryInto<Schedule>>::Error>
     {
-        Job {
+        Ok(Job {
             function: Mutex::new(Box::new(function)),
             name: name.into(),
             group: group.into(),
-            schedule: schedule.into(),
+            schedule: schedule.try_into()?,
             next_run_at: Mutex::new(None),
             last_run_at: Mutex::new(None),
             is_running: RwLock::new(false),
             is_active: true,
-        }
+        })
     }
 
     /// Returns true if this job is pending execution.
@@ -108,5 +110,49 @@ impl Job {
 
         *write = is_running;
         Ok(())
+    }
+}
+
+#[cfg(test)]
+pub mod test {
+
+    use super::*;
+    use std::time::Duration;
+    use std::sync::Arc;
+    use std::sync::mpsc::channel;
+
+    #[test]
+    fn should_be_running() {
+
+        let lock = Arc::new(Mutex::new(true));
+        let lock_clone = lock.clone();
+        let (tx, rx) = channel();
+        let tx_clone = tx.clone();
+
+        let job = Arc::new(Job::new("g", "n", Duration::new(1,0),
+            move || {
+                println!("job - started");
+                tx_clone.send("").unwrap();
+                println!("job - Trying to get the lock");
+                let _lock = lock_clone.lock().unwrap();
+                println!("job - lock acquired");
+                Ok(())
+            }).unwrap());
+
+        assert!(!job.is_running().unwrap());
+        {
+            let _lock = lock.lock().unwrap();
+            let job_clone = job.clone();
+            std::thread::spawn(move || {
+                println!("starting job");
+                job_clone.run().unwrap();
+                println!("end job execution");
+                tx.send("").unwrap();
+            });
+            rx.recv().unwrap();
+            assert!(job.is_running().unwrap());
+        }
+        rx.recv().unwrap();
+        assert!(!job.is_running().unwrap());
     }
 }
