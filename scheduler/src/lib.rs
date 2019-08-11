@@ -44,9 +44,11 @@ impl Scheduler {
     /// Run pending jobs in the Scheduler.
     pub fn run_pending(&mut self) {
         for job in &self.jobs {
+            println!("check JOB IS PENDING: {}", job.is_pending());
             if job.is_pending() {
                 match job.is_running() {
                     Ok(is_running) => {
+                        println!("JOB IS RUNNING? {}", is_running);
                         if !is_running {
                             let job_clone = job.clone();
                             std::thread::spawn(move || {
@@ -87,5 +89,64 @@ impl Scheduler {
     /// Adds a job to the Scheduler.
     pub fn add_job(&mut self, job: Job) {
         self.jobs.push(Arc::new(job));
+    }
+}
+
+#[cfg(test)]
+pub mod test {
+
+    use super::*;
+    use std::sync::atomic::{AtomicUsize, Ordering};
+    use std::sync::mpsc::channel;
+    use std::time::Duration;
+
+    #[test]
+    fn should_not_run_an_already_running_job() {
+        let mut scheduler = Scheduler::new();
+
+        let count = Arc::new(AtomicUsize::new(0));
+        let count_clone = count.clone();
+
+        let (tx, rx) = channel();
+
+        scheduler.add_job(Job::new("g", "n", Duration::new(0,1),
+                                    move || {
+                                        tx.send("").unwrap();
+                                        println!("job - started");
+                                        count_clone.fetch_add(1, Ordering::SeqCst);
+                                        std::thread::sleep(Duration::new(1,0));
+                                        Ok(())
+                                    }).unwrap());
+
+        for i in 0..100 {
+            println!("run_pending {}", i);
+            scheduler.run_pending();
+            std::thread::sleep(Duration::new(0,2));
+        }
+
+        println!("run_pending completed");
+        rx.recv().unwrap();
+
+        let job_executions = count.load(Ordering::Relaxed);
+        assert_eq!(job_executions, 1);
+
+/*
+        {
+            let _lock = count.lock().unwrap();
+            let job_clone = job.clone();
+            std::thread::spawn(move || {
+                println!("starting job");
+                job_clone.run().unwrap();
+                println!("end job execution");
+                tx.send("").unwrap();
+            });
+            assert!(job.is_running().unwrap());
+        }
+        */
+    }
+
+    #[test]
+    fn a_runnig_job_should_not_block_the_scheduler() {
+        assert!(false)
     }
 }

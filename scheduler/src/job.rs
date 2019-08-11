@@ -31,12 +31,17 @@ impl Job {
         F: 'static,
         SchedulerError: std::convert::From<<S as std::convert::TryInto<Schedule>>::Error>
     {
+
+        // Determine the next time it should run
+        let schedule = schedule.try_into()?;
+        let next_run_at = schedule.next(&None);
+
         Ok(Job {
             function: Mutex::new(Box::new(function)),
             name: name.into(),
             group: group.into(),
-            schedule: schedule.try_into()?,
-            next_run_at: Mutex::new(None),
+            schedule,
+            next_run_at: Mutex::new(next_run_at),
             last_run_at: Mutex::new(None),
             is_running: RwLock::new(false),
             is_active: true,
@@ -140,6 +145,7 @@ pub mod test {
             }).unwrap());
 
         assert!(!job.is_running().unwrap());
+
         {
             let _lock = lock.lock().unwrap();
             let job_clone = job.clone();
@@ -152,6 +158,7 @@ pub mod test {
             rx.recv().unwrap();
             assert!(job.is_running().unwrap());
         }
+
         rx.recv().unwrap();
         assert!(!job.is_running().unwrap());
     }
