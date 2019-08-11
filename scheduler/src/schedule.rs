@@ -60,8 +60,8 @@ impl TryFrom<Duration> for Schedule {
 #[cfg(test)]
 pub mod test {
 
-    use std::convert::TryInto;
     use super::*;
+    use std::convert::TryInto;
 
     #[test]
     fn never_should_not_schedule() {
@@ -73,17 +73,16 @@ pub mod test {
     fn interval_should_schedule_plus_duration() {
         let now = Utc::now();
         let secs = 10;
-        let schedule: Schedule = Duration::new(secs,0).try_into().unwrap();
+        let schedule: Schedule = Duration::new(secs, 0).try_into().unwrap();
 
         let next = schedule.next(&Some(now)).unwrap();
 
         assert!(next.timestamp() >= now.timestamp() + (secs as i64));
-
     }
 
     #[test]
     fn should_build_an_interval_schedule_from_duration() {
-        let schedule: Schedule = Duration::new(1,1).try_into().unwrap();
+        let schedule: Schedule = Duration::new(1, 1).try_into().unwrap();
         match schedule {
             Schedule::Interval(_) => assert!(true),
             _ => assert!(false),

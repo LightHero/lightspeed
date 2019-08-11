@@ -52,7 +52,11 @@ impl Scheduler {
                         if !is_running {
                             let job_clone = job.clone();
                             std::thread::spawn(move || {
-                                info!("Start execution of Job [{}/{}]", job_clone.group(), job_clone.name());
+                                info!(
+                                    "Start execution of Job [{}/{}]",
+                                    job_clone.group(),
+                                    job_clone.name()
+                                );
                                 match job_clone.run() {
                                     Ok(()) => {
                                         info!(
@@ -74,16 +78,16 @@ impl Scheduler {
                         } else {
                             debug!("Job [{}/{}] is pending but already running. It will not be executed.", job.group(), job.name())
                         }
-                    },
+                    }
                     Err(err) => error!(
                         "Cannot start execution of Job [{}/{}] because status is unknown. Err: {}",
                         job.group(),
                         job.name(),
                         err
-                    )
+                    ),
                 }
             }
-        };
+        }
     }
 
     /// Adds a job to the Scheduler.
@@ -109,19 +113,21 @@ pub mod test {
 
         let (tx, rx) = channel();
 
-        scheduler.add_job(Job::new("g", "n", Duration::new(0,1),
-                                    move || {
-                                        tx.send("").unwrap();
-                                        println!("job - started");
-                                        count_clone.fetch_add(1, Ordering::SeqCst);
-                                        std::thread::sleep(Duration::new(1,0));
-                                        Ok(())
-                                    }).unwrap());
+        scheduler.add_job(
+            Job::new("g", "n", Duration::new(0, 1), move || {
+                tx.send("").unwrap();
+                println!("job - started");
+                count_clone.fetch_add(1, Ordering::SeqCst);
+                std::thread::sleep(Duration::new(1, 0));
+                Ok(())
+            })
+            .unwrap(),
+        );
 
         for i in 0..100 {
             println!("run_pending {}", i);
             scheduler.run_pending();
-            std::thread::sleep(Duration::new(0,2));
+            std::thread::sleep(Duration::new(0, 2));
         }
 
         println!("run_pending completed");
@@ -129,7 +135,6 @@ pub mod test {
 
         let job_executions = count.load(Ordering::Relaxed);
         assert_eq!(job_executions, 1);
-
     }
 
     #[test]

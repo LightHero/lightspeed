@@ -1,8 +1,8 @@
+use crate::error::SchedulerError;
 use crate::schedule::Schedule;
 use chrono::{DateTime, Utc};
-use std::sync::{Mutex, RwLock};
-use crate::error::SchedulerError;
 use std::convert::TryInto;
+use std::sync::{Mutex, RwLock};
 
 pub struct Job {
     function: Mutex<Box<Fn() -> Result<(), Box<std::error::Error>> + Send>>,
@@ -29,9 +29,8 @@ impl Job {
     ) -> Result<Self, SchedulerError>
     where
         F: 'static,
-        SchedulerError: std::convert::From<<S as std::convert::TryInto<Schedule>>::Error>
+        SchedulerError: std::convert::From<<S as std::convert::TryInto<Schedule>>::Error>,
     {
-
         // Determine the next time it should run
         let schedule = schedule.try_into()?;
         let next_run_at = schedule.next(&None);
@@ -65,8 +64,15 @@ impl Job {
 
     /// Returns true if this job is currently running.
     pub fn is_running(&self) -> Result<bool, SchedulerError> {
-        let read = self.is_running.read()
-            .map_err(|err| SchedulerError::JobLockError { message: format!("Cannot read is_running status of job [{}/{}]. Err: {}", self.group, self.name, err)})?;
+        let read = self
+            .is_running
+            .read()
+            .map_err(|err| SchedulerError::JobLockError {
+                message: format!(
+                    "Cannot read is_running status of job [{}/{}]. Err: {}",
+                    self.group, self.name, err
+                ),
+            })?;
         Ok(*read)
     }
 
@@ -80,13 +86,19 @@ impl Job {
 
     /// Run the job immediately and re-schedule it.
     pub fn run(&self) -> Result<(), Box<std::error::Error>> {
-
         self.set_running(true)?;
 
         // Execute the job function
         let run_result = {
-            let function = self.function.lock()
-                .map_err(|err| SchedulerError::JobLockError { message: format!("Cannot execute job [{}/{}]. Err: {}", self.group, self.name, err)})?;
+            let function = self
+                .function
+                .lock()
+                .map_err(|err| SchedulerError::JobLockError {
+                    message: format!(
+                        "Cannot execute job [{}/{}]. Err: {}",
+                        self.group, self.name, err
+                    ),
+                })?;
             (function)()
         };
 
@@ -105,12 +117,24 @@ impl Job {
         run_result
     }
 
-    fn set_running(&self, is_running: bool) -> Result<(), SchedulerError>{
-        let mut write = self.is_running.write()
-            .map_err(|err| SchedulerError::JobLockError { message: format!("Cannot write is_running status of job [{}/{}]. Err: {}", self.group, self.name, err)})?;
+    fn set_running(&self, is_running: bool) -> Result<(), SchedulerError> {
+        let mut write = self
+            .is_running
+            .write()
+            .map_err(|err| SchedulerError::JobLockError {
+                message: format!(
+                    "Cannot write is_running status of job [{}/{}]. Err: {}",
+                    self.group, self.name, err
+                ),
+            })?;
 
         if is_running.eq(&*write) {
-            return Err(SchedulerError::JobLockError { message: format!("Wrong Job status found for job [{}/{}]. Expected: {}", self.group, self.name, !is_running)});
+            return Err(SchedulerError::JobLockError {
+                message: format!(
+                    "Wrong Job status found for job [{}/{}]. Expected: {}",
+                    self.group, self.name, !is_running
+                ),
+            });
         }
 
         *write = is_running;
@@ -122,27 +146,28 @@ impl Job {
 pub mod test {
 
     use super::*;
-    use std::time::Duration;
-    use std::sync::Arc;
     use std::sync::mpsc::channel;
+    use std::sync::Arc;
+    use std::time::Duration;
 
     #[test]
     fn should_be_running() {
-
         let lock = Arc::new(Mutex::new(true));
         let lock_clone = lock.clone();
         let (tx, rx) = channel();
         let tx_clone = tx.clone();
 
-        let job = Arc::new(Job::new("g", "n", Duration::new(1,0),
-            move || {
+        let job = Arc::new(
+            Job::new("g", "n", Duration::new(1, 0), move || {
                 println!("job - started");
                 tx_clone.send("").unwrap();
                 println!("job - Trying to get the lock");
                 let _lock = lock_clone.lock().unwrap();
                 println!("job - lock acquired");
                 Ok(())
-            }).unwrap());
+            })
+            .unwrap(),
+        );
 
         assert!(!job.is_running().unwrap());
 
