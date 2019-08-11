@@ -74,8 +74,10 @@ where
     }
 }
 
+pub type JobFn = Fn() -> Result<(), Box<std::error::Error>> + Send;
+
 pub struct Job {
-    function: Mutex<Box<Fn() -> Result<(), Box<std::error::Error>> + Send>>,
+    function: Mutex<Box<JobFn>>,
     group: String,
     name: String,
     is_active: bool,
