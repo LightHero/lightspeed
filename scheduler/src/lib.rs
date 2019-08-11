@@ -253,27 +253,4 @@ pub mod test {
         assert_eq!(count_3.load(Ordering::SeqCst), 1);
     }
 
-    //#[test]
-    fn timezone() {
-        let mut executor = new_executor_with_local_tz();
-
-        let schedule = "0 58 15 * * *";
-
-        executor
-            .add_job(
-                schedule,
-                Job::new("g", "n", move || {
-                    println!("job 1 - started");
-                    std::thread::sleep(Duration::new(1, 0));
-                    Ok(())
-                }),
-            )
-            .unwrap();
-
-        println!("start loop");
-        loop {
-            executor.run_pending();
-            std::thread::sleep(Duration::new(1, 0))
-        }
-    }
 }

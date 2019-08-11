@@ -97,4 +97,28 @@ pub mod test {
         }
     }
 
+    #[test]
+    fn cron_should_be_time_zone_aware_with_utc() {
+        let schedule: Scheduler = "* 11 10 * * *".try_into().unwrap();
+        let date = Utc.ymd(2010, 1, 1).and_hms(10, 10, 0);
+
+        let expected_utc = Utc.ymd(2010, 1, 1).and_hms(10, 11, 0);
+        let next = schedule.next(&date).unwrap();
+
+        assert_eq!(next, expected_utc);
+    }
+
+    #[test]
+    fn cron_should_be_time_zone_aware_with_custom_time_zone() {
+        let schedule: Scheduler = "* 11 10 * * *".try_into().unwrap();
+
+        let date = FixedOffset::east(3600).ymd(2010, 1, 1).and_hms(10, 10, 0);
+
+        let expected_utc = Utc.ymd(2010, 1, 1).and_hms(9, 11, 0);
+
+        let next = schedule.next(&date).unwrap();
+
+        assert_eq!(next.with_timezone(&Utc), expected_utc);
+    }
+
 }
