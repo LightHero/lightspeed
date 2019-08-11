@@ -100,10 +100,10 @@ impl Scheduler {
 pub mod test {
 
     use super::*;
+    use chrono::Utc;
     use std::sync::atomic::{AtomicUsize, Ordering};
     use std::sync::mpsc::channel;
     use std::time::Duration;
-    use chrono::Utc;
 
     #[test]
     fn should_not_run_an_already_running_job() {
@@ -122,7 +122,7 @@ pub mod test {
                 std::thread::sleep(Duration::new(1, 0));
                 Ok(())
             })
-                .unwrap(),
+            .unwrap(),
         );
 
         for i in 0..100 {
@@ -141,7 +141,6 @@ pub mod test {
     fn a_running_job_should_not_block_the_scheduler() {
         let mut scheduler = Scheduler::new();
 
-
         let (tx, rx) = channel();
 
         let count_1 = Arc::new(AtomicUsize::new(0));
@@ -155,7 +154,7 @@ pub mod test {
                 std::thread::sleep(Duration::new(1, 0));
                 Ok(())
             })
-                .unwrap(),
+            .unwrap(),
         );
 
         let count_2 = Arc::new(AtomicUsize::new(0));
@@ -168,7 +167,8 @@ pub mod test {
                 count_2_clone.fetch_add(1, Ordering::SeqCst);
                 std::thread::sleep(Duration::new(1, 0));
                 Ok(())
-            }).unwrap(),
+            })
+            .unwrap(),
         );
 
         let count_3 = Arc::new(AtomicUsize::new(0));
@@ -182,9 +182,8 @@ pub mod test {
                 std::thread::sleep(Duration::new(1, 0));
                 Ok(())
             })
-                .unwrap(),
+            .unwrap(),
         );
-
 
         let before_millis = Utc::now().timestamp_millis();
         for i in 0..100 {
