@@ -4,7 +4,7 @@ use cron;
 use std::convert::TryFrom;
 use std::time::Duration;
 
-pub enum Schedule {
+pub enum Scheduler {
     /// Set to execute on set time periods
     Cron(cron::Schedule),
 
@@ -15,15 +15,13 @@ pub enum Schedule {
     Never,
 }
 
-impl Schedule {
+impl Scheduler {
     // Determine the next time we should execute (from a reference point)
-    pub fn next(&self, after: &Option<DateTime<Utc>>) -> Option<DateTime<Utc>> {
-        let after = after.unwrap_or_else(Utc::now);
-
+    pub fn next<T: TimeZone>(&self, after: &DateTime<T>) -> Option<DateTime<T>> {
         match *self {
-            Schedule::Cron(ref cs) => cs.after(&after).next(),
+            Scheduler::Cron(ref cs) => cs.after(&after).next(),
 
-            Schedule::Interval(ref duration) => {
+            Scheduler::Interval(ref duration) => {
                 let ch_duration = match time::Duration::from_std(*duration) {
                     Ok(value) => value,
                     Err(_) => {
@@ -31,18 +29,19 @@ impl Schedule {
                     }
                 };
 
-                Some(after + ch_duration)
+                let date = after.with_timezone(&Utc) + ch_duration;
+                Some(date.with_timezone(&after.timezone()))
             }
 
-            Schedule::Never => None,
+            Scheduler::Never => None,
         }
     }
 }
 
-impl<'a> TryFrom<&'a str> for Schedule {
+impl<'a> TryFrom<&'a str> for Scheduler {
     type Error = SchedulerError;
     fn try_from(value: &str) -> Result<Self, Self::Error> {
-        Ok(Schedule::Cron(value.parse().map_err(|err| {
+        Ok(Scheduler::Cron(value.parse().map_err(|err| {
             SchedulerError::ScheduleDefinitionError {
                 message: format!("Cannot create schedule for [{}]. Err: {}", value, err),
             }
@@ -50,10 +49,10 @@ impl<'a> TryFrom<&'a str> for Schedule {
     }
 }
 
-impl TryFrom<Duration> for Schedule {
+impl TryFrom<Duration> for Scheduler {
     type Error = SchedulerError;
     fn try_from(value: Duration) -> Result<Self, Self::Error> {
-        Ok(Schedule::Interval(value))
+        Ok(Scheduler::Interval(value))
     }
 }
 
@@ -65,35 +64,35 @@ pub mod test {
 
     #[test]
     fn never_should_not_schedule() {
-        let schedule = Schedule::Never;
-        assert_eq!(None, schedule.next(&None))
+        let schedule = Scheduler::Never;
+        assert_eq!(None, schedule.next(&Utc::now()))
     }
 
     #[test]
     fn interval_should_schedule_plus_duration() {
         let now = Utc::now();
         let secs = 10;
-        let schedule: Schedule = Duration::new(secs, 0).try_into().unwrap();
+        let schedule: Scheduler = Duration::new(secs, 0).try_into().unwrap();
 
-        let next = schedule.next(&Some(now)).unwrap();
+        let next = schedule.next(&now).unwrap();
 
         assert!(next.timestamp() >= now.timestamp() + (secs as i64));
     }
 
     #[test]
     fn should_build_an_interval_schedule_from_duration() {
-        let schedule: Schedule = Duration::new(1, 1).try_into().unwrap();
+        let schedule: Scheduler = Duration::new(1, 1).try_into().unwrap();
         match schedule {
-            Schedule::Interval(_) => assert!(true),
+            Scheduler::Interval(_) => assert!(true),
             _ => assert!(false),
         }
     }
 
     #[test]
     fn should_build_a_periodic_schedule_from_str() {
-        let schedule: Schedule = "* * * * * *".try_into().unwrap();
+        let schedule: Scheduler = "* * * * * *".try_into().unwrap();
         match schedule {
-            Schedule::Cron(_) => assert!(true),
+            Scheduler::Cron(_) => assert!(true),
             _ => assert!(false),
         }
     }

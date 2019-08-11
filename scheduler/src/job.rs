@@ -1,33 +1,38 @@
 use crate::error::SchedulerError;
-use crate::schedule::Schedule;
-use chrono::{DateTime, Utc};
+use crate::schedule::Scheduler;
+use chrono::{DateTime, Utc, TimeZone};
 use std::convert::TryInto;
 use std::sync::{Mutex, RwLock};
 
-pub struct JobScheduler {
+pub struct JobScheduler<T: TimeZone + Send + Sync + 'static>
+    where <T as chrono::offset::TimeZone>::Offset: std::marker::Send
+{
     pub job: Job,
-    schedule: Schedule,
-    next_run_at: Mutex<Option<DateTime<Utc>>>,
-    last_run_at: Mutex<Option<DateTime<Utc>>>,
+    schedule: Scheduler,
+    timezone: T,
+    next_run_at: Mutex<Option<DateTime<T>>>,
+    last_run_at: Mutex<Option<DateTime<T>>>,
 }
 
-impl JobScheduler {
+impl <T: TimeZone + Send + Sync + 'static> JobScheduler<T> where <T as chrono::offset::TimeZone>::Offset: std::marker::Send{
     pub fn new<
-        S: TryInto<Schedule>
+        S: TryInto<Scheduler>
     >(
         schedule: S,
+        timezone: T,
         job: Job,
     ) -> Result<Self, SchedulerError>
         where
-            SchedulerError: std::convert::From<<S as std::convert::TryInto<Schedule>>::Error>,
+            SchedulerError: std::convert::From<<S as std::convert::TryInto<Scheduler>>::Error>,
     {
         // Determine the next time it should run
         let schedule = schedule.try_into()?;
-        let next_run_at = schedule.next(&None);
+        let next_run_at = schedule.next(&Utc::now().with_timezone(&timezone));
 
         Ok(JobScheduler {
             job,
             schedule,
+            timezone,
             next_run_at: Mutex::new(next_run_at),
             last_run_at: Mutex::new(None),
         })
@@ -42,7 +47,7 @@ impl JobScheduler {
 
         // Check if NOW is on or after next_run_at
         if let Some(next_run_at) = self.next_run_at.lock().unwrap().as_ref() {
-            &Utc::now() >= next_run_at
+            &Utc::now().with_timezone(&self.timezone) >= next_run_at
         } else {
             false
         }
@@ -53,7 +58,7 @@ impl JobScheduler {
         // Execute the job function
         let run_result = self.job.run();
 
-        let now = Some(Utc::now());
+        let now = Utc::now().with_timezone(&self.timezone);
 
         // Determine the next time it should run
         let mut next_run_at = self.next_run_at.lock().unwrap();
@@ -61,7 +66,7 @@ impl JobScheduler {
 
         // Save the last time this ran
         let mut last_run_at = self.last_run_at.lock().unwrap();
-        *last_run_at = now;
+        *last_run_at = Some(now);
 
         run_result
     }
@@ -184,6 +189,7 @@ pub mod test {
 
         let job_scheduler = Arc::new(
                 JobScheduler::new(Duration::new(1, 0),
+            Utc,
             Job::new("g", "n", move || {
                 println!("job - started");
                 tx_clone.send("").unwrap();

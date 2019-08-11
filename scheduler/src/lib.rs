@@ -6,18 +6,39 @@ use crate::job::{Job, JobScheduler};
 use log::*;
 use std::sync::{Arc};
 use std::convert::TryInto;
-use crate::schedule::Schedule;
+use crate::schedule::Scheduler;
 use crate::error::SchedulerError;
+use chrono::{TimeZone, Local, Utc};
 
-#[derive(Default)]
-pub struct JobExecutor {
-    jobs: Vec<Arc<JobScheduler>>,
+pub struct JobExecutor<T: TimeZone + Send + Sync + 'static> where <T as chrono::offset::TimeZone>::Offset: std::marker::Send{
+    timezone: T,
+    jobs: Vec<Arc<JobScheduler<T>>>,
 }
 
-impl JobExecutor {
-    pub fn new() -> Self {
-        JobExecutor::default()
+/// Creates a new Executor that uses the Local time zone for the execution times evaluation.
+/// For example, the cron expressions will refer to the Local time zone.
+pub fn new_executor_with_local_tz() -> JobExecutor<Local> {
+    new_executor_with_tz(Local)
+}
+
+/// Creates a new Executor that uses the UTC time zone for the execution times evaluation.
+/// For example, the cron expressions will refer to the UTC time zone.
+pub fn new_executor_with_utc_tz() -> JobExecutor<Utc> {
+    new_executor_with_tz(Utc)
+}
+
+/// Creates a new Executor that uses a custom time zone for the execution times evaluation.
+/// For example, the cron expressions will refer to the specified time zone.
+pub fn new_executor_with_tz<T: TimeZone + Send + Sync + 'static>(timezone: T) -> JobExecutor<T>
+    where <T as chrono::offset::TimeZone>::Offset: std::marker::Send
+{
+    JobExecutor{
+        timezone,
+        jobs: vec![]
     }
+}
+
+impl <T: TimeZone + Send + Sync + 'static> JobExecutor<T> where <T as chrono::offset::TimeZone>::Offset: std::marker::Send{
 
     /// Returns true if the JobExecutor contains no jobs.
     pub fn is_empty(&self) -> bool {
@@ -94,10 +115,10 @@ impl JobExecutor {
     }
 
     /// Adds a job to the JobExecutor.
-    pub fn add_job<S: TryInto<Schedule>>(&mut self, schedule: S, job: Job) -> Result<(), SchedulerError>
+    pub fn add_job<S: TryInto<Scheduler>>(&mut self, schedule: S, job: Job) -> Result<(), SchedulerError>
     where
-    SchedulerError: std::convert::From<<S as std::convert::TryInto<Schedule>>::Error> {
-        self.jobs.push(Arc::new(JobScheduler::new(schedule, job)?));
+    SchedulerError: std::convert::From<<S as std::convert::TryInto<Scheduler>>::Error> {
+        self.jobs.push(Arc::new(JobScheduler::new(schedule, self.timezone.clone(), job)?));
         Ok(())
     }
 }
@@ -106,14 +127,14 @@ impl JobExecutor {
 pub mod test {
 
     use super::*;
-    use chrono::Utc;
+    use chrono::{Utc};
     use std::sync::atomic::{AtomicUsize, Ordering};
     use std::sync::mpsc::channel;
     use std::time::Duration;
 
     #[test]
     fn should_not_run_an_already_running_job() {
-        let mut executor = JobExecutor::new();
+        let mut executor = new_executor_with_utc_tz();
 
         let count = Arc::new(AtomicUsize::new(0));
         let count_clone = count.clone();
@@ -145,7 +166,7 @@ pub mod test {
 
     #[test]
     fn a_running_job_should_not_block_the_executor() {
-        let mut executor = JobExecutor::new();
+        let mut executor = new_executor_with_local_tz();
 
         let (tx, rx) = channel();
 
@@ -211,9 +232,9 @@ pub mod test {
 
     //#[test]
     fn timezone() {
-        let mut executor = JobExecutor::new();
+        let mut executor = new_executor_with_local_tz();
 
-        let schedule = "0 19 13 * * *";
+        let schedule = "0 58 15 * * *";
 
         executor.add_job(
             schedule,
