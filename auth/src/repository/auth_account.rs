@@ -1,6 +1,7 @@
 use crate::model::auth_account::{AuthAccountData, AuthAccountModel};
 use c3p0::*;
 
+#[derive(Clone)]
 pub struct AuthAccountRepository {
     repo: C3p0Json<
         AuthAccountData,

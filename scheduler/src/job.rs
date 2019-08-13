@@ -1,5 +1,5 @@
 use crate::error::SchedulerError;
-use crate::schedule::Scheduler;
+use crate::scheduler::Scheduler;
 use chrono::{DateTime, TimeZone, Utc};
 use std::convert::TryInto;
 use std::sync::{Mutex, RwLock};

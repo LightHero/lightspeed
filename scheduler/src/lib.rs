@@ -1,10 +1,10 @@
 pub mod error;
 pub mod job;
-pub mod schedule;
+pub mod scheduler;
 
 use crate::error::SchedulerError;
 use crate::job::{Job, JobScheduler};
-use crate::schedule::Scheduler;
+use crate::scheduler::Scheduler;
 use chrono::{Local, TimeZone, Utc};
 use log::*;
 use std::convert::TryInto;
