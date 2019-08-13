@@ -1,5 +1,5 @@
 use crate::config::AuthConfig;
-use crate::service::password_codec::PasswordCodec;
+use crate::service::password_codec::PasswordCodecService;
 use c3p0::*;
 use lightspeed_core::{config::UIConfig, error::LightSpeedError};
 use log::*;
@@ -24,7 +24,7 @@ pub struct AuthModule {
     pub auth_repo: repository::auth_account::AuthAccountRepository,
     pub token_repo: repository::token::TokenRepository,
 
-    pub password_codec: service::password_codec::PasswordCodec,
+    pub password_codec: service::password_codec::PasswordCodecService,
     pub auth_account_service: service::auth_account::AuthAccountService,
     pub token_service: service::token::TokenService,
 }
@@ -38,7 +38,7 @@ impl AuthModule {
         let auth_repo = repository::auth_account::AuthAccountRepository::new();
         let token_repo = repository::token::TokenRepository::new();
 
-        let password_codec = PasswordCodec::new(auth_config.bcrypt_password_hash_cost);
+        let password_codec = PasswordCodecService::new(auth_config.bcrypt_password_hash_cost);
 
         let token_service = service::token::TokenService::new(
             auth_config.clone(),
@@ -47,8 +47,10 @@ impl AuthModule {
         );
 
         let auth_account_service = AuthAccountService::new(
+            c3p0.clone(),
             auth_config.clone(),
             token_service.clone(),
+            password_codec.clone(),
             auth_repo.clone(),
         );
 

@@ -2,15 +2,15 @@ use bcrypt::{hash, verify};
 use lightspeed_core::error::LightSpeedError;
 
 #[derive(Clone)]
-pub struct PasswordCodec {
+pub struct PasswordCodecService {
     hash_cost: u32,
 }
 
-impl PasswordCodec {
+impl PasswordCodecService {
     /// Cost needs to be between 4 and 31
     /// Java bcrypt lib uses 10 by default
     pub fn new(hash_cost: u32) -> Self {
-        PasswordCodec { hash_cost }
+        PasswordCodecService { hash_cost }
     }
 
     pub fn verify_match(&self, plain_password: &str, hash: &str) -> Result<bool, LightSpeedError> {
@@ -35,7 +35,7 @@ pub mod test {
 
     #[test]
     fn should_encrypt_and_decrypt() -> Result<(), LightSpeedError> {
-        let password_codec = PasswordCodec::new(4);
+        let password_codec = PasswordCodecService::new(4);
         let plain_pass = "wrwdsdfast346n534dfsg5353";
         let hash = password_codec.hash_password(plain_pass)?;
 
@@ -48,7 +48,7 @@ pub mod test {
 
     #[test]
     fn should_decrypt_admin() -> Result<(), LightSpeedError> {
-        let password_codec = PasswordCodec::new(4);
+        let password_codec = PasswordCodecService::new(4);
         let plain_pass = "admin";
         let hash = &password_codec.hash_password(plain_pass)?;
         let java_bcrypt_hash = r#"$2a$10$TkWSZIawgD9tjkmAV2GjGOt30FQktiTlpZTIHbxatakOHf4G0.aA."#;

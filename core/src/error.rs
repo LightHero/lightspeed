@@ -42,6 +42,8 @@ pub enum LightSpeedError {
 
     #[error(display = "ValidationError [{:?}]", details)]
     ValidationError { details: ErrorDetails },
+    #[error(display = "BadRequest [{}]", message)]
+    BadRequest { message: String },
 }
 
 #[derive(Default, Debug, PartialEq, Clone)]

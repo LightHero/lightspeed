@@ -38,6 +38,9 @@ impl ResponseError for LightSpeedError {
                 let code = actix_web::http::StatusCode::UNPROCESSABLE_ENTITY;
                 HttpResponseBuilder::new(code).json(WebErrorDetails::from(code.as_u16(), details))
             }
+            LightSpeedError::BadRequest { .. } => {
+                HttpResponse::BadRequest().finish()
+            }
             _ => HttpResponse::InternalServerError().finish(),
         }
     }
