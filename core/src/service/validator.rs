@@ -1,5 +1,6 @@
 use crate::error::{ErrorDetails, LightSpeedError};
 
+pub mod boolean;
 pub mod contains;
 pub mod email;
 pub mod ip;

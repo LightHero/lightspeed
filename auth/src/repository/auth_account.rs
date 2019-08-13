@@ -28,13 +28,13 @@ impl AuthAccountRepository {
     pub fn fetch_by_username(
         &self,
         conn: &PgConnection,
-        token_string: &str,
+        username: &str,
     ) -> Result<Option<AuthAccountModel>, C3p0Error> {
         let sql = r#"
             select id, version, data_json from AUTH_ACCOUNT
             where DATA_JSON ->> 'username' = $1
             limit 1
         "#;
-        conn.fetch_one_option(sql, &[&token_string], |row| self.repo.json().to_model(row))
+        conn.fetch_one_option(sql, &[&username], |row| self.repo.json().to_model(row))
     }
 }

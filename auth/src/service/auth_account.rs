@@ -2,11 +2,13 @@ use crate::config::AuthConfig;
 use crate::repository::auth_account::AuthAccountRepository;
 use crate::service::token::TokenService;
 use crate::service::password_codec::PasswordCodecService;
-use lightspeed_core::error::LightSpeedError;
+use lightspeed_core::error::{LightSpeedError, ErrorDetails};
 use crate::PoolManager;
 use c3p0::*;
 use crate::model::auth_account::AuthAccountStatus;
 use lightspeed_core::service::auth::Auth;
+use crate::dto::create_user_dto::CreateLoginDto;
+use lightspeed_core::service::validator::Validator;
 
 #[derive(Clone)]
 pub struct AuthAccountService {
@@ -51,7 +53,23 @@ impl AuthAccountService {
 
     }
 
-    pub fn create_user(&self) -> Result<(), LightSpeedError> {
+    pub fn create_user(&self, create_login_dto: CreateLoginDto) -> Result<(), LightSpeedError> {
+
+        self.c3p0.transaction(|conn| {
+
+            let existing_user = self.auth_repo.fetch_by_username(conn, &create_login_dto.email)?;
+            Validator::validate((&create_login_dto, |error_details: &mut ErrorDetails| {
+                if existing_user.is_some() {
+                    error_details.add_detail("username", "NOT_UNIQUE");
+                }
+                Ok(())
+            }))?;
+
+
+
+            Ok(())
+        });
+
         unimplemented!()
     }
 }

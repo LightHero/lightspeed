@@ -7,6 +7,7 @@ use crate::service::auth_account::AuthAccountService;
 use crate::repository::db::AuthDbRepository;
 
 pub mod config;
+pub mod dto;
 pub mod model;
 pub mod repository;
 pub mod service;
