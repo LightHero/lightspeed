@@ -1,10 +1,10 @@
 use crate::config::AuthConfig;
-use crate::service::password_codec::PasswordCodecService;
-use c3p0::*;
-use lightspeed_core::{config::UIConfig, error::LightSpeedError};
-use log::*;
+use crate::repository::AuthRepositoryManager;
 use crate::service::auth_account::AuthAccountService;
-use crate::repository::db::AuthDbRepository;
+use crate::service::password_codec::PasswordCodecService;
+use lightspeed_core::{config::UIConfig, error::LightSpeedError};
+use lightspeed_email::EmailModule;
+use log::*;
 
 pub mod config;
 pub mod dto;
@@ -12,58 +12,50 @@ pub mod model;
 pub mod repository;
 pub mod service;
 
-pub type PoolManager = PgPoolManager;
-
 #[derive(Clone)]
-pub struct AuthModule {
+pub struct AuthModule<RepoManager: AuthRepositoryManager> {
     pub ui_config: UIConfig,
     pub auth_config: AuthConfig,
 
-    pub c3p0: C3p0Pool<PoolManager>,
-
-    db_repo: AuthDbRepository,
-    pub auth_repo: repository::auth_account::AuthAccountRepository,
-    pub token_repo: repository::token::TokenRepository,
+    pub repo_manager: RepoManager,
 
     pub password_codec: service::password_codec::PasswordCodecService,
-    pub auth_account_service: service::auth_account::AuthAccountService,
-    pub token_service: service::token::TokenService,
+    pub auth_account_service: service::auth_account::AuthAccountService<RepoManager>,
+    pub token_service: service::token::TokenService<RepoManager::TOKEN_REPO>,
 }
 
-impl AuthModule {
-    pub fn new(auth_config: AuthConfig, ui_config: UIConfig, c3p0: C3p0Pool<PoolManager>) -> Self {
+impl<RepoManager: AuthRepositoryManager> AuthModule<RepoManager> {
+    pub fn new(
+        repo_manager: RepoManager,
+        auth_config: AuthConfig,
+        ui_config: UIConfig,
+        email_module: &EmailModule,
+    ) -> Self {
         println!("Creating AuthModule");
         info!("Creating AuthModule");
-
-        let db_repo = repository::db::AuthDbRepository::new(c3p0.clone());
-        let auth_repo = repository::auth_account::AuthAccountRepository::new();
-        let token_repo = repository::token::TokenRepository::new();
 
         let password_codec = PasswordCodecService::new(auth_config.bcrypt_password_hash_cost);
 
         let token_service = service::token::TokenService::new(
             auth_config.clone(),
             ui_config.clone(),
-            token_repo.clone(),
+            repo_manager.token_repo(),
         );
 
         let auth_account_service = AuthAccountService::new(
-            c3p0.clone(),
+            repo_manager.c3p0().clone(),
             auth_config.clone(),
             token_service.clone(),
             password_codec.clone(),
-            auth_repo.clone(),
+            repo_manager.auth_account_repo(),
+            email_module.email_service.clone(),
         );
 
         AuthModule {
             ui_config,
             auth_config,
 
-            c3p0,
-
-            db_repo,
-            auth_repo,
-            token_repo,
+            repo_manager,
 
             password_codec,
             auth_account_service,
@@ -72,10 +64,12 @@ impl AuthModule {
     }
 }
 
-impl lightspeed_core::module::Module for AuthModule {
+impl<RepoManager: AuthRepositoryManager> lightspeed_core::module::Module
+    for AuthModule<RepoManager>
+{
     fn start(&mut self) -> Result<(), LightSpeedError> {
         info!("Starting AuthModule");
-        self.db_repo.start()?;
+        self.repo_manager.start()?;
         Ok(())
     }
 }

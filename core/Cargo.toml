@@ -7,8 +7,8 @@ edition = "2018"
 
 [dependencies]
 actix-web = "1.0"
-#c3p0_common = "0.9"
-c3p0_common = { version = "0.9", path = "../../../github_ufoscout/c3p0/c3p0_common"}
+c3p0_common = "0.10"
+#c3p0_common = { version = "0.9", path = "../../../github_ufoscout/c3p0/c3p0_common"}
 chrono = "0.4"
 err-derive= "0.1"
 jsonwebtoken = "6.0"

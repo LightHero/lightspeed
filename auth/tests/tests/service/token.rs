@@ -1,12 +1,14 @@
 use crate::test;
-use c3p0::NewModel;
+use c3p0::*;
 use lightspeed_auth::model::token::{TokenData, TokenType};
+use lightspeed_auth::repository::AuthRepositoryManager;
 use lightspeed_core::utils::{current_epoch_seconds, new_hyphenated_uuid};
 
 #[test]
 fn should_delete_token() {
     test(|auth_module| {
-        let c3p0 = &auth_module.c3p0;
+        let c3p0 = auth_module.repo_manager.c3p0();
+        let token_repo = auth_module.repo_manager.token_repo();
 
         let token = NewModel {
             version: 0,
@@ -18,20 +20,16 @@ fn should_delete_token() {
             },
         };
 
-        let saved_token = auth_module.token_repo.save(&c3p0.connection()?, token)?;
+        let saved_token = token_repo.save(&c3p0.connection()?, token)?;
 
-        assert!(auth_module
-            .token_repo
-            .exists_by_id(&c3p0.connection()?, &saved_token.id)?);
+        assert!(token_repo.exists_by_id(&c3p0.connection()?, &saved_token.id)?);
         assert_eq!(
             1,
             auth_module
                 .token_service
                 .delete(&c3p0.connection()?, saved_token.clone())?
         );
-        assert!(!auth_module
-            .token_repo
-            .exists_by_id(&c3p0.connection()?, &saved_token.id)?);
+        assert!(!token_repo.exists_by_id(&c3p0.connection()?, &saved_token.id)?);
 
         Ok(())
     });
@@ -40,7 +38,7 @@ fn should_delete_token() {
 #[test]
 fn should_generate_token() {
     test(|auth_module| {
-        let c3p0 = &auth_module.c3p0;
+        let c3p0 = auth_module.repo_manager.c3p0();
         Ok(c3p0.transaction(|conn| {
             let username = new_hyphenated_uuid();
             let token_type = TokenType::AccountActivation;
@@ -85,7 +83,9 @@ fn should_generate_token() {
 #[test]
 fn should_validate_token_on_fetch() {
     test(|auth_module| {
-        let c3p0 = &auth_module.c3p0;
+        let c3p0 = auth_module.repo_manager.c3p0();
+        let token_repo = auth_module.repo_manager.token_repo();
+
         Ok(c3p0.transaction(|conn| {
             let token = NewModel {
                 version: 0,
@@ -97,7 +97,7 @@ fn should_validate_token_on_fetch() {
                 },
             };
 
-            let saved_token = auth_module.token_repo.save(conn, token)?;
+            let saved_token = token_repo.save(conn, token)?;
 
             assert!(auth_module
                 .token_service

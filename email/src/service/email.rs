@@ -6,7 +6,7 @@ use crate::service::no_ops_email::NoOpsEmailService;
 use lightspeed_core::error::LightSpeedError;
 use std::str::FromStr;
 
-pub trait EmailService {
+pub trait EmailService: Send + Sync {
     fn send(&self, email_message: EmailMessage) -> Result<(), LightSpeedError>;
     fn get_emails(&self) -> Result<Vec<EmailMessage>, LightSpeedError>;
     fn clear_emails(&self) -> Result<(), LightSpeedError>;

@@ -1,6 +1,6 @@
 use crate::config::AuthConfig;
 use crate::model::token::{TokenData, TokenModel, TokenType};
-use crate::repository::token::TokenRepository;
+use crate::repository::TokenRepository;
 use c3p0::*;
 use lightspeed_core::config::UIConfig;
 use lightspeed_core::error::LightSpeedError;
@@ -8,14 +8,14 @@ use lightspeed_core::service::validator::Validator;
 use lightspeed_core::utils::*;
 
 #[derive(Clone)]
-pub struct TokenService {
+pub struct TokenService<TokenRepo: TokenRepository> {
     ui_config: UIConfig,
     auth_config: AuthConfig,
-    token_repo: TokenRepository,
+    token_repo: TokenRepo,
 }
 
-impl TokenService {
-    pub fn new(auth_config: AuthConfig, ui_config: UIConfig, token_repo: TokenRepository) -> Self {
+impl<TokenRepo: TokenRepository> TokenService<TokenRepo> {
+    pub fn new(auth_config: AuthConfig, ui_config: UIConfig, token_repo: TokenRepo) -> Self {
         TokenService {
             auth_config,
             ui_config,
@@ -23,10 +23,10 @@ impl TokenService {
         }
     }
 
-    pub fn generate_and_save_token(
+    pub fn generate_and_save_token<S: Into<String>>(
         &self,
-        conn: &PgConnection,
-        username: String,
+        conn: &TokenRepo::CONN,
+        username: S,
         token_type: TokenType,
     ) -> Result<TokenModel, LightSpeedError> {
         let issued_at = current_epoch_seconds();
@@ -34,7 +34,7 @@ impl TokenService {
         let token = NewModel::new(TokenData {
             token: new_hyphenated_uuid(),
             token_type,
-            username,
+            username: username.into(),
             expire_at_epoch,
         });
         Ok(self.token_repo.save(conn, token)?)
@@ -46,7 +46,7 @@ impl TokenService {
 
     pub fn fetch_by_token(
         &self,
-        conn: &PgConnection,
+        conn: &TokenRepo::CONN,
         token: &str,
         validate: bool,
     ) -> Result<Option<TokenModel>, LightSpeedError> {
@@ -62,7 +62,7 @@ impl TokenService {
 
     pub fn delete(
         &self,
-        conn: &PgConnection,
+        conn: &TokenRepo::CONN,
         token_model: TokenModel,
     ) -> Result<u64, LightSpeedError> {
         Ok(self.token_repo.delete(conn, &token_model)?)

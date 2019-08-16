@@ -5,13 +5,10 @@ use crate::error::{ErrorDetail, ErrorDetails};
 pub fn validate_is_true<S: Into<String>>(
     error_details: &mut ErrorDetails,
     field_name: S,
-    val: bool
+    val: bool,
 ) {
     if !val {
-        error_details.add_detail(
-            field_name,
-            ErrorDetail::new("MUST_BE_TRUE", vec![]),
-        )
+        error_details.add_detail(field_name, ErrorDetail::new("MUST_BE_TRUE", vec![]))
     }
 }
 
@@ -20,16 +17,12 @@ pub fn validate_is_true<S: Into<String>>(
 pub fn validate_is_false<S: Into<String>>(
     error_details: &mut ErrorDetails,
     field_name: S,
-    val: bool
+    val: bool,
 ) {
     if val {
-        error_details.add_detail(
-            field_name,
-            ErrorDetail::new("MUST_BE_FALSE", vec![]),
-        )
+        error_details.add_detail(field_name, ErrorDetail::new("MUST_BE_FALSE", vec![]))
     }
 }
-
 
 #[cfg(test)]
 mod tests {

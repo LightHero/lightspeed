@@ -8,22 +8,19 @@ pub mod config;
 pub mod model;
 pub mod service;
 
-pub type PoolManager = PgPoolManager;
+pub type C3p0 = C3p0PoolPg;
 
 #[derive(Clone)]
 pub struct EmailModule {
     pub email_config: EmailConfig,
 
-    pub c3p0: C3p0Pool<PoolManager>,
+    pub c3p0: C3p0,
 
     pub email_service: Arc<Box<service::email::EmailService>>,
 }
 
 impl EmailModule {
-    pub fn new(
-        email_config: EmailConfig,
-        c3p0: C3p0Pool<PoolManager>,
-    ) -> Result<Self, LightSpeedError> {
+    pub fn new(email_config: EmailConfig, c3p0: C3p0) -> Result<Self, LightSpeedError> {
         println!("Creating EmailModule");
         info!("Creating EmailModule");
 
