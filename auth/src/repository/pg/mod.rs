@@ -1,5 +1,5 @@
 use crate::repository::pg::pg_auth_account::PgAuthAccountRepository;
-use crate::repository::pg::token::PgTokenRepository;
+use crate::repository::pg::pg_token::PgTokenRepository;
 use crate::repository::AuthRepositoryManager;
 use c3p0::*;
 use include_dir::*;
@@ -7,7 +7,7 @@ use lightspeed_core::error::LightSpeedError;
 use std::convert::TryInto;
 
 pub mod pg_auth_account;
-pub mod token;
+pub mod pg_token;
 
 const MIGRATIONS: Dir = include_dir!("./src_resources/db/pg/migrations");
 

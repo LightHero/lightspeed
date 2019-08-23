@@ -193,4 +193,55 @@ impl<RepoManager: AuthRepositoryManager> AuthAccountService<RepoManager> {
 
         Ok(result?)
     }
+
+    pub fn activate_user(
+        &self,
+        activation_token: &str,
+    ) -> Result<AuthAccountModel, LightSpeedError> {
+        let result = self.c3p0.transaction(move |conn| {
+            let token = self
+                .token_service
+                .fetch_by_token(conn, activation_token, false)?;
+            let token = token.ok_or_else(|| LightSpeedError::BadRequest {
+                message: "Token not found".to_owned(),
+            })?;
+
+            Validator::validate(|error_details: &mut ErrorDetails| {
+                match &token.data.token_type {
+                    TokenType::AccountActivation => {}
+                    _ => error_details.add_detail("token_type", "WRONG_TYPE"),
+                };
+                Ok(())
+            })?;
+
+            info!("Activate user [{}]", token.data.username);
+
+            let mut user = self
+                .auth_repo
+                .fetch_by_username(conn, &token.data.username)?
+                .ok_or_else(|| LightSpeedError::BadRequest {
+                    message: "User not found".to_owned(),
+                })?;
+            ;
+
+            match &user.data.status {
+                AuthAccountStatus::PendingActivation => {}
+                _ => {
+                    return Err(Box::new(LightSpeedError::BadRequest {
+                        message: format!(
+                            "User [{}] not in status PendingActivation",
+                            token.data.username
+                        ),
+                    }))
+                }
+            };
+
+            self.token_service.delete(conn, token)?;
+
+            user.data.status = AuthAccountStatus::Active;
+            user = self.auth_repo.update(conn, user)?;
+            Ok(user)
+        });
+        Ok(result?)
+    }
 }

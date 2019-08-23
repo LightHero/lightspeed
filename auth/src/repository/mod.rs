@@ -1,6 +1,6 @@
 use crate::model::auth_account::{AuthAccountData, AuthAccountModel};
 use crate::model::token::{TokenData, TokenModel};
-use c3p0::{C3p0Error, C3p0Pool, Connection, NewModel};
+use c3p0::{C3p0Error, C3p0Pool, Connection, Model, NewModel};
 use lightspeed_core::error::LightSpeedError;
 
 pub mod pg;
@@ -36,6 +36,12 @@ pub trait AuthAccountRepository: Clone {
         &self,
         conn: &Self::CONN,
         model: NewModel<AuthAccountData>,
+    ) -> Result<AuthAccountModel, C3p0Error>;
+
+    fn update(
+        &self,
+        conn: &Self::CONN,
+        model: Model<AuthAccountData>,
     ) -> Result<AuthAccountModel, C3p0Error>;
 
     fn delete(&self, conn: &Self::CONN, model: &AuthAccountModel) -> Result<u64, C3p0Error>;

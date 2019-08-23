@@ -55,6 +55,14 @@ impl AuthAccountRepository for PgAuthAccountRepository {
         self.repo.save(conn, model)
     }
 
+    fn update(
+        &self,
+        conn: &Self::CONN,
+        model: Model<AuthAccountData>,
+    ) -> Result<Model<AuthAccountData>, C3p0Error> {
+        self.repo.update(conn, model)
+    }
+
     fn delete(&self, conn: &Self::CONN, model: &Model<AuthAccountData>) -> Result<u64, C3p0Error> {
         self.repo.delete(conn, model)
     }
