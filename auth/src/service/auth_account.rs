@@ -1,5 +1,6 @@
 use crate::config::AuthConfig;
 use crate::dto::create_user_dto::CreateLoginDto;
+use crate::dto::reset_password_dto::ResetPasswordDto;
 use crate::model::auth_account::{AuthAccountData, AuthAccountModel, AuthAccountStatus};
 use crate::model::token::{TokenModel, TokenType};
 use crate::repository::{AuthAccountRepository, AuthRepositoryManager};
@@ -252,7 +253,7 @@ impl<RepoManager: AuthRepositoryManager> AuthAccountService<RepoManager> {
         info!("Send reset password email to [{}]", username);
 
         let result = self.c3p0.transaction(move |conn| {
-            let mut user = self
+            let user = self
                 .auth_repo
                 .fetch_by_username(conn, &username)?
                 .ok_or_else(|| LightSpeedError::BadRequest {
@@ -286,6 +287,62 @@ impl<RepoManager: AuthRepositoryManager> AuthAccountService<RepoManager> {
             Ok((user, token))
         });
 
+        Ok(result?)
+    }
+
+    pub fn reset_password_by_token(
+        &self,
+        reset_password_dto: ResetPasswordDto,
+    ) -> Result<AuthAccountModel, LightSpeedError> {
+        Validator::validate(&reset_password_dto)?;
+
+        let result = self.c3p0.transaction(move |conn| {
+            let token =
+                self.token_service
+                    .fetch_by_token(conn, &reset_password_dto.token, false)?;
+            let token = token.ok_or_else(|| LightSpeedError::BadRequest {
+                message: "Token not found".to_owned(),
+            })?;
+
+            info!("Reset password of user [{}]", token.data.username);
+
+            Validator::validate(|error_details: &mut ErrorDetails| {
+                match &token.data.token_type {
+                    TokenType::ResetPassword => {}
+                    _ => error_details.add_detail("token_type", "WRONG_TYPE"),
+                };
+                Ok(())
+            })?;
+
+            let mut user = self
+                .auth_repo
+                .fetch_by_username(conn, &token.data.username)?
+                .ok_or_else(|| LightSpeedError::BadRequest {
+                    message: "User not found".to_owned(),
+                })?;
+            ;
+
+            match &user.data.status {
+                AuthAccountStatus::PendingActivation => {}
+                _ => {
+                    return Err(Box::new(LightSpeedError::BadRequest {
+                        message: format!(
+                            "User [{}] not in status PendingActivation",
+                            token.data.username
+                        ),
+                    }))
+                }
+            };
+
+            self.token_service.delete(conn, token)?;
+
+            let password_hash = self
+                .password_service
+                .hash_password(&reset_password_dto.password)?;
+            user.data.password = password_hash;
+            user = self.auth_repo.update(conn, user)?;
+            Ok(user)
+        });
         Ok(result?)
     }
 }
