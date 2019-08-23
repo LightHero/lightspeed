@@ -244,4 +244,48 @@ impl<RepoManager: AuthRepositoryManager> AuthAccountService<RepoManager> {
         });
         Ok(result?)
     }
+
+    pub fn send_reset_password_email(
+        &self,
+        username: &str,
+    ) -> Result<(AuthAccountModel, TokenModel), LightSpeedError> {
+        info!("Send reset password email to [{}]", username);
+
+        let result = self.c3p0.transaction(move |conn| {
+            let mut user = self
+                .auth_repo
+                .fetch_by_username(conn, &username)?
+                .ok_or_else(|| LightSpeedError::BadRequest {
+                    message: "User not found".to_owned(),
+                })?;
+            ;
+
+            match &user.data.status {
+                AuthAccountStatus::Active => {}
+                _ => {
+                    return Err(Box::new(LightSpeedError::BadRequest {
+                        message: format!("User [{}] not in status Active", username),
+                    }))
+                }
+            };
+
+            let token = self.token_service.generate_and_save_token(
+                conn,
+                username,
+                TokenType::ResetPassword,
+            )?;
+
+            let token_public_url = self.token_service.generate_public_token_url(&token);
+
+            let mut email_message = EmailMessage::new();
+            email_message.to.push(user.data.email.to_owned());
+            email_message.subject = Some("Reset password link".to_owned());
+            email_message.html = Some(format!("Reset password link: {}", token_public_url));
+            self.email_service.send(email_message)?;
+
+            Ok((user, token))
+        });
+
+        Ok(result?)
+    }
 }
