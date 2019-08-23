@@ -12,6 +12,7 @@ use lightspeed_core::service::validator::Validator;
 use lightspeed_core::utils::current_epoch_seconds;
 use lightspeed_email::model::email::EmailMessage;
 use lightspeed_email::service::email::EmailService;
+use log::*;
 use std::sync::Arc;
 
 #[derive(Clone)]
@@ -138,5 +139,58 @@ impl<RepoManager: AuthRepositoryManager> AuthAccountService<RepoManager> {
         self.email_service.send(email_message)?;
 
         Ok(token)
+    }
+
+    pub fn send_new_activation_token_by_email(
+        &self,
+        previous_activation_token: &str,
+    ) -> Result<(AuthAccountModel, TokenModel), LightSpeedError> {
+        let result = self.c3p0.transaction(move |conn| {
+            let token =
+                self.token_service
+                    .fetch_by_token(conn, previous_activation_token, false)?;
+            let token = token.ok_or_else(|| LightSpeedError::BadRequest {
+                message: "Token not found".to_owned(),
+            })?;
+
+            Validator::validate(|error_details: &mut ErrorDetails| {
+                match &token.data.token_type {
+                    TokenType::AccountActivation => {}
+                    _ => error_details.add_detail("token_type", "WRONG_TYPE"),
+                };
+                Ok(())
+            })?;
+
+            info!(
+                "Send new activation token to user [{}]",
+                token.data.username
+            );
+
+            let user = self
+                .auth_repo
+                .fetch_by_username(conn, &token.data.username)?
+                .ok_or_else(|| LightSpeedError::BadRequest {
+                    message: "User not found".to_owned(),
+                })?;;
+
+            match &user.data.status {
+                AuthAccountStatus::PendingActivation => {}
+                _ => {
+                    return Err(Box::new(LightSpeedError::BadRequest {
+                        message: format!(
+                            "User [{}] not in status PendingActivation",
+                            token.data.username
+                        ),
+                    }))
+                }
+            };
+
+            self.token_service.delete(conn, token)?;
+
+            let token = self.send_activation_email(conn, &user.data.username, &user.data.email)?;
+            Ok((user, token))
+        });
+
+        Ok(result?)
     }
 }
