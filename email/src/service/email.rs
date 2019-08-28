@@ -12,7 +12,7 @@ pub trait EmailService: Send + Sync {
     fn clear_emails(&self) -> Result<(), LightSpeedError>;
 }
 
-pub fn new(email_config: EmailConfig) -> Result<Box<EmailService>, LightSpeedError> {
+pub fn new(email_config: EmailConfig) -> Result<Box<dyn EmailService>, LightSpeedError> {
     match &email_config.service_type {
         EmailServiceType::Full => Ok(Box::new(FullEmailService::new(email_config)?)),
         EmailServiceType::InMemory => Ok(Box::new(InMemoryEmailService::new())),

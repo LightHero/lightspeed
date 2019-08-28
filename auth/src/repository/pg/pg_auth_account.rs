@@ -2,6 +2,7 @@ use crate::model::auth_account::{AuthAccountData, AuthAccountModel};
 use crate::repository::AuthAccountRepository;
 use c3p0::*;
 use std::ops::Deref;
+use lightspeed_core::error::LightSpeedError;
 
 #[derive(Clone)]
 pub struct PgAuthAccountRepository {
@@ -20,6 +21,12 @@ impl Default for PgAuthAccountRepository {
 
 impl AuthAccountRepository for PgAuthAccountRepository {
     type CONN = PgConnection;
+
+    fn fetch_by_id(&self, conn: &Self::CONN, user_id: i64) -> Result<Model<AuthAccountData>, LightSpeedError> {
+        self.repo.fetch_one_by_id(conn, &user_id)?.ok_or_else(|| LightSpeedError::BadRequest {
+            message: format!("No user found with id [{}]", user_id),
+        })
+    }
 
     fn fetch_by_username(
         &self,

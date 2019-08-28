@@ -15,6 +15,7 @@ use lightspeed_email::model::email::EmailMessage;
 use lightspeed_email::service::email::EmailService;
 use log::*;
 use std::sync::Arc;
+use crate::dto::change_password_dto::ChangePasswordDto;
 
 #[derive(Clone)]
 pub struct AuthAccountService<RepoManager: AuthRepositoryManager> {
@@ -23,7 +24,7 @@ pub struct AuthAccountService<RepoManager: AuthRepositoryManager> {
     auth_repo: RepoManager::AUTH_ACCOUNT_REPO,
     password_service: PasswordCodecService,
     token_service: TokenService<RepoManager::TOKEN_REPO>,
-    email_service: Arc<Box<EmailService>>,
+    email_service: Arc<Box<dyn EmailService>>,
 }
 
 impl<RepoManager: AuthRepositoryManager> AuthAccountService<RepoManager> {
@@ -33,7 +34,7 @@ impl<RepoManager: AuthRepositoryManager> AuthAccountService<RepoManager> {
         token_service: TokenService<RepoManager::TOKEN_REPO>,
         password_service: PasswordCodecService,
         auth_repo: RepoManager::AUTH_ACCOUNT_REPO,
-        email_service: Arc<Box<EmailService>>,
+        email_service: Arc<Box<dyn EmailService>>,
     ) -> Self {
         AuthAccountService {
             c3p0,
@@ -336,10 +337,43 @@ impl<RepoManager: AuthRepositoryManager> AuthAccountService<RepoManager> {
 
             self.token_service.delete(conn, token)?;
 
-            let password_hash = self
+            user.data.password = self
                 .password_service
                 .hash_password(&reset_password_dto.password)?;
-            user.data.password = password_hash;
+            user = self.auth_repo.update(conn, user)?;
+            Ok(user)
+        });
+        Ok(result?)
+    }
+
+    pub fn change_password(&self, dto: ChangePasswordDto)-> Result<AuthAccountModel, LightSpeedError> {
+        Validator::validate(&dto)?;
+        let result = self.c3p0.transaction(move |conn| {
+            let mut user = self.auth_repo.fetch_by_id(conn, dto.user_id)?;
+            info!("Change password of user [{}]", user.data.username);
+
+            match &user.data.status {
+                AuthAccountStatus::Active => {}
+                _ => {
+                    return Err(Box::new(LightSpeedError::BadRequest {
+                        message: format!(
+                            "User [{}] not in status Active",
+                            user.data.username
+                        ),
+                    }))
+                }
+            };
+
+            if !self.password_service.verify_match(&dto.old_password, &user.data.password)? {
+                return Err(Box::new(LightSpeedError::BadRequest {
+                    message: "Wrong credentials".to_owned()
+                }))
+            }
+
+            user.data.password = self
+                .password_service
+                .hash_password(&dto.new_password)?;
+
             user = self.auth_repo.update(conn, user)?;
             Ok(user)
         });

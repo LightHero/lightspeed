@@ -16,7 +16,7 @@ pub struct EmailModule {
 
     pub c3p0: C3p0,
 
-    pub email_service: Arc<Box<service::email::EmailService>>,
+    pub email_service: Arc<Box<dyn service::email::EmailService>>,
 }
 
 impl EmailModule {

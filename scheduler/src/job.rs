@@ -56,7 +56,7 @@ where
     }
 
     /// Run the job immediately and re-schedule it.
-    pub fn run(&self) -> Result<(), Box<std::error::Error>> {
+    pub fn run(&self) -> Result<(), Box<dyn std::error::Error>> {
         // Execute the job function
         let run_result = self.job.run();
 
@@ -74,7 +74,7 @@ where
     }
 }
 
-pub type JobFn = Fn() -> Result<(), Box<std::error::Error>> + Send;
+pub type JobFn = dyn Fn() -> Result<(), Box<dyn std::error::Error>> + Send;
 
 pub struct Job {
     function: Mutex<Box<JobFn>>,
@@ -88,7 +88,7 @@ impl Job {
     pub fn new<
         G: Into<String>,
         N: Into<String>,
-        F: Fn() -> Result<(), Box<std::error::Error>> + Send,
+        F: Fn() -> Result<(), Box<dyn std::error::Error>> + Send,
     >(
         group: G,
         name: N,
@@ -129,7 +129,7 @@ impl Job {
     }
 
     /// Run the job immediately and re-schedule it.
-    pub fn run(&self) -> Result<(), Box<std::error::Error>> {
+    pub fn run(&self) -> Result<(), Box<dyn std::error::Error>> {
         self.set_running(true)?;
 
         // Execute the job function

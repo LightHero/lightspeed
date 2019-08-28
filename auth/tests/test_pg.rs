@@ -57,7 +57,7 @@ fn init() -> (
     (auth_module, node)
 }
 
-pub fn test(callback: fn(&AuthModule<RepoManager>) -> Result<(), Box<std::error::Error>>) {
+pub fn test(callback: fn(&AuthModule<RepoManager>) -> Result<(), Box<dyn std::error::Error>>) {
     SINGLETON.get(|(auth_module, _)| {
         callback(&auth_module).unwrap();
     });

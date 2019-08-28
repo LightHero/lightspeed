@@ -20,6 +20,12 @@ pub trait AuthRepositoryManager: Clone {
 pub trait AuthAccountRepository: Clone {
     type CONN: Connection;
 
+    fn fetch_by_id(
+        &self,
+        conn: &Self::CONN,
+        user_id: i64,
+    ) -> Result<AuthAccountModel, LightSpeedError>;
+
     fn fetch_by_username(
         &self,
         conn: &Self::CONN,
