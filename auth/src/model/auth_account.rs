@@ -13,7 +13,7 @@ pub struct AuthAccountData {
     pub status: AuthAccountStatus,
 }
 
-#[derive(Clone, Serialize, Deserialize)]
+#[derive(Debug, PartialEq, Clone, Serialize, Deserialize)]
 pub enum AuthAccountStatus {
     Active,
     PendingActivation,

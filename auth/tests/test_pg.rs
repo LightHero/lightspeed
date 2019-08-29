@@ -20,13 +20,13 @@ pub type RepoManager = PgAuthRepositoryManager;
 lazy_static! {
     static ref DOCKER: clients::Cli = clients::Cli::default();
     pub static ref SINGLETON: MaybeSingle<(
-        AuthModule<RepoManager>,
+        (AuthModule<RepoManager>, EmailModule),
         Container<'static, clients::Cli, images::postgres::Postgres>
     )> = MaybeSingle::new(|| init());
 }
 
 fn init() -> (
-    AuthModule<RepoManager>,
+    (AuthModule<RepoManager>, EmailModule),
     Container<'static, clients::Cli, images::postgres::Postgres>,
 ) {
     let node = DOCKER.run(images::postgres::Postgres::default());
@@ -54,11 +54,14 @@ fn init() -> (
     let mut auth_module = AuthModule::new(repo_manager, auth_config, ui_config, &email_module);
     auth_module.start().unwrap();
 
-    (auth_module, node)
+    ((auth_module, email_module), node)
 }
 
-pub fn test(callback: fn(&AuthModule<RepoManager>) -> Result<(), Box<dyn std::error::Error>>) {
-    SINGLETON.get(|(auth_module, _)| {
-        callback(&auth_module).unwrap();
+pub fn test(
+    callback: fn(&AuthModule<RepoManager>, &EmailModule) -> Result<(), Box<dyn std::error::Error>>,
+) {
+    SINGLETON.get(|((auth_module, email_module), _)| {
+        email_module.email_service.clear_emails().unwrap();
+        callback(&auth_module, &email_module).unwrap();
     });
 }

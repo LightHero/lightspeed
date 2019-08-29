@@ -6,7 +6,7 @@ use lightspeed_core::utils::{current_epoch_seconds, new_hyphenated_uuid};
 
 #[test]
 fn should_delete_token() {
-    test(|auth_module| {
+    test(|auth_module, _| {
         let c3p0 = auth_module.repo_manager.c3p0();
         let token_repo = auth_module.repo_manager.token_repo();
 
@@ -37,9 +37,9 @@ fn should_delete_token() {
 
 #[test]
 fn should_generate_token() {
-    test(|auth_module| {
+    test(|auth_module, _| {
         let c3p0 = auth_module.repo_manager.c3p0();
-        Ok(c3p0.transaction(|conn| {
+        c3p0.transaction(|conn| {
             let username = new_hyphenated_uuid();
             let token_type = TokenType::AccountActivation;
 
@@ -66,27 +66,24 @@ fn should_generate_token() {
             assert!(auth_module
                 .token_service
                 .fetch_by_token(conn, &token.data.token, true)
-                .unwrap()
-                .is_some());
+                .is_ok());
             assert_eq!(1, auth_module.token_service.delete(conn, token.clone())?);
             assert!(auth_module
                 .token_service
                 .fetch_by_token(conn, &token.data.token, true)
-                .unwrap()
-                .is_none());
-
+                .is_err());
             Ok(())
-        })?)
+        })
     });
 }
 
 #[test]
 fn should_validate_token_on_fetch() {
-    test(|auth_module| {
+    test(|auth_module, _| {
         let c3p0 = auth_module.repo_manager.c3p0();
         let token_repo = auth_module.repo_manager.token_repo();
 
-        Ok(c3p0.transaction(|conn| {
+        c3p0.transaction(|conn| {
             let token = NewModel {
                 version: 0,
                 data: TokenData {
@@ -105,6 +102,6 @@ fn should_validate_token_on_fetch() {
                 .is_err());
 
             Ok(())
-        })?)
+        })
     });
 }

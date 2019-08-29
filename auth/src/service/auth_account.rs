@@ -1,4 +1,5 @@
 use crate::config::AuthConfig;
+use crate::dto::change_password_dto::ChangePasswordDto;
 use crate::dto::create_user_dto::CreateLoginDto;
 use crate::dto::reset_password_dto::ResetPasswordDto;
 use crate::model::auth_account::{AuthAccountData, AuthAccountModel, AuthAccountStatus};
@@ -15,7 +16,6 @@ use lightspeed_email::model::email::EmailMessage;
 use lightspeed_email::service::email::EmailService;
 use log::*;
 use std::sync::Arc;
-use crate::dto::change_password_dto::ChangePasswordDto;
 
 #[derive(Clone)]
 pub struct AuthAccountService<RepoManager: AuthRepositoryManager> {
@@ -49,7 +49,7 @@ impl<RepoManager: AuthRepositoryManager> AuthAccountService<RepoManager> {
     pub fn login(&self, username: &str, password: &str) -> Result<Auth, LightSpeedError> {
         let model = self
             .auth_repo
-            .fetch_by_username(&self.c3p0.connection()?, username)?
+            .fetch_by_username_optional(&self.c3p0.connection()?, username)?
             .filter(|model| match model.data.status {
                 AuthAccountStatus::Active => true,
                 _ => false,
@@ -81,13 +81,13 @@ impl<RepoManager: AuthRepositoryManager> AuthAccountService<RepoManager> {
             .password_service
             .hash_password(&create_login_dto.password)?;
 
-        let result = self.c3p0.transaction(move |conn| {
+        self.c3p0.transaction(move |conn| {
             let existing_user = self
                 .auth_repo
-                .fetch_by_username(conn, &create_login_dto.username)?;
+                .fetch_by_username_optional(conn, &create_login_dto.username)?;
             let existing_email = self
                 .auth_repo
-                .fetch_by_email(conn, &create_login_dto.email)?;
+                .fetch_by_email_optional(conn, &create_login_dto.email)?;
             Validator::validate((&create_login_dto, |error_details: &mut ErrorDetails| {
                 if existing_user.is_some() {
                     error_details.add_detail("username", "NOT_UNIQUE");
@@ -116,9 +116,7 @@ impl<RepoManager: AuthRepositoryManager> AuthAccountService<RepoManager> {
                 &auth_account_model.data.email,
             )?;
             Ok((auth_account_model, token))
-        })?;
-
-        Ok(result)
+        })
     }
 
     fn send_activation_email(
@@ -147,13 +145,10 @@ impl<RepoManager: AuthRepositoryManager> AuthAccountService<RepoManager> {
         &self,
         previous_activation_token: &str,
     ) -> Result<(AuthAccountModel, TokenModel), LightSpeedError> {
-        let result = self.c3p0.transaction(move |conn| {
+        self.c3p0.transaction(move |conn| {
             let token =
                 self.token_service
                     .fetch_by_token(conn, previous_activation_token, false)?;
-            let token = token.ok_or_else(|| LightSpeedError::BadRequest {
-                message: "Token not found".to_owned(),
-            })?;
 
             Validator::validate(|error_details: &mut ErrorDetails| {
                 match &token.data.token_type {
@@ -170,20 +165,17 @@ impl<RepoManager: AuthRepositoryManager> AuthAccountService<RepoManager> {
 
             let user = self
                 .auth_repo
-                .fetch_by_username(conn, &token.data.username)?
-                .ok_or_else(|| LightSpeedError::BadRequest {
-                    message: "User not found".to_owned(),
-                })?;;
+                .fetch_by_username(conn, &token.data.username)?;
 
             match &user.data.status {
                 AuthAccountStatus::PendingActivation => {}
                 _ => {
-                    return Err(Box::new(LightSpeedError::BadRequest {
+                    return Err(LightSpeedError::BadRequest {
                         message: format!(
                             "User [{}] not in status PendingActivation",
                             token.data.username
                         ),
-                    }))
+                    })
                 }
             };
 
@@ -191,22 +183,17 @@ impl<RepoManager: AuthRepositoryManager> AuthAccountService<RepoManager> {
 
             let token = self.send_activation_email(conn, &user.data.username, &user.data.email)?;
             Ok((user, token))
-        });
-
-        Ok(result?)
+        })
     }
 
     pub fn activate_user(
         &self,
         activation_token: &str,
     ) -> Result<AuthAccountModel, LightSpeedError> {
-        let result = self.c3p0.transaction(move |conn| {
+        self.c3p0.transaction(move |conn| {
             let token = self
                 .token_service
-                .fetch_by_token(conn, activation_token, false)?;
-            let token = token.ok_or_else(|| LightSpeedError::BadRequest {
-                message: "Token not found".to_owned(),
-            })?;
+                .fetch_by_token(conn, activation_token, true)?;
 
             Validator::validate(|error_details: &mut ErrorDetails| {
                 match &token.data.token_type {
@@ -220,21 +207,17 @@ impl<RepoManager: AuthRepositoryManager> AuthAccountService<RepoManager> {
 
             let mut user = self
                 .auth_repo
-                .fetch_by_username(conn, &token.data.username)?
-                .ok_or_else(|| LightSpeedError::BadRequest {
-                    message: "User not found".to_owned(),
-                })?;
-            ;
+                .fetch_by_username(conn, &token.data.username)?;
 
             match &user.data.status {
                 AuthAccountStatus::PendingActivation => {}
                 _ => {
-                    return Err(Box::new(LightSpeedError::BadRequest {
+                    return Err(LightSpeedError::BadRequest {
                         message: format!(
                             "User [{}] not in status PendingActivation",
                             token.data.username
                         ),
-                    }))
+                    })
                 }
             };
 
@@ -243,8 +226,7 @@ impl<RepoManager: AuthRepositoryManager> AuthAccountService<RepoManager> {
             user.data.status = AuthAccountStatus::Active;
             user = self.auth_repo.update(conn, user)?;
             Ok(user)
-        });
-        Ok(result?)
+        })
     }
 
     pub fn send_reset_password_email(
@@ -253,21 +235,15 @@ impl<RepoManager: AuthRepositoryManager> AuthAccountService<RepoManager> {
     ) -> Result<(AuthAccountModel, TokenModel), LightSpeedError> {
         info!("Send reset password email to [{}]", username);
 
-        let result = self.c3p0.transaction(move |conn| {
-            let user = self
-                .auth_repo
-                .fetch_by_username(conn, &username)?
-                .ok_or_else(|| LightSpeedError::BadRequest {
-                    message: "User not found".to_owned(),
-                })?;
-            ;
+        self.c3p0.transaction(move |conn| {
+            let user = self.auth_repo.fetch_by_username(conn, &username)?;
 
             match &user.data.status {
                 AuthAccountStatus::Active => {}
                 _ => {
-                    return Err(Box::new(LightSpeedError::BadRequest {
+                    return Err(LightSpeedError::BadRequest {
                         message: format!("User [{}] not in status Active", username),
-                    }))
+                    })
                 }
             };
 
@@ -286,9 +262,7 @@ impl<RepoManager: AuthRepositoryManager> AuthAccountService<RepoManager> {
             self.email_service.send(email_message)?;
 
             Ok((user, token))
-        });
-
-        Ok(result?)
+        })
     }
 
     pub fn reset_password_by_token(
@@ -301,9 +275,6 @@ impl<RepoManager: AuthRepositoryManager> AuthAccountService<RepoManager> {
             let token =
                 self.token_service
                     .fetch_by_token(conn, &reset_password_dto.token, false)?;
-            let token = token.ok_or_else(|| LightSpeedError::BadRequest {
-                message: "Token not found".to_owned(),
-            })?;
 
             info!("Reset password of user [{}]", token.data.username);
 
@@ -317,21 +288,14 @@ impl<RepoManager: AuthRepositoryManager> AuthAccountService<RepoManager> {
 
             let mut user = self
                 .auth_repo
-                .fetch_by_username(conn, &token.data.username)?
-                .ok_or_else(|| LightSpeedError::BadRequest {
-                    message: "User not found".to_owned(),
-                })?;
-            ;
+                .fetch_by_username(conn, &token.data.username)?;
 
             match &user.data.status {
-                AuthAccountStatus::PendingActivation => {}
+                AuthAccountStatus::Active => {}
                 _ => {
-                    return Err(Box::new(LightSpeedError::BadRequest {
-                        message: format!(
-                            "User [{}] not in status PendingActivation",
-                            token.data.username
-                        ),
-                    }))
+                    return Err(LightSpeedError::BadRequest {
+                        message: format!("User [{}] not in status Active", token.data.username),
+                    })
                 }
             };
 
@@ -346,37 +310,53 @@ impl<RepoManager: AuthRepositoryManager> AuthAccountService<RepoManager> {
         Ok(result?)
     }
 
-    pub fn change_password(&self, dto: ChangePasswordDto)-> Result<AuthAccountModel, LightSpeedError> {
+    pub fn change_password(
+        &self,
+        dto: ChangePasswordDto,
+    ) -> Result<AuthAccountModel, LightSpeedError> {
         Validator::validate(&dto)?;
-        let result = self.c3p0.transaction(move |conn| {
+        self.c3p0.transaction(move |conn| {
             let mut user = self.auth_repo.fetch_by_id(conn, dto.user_id)?;
             info!("Change password of user [{}]", user.data.username);
 
             match &user.data.status {
                 AuthAccountStatus::Active => {}
                 _ => {
-                    return Err(Box::new(LightSpeedError::BadRequest {
-                        message: format!(
-                            "User [{}] not in status Active",
-                            user.data.username
-                        ),
-                    }))
+                    return Err(LightSpeedError::BadRequest {
+                        message: format!("User [{}] not in status Active", user.data.username),
+                    })
                 }
             };
 
-            if !self.password_service.verify_match(&dto.old_password, &user.data.password)? {
-                return Err(Box::new(LightSpeedError::BadRequest {
-                    message: "Wrong credentials".to_owned()
-                }))
+            if !self
+                .password_service
+                .verify_match(&dto.old_password, &user.data.password)?
+            {
+                return Err(LightSpeedError::BadRequest {
+                    message: "Wrong credentials".to_owned(),
+                });
             }
 
-            user.data.password = self
-                .password_service
-                .hash_password(&dto.new_password)?;
+            user.data.password = self.password_service.hash_password(&dto.new_password)?;
 
             user = self.auth_repo.update(conn, user)?;
             Ok(user)
-        });
-        Ok(result?)
+        })
+    }
+
+    pub fn fetch_by_user_id(
+        &self,
+        conn: &RepoManager::CONN,
+        user_id: i64,
+    ) -> Result<AuthAccountModel, LightSpeedError> {
+        self.auth_repo.fetch_by_id(conn, user_id)
+    }
+
+    pub fn fetch_by_username(
+        &self,
+        conn: &RepoManager::CONN,
+        username: &str,
+    ) -> Result<AuthAccountModel, LightSpeedError> {
+        self.auth_repo.fetch_by_username(conn, username)
     }
 }

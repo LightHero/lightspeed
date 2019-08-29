@@ -14,7 +14,7 @@ pub struct TokenData {
     pub expire_at_epoch: i64,
 }
 
-#[derive(Clone, Serialize, Deserialize)]
+#[derive(Debug, PartialEq, Clone, Serialize, Deserialize)]
 pub enum TokenType {
     AccountActivation,
     ResetPassword,

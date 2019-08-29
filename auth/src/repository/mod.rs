@@ -30,9 +30,15 @@ pub trait AuthAccountRepository: Clone {
         &self,
         conn: &Self::CONN,
         username: &str,
+    ) -> Result<AuthAccountModel, LightSpeedError>;
+
+    fn fetch_by_username_optional(
+        &self,
+        conn: &Self::CONN,
+        username: &str,
     ) -> Result<Option<AuthAccountModel>, C3p0Error>;
 
-    fn fetch_by_email(
+    fn fetch_by_email_optional(
         &self,
         conn: &Self::CONN,
         email: &str,
@@ -60,7 +66,7 @@ pub trait TokenRepository: Clone {
         &self,
         conn: &Self::CONN,
         token_string: &str,
-    ) -> Result<Option<TokenModel>, C3p0Error>;
+    ) -> Result<TokenModel, LightSpeedError>;
 
     fn save(&self, conn: &Self::CONN, model: NewModel<TokenData>) -> Result<TokenModel, C3p0Error>;
 

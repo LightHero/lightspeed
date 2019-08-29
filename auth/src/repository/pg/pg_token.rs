@@ -1,6 +1,7 @@
 use crate::model::token::{TokenData, TokenModel};
 use crate::repository::TokenRepository;
 use c3p0::*;
+use lightspeed_core::error::LightSpeedError;
 use std::ops::Deref;
 
 #[derive(Clone)]
@@ -33,13 +34,17 @@ impl TokenRepository for PgTokenRepository {
         &self,
         conn: &PgConnection,
         token_string: &str,
-    ) -> Result<Option<TokenModel>, C3p0Error> {
+    ) -> Result<TokenModel, LightSpeedError> {
         let sql = r#"
             select id, version, data_json from AUTH_TOKEN
             where AUTH_TOKEN.DATA_JSON ->> 'token' = $1
             limit 1
         "#;
-        self.repo.fetch_one_by_sql(conn, sql, &[&token_string])
+        self.repo
+            .fetch_one_with_sql(conn, sql, &[&token_string])?
+            .ok_or_else(|| LightSpeedError::BadRequest {
+                message: format!("No token found with code [{}]", token_string),
+            })
     }
 
     fn save(

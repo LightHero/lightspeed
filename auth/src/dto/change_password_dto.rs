@@ -1,8 +1,8 @@
 use lightspeed_core::error::{ErrorDetails, LightSpeedError};
+use lightspeed_core::service::auth::Owned;
 use lightspeed_core::service::validator::must_match::validate_must_match;
 use lightspeed_core::service::validator::Validable;
 use serde_derive::{Deserialize, Serialize};
-use lightspeed_core::service::auth::Owned;
 
 #[derive(Serialize, Deserialize)]
 pub struct ChangePasswordDto {

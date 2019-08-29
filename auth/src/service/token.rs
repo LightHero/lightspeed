@@ -49,14 +49,13 @@ impl<TokenRepo: TokenRepository> TokenService<TokenRepo> {
         conn: &TokenRepo::CONN,
         token: &str,
         validate: bool,
-    ) -> Result<Option<TokenModel>, LightSpeedError> {
+    ) -> Result<TokenModel, LightSpeedError> {
         let token_model = self.token_repo.fetch_by_token(conn, token)?;
 
         if validate {
-            if let Some(token) = &token_model {
-                Validator::validate(&token.data)?;
-            }
-        }
+            Validator::validate(&token_model.data)?;
+        };
+
         Ok(token_model)
     }
 
