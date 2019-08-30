@@ -8,7 +8,7 @@ pub mod config;
 pub mod model;
 pub mod service;
 
-pub type C3p0 = C3p0PoolPg;
+pub type C3p0 = pg::C3p0PoolPg;
 
 #[derive(Clone)]
 pub struct EmailModule {

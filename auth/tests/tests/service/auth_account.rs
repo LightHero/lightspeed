@@ -185,7 +185,8 @@ fn should_activate_user_only_if_pending_activation() {
 fn should_resend_activation_token_email() {
     test(|auth_module, email_module| {
         let (user, token) = create_user(&auth_module, false)?;
-        email_module.email_service.clear_emails()?;
+        //email_module.email_service.clear_emails()?;
+        let emails_len_before = filter_emails_to(&user.data.email, email_module.email_service.get_emails()?).len();
 
         let (new_user, new_token) = auth_module
             .auth_account_service
@@ -195,9 +196,9 @@ fn should_resend_activation_token_email() {
         assert!(!(token.data.token == new_token.data.token));
 
         let emails = filter_emails_to(&user.data.email, email_module.email_service.get_emails()?);
-        assert_eq!(1, emails.len());
-        assert!(!emails[0].html.clone().unwrap().contains(&token.data.token));
-        assert!(emails[0]
+        assert_eq!(emails_len_before + 1, emails.len());
+        assert!(!emails[emails_len_before].html.clone().unwrap().contains(&token.data.token));
+        assert!(emails[emails_len_before]
             .html
             .clone()
             .unwrap()
@@ -634,7 +635,7 @@ fn should_reset_password_only_if_passwords_match() {
 fn should_send_reset_password_email() {
     test(|auth_module, email_module| {
         let (user, _) = create_user(&auth_module, true)?;
-        email_module.email_service.clear_emails()?;
+        let emails_len_before= filter_emails_to(&user.data.email, email_module.email_service.get_emails()?).len();
 
         let (new_user, token) = auth_module
             .auth_account_service
@@ -643,10 +644,10 @@ fn should_send_reset_password_email() {
         assert_eq!(TokenType::ResetPassword, token.data.token_type);
 
         let emails = filter_emails_to(&user.data.email, email_module.email_service.get_emails()?);
-        assert_eq!(1, emails.len());
+        assert_eq!(emails_len_before + 1, emails.len());
 
         let public_token_url = auth_module.token_service.generate_public_token_url(&token);
-        assert!(emails[0].html.clone().unwrap().contains(&public_token_url));
+        assert!(emails[emails_len_before].html.clone().unwrap().contains(&public_token_url));
 
         Ok(())
     });
@@ -656,7 +657,7 @@ fn should_send_reset_password_email() {
 fn should_not_send_reset_password_email_if_user_not_active() {
     test(|auth_module, email_module| {
         let (user, _) = create_user(&auth_module, false)?;
-        email_module.email_service.clear_emails()?;
+        let emails_len_before= filter_emails_to(&user.data.email, email_module.email_service.get_emails()?).len();
 
         assert!(auth_module
             .auth_account_service
@@ -664,7 +665,7 @@ fn should_not_send_reset_password_email_if_user_not_active() {
             .is_err());
 
         let emails = filter_emails_to(&user.data.email, email_module.email_service.get_emails()?);
-        assert!(emails.is_empty());
+        assert_eq!(emails_len_before, emails.len());
 
         Ok(())
     });

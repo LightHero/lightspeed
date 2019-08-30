@@ -1,5 +1,5 @@
 use c3p0::pg::r2d2::{Pool, PostgresConnectionManager, TlsMode};
-use c3p0::*;
+use c3p0::pg::*;
 use lazy_static::lazy_static;
 use maybe_single::MaybeSingle;
 use testcontainers::*;
@@ -61,7 +61,6 @@ pub fn test(
     callback: fn(&AuthModule<RepoManager>, &EmailModule) -> Result<(), Box<dyn std::error::Error>>,
 ) {
     SINGLETON.get(|((auth_module, email_module), _)| {
-        email_module.email_service.clear_emails().unwrap();
         callback(&auth_module, &email_module).unwrap();
     });
 }

@@ -1,6 +1,7 @@
 use crate::model::auth_account::{AuthAccountData, AuthAccountModel};
 use crate::repository::AuthAccountRepository;
 use c3p0::*;
+use c3p0::pg::*;
 use lightspeed_core::error::LightSpeedError;
 use std::ops::Deref;
 

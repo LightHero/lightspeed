@@ -2,6 +2,7 @@ use crate::repository::pg::pg_auth_account::PgAuthAccountRepository;
 use crate::repository::pg::pg_token::PgTokenRepository;
 use crate::repository::AuthRepositoryManager;
 use c3p0::*;
+use c3p0::pg::*;
 use include_dir::*;
 use lightspeed_core::error::LightSpeedError;
 use std::convert::TryInto;
@@ -33,15 +34,15 @@ impl AuthRepositoryManager for PgAuthRepositoryManager {
     }
 
     fn start(&self) -> Result<(), LightSpeedError> {
-        let migrate_table_name = format!("AUTH_{}", migrate::C3P0_MIGRATE_TABLE_DEFAULT);
-        let migrations: migrate::Migrations =
+        let migrate_table_name = format!("AUTH_{}", C3P0_MIGRATE_TABLE_DEFAULT);
+        let migrations: Migrations =
             (&MIGRATIONS)
                 .try_into()
                 .map_err(|err| LightSpeedError::ModuleStartError {
                     message: format!("AuthDbService failed to start: {}", err),
                 })?;
 
-        let migrate = migrate::C3p0MigrateBuilder::new(self.c3p0().clone())
+        let migrate = C3p0MigrateBuilder::new(self.c3p0().clone())
             .with_table_name(migrate_table_name)
             .with_migrations(migrations)
             .build();
