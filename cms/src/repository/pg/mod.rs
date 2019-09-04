@@ -1,45 +1,39 @@
-use crate::repository::pg::pg_auth_account::PgAuthAccountRepository;
-use crate::repository::pg::pg_token::PgTokenRepository;
-use crate::repository::AuthRepositoryManager;
+
 use c3p0::*;
 use c3p0::pg::*;
 use include_dir::*;
 use lightspeed_core::error::LightSpeedError;
 use std::convert::TryInto;
-
-pub mod pg_auth_account;
-pub mod pg_token;
+use crate::repository::CmsRepositoryManager;
 
 const MIGRATIONS: Dir = include_dir!("./src_resources/db/pg/migrations");
 
 #[derive(Clone)]
-pub struct PgAuthRepositoryManager {
+pub struct PgCmsRepositoryManager {
     c3p0: C3p0PoolPg,
 }
 
-impl PgAuthRepositoryManager {
+impl PgCmsRepositoryManager {
     pub fn new(c3p0: C3p0PoolPg) -> Self {
         Self { c3p0 }
     }
 }
 
-impl AuthRepositoryManager for PgAuthRepositoryManager {
+impl CmsRepositoryManager for PgCmsRepositoryManager {
     type CONN = PgConnection;
     type C3P0 = C3p0PoolPg;
-    type AUTH_ACCOUNT_REPO = PgAuthAccountRepository;
-    type TOKEN_REPO = PgTokenRepository;
 
     fn c3p0(&self) -> &C3p0PoolPg {
         &self.c3p0
     }
 
     fn start(&self) -> Result<(), LightSpeedError> {
-        let migrate_table_name = format!("AUTH_{}", C3P0_MIGRATE_TABLE_DEFAULT);
+        let migrate_table_name = format!("CMS_{}", C3P0_MIGRATE_TABLE_DEFAULT);
         let migrations: Migrations =
             (&MIGRATIONS)
                 .try_into()
                 .map_err(|err| LightSpeedError::ModuleStartError {
-                    message: format!("PgAuthRepositoryManager failed to start: {}", err),
+                    message: format!("CmsRepositoryManager failed to start: {}", err),
                 })?;
 
         let migrate = C3p0MigrateBuilder::new(self.c3p0().clone())
@@ -50,15 +44,8 @@ impl AuthRepositoryManager for PgAuthRepositoryManager {
         migrate
             .migrate()
             .map_err(|err| LightSpeedError::ModuleStartError {
-                message: format!("PgAuthRepositoryManager failed to start: {}", err),
+                message: format!("CmsRepositoryManager failed to start: {}", err),
             })
     }
 
-    fn auth_account_repo(&self) -> Self::AUTH_ACCOUNT_REPO {
-        PgAuthAccountRepository::default()
-    }
-
-    fn token_repo(&self) -> Self::TOKEN_REPO {
-        PgTokenRepository::default()
-    }
 }

@@ -1145,6 +1145,26 @@ dependencies = [
 ]
 
 [[package]]
+name = "lightspeed_cms"
+version = "0.1.0"
+dependencies = [
+ "actix-web 1.0.2 (registry+https://github.com/rust-lang/crates.io-index)",
+ "c3p0 0.20.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "err-derive 0.1.5 (registry+https://github.com/rust-lang/crates.io-index)",
+ "include_dir 0.2.1 (registry+https://github.com/rust-lang/crates.io-index)",
+ "lazy_static 1.3.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "lightspeed_core 0.1.0",
+ "lightspeed_logger 0.1.0",
+ "log 0.4.6 (registry+https://github.com/rust-lang/crates.io-index)",
+ "maybe-single 0.4.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "rand 0.7.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "serde 1.0.92 (registry+https://github.com/rust-lang/crates.io-index)",
+ "serde_derive 1.0.92 (registry+https://github.com/rust-lang/crates.io-index)",
+ "structopt 0.2.16 (registry+https://github.com/rust-lang/crates.io-index)",
+ "testcontainers 0.6.0 (registry+https://github.com/rust-lang/crates.io-index)",
+]
+
+[[package]]
 name = "lightspeed_core"
 version = "0.1.0"
 dependencies = [
