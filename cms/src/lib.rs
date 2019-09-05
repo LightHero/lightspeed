@@ -1,7 +1,7 @@
+use crate::config::CmsConfig;
+use crate::repository::CmsRepositoryManager;
 use lightspeed_core::{config::UIConfig, error::LightSpeedError};
 use log::*;
-use crate::repository::CmsRepositoryManager;
-use crate::config::CmsConfig;
 
 pub mod config;
 pub mod dto;
@@ -15,15 +15,10 @@ pub struct CmsModule<RepoManager: CmsRepositoryManager> {
     pub cms_config: CmsConfig,
 
     pub repo_manager: RepoManager,
-
 }
 
 impl<RepoManager: CmsRepositoryManager> CmsModule<RepoManager> {
-    pub fn new(
-        repo_manager: RepoManager,
-        cms_config: CmsConfig,
-        ui_config: UIConfig,
-    ) -> Self {
+    pub fn new(repo_manager: RepoManager, cms_config: CmsConfig, ui_config: UIConfig) -> Self {
         println!("Creating AuthModule");
         info!("Creating AuthModule");
 
@@ -32,14 +27,11 @@ impl<RepoManager: CmsRepositoryManager> CmsModule<RepoManager> {
             cms_config,
 
             repo_manager,
-
         }
     }
 }
 
-impl<RepoManager: CmsRepositoryManager> lightspeed_core::module::Module
-    for CmsModule<RepoManager>
-{
+impl<RepoManager: CmsRepositoryManager> lightspeed_core::module::Module for CmsModule<RepoManager> {
     fn start(&mut self) -> Result<(), LightSpeedError> {
         info!("Starting CmsModule");
         self.repo_manager.start()?;

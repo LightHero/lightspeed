@@ -1,10 +1,9 @@
-
-use c3p0::*;
+use crate::repository::CmsRepositoryManager;
 use c3p0::pg::*;
+use c3p0::*;
 use include_dir::*;
 use lightspeed_core::error::LightSpeedError;
 use std::convert::TryInto;
-use crate::repository::CmsRepositoryManager;
 
 const MIGRATIONS: Dir = include_dir!("./src_resources/db/pg/migrations");
 
@@ -47,5 +46,4 @@ impl CmsRepositoryManager for PgCmsRepositoryManager {
                 message: format!("CmsRepositoryManager failed to start: {}", err),
             })
     }
-
 }

@@ -4,11 +4,11 @@ use lazy_static::lazy_static;
 use maybe_single::MaybeSingle;
 use testcontainers::*;
 
-use lightspeed_core::config::UIConfig;
-use lightspeed_core::module::Module;
+use lightspeed_cms::config::CmsConfig;
 use lightspeed_cms::repository::pg::PgCmsRepositoryManager;
 use lightspeed_cms::CmsModule;
-use lightspeed_cms::config::CmsConfig;
+use lightspeed_core::config::UIConfig;
+use lightspeed_core::module::Module;
 
 mod tests;
 
@@ -49,9 +49,7 @@ fn init() -> (
     ((cms_module), node)
 }
 
-pub fn test(
-    callback: fn(&CmsModule<RepoManager>) -> Result<(), Box<dyn std::error::Error>>,
-) {
+pub fn test(callback: fn(&CmsModule<RepoManager>) -> Result<(), Box<dyn std::error::Error>>) {
     SINGLETON.get(|(cms_module, _)| {
         callback(&cms_module).unwrap();
     });

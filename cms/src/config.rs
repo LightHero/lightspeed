@@ -2,9 +2,7 @@ use structopt::StructOpt;
 
 #[derive(Debug, Clone, StructOpt)]
 #[structopt(rename_all = "kebab-case")]
-pub struct CmsConfig {
-
-}
+pub struct CmsConfig {}
 
 impl CmsConfig {
     pub fn build() -> Self {
