@@ -85,6 +85,15 @@ impl From<&str> for ErrorDetail {
     }
 }
 
+impl From<(&str, Vec<String>)> for ErrorDetail {
+    fn from(error: (&str, Vec<String>)) -> Self {
+        ErrorDetail {
+            error: error.0.to_string(),
+            params: error.1,
+        }
+    }
+}
+
 impl PartialEq<ErrorDetail> for &str {
     fn eq(&self, other: &ErrorDetail) -> bool {
         other.params.is_empty() && other.error.eq(self)

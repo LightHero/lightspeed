@@ -1,5 +1,4 @@
 pub struct Content {
-    pub schema_name: String,
     pub fields: Vec<ContentField>,
     pub created_ms: i64,
     pub updated_ms: i64,
