@@ -180,9 +180,10 @@ pub struct Validator {}
 
 impl Validator {
     pub fn validate<V: Validable>(validable: V) -> Result<(), LightSpeedError> {
-        let mut error_details = ErrorDetails::default();
+        let mut error_details = ErrorDetails::new();
         validable.validate(&mut error_details)?;
-        if !error_details.details.is_empty() {
+
+        if !error_details.details().is_empty() {
             Err(LightSpeedError::ValidationError {
                 details: error_details,
             })
@@ -213,7 +214,7 @@ pub mod test {
         assert!(result.is_err());
         match result {
             Err(LightSpeedError::ValidationError { details }) => {
-                assert_eq!("duplicated", details.details["username"][0])
+                assert_eq!("duplicated", details.details()["username"][0])
             }
             _ => assert!(false),
         }
@@ -235,7 +236,7 @@ pub mod test {
     #[test]
     pub fn validator_should_accept_validable() {
         let validable = Tester {
-            error_details: ErrorDetails::default(),
+            error_details: ErrorDetails::new(),
         };
         let result = Validator::validate(&validable);
         assert!(result.is_ok());
@@ -243,7 +244,7 @@ pub mod test {
 
     #[test]
     pub fn validator_should_accept_validable_with_errors() {
-        let mut error_details = ErrorDetails::default();
+        let mut error_details = ErrorDetails::new();
         error_details.add_detail("1", "2");
 
         let validable = Tester { error_details };
@@ -252,7 +253,7 @@ pub mod test {
         assert!(result.is_err());
         match result {
             Err(LightSpeedError::ValidationError { details }) => {
-                assert_eq!("2", details.details["1"][0])
+                assert_eq!("2", details.details()["1"][0])
             }
             _ => assert!(false),
         }
@@ -260,8 +261,8 @@ pub mod test {
 
     #[test]
     pub fn validator_should_accept_pair() {
-        let validable1 = Tester::default();
-        let validable2 = Tester::default();
+        let validable1 = Tester::new();
+        let validable2 = Tester::new();
 
         let result = Validator::validate((&validable1, &validable2));
 
@@ -270,7 +271,7 @@ pub mod test {
 
     #[test]
     pub fn validator_should_accept_pair_with_closures() {
-        let validable1 = Tester::default();
+        let validable1 = Tester::new();
 
         let result = Validator::validate((&validable1, |_error_details: &mut ErrorDetails| Ok(())));
 
@@ -279,7 +280,7 @@ pub mod test {
 
     #[test]
     pub fn validator_should_aggregate_errors() {
-        let mut error_details = ErrorDetails::default();
+        let mut error_details = ErrorDetails::new();
         error_details.add_detail("1", "2");
 
         let validable1 = Tester {
@@ -314,21 +315,27 @@ pub mod test {
         assert!(result.is_err());
         match result {
             Err(LightSpeedError::ValidationError { details }) => {
-                assert_eq!(5, details.details["1"].len());
-                assert_eq!(2, details.details["2"].len());
+                assert_eq!(5, details.details()["1"].len());
+                assert_eq!(2, details.details()["2"].len());
             }
             _ => assert!(false),
         }
     }
 
-    #[derive(Default, Clone)]
+    #[derive(Clone)]
     struct Tester {
         error_details: ErrorDetails,
     }
 
+    impl Tester {
+        fn new() -> Self {
+            Self {error_details: ErrorDetails::new()}
+        }
+    }
+
     impl Validable for &Tester {
         fn validate(&self, error_details: &mut ErrorDetails) -> Result<(), LightSpeedError> {
-            for (key, details) in &self.error_details.details {
+            for (key, details) in self.error_details.details() {
                 for detail in details {
                     error_details.add_detail(key.clone(), detail.clone())
                 }

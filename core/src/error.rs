@@ -46,10 +46,15 @@ pub enum LightSpeedError {
     BadRequest { message: String },
 }
 
-#[derive(Default, Debug, PartialEq, Clone)]
-pub struct ErrorDetails {
-    pub message: Option<String>,
-    pub details: HashMap<String, Vec<ErrorDetail>>,
+#[derive(Debug, PartialEq, Clone)]
+pub enum  ErrorDetails {
+    Root{message: Option<String>, details: HashMap<String, Vec<ErrorDetail>>}
+}
+
+impl ErrorDetails {
+    pub fn new() -> Self {
+        ErrorDetails::Root{message: None, details: HashMap::new()}
+    }
 }
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize)]
@@ -108,13 +113,22 @@ impl PartialEq<ErrorDetail> for String {
 
 impl ErrorDetails {
     pub fn add_detail<K: Into<String>, V: Into<ErrorDetail>>(&mut self, key: K, value: V) {
-        match self.details.entry(key.into()) {
+        let details = match self {
+            ErrorDetails::Root {details, ..} => details
+        };
+        match details.entry(key.into()) {
             Entry::Occupied(mut entry) => {
                 entry.get_mut().push(value.into());
             }
             Entry::Vacant(entry) => {
                 entry.insert(vec![value.into()]);
             }
+        }
+    }
+
+    pub fn details(&self) -> &HashMap<String, Vec<ErrorDetail>> {
+        match self {
+            ErrorDetails::Root {details, ..} => details
         }
     }
 }
@@ -134,19 +148,19 @@ pub mod test {
 
     #[test]
     pub fn error_details_should_add_entries() {
-        let mut err = ErrorDetails::default();
-        assert!(err.details.is_empty());
+        let mut err = ErrorDetails::new();
+        assert!(err.details().is_empty());
 
         err.add_detail("hello", "world_1");
         err.add_detail("hello", "world_2");
         err.add_detail("baby", "asta la vista");
 
-        assert_eq!(2, err.details.len());
+        assert_eq!(2, err.details().len());
         assert_eq!(
             vec!["world_1".to_owned(), "world_2".to_owned()],
-            err.details["hello"]
+            err.details()["hello"]
         );
-        assert_eq!(vec!["asta la vista".to_owned()], err.details["baby"]);
+        assert_eq!(vec!["asta la vista".to_owned()], err.details()["baby"]);
     }
 
 }

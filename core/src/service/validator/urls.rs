@@ -13,19 +13,19 @@ mod tests {
 
     #[test]
     fn should_validate_and_return_no_errors() {
-        let mut error_details = ErrorDetails::default();
+        let mut error_details = ErrorDetails::new();
         validate_url(&mut error_details, "url", "http://www.gmail.com");
-        assert!(error_details.details.is_empty())
+        assert!(error_details.details().is_empty())
     }
 
     #[test]
     fn should_validate_and_return_errors() {
-        let mut error_details = ErrorDetails::default();
+        let mut error_details = ErrorDetails::new();
         validate_url(&mut error_details, "url", "gmail");
-        assert_eq!(1, error_details.details.len());
+        assert_eq!(1, error_details.details().len());
         assert_eq!(
             ErrorDetail::new("NOT_VALID", vec![]),
-            error_details.details["url"][0]
+            error_details.details()["url"][0]
         )
     }
 

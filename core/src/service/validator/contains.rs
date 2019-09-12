@@ -26,19 +26,19 @@ mod tests {
 
     #[test]
     fn should_validate_and_return_no_errors() {
-        let mut error_details = ErrorDetails::default();
+        let mut error_details = ErrorDetails::new();
         validate_contains(&mut error_details, "name", "ufoscout", "ufo");
-        assert!(error_details.details.is_empty())
+        assert!(error_details.details().is_empty())
     }
 
     #[test]
     fn should_validate_and_return_errors() {
-        let mut error_details = ErrorDetails::default();
+        let mut error_details = ErrorDetails::new();
         validate_contains(&mut error_details, "name", "ufoscout", "alien");
-        assert_eq!(1, error_details.details.len());
+        assert_eq!(1, error_details.details().len());
         assert_eq!(
             ErrorDetail::new("NOT_CONTAIN", vec!["alien".to_string()]),
-            error_details.details["name"][0]
+            error_details.details()["name"][0]
         )
     }
 }

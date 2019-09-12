@@ -15,19 +15,19 @@ mod tests {
 
     #[test]
     fn should_validate_and_return_no_errors() {
-        let mut error_details = ErrorDetails::default();
+        let mut error_details = ErrorDetails::new();
         validate_email(&mut error_details, "email", "ufoscout@gmail.com");
-        assert!(error_details.details.is_empty())
+        assert!(error_details.details().is_empty())
     }
 
     #[test]
     fn should_validate_and_return_errors() {
-        let mut error_details = ErrorDetails::default();
+        let mut error_details = ErrorDetails::new();
         validate_email(&mut error_details, "email", "ufoscout_gmail.com");
-        assert_eq!(1, error_details.details.len());
+        assert_eq!(1, error_details.details().len());
         assert_eq!(
             ErrorDetail::new("NOT_VALID", vec![]),
-            error_details.details["email"][0]
+            error_details.details()["email"][0]
         )
     }
 

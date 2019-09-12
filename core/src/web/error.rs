@@ -13,10 +13,12 @@ pub struct WebErrorDetails<'a> {
 
 impl<'a> WebErrorDetails<'a> {
     pub fn from(code: u16, error_details: &'a ErrorDetails) -> Self {
-        WebErrorDetails {
-            code,
-            message: &error_details.message,
-            details: &error_details.details,
+        match error_details {
+            ErrorDetails::Root {message, details} => WebErrorDetails {
+                code,
+                message,
+                details,
+            }
         }
     }
 }

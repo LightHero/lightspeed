@@ -6,6 +6,7 @@ use lightspeed_core::service::validator::Validator;
 pub struct ContentService {}
 
 impl ContentService {
+
     pub fn validate_content(schema: &Schema, content: &Content) -> Result<(), LightSpeedError> {
         Validator::validate(|error_details: &mut ErrorDetails| {
             let content_fields_not_in_schema = get_content_fields_not_in_schema(schema, content);
@@ -21,11 +22,7 @@ impl ContentService {
             for schema_field in &schema.fields {
                 if let Some(content_field) = get_content_field_by_name(&schema_field.label, content)
                 {
-                    schema_field.field_validation.validate_content_field(
-                        content_field,
-                        schema_field.required,
-                        error_details,
-                    )
+                    content_field.validate(schema_field, error_details);
                 } else {
                     if schema_field.required {
                         content_missing_fields.push(schema_field.label.to_owned())
@@ -135,7 +132,7 @@ mod test {
         assert!(result.is_err());
         match result {
             Err(LightSpeedError::ValidationError { details }) => assert_eq!(
-                details.details["fields"],
+                details.details()["fields"],
                 vec![ErrorDetail::new("UNKNOWN", vec!["two".to_owned()])]
             ),
             _ => assert!(false),
@@ -189,7 +186,7 @@ mod test {
         assert!(result.is_err());
         match result {
             Err(LightSpeedError::ValidationError { details }) => assert_eq!(
-                details.details["fields"],
+                details.details()["fields"],
                 vec![ErrorDetail::new(
                     "MISSING_REQUIRED",
                     vec!["one".to_owned(), "four".to_owned()]
@@ -226,7 +223,7 @@ mod test {
         assert!(result.is_err());
         match result {
             Err(LightSpeedError::ValidationError { details }) => assert_eq!(
-                details.details["fields.one"],
+                details.details()["fields.one"],
                 vec![ErrorDetail::new("SHOULD_BE_OF_TYPE_BOOLEAN", vec![])]
             ),
             _ => assert!(false),
@@ -264,7 +261,7 @@ mod test {
         assert!(result.is_err());
         match result {
             Err(LightSpeedError::ValidationError { details }) => assert_eq!(
-                details.details["fields.one"],
+                details.details()["fields.one"],
                 vec![ErrorDetail::new("SHOULD_BE_OF_TYPE_STRING", vec![])]
             ),
             _ => assert!(false),
@@ -302,7 +299,7 @@ mod test {
         assert!(result.is_err());
         match result {
             Err(LightSpeedError::ValidationError { details }) => assert_eq!(
-                details.details["fields.one"],
+                details.details()["fields.one"],
                 vec![ErrorDetail::new("SHOULD_BE_OF_TYPE_NUMBER", vec![])]
             ),
             _ => assert!(false),
@@ -340,7 +337,7 @@ mod test {
         assert!(result.is_err());
         match result {
             Err(LightSpeedError::ValidationError { details }) => assert_eq!(
-                details.details["fields.one"],
+                details.details()["fields.one"],
                 vec![ErrorDetail::new(
                     "MUST_BE_GREATER_OR_EQUAL",
                     vec!["100".to_owned()]
@@ -381,7 +378,7 @@ mod test {
         assert!(result.is_err());
         match result {
             Err(LightSpeedError::ValidationError { details }) => assert_eq!(
-                details.details["fields.one"],
+                details.details()["fields.one"],
                 vec![ErrorDetail::new(
                     "MUST_BE_LESS_OR_EQUAL",
                     vec!["1000".to_owned()]
@@ -422,7 +419,7 @@ mod test {
         assert!(result.is_err());
         match result {
             Err(LightSpeedError::ValidationError { details }) => assert_eq!(
-                details.details["fields.one"],
+                details.details()["fields.one"],
                 vec![ErrorDetail::new(
                     "MUST_BE_GREATER_OR_EQUAL",
                     vec!["1000".to_owned()]
@@ -463,7 +460,7 @@ mod test {
         assert!(result.is_err());
         match result {
             Err(LightSpeedError::ValidationError { details }) => assert_eq!(
-                details.details["fields.one"],
+                details.details()["fields.one"],
                 vec![ErrorDetail::new(
                     "MUST_BE_LESS_OR_EQUAL",
                     vec!["10".to_owned()]
@@ -514,7 +511,7 @@ mod test {
         assert!(result.is_err());
         match result {
             Err(LightSpeedError::ValidationError { details }) => assert_eq!(
-                details.details["fields.one"],
+                details.details()["fields.one"],
                 vec![ErrorDetail::new("VALUE_REQUIRED", vec![])]
             ),
             _ => assert!(false),
