@@ -2,23 +2,30 @@ use crate::error::{ErrorDetail, ErrorDetails, LightSpeedError};
 use actix_web::dev::HttpResponseBuilder;
 use actix_web::{HttpResponse, ResponseError};
 use serde_derive::Serialize;
+use std::cell::RefCell;
 use std::collections::HashMap;
+use std::ops::Deref;
 
 #[derive(Serialize)]
 pub struct WebErrorDetails<'a> {
     pub code: u16,
     pub message: &'a Option<String>,
-    pub details: &'a HashMap<String, Vec<ErrorDetail>>,
+    pub details: &'a RefCell<HashMap<String, Vec<ErrorDetail>>>,
 }
 
 impl<'a> WebErrorDetails<'a> {
     pub fn from(code: u16, error_details: &'a ErrorDetails) -> Self {
         match error_details {
-            ErrorDetails::Root {message, details} => WebErrorDetails {
+            ErrorDetails::Root { message, details } => WebErrorDetails {
                 code,
                 message,
-                details,
-            }
+                details: details.deref(),
+            },
+            ErrorDetails::Child { details, .. } => WebErrorDetails {
+                code,
+                message: &None,
+                details: details.deref(),
+            },
         }
     }
 }

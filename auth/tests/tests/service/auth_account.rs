@@ -362,7 +362,7 @@ fn create_user_should_fail_if_passwords_do_not_match() {
 
         match &result {
             Err(LightSpeedError::ValidationError { details }) => {
-                assert!(details.details().contains_key("password"))
+                assert!(details.details().borrow().contains_key("password"))
             }
             _ => assert!(false),
         }
@@ -394,7 +394,7 @@ fn create_user_should_fail_if_not_valid_email() {
 
         match &result {
             Err(LightSpeedError::ValidationError { details }) => {
-                assert!(details.details().contains_key("email"))
+                assert!(details.details().borrow().contains_key("email"))
             }
             _ => assert!(false),
         }
@@ -425,9 +425,10 @@ fn create_user_should_fail_if_not_accepted_privacy_policy() {
         assert!(result.is_err());
 
         match &result {
-            Err(LightSpeedError::ValidationError { details }) => {
-                assert!(details.details().contains_key("accept_privacy_policy"))
-            }
+            Err(LightSpeedError::ValidationError { details }) => assert!(details
+                .details()
+                .borrow()
+                .contains_key("accept_privacy_policy")),
             _ => assert!(false),
         }
 
@@ -462,7 +463,7 @@ fn create_user_should_fail_if_username_not_unique() {
 
         match &result {
             Err(LightSpeedError::ValidationError { details }) => {
-                assert!(details.details().contains_key("username"))
+                assert!(details.details().borrow().contains_key("username"))
             }
             _ => assert!(false),
         }
@@ -497,7 +498,7 @@ fn create_user_should_fail_if_email_not_unique() {
 
         match &result {
             Err(LightSpeedError::ValidationError { details }) => {
-                assert!(details.details().contains_key("email"))
+                assert!(details.details().borrow().contains_key("email"))
             }
             _ => assert!(false),
         }
@@ -627,7 +628,7 @@ fn should_reset_password_only_if_passwords_match() {
 
         match &result {
             Err(LightSpeedError::ValidationError { details }) => {
-                assert!(details.details().contains_key("password"))
+                assert!(details.details().borrow().contains_key("password"))
             }
             _ => assert!(false),
         }
@@ -792,7 +793,7 @@ fn should_not_change_user_password_if_new_passwords_do_not_match() {
 
         match &result {
             Err(LightSpeedError::ValidationError { details }) => {
-                assert!(details.details().contains_key("new_password"))
+                assert!(details.details().borrow().contains_key("new_password"))
             }
             _ => assert!(false),
         }

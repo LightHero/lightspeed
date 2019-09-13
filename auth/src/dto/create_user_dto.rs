@@ -2,7 +2,7 @@ use lightspeed_core::error::{ErrorDetails, LightSpeedError};
 use lightspeed_core::model::language::Language;
 use lightspeed_core::service::validator::boolean::validate_is_true;
 use lightspeed_core::service::validator::email::validate_email;
-use lightspeed_core::service::validator::must_match::validate_must_match;
+use lightspeed_core::service::validator::must_match::validate_must_be_equals;
 use lightspeed_core::service::validator::Validable;
 use serde_derive::{Deserialize, Serialize};
 use std::collections::HashMap;
@@ -19,8 +19,8 @@ pub struct CreateLoginDto {
 }
 
 impl Validable for &CreateLoginDto {
-    fn validate(&self, error_details: &mut ErrorDetails) -> Result<(), LightSpeedError> {
-        validate_must_match(
+    fn validate(&self, error_details: &ErrorDetails) -> Result<(), LightSpeedError> {
+        validate_must_be_equals(
             error_details,
             "password",
             &self.password,

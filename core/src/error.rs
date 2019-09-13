@@ -1,8 +1,11 @@
 use c3p0_common::error::C3p0Error;
 use err_derive::Error;
 use serde::Serialize;
+use std::cell::RefCell;
 use std::collections::hash_map::Entry;
 use std::collections::HashMap;
+use std::ops::Deref;
+use std::rc::Rc;
 
 #[derive(Error, Debug)]
 pub enum LightSpeedError {
@@ -42,19 +45,21 @@ pub enum LightSpeedError {
 
     #[error(display = "ValidationError [{:?}]", details)]
     ValidationError { details: ErrorDetails },
+
     #[error(display = "BadRequest [{}]", message)]
     BadRequest { message: String },
 }
 
-#[derive(Debug, PartialEq, Clone)]
-pub enum  ErrorDetails {
-    Root{message: Option<String>, details: HashMap<String, Vec<ErrorDetail>>}
-}
-
-impl ErrorDetails {
-    pub fn new() -> Self {
-        ErrorDetails::Root{message: None, details: HashMap::new()}
-    }
+#[derive(Debug, PartialEq)]
+pub enum ErrorDetails {
+    Root {
+        message: Option<String>,
+        details: Rc<RefCell<HashMap<String, Vec<ErrorDetail>>>>,
+    },
+    Child {
+        scope: String,
+        details: Rc<RefCell<HashMap<String, Vec<ErrorDetail>>>>,
+    },
 }
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize)]
@@ -111,12 +116,28 @@ impl PartialEq<ErrorDetail> for String {
     }
 }
 
+impl Default for ErrorDetails {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl ErrorDetails {
-    pub fn add_detail<K: Into<String>, V: Into<ErrorDetail>>(&mut self, key: K, value: V) {
-        let details = match self {
-            ErrorDetails::Root {details, ..} => details
+    pub fn new() -> Self {
+        ErrorDetails::Root {
+            message: None,
+            details: Rc::new(RefCell::new(HashMap::new())),
+        }
+    }
+
+    pub fn add_detail<K: Into<String>, V: Into<ErrorDetail>>(&self, key: K, value: V) {
+        let (scoped_key, details) = match self {
+            ErrorDetails::Root { details, .. } => (key.into(), details),
+            ErrorDetails::Child { details, scope } => {
+                (format!("{}.{}", scope, key.into()), details)
+            }
         };
-        match details.entry(key.into()) {
+        match details.deref().borrow_mut().entry(scoped_key) {
             Entry::Occupied(mut entry) => {
                 entry.get_mut().push(value.into());
             }
@@ -126,9 +147,24 @@ impl ErrorDetails {
         }
     }
 
-    pub fn details(&self) -> &HashMap<String, Vec<ErrorDetail>> {
+    pub fn details(&self) -> &Rc<RefCell<HashMap<String, Vec<ErrorDetail>>>> {
         match self {
-            ErrorDetails::Root {details, ..} => details
+            ErrorDetails::Root { details, .. } => details,
+            ErrorDetails::Child { details, .. } => details,
+        }
+    }
+
+    pub fn with_scope<S: Into<String>>(&self, scope: S) -> ErrorDetails {
+        let (scoped_key, details) = match self {
+            ErrorDetails::Root { details, .. } => (scope.into(), details),
+            ErrorDetails::Child {
+                details,
+                scope: this_scope,
+            } => (format!("{}.{}", this_scope, scope.into()), details),
+        };
+        ErrorDetails::Child {
+            scope: scoped_key,
+            details: details.clone(),
         }
     }
 }
@@ -148,19 +184,64 @@ pub mod test {
 
     #[test]
     pub fn error_details_should_add_entries() {
-        let mut err = ErrorDetails::new();
-        assert!(err.details().is_empty());
+        let err = ErrorDetails::new();
+        assert!(err.details().borrow().is_empty());
 
         err.add_detail("hello", "world_1");
         err.add_detail("hello", "world_2");
         err.add_detail("baby", "asta la vista");
 
-        assert_eq!(2, err.details().len());
+        assert_eq!(2, err.details().borrow().len());
         assert_eq!(
             vec!["world_1".to_owned(), "world_2".to_owned()],
-            err.details()["hello"]
+            err.details().borrow()["hello"]
         );
-        assert_eq!(vec!["asta la vista".to_owned()], err.details()["baby"]);
+        assert_eq!(
+            vec!["asta la vista".to_owned()],
+            err.details().borrow()["baby"]
+        );
+    }
+
+    #[test]
+    pub fn error_details_should_have_scoped_children() {
+        let root = ErrorDetails::new();
+
+        root.add_detail("root", "world_1");
+
+        let child_one = root.with_scope("one");
+        child_one.add_detail("A", "child one.A");
+        child_one.add_detail("B", "child one.B");
+
+        let child_one_one = child_one.with_scope("inner");
+        child_one_one.add_detail("A", "child one.inner.A");
+
+        let child_two = root.with_scope("two");
+        child_two.add_detail("A", "child two.A");
+
+        assert_eq!(5, root.details().borrow().len());
+
+        println!("{:?}", root.details());
+
+        assert_eq!(
+            ErrorDetail::new("world_1", vec![]),
+            root.details().clone().borrow()["root"][0]
+        );
+        assert_eq!(
+            ErrorDetail::new("child one.A", vec![]),
+            root.details().clone().borrow()["one.A"][0]
+        );
+        assert_eq!(
+            ErrorDetail::new("child one.B", vec![]),
+            root.details().clone().borrow()["one.B"][0]
+        );
+        assert_eq!(
+            ErrorDetail::new("child one.inner.A", vec![]),
+            root.details().clone().borrow()["one.inner.A"][0]
+        );
+        assert_eq!(
+            ErrorDetail::new("child two.A", vec![]),
+            root.details().clone().borrow()["two.A"][0]
+        );
     }
 
 }

@@ -21,7 +21,7 @@ pub enum TokenType {
 }
 
 impl Validable for &TokenData {
-    fn validate(&self, error_details: &mut ErrorDetails) -> Result<(), LightSpeedError> {
+    fn validate(&self, error_details: &ErrorDetails) -> Result<(), LightSpeedError> {
         if current_epoch_seconds() > self.expire_at_epoch {
             error_details.add_detail("expire_at_epoch", "expired");
         }
@@ -61,7 +61,7 @@ pub mod test {
         assert!(result.is_err());
         match result {
             Err(LightSpeedError::ValidationError { details }) => {
-                assert_eq!("expired", details.details()["expire_at_epoch"][0])
+                assert_eq!("expired", details.details().borrow()["expire_at_epoch"][0])
             }
             _ => assert!(false),
         }

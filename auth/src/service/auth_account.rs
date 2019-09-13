@@ -88,7 +88,7 @@ impl<RepoManager: AuthRepositoryManager> AuthAccountService<RepoManager> {
             let existing_email = self
                 .auth_repo
                 .fetch_by_email_optional(conn, &create_login_dto.email)?;
-            Validator::validate((&create_login_dto, |error_details: &mut ErrorDetails| {
+            Validator::validate((&create_login_dto, |error_details: &ErrorDetails| {
                 if existing_user.is_some() {
                     error_details.add_detail("username", "NOT_UNIQUE");
                 }
@@ -150,7 +150,7 @@ impl<RepoManager: AuthRepositoryManager> AuthAccountService<RepoManager> {
                 self.token_service
                     .fetch_by_token(conn, previous_activation_token, false)?;
 
-            Validator::validate(|error_details: &mut ErrorDetails| {
+            Validator::validate(|error_details: &ErrorDetails| {
                 match &token.data.token_type {
                     TokenType::AccountActivation => {}
                     _ => error_details.add_detail("token_type", "WRONG_TYPE"),
@@ -195,7 +195,7 @@ impl<RepoManager: AuthRepositoryManager> AuthAccountService<RepoManager> {
                 .token_service
                 .fetch_by_token(conn, activation_token, true)?;
 
-            Validator::validate(|error_details: &mut ErrorDetails| {
+            Validator::validate(|error_details: &ErrorDetails| {
                 match &token.data.token_type {
                     TokenType::AccountActivation => {}
                     _ => error_details.add_detail("token_type", "WRONG_TYPE"),
@@ -278,7 +278,7 @@ impl<RepoManager: AuthRepositoryManager> AuthAccountService<RepoManager> {
 
             info!("Reset password of user [{}]", token.data.username);
 
-            Validator::validate(|error_details: &mut ErrorDetails| {
+            Validator::validate(|error_details: &ErrorDetails| {
                 match &token.data.token_type {
                     TokenType::ResetPassword => {}
                     _ => error_details.add_detail("token_type", "WRONG_TYPE"),
