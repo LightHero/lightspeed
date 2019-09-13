@@ -1,6 +1,6 @@
 use lightspeed_core::error::{ErrorDetails, LightSpeedError};
-use lightspeed_core::service::validator::Validable;
 use lightspeed_core::service::validator::number::validate_number_ge;
+use lightspeed_core::service::validator::Validable;
 
 pub const SLUG_VALIDATION_REGEX: &str = "^[a-z0-9]+(?:-[a-z0-9]+)*$";
 
@@ -13,7 +13,6 @@ pub struct Schema {
 
 impl Validable for &Schema {
     fn validate(&self, error_details: &ErrorDetails) -> Result<(), LightSpeedError> {
-
         validate_number_ge(error_details, "name", 1, self.name.len());
 
         let mut field_names = vec![];
@@ -76,8 +75,8 @@ pub enum SchemaFieldValue {
 mod test {
     use super::*;
     use lightspeed_core::error::ErrorDetail;
-    use lightspeed_core::service::validator::Validator;
     use lightspeed_core::service::validator::number::MUST_BE_GREATER_OR_EQUAL;
+    use lightspeed_core::service::validator::Validator;
 
     #[test]
     fn schema_validation_should_fail_if_name_is_empty() {
@@ -118,16 +117,10 @@ mod test {
 
         match result {
             Err(LightSpeedError::ValidationError { details }) => {
-                assert_eq!(
-                    details.details().borrow().len(),
-                    1
-                );
+                assert_eq!(details.details().borrow().len(), 1);
                 assert_eq!(
                     details.details().borrow().get("fields[2].name"),
-                    Some(&vec![ErrorDetail::new(
-                        "MUST_BE_UNIQUE",
-                        vec![]
-                    )])
+                    Some(&vec![ErrorDetail::new("MUST_BE_UNIQUE", vec![])])
                 );
             }
             _ => assert!(false),
@@ -158,7 +151,7 @@ mod test {
                         default: None,
                     },
                     required: false,
-                }
+                },
             ],
         };
 
@@ -167,10 +160,7 @@ mod test {
 
         match result {
             Err(LightSpeedError::ValidationError { details }) => {
-                assert_eq!(
-                    details.details().borrow().len(),
-                    2
-                );
+                assert_eq!(details.details().borrow().len(), 2);
                 assert_eq!(
                     details.details().borrow().get("name"),
                     Some(&vec![ErrorDetail::new(

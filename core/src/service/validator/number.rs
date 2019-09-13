@@ -5,7 +5,6 @@ pub const MUST_BE_LESS: &str = "MUST_BE_LESS";
 pub const MUST_BE_GREATER_OR_EQUAL: &str = "MUST_BE_GREATER_OR_EQUAL";
 pub const MUST_BE_GREATER: &str = "MUST_BE_GREATER";
 
-
 /// Validates whether the size is less than or equal to max
 #[inline]
 pub fn validate_number_le<S: Into<String>>(

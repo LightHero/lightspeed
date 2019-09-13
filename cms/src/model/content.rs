@@ -1,6 +1,7 @@
 use crate::model::schema::{Schema, SchemaField, SchemaFieldValidation};
 use lightspeed_core::error::ErrorDetails;
 use lightspeed_core::service::validator::number::{validate_number_ge, validate_number_le};
+use std::collections::BTreeMap;
 
 pub struct Content {
     pub fields: Vec<ContentField>,
@@ -21,25 +22,53 @@ pub enum ContentFieldValue {
 
 impl Content {
     pub fn validate(&self, schema: &Schema, error_details: &ErrorDetails) {
-        let mut field_names = vec![];
-        let mut count = 0;
-        for content_field in &self.fields {
-            let scoped_err = error_details.with_scope(format!("fields[{}]", count));
-            if field_names.contains(&&content_field.name) {
-                scoped_err.add_detail("name", "MUST_BE_UNIQUE");
+        let mut schema_fields = BTreeMap::new();
+        schema.fields.iter().for_each(|field| {
+            schema_fields.insert(&field.name, field);
+        });
+
+        {
+            let mut field_names = vec![];
+            let mut count = 0;
+            for content_field in &self.fields {
+                let scoped_err = error_details.with_scope(format!("fields[{}]", count));
+
+                if field_names.contains(&&content_field.name) {
+                    scoped_err.add_detail("name", "MUST_BE_UNIQUE");
+                } else if let Some(schema_field) = schema_fields.remove(&content_field.name) {
+                    content_field.validate(schema_field, &scoped_err);
+                } else {
+                    scoped_err.add_detail("name", "UNKNOWN");
+                }
+                field_names.push(&content_field.name);
+
+                count += 1;
             }
-            field_names.push(&content_field.name);
-            count += 1;
+        }
+
+        {
+            if !schema_fields.is_empty() {
+                error_details.add_detail(
+                    "fields",
+                    (
+                        "MISSING_REQUIRED",
+                        schema_fields
+                            .iter()
+                            .filter(|(_, value)| value.required)
+                            .map(|(key, _)| key.to_string())
+                            .collect(),
+                    ),
+                );
+            }
         }
     }
 }
 
 impl ContentField {
-    pub fn validate(&self, schema_field: &SchemaField, error_details: &ErrorDetails) {
-
+    fn validate(&self, schema_field: &SchemaField, error_details: &ErrorDetails) {
         validate_number_ge(error_details, "name", 1, self.name.len());
 
-        let full_field_name = "field_validation";
+        let full_field_name = "value";
         match schema_field.field_validation {
             SchemaFieldValidation::Boolean { .. } => match &self.value {
                 ContentFieldValue::Boolean(value) => {
@@ -98,40 +127,14 @@ impl ContentField {
     }
 }
 
-fn get_content_field_by_name<'a>(
-    field_name: &str,
-    content: &'a Content,
-) -> Option<&'a ContentField> {
-    for field in &content.fields {
-        if field.name.eq(field_name) {
-            return Some(field);
-        }
-    }
-    None
-}
-
-fn get_content_fields_not_in_schema(schema: &Schema, content: &Content) -> Vec<String> {
-    content
-        .fields
-        .iter()
-        .map(|content_field| &content_field.name)
-        .filter(|content_field| {
-            for schema_field in &schema.fields {
-                if schema_field.name.eq(*content_field) {
-                    return false;
-                }
-            }
-            true
-        })
-        .map(|content_field| content_field.to_owned())
-        .collect()
-}
-
 #[cfg(test)]
 mod test {
     use super::*;
     use crate::model::schema::{SchemaField, SchemaFieldValidation, SchemaFieldValue};
     use lightspeed_core::error::{ErrorDetail, LightSpeedError};
+    use lightspeed_core::service::validator::number::{
+        MUST_BE_GREATER_OR_EQUAL, MUST_BE_LESS_OR_EQUAL,
+    };
     use lightspeed_core::service::validator::Validator;
 
     #[test]
@@ -159,15 +162,26 @@ mod test {
             name: "schema".to_owned(),
             updated_ms: 0,
             created_ms: 0,
-            fields: vec![SchemaField {
-                name: "field".to_owned(),
-                description: "".to_owned(),
-                field_validation: SchemaFieldValidation::Boolean {
-                    value: SchemaFieldValue::Single { unique: false },
-                    default: None,
+            fields: vec![
+                SchemaField {
+                    name: "one".to_owned(),
+                    description: "".to_owned(),
+                    field_validation: SchemaFieldValidation::Boolean {
+                        value: SchemaFieldValue::Single { unique: false },
+                        default: None,
+                    },
+                    required: false,
                 },
-                required: false,
-            }],
+                SchemaField {
+                    name: "two".to_owned(),
+                    description: "".to_owned(),
+                    field_validation: SchemaFieldValidation::Boolean {
+                        value: SchemaFieldValue::Single { unique: false },
+                        default: None,
+                    },
+                    required: false,
+                },
+            ],
         };
 
         // Act
@@ -178,24 +192,17 @@ mod test {
 
         match result {
             Err(LightSpeedError::ValidationError { details }) => {
-                assert_eq!(
-                    details.details().borrow().len(),
-                    1
-                );
+                assert_eq!(details.details().borrow().len(), 1);
                 assert_eq!(
                     details.details().borrow().get("fields[1].name"),
-                    Some(&vec![ErrorDetail::new(
-                        "MUST_BE_UNIQUE",
-                        vec![]
-                    )])
+                    Some(&vec![ErrorDetail::new("MUST_BE_UNIQUE", vec![])])
                 );
             }
             _ => assert!(false),
         }
     }
 
-    /*
-       #[test]
+    #[test]
     fn empty_schema_should_validate_empty_content() {
         let schema = Schema {
             created_ms: 0,
@@ -207,11 +214,10 @@ mod test {
         let content = Content {
             updated_ms: 0,
             created_ms: 0,
-            schema_name: "".to_owned(),
             fields: vec![],
         };
 
-        let result = ContentService::validate_content(&schema, &content);
+        let result = validate_content(&schema, &content);
         assert!(result.is_ok());
     }
 
@@ -222,34 +228,36 @@ mod test {
             updated_ms: 0,
             name: "".to_owned(),
             fields: vec![SchemaField {
-                label: "one".to_owned(),
+                name: "one".to_owned(),
                 required: true,
                 description: "".to_owned(),
-                field_validation: SchemaFieldValidation::Boolean { default: None },
+                field_validation: SchemaFieldValidation::Boolean {
+                    default: None,
+                    value: SchemaFieldValue::Single { unique: false },
+                },
             }],
         };
         let content = Content {
             updated_ms: 0,
             created_ms: 0,
-            schema_name: "".to_owned(),
             fields: vec![
                 ContentField {
-                    label: "one".to_owned(),
+                    name: "one".to_owned(),
                     value: ContentFieldValue::Boolean(Some(true)),
                 },
                 ContentField {
-                    label: "two".to_owned(),
+                    name: "two".to_owned(),
                     value: ContentFieldValue::Boolean(Some(true)),
                 },
             ],
         };
 
-        let result = ContentService::validate_content(&schema, &content);
+        let result = validate_content(&schema, &content);
         assert!(result.is_err());
         match result {
             Err(LightSpeedError::ValidationError { details }) => assert_eq!(
-                details.details().borrow()["fields"],
-                vec![ErrorDetail::new("UNKNOWN", vec!["two".to_owned()])]
+                details.details().borrow()["fields[1].name"],
+                vec![ErrorDetail::new("UNKNOWN", vec![])]
             ),
             _ => assert!(false),
         };
@@ -263,49 +271,60 @@ mod test {
             name: "".to_owned(),
             fields: vec![
                 SchemaField {
-                    label: "one".to_owned(),
+                    name: "one".to_owned(),
                     required: true,
                     description: "".to_owned(),
-                    field_validation: SchemaFieldValidation::Boolean { default: None },
+                    field_validation: SchemaFieldValidation::Boolean {
+                        default: None,
+                        value: SchemaFieldValue::Single { unique: false },
+                    },
                 },
                 SchemaField {
-                    label: "two".to_owned(),
+                    name: "two".to_owned(),
                     required: true,
                     description: "".to_owned(),
-                    field_validation: SchemaFieldValidation::Boolean { default: None },
+                    field_validation: SchemaFieldValidation::Boolean {
+                        default: None,
+                        value: SchemaFieldValue::Single { unique: false },
+                    },
                 },
                 SchemaField {
-                    label: "three".to_owned(),
+                    name: "three".to_owned(),
                     required: false,
                     description: "".to_owned(),
-                    field_validation: SchemaFieldValidation::Boolean { default: None },
+                    field_validation: SchemaFieldValidation::Boolean {
+                        default: None,
+                        value: SchemaFieldValue::Single { unique: false },
+                    },
                 },
                 SchemaField {
-                    label: "four".to_owned(),
+                    name: "four".to_owned(),
                     required: true,
                     description: "".to_owned(),
-                    field_validation: SchemaFieldValidation::Boolean { default: None },
+                    field_validation: SchemaFieldValidation::Boolean {
+                        default: None,
+                        value: SchemaFieldValue::Single { unique: false },
+                    },
                 },
             ],
         };
         let content = Content {
             updated_ms: 0,
             created_ms: 0,
-            schema_name: "".to_owned(),
             fields: vec![ContentField {
-                label: "two".to_owned(),
+                name: "two".to_owned(),
                 value: ContentFieldValue::Boolean(Some(true)),
             }],
         };
 
-        let result = ContentService::validate_content(&schema, &content);
+        let result = validate_content(&schema, &content);
         assert!(result.is_err());
         match result {
             Err(LightSpeedError::ValidationError { details }) => assert_eq!(
                 details.details().borrow()["fields"],
                 vec![ErrorDetail::new(
                     "MISSING_REQUIRED",
-                    vec!["one".to_owned(), "four".to_owned()]
+                    vec!["four".to_owned(), "one".to_owned()]
                 )]
             ),
             _ => assert!(false),
@@ -319,28 +338,31 @@ mod test {
             updated_ms: 0,
             name: "".to_owned(),
             fields: vec![SchemaField {
-                label: "one".to_owned(),
+                name: "one".to_owned(),
                 required: true,
                 description: "".to_owned(),
-                field_validation: SchemaFieldValidation::Boolean { default: None },
+                field_validation: SchemaFieldValidation::Boolean {
+                    default: None,
+                    value: SchemaFieldValue::Single { unique: false },
+                },
             }],
         };
         let content = Content {
             updated_ms: 0,
             created_ms: 0,
-            schema_name: "".to_owned(),
             fields: vec![ContentField {
-                label: "one".to_owned(),
+                name: "one".to_owned(),
                 value: ContentFieldValue::String(Some("hello world".to_owned())),
             }],
         };
 
-        let result = ContentService::validate_content(&schema, &content);
+        let result = validate_content(&schema, &content);
         assert!(result.is_err());
+        println!("{:?}", result);
         match result {
             Err(LightSpeedError::ValidationError { details }) => assert_eq!(
-                details.details().borrow()["fields.one"],
-                vec![ErrorDetail::new("SHOULD_BE_OF_TYPE_BOOLEAN", vec![])]
+                details.details().borrow()["fields[0].value"],
+                vec![ErrorDetail::new("MUST_BE_OF_TYPE_BOOLEAN", vec![])]
             ),
             _ => assert!(false),
         };
@@ -353,32 +375,32 @@ mod test {
             updated_ms: 0,
             name: "".to_owned(),
             fields: vec![SchemaField {
-                label: "one".to_owned(),
+                name: "one".to_owned(),
                 required: true,
                 description: "".to_owned(),
                 field_validation: SchemaFieldValidation::String {
                     min_length: None,
                     max_length: None,
                     default: None,
+                    value: SchemaFieldValue::Single { unique: false },
                 },
             }],
         };
         let content = Content {
             updated_ms: 0,
             created_ms: 0,
-            schema_name: "".to_owned(),
             fields: vec![ContentField {
-                label: "one".to_owned(),
+                name: "one".to_owned(),
                 value: ContentFieldValue::Boolean(Some(false)),
             }],
         };
 
-        let result = ContentService::validate_content(&schema, &content);
+        let result = validate_content(&schema, &content);
         assert!(result.is_err());
         match result {
             Err(LightSpeedError::ValidationError { details }) => assert_eq!(
-                details.details().borrow()["fields.one"],
-                vec![ErrorDetail::new("SHOULD_BE_OF_TYPE_STRING", vec![])]
+                details.details().borrow()["fields[0].value"],
+                vec![ErrorDetail::new("MUST_BE_OF_TYPE_STRING", vec![])]
             ),
             _ => assert!(false),
         };
@@ -391,32 +413,32 @@ mod test {
             updated_ms: 0,
             name: "".to_owned(),
             fields: vec![SchemaField {
-                label: "one".to_owned(),
+                name: "one".to_owned(),
                 required: true,
                 description: "".to_owned(),
                 field_validation: SchemaFieldValidation::Number {
                     min: None,
                     max: None,
                     default: None,
+                    value: SchemaFieldValue::Single { unique: false },
                 },
             }],
         };
         let content = Content {
             updated_ms: 0,
             created_ms: 0,
-            schema_name: "".to_owned(),
             fields: vec![ContentField {
-                label: "one".to_owned(),
+                name: "one".to_owned(),
                 value: ContentFieldValue::String(Some("hello world".to_owned())),
             }],
         };
 
-        let result = ContentService::validate_content(&schema, &content);
+        let result = validate_content(&schema, &content);
         assert!(result.is_err());
         match result {
             Err(LightSpeedError::ValidationError { details }) => assert_eq!(
-                details.details().borrow()["fields.one"],
-                vec![ErrorDetail::new("SHOULD_BE_OF_TYPE_NUMBER", vec![])]
+                details.details().borrow()["fields[0].value"],
+                vec![ErrorDetail::new("MUST_BE_OF_TYPE_NUMBER", vec![])]
             ),
             _ => assert!(false),
         };
@@ -429,33 +451,33 @@ mod test {
             updated_ms: 0,
             name: "".to_owned(),
             fields: vec![SchemaField {
-                label: "one".to_owned(),
+                name: "one".to_owned(),
                 required: true,
                 description: "".to_owned(),
                 field_validation: SchemaFieldValidation::Number {
                     min: Some(100),
                     max: None,
                     default: None,
+                    value: SchemaFieldValue::Single { unique: false },
                 },
             }],
         };
         let content = Content {
             updated_ms: 0,
             created_ms: 0,
-            schema_name: "".to_owned(),
             fields: vec![ContentField {
-                label: "one".to_owned(),
+                name: "one".to_owned(),
                 value: ContentFieldValue::Number(Some(99)),
             }],
         };
 
-        let result = ContentService::validate_content(&schema, &content);
+        let result = validate_content(&schema, &content);
         assert!(result.is_err());
         match result {
             Err(LightSpeedError::ValidationError { details }) => assert_eq!(
-                details.details().borrow()["fields.one"],
+                details.details().borrow()["fields[0].value"],
                 vec![ErrorDetail::new(
-                    "MUST_BE_GREATER_OR_EQUAL",
+                    MUST_BE_GREATER_OR_EQUAL,
                     vec!["100".to_owned()]
                 )]
             ),
@@ -470,33 +492,33 @@ mod test {
             updated_ms: 0,
             name: "".to_owned(),
             fields: vec![SchemaField {
-                label: "one".to_owned(),
+                name: "one".to_owned(),
                 required: true,
                 description: "".to_owned(),
                 field_validation: SchemaFieldValidation::Number {
                     min: Some(100),
                     max: Some(1000),
                     default: None,
+                    value: SchemaFieldValue::Single { unique: false },
                 },
             }],
         };
         let content = Content {
             updated_ms: 0,
             created_ms: 0,
-            schema_name: "".to_owned(),
             fields: vec![ContentField {
-                label: "one".to_owned(),
+                name: "one".to_owned(),
                 value: ContentFieldValue::Number(Some(1099)),
             }],
         };
 
-        let result = ContentService::validate_content(&schema, &content);
+        let result = validate_content(&schema, &content);
         assert!(result.is_err());
         match result {
             Err(LightSpeedError::ValidationError { details }) => assert_eq!(
-                details.details().borrow()["fields.one"],
+                details.details().borrow()["fields[0].value"],
                 vec![ErrorDetail::new(
-                    "MUST_BE_LESS_OR_EQUAL",
+                    MUST_BE_LESS_OR_EQUAL,
                     vec!["1000".to_owned()]
                 )]
             ),
@@ -511,33 +533,33 @@ mod test {
             updated_ms: 0,
             name: "".to_owned(),
             fields: vec![SchemaField {
-                label: "one".to_owned(),
+                name: "one".to_owned(),
                 required: true,
                 description: "".to_owned(),
                 field_validation: SchemaFieldValidation::String {
                     min_length: Some(1000),
                     max_length: None,
                     default: None,
+                    value: SchemaFieldValue::Single { unique: false },
                 },
             }],
         };
         let content = Content {
             updated_ms: 0,
             created_ms: 0,
-            schema_name: "".to_owned(),
             fields: vec![ContentField {
-                label: "one".to_owned(),
+                name: "one".to_owned(),
                 value: ContentFieldValue::String(Some("hello world".to_owned())),
             }],
         };
 
-        let result = ContentService::validate_content(&schema, &content);
+        let result = validate_content(&schema, &content);
         assert!(result.is_err());
         match result {
             Err(LightSpeedError::ValidationError { details }) => assert_eq!(
-                details.details().borrow()["fields.one"],
+                details.details().borrow()["fields[0].value"],
                 vec![ErrorDetail::new(
-                    "MUST_BE_GREATER_OR_EQUAL",
+                    MUST_BE_GREATER_OR_EQUAL,
                     vec!["1000".to_owned()]
                 )]
             ),
@@ -552,33 +574,33 @@ mod test {
             updated_ms: 0,
             name: "".to_owned(),
             fields: vec![SchemaField {
-                label: "one".to_owned(),
+                name: "one".to_owned(),
                 required: true,
                 description: "".to_owned(),
                 field_validation: SchemaFieldValidation::String {
                     min_length: Some(1),
                     max_length: Some(10),
                     default: None,
+                    value: SchemaFieldValue::Single { unique: false },
                 },
             }],
         };
         let content = Content {
             updated_ms: 0,
             created_ms: 0,
-            schema_name: "".to_owned(),
             fields: vec![ContentField {
-                label: "one".to_owned(),
+                name: "one".to_owned(),
                 value: ContentFieldValue::String(Some("hello world?!?!?!?!?!".to_owned())),
             }],
         };
 
-        let result = ContentService::validate_content(&schema, &content);
+        let result = validate_content(&schema, &content);
         assert!(result.is_err());
         match result {
             Err(LightSpeedError::ValidationError { details }) => assert_eq!(
-                details.details().borrow()["fields.one"],
+                details.details().borrow()["fields[0].value"],
                 vec![ErrorDetail::new(
-                    "MUST_BE_LESS_OR_EQUAL",
+                    MUST_BE_LESS_OR_EQUAL,
                     vec!["10".to_owned()]
                 )]
             ),
@@ -594,47 +616,56 @@ mod test {
             name: "".to_owned(),
             fields: vec![
                 SchemaField {
-                    label: "one".to_owned(),
+                    name: "one".to_owned(),
                     required: true,
                     description: "".to_owned(),
-                    field_validation: SchemaFieldValidation::Boolean { default: None },
+                    field_validation: SchemaFieldValidation::Boolean {
+                        default: None,
+                        value: SchemaFieldValue::Single { unique: false },
+                    },
                 },
                 SchemaField {
-                    label: "two".to_owned(),
+                    name: "two".to_owned(),
                     required: false,
                     description: "".to_owned(),
-                    field_validation: SchemaFieldValidation::Boolean { default: None },
+                    field_validation: SchemaFieldValidation::Boolean {
+                        default: None,
+                        value: SchemaFieldValue::Single { unique: false },
+                    },
                 },
             ],
         };
         let content = Content {
             updated_ms: 0,
             created_ms: 0,
-            schema_name: "".to_owned(),
             fields: vec![
                 ContentField {
-                    label: "one".to_owned(),
+                    name: "one".to_owned(),
                     value: ContentFieldValue::Boolean(None),
                 },
                 ContentField {
-                    label: "two".to_owned(),
+                    name: "two".to_owned(),
                     value: ContentFieldValue::Boolean(None),
                 },
             ],
         };
 
-        let result = ContentService::validate_content(&schema, &content);
+        let result = validate_content(&schema, &content);
         assert!(result.is_err());
         match result {
             Err(LightSpeedError::ValidationError { details }) => assert_eq!(
-                details.details().borrow()["fields.one"],
+                details.details().borrow()["fields[0].value"],
                 vec![ErrorDetail::new("VALUE_REQUIRED", vec![])]
             ),
             _ => assert!(false),
         };
     }
 
-
-    */
+    pub fn validate_content(schema: &Schema, content: &Content) -> Result<(), LightSpeedError> {
+        Validator::validate(|error_details: &ErrorDetails| {
+            content.validate(schema, error_details);
+            Ok(())
+        })
+    }
 
 }
