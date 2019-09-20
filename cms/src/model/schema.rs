@@ -2,7 +2,7 @@ use lightspeed_core::error::{ErrorDetails, LightSpeedError};
 use lightspeed_core::service::validator::number::validate_number_ge;
 use lightspeed_core::service::validator::Validable;
 
-pub const SLUG_VALIDATION_REGEX: &str = "^[a-z0-9]+(?:-[a-z0-9]+)*$";
+const MUST_BE_UNIQUE: &str = "MUST_BE_UNIQUE";
 
 pub struct Schema {
     pub name: String,
@@ -17,15 +17,13 @@ impl Validable for &Schema {
 
         let mut field_names = vec![];
 
-        let mut count = 0;
-        for schema_field in &self.fields {
+        for (count, schema_field) in (&self.fields).iter().enumerate() {
             let scoped_err = error_details.with_scope(format!("fields[{}]", count));
             if field_names.contains(&&schema_field.name) {
-                scoped_err.add_detail("name", "MUST_BE_UNIQUE");
+                scoped_err.add_detail("name", MUST_BE_UNIQUE);
             }
             field_names.push(&schema_field.name);
             schema_field.validate(&scoped_err)?;
-            count += 1;
         }
 
         Ok(())
@@ -36,7 +34,7 @@ pub struct SchemaField {
     pub name: String,
     pub description: String,
     pub required: bool,
-    pub field_validation: SchemaFieldValidation,
+    pub field_type: SchemaFieldType,
 }
 
 impl Validable for &SchemaField {
@@ -46,29 +44,34 @@ impl Validable for &SchemaField {
     }
 }
 
-pub enum SchemaFieldValidation {
+pub enum SchemaFieldType {
     Boolean {
         default: Option<bool>,
-        value: SchemaFieldValue,
+        arity: SchemaFieldArity,
     },
     Number {
         min: Option<usize>,
         max: Option<usize>,
         default: Option<usize>,
-        value: SchemaFieldValue,
+        arity: SchemaFieldArity,
     },
     Slug,
     String {
         min_length: Option<usize>,
         max_length: Option<usize>,
         default: Option<String>,
-        value: SchemaFieldValue,
+        arity: SchemaFieldArity,
     },
 }
 
-pub enum SchemaFieldValue {
-    Single { unique: bool },
-    Localizable,
+pub enum SchemaFieldArity {
+    Unique,
+    Single,
+    Localizable { options: LocalizableOptions },
+}
+
+pub enum LocalizableOptions {
+    Languages{ languages: Vec<String> }
 }
 
 #[cfg(test)]
@@ -88,8 +91,8 @@ mod test {
                 SchemaField {
                     name: "label1".to_owned(),
                     description: "".to_owned(),
-                    field_validation: SchemaFieldValidation::Boolean {
-                        value: SchemaFieldValue::Single { unique: false },
+                    field_type: SchemaFieldType::Boolean {
+                        arity: SchemaFieldArity::Single,
                         default: None,
                     },
                     required: false,
@@ -97,8 +100,8 @@ mod test {
                 SchemaField {
                     name: "label2".to_owned(),
                     description: "".to_owned(),
-                    field_validation: SchemaFieldValidation::Boolean {
-                        value: SchemaFieldValue::Single { unique: false },
+                    field_type: SchemaFieldType::Boolean {
+                        arity: SchemaFieldArity::Single,
                         default: None,
                     },
                     required: false,
@@ -106,7 +109,7 @@ mod test {
                 SchemaField {
                     name: "label2".to_owned(),
                     description: "".to_owned(),
-                    field_validation: SchemaFieldValidation::Slug,
+                    field_type: SchemaFieldType::Slug,
                     required: false,
                 },
             ],
@@ -120,7 +123,7 @@ mod test {
                 assert_eq!(details.details().borrow().len(), 1);
                 assert_eq!(
                     details.details().borrow().get("fields[2].name"),
-                    Some(&vec![ErrorDetail::new("MUST_BE_UNIQUE", vec![])])
+                    Some(&vec![ErrorDetail::new(MUST_BE_UNIQUE, vec![])])
                 );
             }
             _ => assert!(false),
@@ -137,8 +140,8 @@ mod test {
                 SchemaField {
                     name: "label1".to_owned(),
                     description: "".to_owned(),
-                    field_validation: SchemaFieldValidation::Boolean {
-                        value: SchemaFieldValue::Single { unique: false },
+                    field_type: SchemaFieldType::Boolean {
+                        arity: SchemaFieldArity::Single,
                         default: None,
                     },
                     required: false,
@@ -146,8 +149,8 @@ mod test {
                 SchemaField {
                     name: "".to_owned(),
                     description: "".to_owned(),
-                    field_validation: SchemaFieldValidation::Boolean {
-                        value: SchemaFieldValue::Single { unique: false },
+                    field_type: SchemaFieldType::Boolean {
+                        arity: SchemaFieldArity::Unique,
                         default: None,
                     },
                     required: false,
