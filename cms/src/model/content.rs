@@ -1,4 +1,6 @@
-use crate::model::schema::{Schema, SchemaField, SchemaFieldArity, SchemaFieldType, LocalizableOptions};
+use crate::model::schema::{
+    LocalizableOptions, Schema, SchemaField, SchemaFieldArity, SchemaFieldType,
+};
 use lazy_static::*;
 use lightspeed_core::error::ErrorDetails;
 use lightspeed_core::service::validator::number::{validate_number_ge, validate_number_le};
@@ -7,7 +9,7 @@ use std::collections::{BTreeMap, HashMap};
 
 pub const SLUG_VALIDATION_REGEX: &str = r#"^[a-z0-9]+(?:-[a-z0-9]+)*$"#;
 
-const VALUE_REQUIRED : &str = "VALUE_REQUIRED";
+const VALUE_REQUIRED: &str = "VALUE_REQUIRED";
 const MUST_BE_UNIQUE: &str = "MUST_BE_UNIQUE";
 const UNKNOWN: &str = "UNKNOWN";
 const MUST_BE_OF_TYPE_BOOLEAN: &str = "MUST_BE_OF_TYPE_BOOLEAN";
@@ -19,7 +21,8 @@ const SHOULD_HAVE_LOCALIZABLE_ARITY: &str = "SHOULD_HAVE_LOCALIZABLE_ARITY";
 const NOT_VALID_SLUG: &str = "NOT_VALID_SLUG";
 
 lazy_static! {
-    static ref SLUG_REGEX: Regex = Regex::new(SLUG_VALIDATION_REGEX).expect("slug validation regex should be valid");
+    static ref SLUG_REGEX: Regex =
+        Regex::new(SLUG_VALIDATION_REGEX).expect("slug validation regex should be valid");
 }
 
 pub struct Content {
@@ -66,7 +69,6 @@ impl Content {
                     scoped_err.add_detail("name", UNKNOWN);
                 }
                 field_names.push(&content_field.name);
-
             }
         }
 
@@ -145,8 +147,9 @@ impl ContentField {
                 _ => error_details.add_detail(full_field_name, MUST_BE_OF_TYPE_NUMBER),
             },
             SchemaFieldType::Slug => match &self.value {
-                ContentFieldValue::Slug(value) => ContentField::validate_slug(
-                    full_field_name, value, error_details),
+                ContentFieldValue::Slug(value) => {
+                    ContentField::validate_slug(full_field_name, value, error_details)
+                }
                 _ => error_details.add_detail(full_field_name, MUST_BE_OF_TYPE_SLUG),
             },
             SchemaFieldType::String {
@@ -194,22 +197,26 @@ impl ContentField {
                 }
                 _ => error_details.add_detail(full_field_name, SHOULD_HAVE_SINGLE_VALUE_ARITY),
             },
-            SchemaFieldArity::Localizable {options} => match arity {
+            SchemaFieldArity::Localizable { options } => match arity {
                 ContentFieldValueArity::Localizable { values } => {
                     match options {
-                        LocalizableOptions::Languages{languages} => {
+                        LocalizableOptions::Languages { languages } => {
                             if required {
-                                languages.iter().for_each(|language| if !values.contains_key(language) {
-                                    error_details.add_detail(format!("{}[{}]", full_field_name, language),VALUE_REQUIRED)
+                                languages.iter().for_each(|language| {
+                                    if !values.contains_key(language) {
+                                        error_details.add_detail(
+                                            format!("{}[{}]", full_field_name, language),
+                                            VALUE_REQUIRED,
+                                        )
+                                    }
                                 })
                             }
-
                         }
                     }
-                    values
-                        .iter()
-                        .for_each(|(key, value)| value_validation(&format!("{}[{}]", full_field_name, key), value))
-                },
+                    values.iter().for_each(|(key, value)| {
+                        value_validation(&format!("{}[{}]", full_field_name, key), value)
+                    })
+                }
                 _ => error_details.add_detail(full_field_name, SHOULD_HAVE_LOCALIZABLE_ARITY),
             },
         }
@@ -267,7 +274,12 @@ impl ContentField {
     ) {
         if let Some(value) = value {
             if let Some(min_length) = min_length {
-                validate_number_ge(error_details, full_field_name.clone(), *min_length, value.len())
+                validate_number_ge(
+                    error_details,
+                    full_field_name.clone(),
+                    *min_length,
+                    value.len(),
+                )
             }
             if let Some(max_length) = max_length {
                 validate_number_le(error_details, full_field_name, *max_length, value.len())
@@ -311,7 +323,6 @@ mod test {
         });
 
         let schema = Schema {
-            name: "schema".to_owned(),
             updated_ms: 0,
             created_ms: 0,
             fields: vec![
@@ -359,7 +370,6 @@ mod test {
         let schema = Schema {
             created_ms: 0,
             updated_ms: 0,
-            name: "".to_owned(),
             fields: vec![],
         };
 
@@ -378,7 +388,6 @@ mod test {
         let schema = Schema {
             created_ms: 0,
             updated_ms: 0,
-            name: "".to_owned(),
             fields: vec![SchemaField {
                 name: "one".to_owned(),
                 required: true,
@@ -424,7 +433,6 @@ mod test {
         let schema = Schema {
             created_ms: 0,
             updated_ms: 0,
-            name: "".to_owned(),
             fields: vec![
                 SchemaField {
                     name: "one".to_owned(),
@@ -494,7 +502,6 @@ mod test {
         let schema = Schema {
             created_ms: 0,
             updated_ms: 0,
-            name: "".to_owned(),
             fields: vec![SchemaField {
                 name: "one".to_owned(),
                 required: true,
@@ -533,7 +540,6 @@ mod test {
         let schema = Schema {
             created_ms: 0,
             updated_ms: 0,
-            name: "".to_owned(),
             fields: vec![SchemaField {
                 name: "one".to_owned(),
                 required: true,
@@ -573,7 +579,6 @@ mod test {
         let schema = Schema {
             created_ms: 0,
             updated_ms: 0,
-            name: "".to_owned(),
             fields: vec![SchemaField {
                 name: "one".to_owned(),
                 required: true,
@@ -608,7 +613,6 @@ mod test {
         let schema = Schema {
             created_ms: 0,
             updated_ms: 0,
-            name: "".to_owned(),
             fields: vec![SchemaField {
                 name: "one".to_owned(),
                 required: true,
@@ -648,7 +652,6 @@ mod test {
         let schema = Schema {
             created_ms: 0,
             updated_ms: 0,
-            name: "".to_owned(),
             fields: vec![SchemaField {
                 name: "one".to_owned(),
                 required: true,
@@ -691,7 +694,6 @@ mod test {
         let schema = Schema {
             created_ms: 0,
             updated_ms: 0,
-            name: "".to_owned(),
             fields: vec![SchemaField {
                 name: "one".to_owned(),
                 required: true,
@@ -734,7 +736,6 @@ mod test {
         let schema = Schema {
             created_ms: 0,
             updated_ms: 0,
-            name: "".to_owned(),
             fields: vec![SchemaField {
                 name: "one".to_owned(),
                 required: true,
@@ -777,7 +778,6 @@ mod test {
         let schema = Schema {
             created_ms: 0,
             updated_ms: 0,
-            name: "".to_owned(),
             fields: vec![SchemaField {
                 name: "one".to_owned(),
                 required: true,
@@ -820,7 +820,6 @@ mod test {
         let schema = Schema {
             created_ms: 0,
             updated_ms: 0,
-            name: "".to_owned(),
             fields: vec![
                 SchemaField {
                     name: "one".to_owned(),
@@ -877,7 +876,6 @@ mod test {
         let schema = Schema {
             created_ms: 0,
             updated_ms: 0,
-            name: "".to_owned(),
             fields: vec![SchemaField {
                 name: "one".to_owned(),
                 required: false,
@@ -894,7 +892,7 @@ mod test {
             fields: vec![ContentField {
                 name: "one".to_owned(),
                 value: ContentFieldValue::Boolean(ContentFieldValueArity::Localizable {
-                    values: HashMap::new()
+                    values: HashMap::new(),
                 }),
             }],
         };
@@ -916,14 +914,15 @@ mod test {
         let schema = Schema {
             created_ms: 0,
             updated_ms: 0,
-            name: "".to_owned(),
             fields: vec![SchemaField {
                 name: "one".to_owned(),
                 required: true,
                 description: "".to_owned(),
                 field_type: SchemaFieldType::Boolean {
                     default: None,
-                    arity: SchemaFieldArity::Localizable{options: LocalizableOptions::Languages {languages: vec![]}},
+                    arity: SchemaFieldArity::Localizable {
+                        options: LocalizableOptions::Languages { languages: vec![] },
+                    },
                 },
             }],
         };
@@ -955,14 +954,17 @@ mod test {
         let schema = Schema {
             created_ms: 0,
             updated_ms: 0,
-            name: "".to_owned(),
             fields: vec![SchemaField {
                 name: "one".to_owned(),
                 required: true,
                 description: "".to_owned(),
                 field_type: SchemaFieldType::Boolean {
                     default: None,
-                    arity: SchemaFieldArity::Localizable{options: LocalizableOptions::Languages {languages: vec!["IT".to_owned(), "EN".to_owned(), "FR".to_owned()]}},
+                    arity: SchemaFieldArity::Localizable {
+                        options: LocalizableOptions::Languages {
+                            languages: vec!["IT".to_owned(), "EN".to_owned(), "FR".to_owned()],
+                        },
+                    },
                 },
             }],
         };
@@ -993,7 +995,7 @@ mod test {
                     details.details().borrow()["fields[0].value[EN]"],
                     vec![ErrorDetail::new(VALUE_REQUIRED, vec![])]
                 );
-            },
+            }
             _ => assert!(false),
         };
     }
@@ -1003,7 +1005,6 @@ mod test {
         let schema = Schema {
             created_ms: 0,
             updated_ms: 0,
-            name: "".to_owned(),
             fields: vec![SchemaField {
                 name: "slug".to_owned(),
                 required: true,
@@ -1022,7 +1023,6 @@ mod test {
 
         let result = validate_content(&schema, &content);
         assert!(result.is_ok());
-
     }
 
     #[test]
@@ -1030,7 +1030,6 @@ mod test {
         let schema = Schema {
             created_ms: 0,
             updated_ms: 0,
-            name: "".to_owned(),
             fields: vec![SchemaField {
                 name: "slug".to_owned(),
                 required: true,

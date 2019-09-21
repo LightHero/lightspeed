@@ -1,11 +1,30 @@
+use c3p0::Model;
 use lightspeed_core::error::{ErrorDetails, LightSpeedError};
 use lightspeed_core::service::validator::number::validate_number_ge;
 use lightspeed_core::service::validator::Validable;
+use serde::{Deserialize, Serialize};
 
 const MUST_BE_UNIQUE: &str = "MUST_BE_UNIQUE";
 
-pub struct Schema {
+pub type SchemaModel = Model<SchemaData>;
+
+#[derive(Clone, Serialize, Deserialize)]
+pub struct SchemaData {
     pub name: String,
+    pub project_name: String,
+    pub schema: Schema,
+}
+
+impl Validable for &SchemaData {
+    fn validate(&self, error_details: &ErrorDetails) -> Result<(), LightSpeedError> {
+        validate_number_ge(error_details, "name", 3, self.name.len());
+        (&self.schema).validate(&error_details.with_scope("schema"))?;
+        Ok(())
+    }
+}
+
+#[derive(Clone, Serialize, Deserialize)]
+pub struct Schema {
     pub fields: Vec<SchemaField>,
     pub created_ms: i64,
     pub updated_ms: i64,
@@ -13,8 +32,6 @@ pub struct Schema {
 
 impl Validable for &Schema {
     fn validate(&self, error_details: &ErrorDetails) -> Result<(), LightSpeedError> {
-        validate_number_ge(error_details, "name", 1, self.name.len());
-
         let mut field_names = vec![];
 
         for (count, schema_field) in (&self.fields).iter().enumerate() {
@@ -30,6 +47,7 @@ impl Validable for &Schema {
     }
 }
 
+#[derive(Clone, Serialize, Deserialize)]
 pub struct SchemaField {
     pub name: String,
     pub description: String,
@@ -44,6 +62,7 @@ impl Validable for &SchemaField {
     }
 }
 
+#[derive(Clone, Serialize, Deserialize)]
 pub enum SchemaFieldType {
     Boolean {
         default: Option<bool>,
@@ -64,14 +83,16 @@ pub enum SchemaFieldType {
     },
 }
 
+#[derive(Clone, Serialize, Deserialize)]
 pub enum SchemaFieldArity {
     Unique,
     Single,
     Localizable { options: LocalizableOptions },
 }
 
+#[derive(Clone, Serialize, Deserialize)]
 pub enum LocalizableOptions {
-    Languages{ languages: Vec<String> }
+    Languages { languages: Vec<String> },
 }
 
 #[cfg(test)]
@@ -83,46 +104,56 @@ mod test {
 
     #[test]
     fn schema_validation_should_fail_if_name_is_empty() {
-        let schema = Schema {
-            name: "schema".to_owned(),
-            updated_ms: 0,
-            created_ms: 0,
-            fields: vec![
-                SchemaField {
-                    name: "label1".to_owned(),
-                    description: "".to_owned(),
-                    field_type: SchemaFieldType::Boolean {
-                        arity: SchemaFieldArity::Single,
-                        default: None,
+        let schema_data = SchemaData {
+            name: "1".to_owned(),
+            project_name: "".to_owned(),
+            schema: Schema {
+                updated_ms: 0,
+                created_ms: 0,
+                fields: vec![
+                    SchemaField {
+                        name: "label1".to_owned(),
+                        description: "".to_owned(),
+                        field_type: SchemaFieldType::Boolean {
+                            arity: SchemaFieldArity::Single,
+                            default: None,
+                        },
+                        required: false,
                     },
-                    required: false,
-                },
-                SchemaField {
-                    name: "label2".to_owned(),
-                    description: "".to_owned(),
-                    field_type: SchemaFieldType::Boolean {
-                        arity: SchemaFieldArity::Single,
-                        default: None,
+                    SchemaField {
+                        name: "label2".to_owned(),
+                        description: "".to_owned(),
+                        field_type: SchemaFieldType::Boolean {
+                            arity: SchemaFieldArity::Single,
+                            default: None,
+                        },
+                        required: false,
                     },
-                    required: false,
-                },
-                SchemaField {
-                    name: "label2".to_owned(),
-                    description: "".to_owned(),
-                    field_type: SchemaFieldType::Slug,
-                    required: false,
-                },
-            ],
+                    SchemaField {
+                        name: "label2".to_owned(),
+                        description: "".to_owned(),
+                        field_type: SchemaFieldType::Slug,
+                        required: false,
+                    },
+                ],
+            },
         };
 
         // Act
-        let result = Validator::validate(&schema);
+        let result = Validator::validate(&schema_data);
 
         match result {
             Err(LightSpeedError::ValidationError { details }) => {
-                assert_eq!(details.details().borrow().len(), 1);
+                assert_eq!(details.details().borrow().len(), 2);
                 assert_eq!(
-                    details.details().borrow().get("fields[2].name"),
+                    details.details().borrow().get("name"),
+                    Some(&vec![ErrorDetail::new(
+                        MUST_BE_GREATER_OR_EQUAL,
+                        vec!["3".to_owned()]
+                    )])
+                );
+                assert_eq!(
+                    details.details().borrow().get("schema.fields[2].name"),
                     Some(&vec![ErrorDetail::new(MUST_BE_UNIQUE, vec![])])
                 );
             }
@@ -133,7 +164,6 @@ mod test {
     #[test]
     fn schema_validation_should_fail_if_fields_with_same_name() {
         let schema = Schema {
-            name: "".to_owned(),
             updated_ms: 0,
             created_ms: 0,
             fields: vec![
@@ -163,14 +193,7 @@ mod test {
 
         match result {
             Err(LightSpeedError::ValidationError { details }) => {
-                assert_eq!(details.details().borrow().len(), 2);
-                assert_eq!(
-                    details.details().borrow().get("name"),
-                    Some(&vec![ErrorDetail::new(
-                        MUST_BE_GREATER_OR_EQUAL,
-                        vec!["1".to_owned()]
-                    )])
-                );
+                assert_eq!(details.details().borrow().len(), 1);
                 assert_eq!(
                     details.details().borrow().get("fields[1].name"),
                     Some(&vec![ErrorDetail::new(
