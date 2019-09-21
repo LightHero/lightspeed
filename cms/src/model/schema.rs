@@ -11,7 +11,7 @@ pub type SchemaModel = Model<SchemaData>;
 #[derive(Clone, Serialize, Deserialize)]
 pub struct SchemaData {
     pub name: String,
-    pub project_name: String,
+    pub project_id: i64,
     pub schema: Schema,
 }
 
@@ -106,7 +106,7 @@ mod test {
     fn schema_validation_should_fail_if_name_is_empty() {
         let schema_data = SchemaData {
             name: "1".to_owned(),
-            project_name: "".to_owned(),
+            project_id: 0,
             schema: Schema {
                 updated_ms: 0,
                 created_ms: 0,
