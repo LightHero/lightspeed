@@ -1,12 +1,12 @@
-use crate::repository::SchemaContentMappingRepository;
+use crate::repository::{CmsRepositoryManager};
 
 #[derive(Clone)]
-pub struct SchemaContentMappingService<SchemaContentMappingRepo: SchemaContentMappingRepository> {
-    schema_content_repo: SchemaContentMappingRepo,
+pub struct SchemaContentMappingService<RepoManager: CmsRepositoryManager> {
+    schema_content_repo: RepoManager::SCHEMA_CONTENT_MAPPING_REPO,
 }
 
-impl<SchemaContentMappingRepo: SchemaContentMappingRepository> SchemaContentMappingService<SchemaContentMappingRepo> {
-    pub fn new(schema_content_repo: SchemaContentMappingRepo) -> Self {
+impl<RepoManager: CmsRepositoryManager> SchemaContentMappingService<RepoManager> {
+    pub fn new(schema_content_repo: RepoManager::SCHEMA_CONTENT_MAPPING_REPO) -> Self {
         SchemaContentMappingService {
             schema_content_repo,
         }

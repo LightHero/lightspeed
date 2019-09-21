@@ -2,6 +2,9 @@ use crate::config::CmsConfig;
 use crate::repository::CmsRepositoryManager;
 use lightspeed_core::{config::UIConfig, error::LightSpeedError};
 use log::*;
+use crate::service::project::ProjectService;
+use crate::service::schema::SchemaService;
+use crate::service::schema_content_mapping::SchemaContentMappingService;
 
 pub mod config;
 pub mod dto;
@@ -15,18 +18,30 @@ pub struct CmsModule<RepoManager: CmsRepositoryManager> {
     pub cms_config: CmsConfig,
 
     pub repo_manager: RepoManager,
+
+    pub project_service: ProjectService<RepoManager>,
+    pub schema_service: SchemaService<RepoManager>,
+    pub schema_content_mapping_service: SchemaContentMappingService<RepoManager>,
 }
 
 impl<RepoManager: CmsRepositoryManager> CmsModule<RepoManager> {
     pub fn new(repo_manager: RepoManager, cms_config: CmsConfig, ui_config: UIConfig) -> Self {
-        println!("Creating AuthModule");
-        info!("Creating AuthModule");
+        println!("Creating CmsModule");
+        info!("Creating CmsModule");
+
+        let project_service = ProjectService::new(repo_manager.project_repo());
+        let schema_service = SchemaService::new(repo_manager.schema_repo());
+        let schema_content_mapping_service = SchemaContentMappingService::new(repo_manager.schema_content_repo());
 
         CmsModule {
             ui_config,
             cms_config,
 
             repo_manager,
+
+            project_service,
+            schema_service,
+            schema_content_mapping_service
         }
     }
 }

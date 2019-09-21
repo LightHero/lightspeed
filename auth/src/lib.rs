@@ -21,7 +21,7 @@ pub struct AuthModule<RepoManager: AuthRepositoryManager> {
 
     pub password_codec: service::password_codec::PasswordCodecService,
     pub auth_account_service: service::auth_account::AuthAccountService<RepoManager>,
-    pub token_service: service::token::TokenService<RepoManager::TOKEN_REPO>,
+    pub token_service: service::token::TokenService<RepoManager>,
 }
 
 impl<RepoManager: AuthRepositoryManager> AuthModule<RepoManager> {

@@ -23,7 +23,7 @@ pub struct AuthAccountService<RepoManager: AuthRepositoryManager> {
     auth_config: AuthConfig,
     auth_repo: RepoManager::AUTH_ACCOUNT_REPO,
     password_service: PasswordCodecService,
-    token_service: TokenService<RepoManager::TOKEN_REPO>,
+    token_service: TokenService<RepoManager>,
     email_service: Arc<Box<dyn EmailService>>,
 }
 
@@ -31,7 +31,7 @@ impl<RepoManager: AuthRepositoryManager> AuthAccountService<RepoManager> {
     pub fn new(
         c3p0: RepoManager::C3P0,
         auth_config: AuthConfig,
-        token_service: TokenService<RepoManager::TOKEN_REPO>,
+        token_service: TokenService<RepoManager>,
         password_service: PasswordCodecService,
         auth_repo: RepoManager::AUTH_ACCOUNT_REPO,
         email_service: Arc<Box<dyn EmailService>>,

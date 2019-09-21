@@ -1,12 +1,12 @@
-use crate::repository::ProjectRepository;
+use crate::repository::{CmsRepositoryManager};
 
 #[derive(Clone)]
-pub struct ProjectService<ProjectRepo: ProjectRepository> {
-    project_repo: ProjectRepo,
+pub struct ProjectService<RepoManager: CmsRepositoryManager> {
+    project_repo: RepoManager::PROJECT_REPO,
 }
 
-impl<ProjectRepo: ProjectRepository> ProjectService<ProjectRepo> {
-    pub fn new(project_repo: ProjectRepo) -> Self {
+impl<RepoManager: CmsRepositoryManager> ProjectService<RepoManager> {
+    pub fn new(project_repo: RepoManager::PROJECT_REPO) -> Self {
         ProjectService {
             project_repo,
         }

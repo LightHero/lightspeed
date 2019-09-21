@@ -1,6 +1,6 @@
 use crate::config::AuthConfig;
 use crate::model::token::{TokenData, TokenModel, TokenType};
-use crate::repository::TokenRepository;
+use crate::repository::{TokenRepository, AuthRepositoryManager};
 use c3p0::*;
 use lightspeed_core::config::UIConfig;
 use lightspeed_core::error::LightSpeedError;
@@ -8,14 +8,14 @@ use lightspeed_core::service::validator::Validator;
 use lightspeed_core::utils::*;
 
 #[derive(Clone)]
-pub struct TokenService<TokenRepo: TokenRepository> {
+pub struct TokenService<RepoManager: AuthRepositoryManager> {
     ui_config: UIConfig,
     auth_config: AuthConfig,
-    token_repo: TokenRepo,
+    token_repo: RepoManager::TOKEN_REPO,
 }
 
-impl<TokenRepo: TokenRepository> TokenService<TokenRepo> {
-    pub fn new(auth_config: AuthConfig, ui_config: UIConfig, token_repo: TokenRepo) -> Self {
+impl<RepoManager: AuthRepositoryManager> TokenService<RepoManager> {
+    pub fn new(auth_config: AuthConfig, ui_config: UIConfig, token_repo: RepoManager::TOKEN_REPO) -> Self {
         TokenService {
             auth_config,
             ui_config,
@@ -25,7 +25,7 @@ impl<TokenRepo: TokenRepository> TokenService<TokenRepo> {
 
     pub fn generate_and_save_token<S: Into<String>>(
         &self,
-        conn: &TokenRepo::CONN,
+        conn: &RepoManager::CONN,
         username: S,
         token_type: TokenType,
     ) -> Result<TokenModel, LightSpeedError> {
@@ -46,7 +46,7 @@ impl<TokenRepo: TokenRepository> TokenService<TokenRepo> {
 
     pub fn fetch_by_token(
         &self,
-        conn: &TokenRepo::CONN,
+        conn: &RepoManager::CONN,
         token: &str,
         validate: bool,
     ) -> Result<TokenModel, LightSpeedError> {
@@ -61,7 +61,7 @@ impl<TokenRepo: TokenRepository> TokenService<TokenRepo> {
 
     pub fn delete(
         &self,
-        conn: &TokenRepo::CONN,
+        conn: &RepoManager::CONN,
         token_model: TokenModel,
     ) -> Result<u64, LightSpeedError> {
         Ok(self.token_repo.delete(conn, &token_model)?)

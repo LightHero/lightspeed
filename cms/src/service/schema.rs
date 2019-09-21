@@ -1,12 +1,12 @@
-use crate::repository::SchemaRepository;
+use crate::repository::{ CmsRepositoryManager};
 
 #[derive(Clone)]
-pub struct SchemaService<SchemaRepo: SchemaRepository> {
-    schema_repo: SchemaRepo,
+pub struct SchemaService<RepoManager: CmsRepositoryManager> {
+    schema_repo: RepoManager::SCHEMA_REPO,
 }
 
-impl<SchemaRepo: SchemaRepository> SchemaService<SchemaRepo> {
-    pub fn new(schema_repo: SchemaRepo) -> Self {
+impl<RepoManager: CmsRepositoryManager> SchemaService<RepoManager> {
+    pub fn new(schema_repo: RepoManager::SCHEMA_REPO) -> Self {
         SchemaService {
             schema_repo,
         }
