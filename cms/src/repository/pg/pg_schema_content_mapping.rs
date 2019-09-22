@@ -3,6 +3,7 @@ use c3p0::pg::*;
 use c3p0::*;
 use crate::model::schema_content_mapping::SchemaContentMappingData;
 use std::ops::Deref;
+use lightspeed_core::error::LightSpeedError;
 
 #[derive(Clone)]
 pub struct PgSchemaContentMappingRepository {
@@ -29,4 +30,20 @@ impl Default for PgSchemaContentMappingRepository {
 
 impl SchemaContentMappingRepository for PgSchemaContentMappingRepository {
     type CONN = PgConnection;
+
+    fn fetch_by_id(&self, conn: &Self::CONN, id: i64) -> Result<Model<SchemaContentMappingData>, LightSpeedError> {
+        self.repo
+            .fetch_one_by_id(conn, &id)?
+            .ok_or_else(|| LightSpeedError::BadRequest {
+                message: format!("No SchemaContentMapping found with id [{}]", id),
+            })
+    }
+
+    fn save(&self, conn: &Self::CONN, model: NewModel<SchemaContentMappingData>) -> Result<Model<SchemaContentMappingData>, LightSpeedError> {
+        Ok(self.repo.save(conn, model)?)
+    }
+
+    fn delete(&self, conn: &Self::CONN, model: &Model<SchemaContentMappingData>) -> Result<u64, LightSpeedError> {
+        Ok(self.repo.delete(conn, model)?)
+    }
 }

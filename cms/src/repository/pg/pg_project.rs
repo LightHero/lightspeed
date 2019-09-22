@@ -3,6 +3,7 @@ use c3p0::pg::*;
 use c3p0::*;
 use crate::model::project::ProjectData;
 use std::ops::Deref;
+use lightspeed_core::error::LightSpeedError;
 
 #[derive(Clone)]
 pub struct PgProjectRepository {
@@ -29,4 +30,24 @@ impl Default for PgProjectRepository {
 
 impl ProjectRepository for PgProjectRepository {
     type CONN = PgConnection;
+
+    fn fetch_by_id(&self, conn: &Self::CONN, id: i64) -> Result<Model<ProjectData>, LightSpeedError> {
+        self.repo
+            .fetch_one_by_id(conn, &id)?
+            .ok_or_else(|| LightSpeedError::BadRequest {
+                message: format!("No project found with id [{}]", id),
+            })
+    }
+
+    fn save(&self, conn: &Self::CONN, model: NewModel<ProjectData>) -> Result<Model<ProjectData>, LightSpeedError> {
+        Ok(self.repo.save(conn, model)?)
+    }
+
+    fn update(&self, conn: &Self::CONN, model: Model<ProjectData>) -> Result<Model<ProjectData>, LightSpeedError> {
+        Ok(self.repo.update(conn, model)?)
+    }
+
+    fn delete(&self, conn: &Self::CONN, model: &Model<ProjectData>) -> Result<u64, LightSpeedError> {
+        Ok(self.repo.delete(conn, model)?)
+    }
 }

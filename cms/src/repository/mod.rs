@@ -1,4 +1,4 @@
-use c3p0::{C3p0Pool, Connection, Model, NewModel, C3p0Error};
+use c3p0::{C3p0Pool, Connection, NewModel};
 use lightspeed_core::error::LightSpeedError;
 use crate::model::project::{ProjectModel, ProjectData};
 use crate::model::schema::{SchemaModel, SchemaData};
@@ -23,18 +23,20 @@ pub trait CmsRepositoryManager: Clone {
 
 pub trait ProjectRepository: Clone {
     type CONN: Connection;
-/*
+
     fn fetch_by_id(
         &self,
         conn: &Self::CONN,
         id: i64,
     ) -> Result<ProjectModel, LightSpeedError>;
+/*
 
     fn fetch_by_name(
         &self,
         conn: &Self::CONN,
         name: &str,
     ) -> Result<ProjectModel, LightSpeedError>;
+    */
 
     fn save(
         &self,
@@ -49,7 +51,6 @@ pub trait ProjectRepository: Clone {
     ) -> Result<ProjectModel, LightSpeedError>;
 
     fn delete(&self, conn: &Self::CONN, model: &ProjectModel) -> Result<u64, LightSpeedError>;
-    */
 }
 
 pub trait SchemaRepository: Clone {
@@ -59,7 +60,7 @@ pub trait SchemaRepository: Clone {
         &self,
         conn: &Self::CONN,
         id: i64,
-    ) -> Result<SchemaModel, C3p0Error>;
+    ) -> Result<SchemaModel, LightSpeedError>;
 
 /*
     fn fetch_by_name_and_project_id(
@@ -74,25 +75,34 @@ pub trait SchemaRepository: Clone {
         &self,
         conn: &Self::CONN,
         model: NewModel<SchemaData>,
-    ) -> Result<SchemaModel, C3p0Error>;
+    ) -> Result<SchemaModel, LightSpeedError>;
 
     fn update(
         &self,
         conn: &Self::CONN,
         model: SchemaModel,
-    ) -> Result<SchemaModel, C3p0Error>;
+    ) -> Result<SchemaModel, LightSpeedError>;
 
-    fn delete(&self, conn: &Self::CONN, model: &SchemaModel) -> Result<u64, C3p0Error>;
+    fn delete(&self, conn: &Self::CONN, model: &SchemaModel) -> Result<u64, LightSpeedError>;
 }
 
 pub trait SchemaContentMappingRepository: Clone {
     type CONN: Connection;
+
+    fn fetch_by_id(
+        &self,
+        conn: &Self::CONN,
+        id: i64,
+    ) -> Result<SchemaContentMappingModel, LightSpeedError>;
+
 /*
     fn fetch_by_schema_id(
         &self,
         conn: &Self::CONN,
         schema_id: i64,
     ) -> Result<SchemaContentMappingModel, LightSpeedError>;
+
+    */
 
     fn save(
         &self,
@@ -101,5 +111,4 @@ pub trait SchemaContentMappingRepository: Clone {
     ) -> Result<SchemaContentMappingModel, LightSpeedError>;
 
     fn delete(&self, conn: &Self::CONN, model: &SchemaContentMappingModel) -> Result<u64, LightSpeedError>;
-    */
 }
