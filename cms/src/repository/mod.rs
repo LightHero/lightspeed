@@ -1,4 +1,4 @@
-use c3p0::{C3p0Pool, Connection, Model, NewModel};
+use c3p0::{C3p0Pool, Connection, Model, NewModel, C3p0Error};
 use lightspeed_core::error::LightSpeedError;
 use crate::model::project::{ProjectModel, ProjectData};
 use crate::model::schema::{SchemaModel, SchemaData};
@@ -54,34 +54,35 @@ pub trait ProjectRepository: Clone {
 
 pub trait SchemaRepository: Clone {
     type CONN: Connection;
-/*
+
     fn fetch_by_id(
         &self,
         conn: &Self::CONN,
         id: i64,
-    ) -> Result<SchemaModel, LightSpeedError>;
+    ) -> Result<SchemaModel, C3p0Error>;
 
+/*
     fn fetch_by_name_and_project_id(
         &self,
         conn: &Self::CONN,
         schema_name: &str,
         project_id: i64,
     ) -> Result<SchemaModel, LightSpeedError>;
+    */
 
     fn save(
         &self,
         conn: &Self::CONN,
         model: NewModel<SchemaData>,
-    ) -> Result<SchemaModel, LightSpeedError>;
+    ) -> Result<SchemaModel, C3p0Error>;
 
     fn update(
         &self,
         conn: &Self::CONN,
         model: SchemaModel,
-    ) -> Result<SchemaModel, LightSpeedError>;
+    ) -> Result<SchemaModel, C3p0Error>;
 
-    fn delete(&self, conn: &Self::CONN, model: &SchemaModel) -> Result<u64, LightSpeedError>;
-    */
+    fn delete(&self, conn: &Self::CONN, model: &SchemaModel) -> Result<u64, C3p0Error>;
 }
 
 pub trait SchemaContentMappingRepository: Clone {
