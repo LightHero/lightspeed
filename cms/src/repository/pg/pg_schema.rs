@@ -22,7 +22,6 @@ impl Default for PgSchemaRepository {
     fn default() -> Self {
         PgSchemaRepository {
             repo: C3p0JsonBuilder::new("CMS_SCHEMA")
-                .with_data_field_name("data_json")
                 .build(),
         }
     }

@@ -10,12 +10,14 @@ use crate::service::token::TokenService;
 use c3p0::*;
 use lightspeed_core::error::{ErrorDetails, LightSpeedError};
 use lightspeed_core::service::auth::Auth;
-use lightspeed_core::service::validator::Validator;
+use lightspeed_core::service::validator::{Validator, ERR_NOT_UNIQUE};
 use lightspeed_core::utils::current_epoch_seconds;
 use lightspeed_email::model::email::EmailMessage;
 use lightspeed_email::service::email::EmailService;
 use log::*;
 use std::sync::Arc;
+
+pub const WRONG_TYPE: &str = "WRONG_TYPE";
 
 #[derive(Clone)]
 pub struct AuthAccountService<RepoManager: AuthRepositoryManager> {
@@ -90,10 +92,10 @@ impl<RepoManager: AuthRepositoryManager> AuthAccountService<RepoManager> {
                 .fetch_by_email_optional(conn, &create_login_dto.email)?;
             Validator::validate((&create_login_dto, |error_details: &ErrorDetails| {
                 if existing_user.is_some() {
-                    error_details.add_detail("username", "NOT_UNIQUE");
+                    error_details.add_detail("username", ERR_NOT_UNIQUE);
                 }
                 if existing_email.is_some() {
-                    error_details.add_detail("email", "NOT_UNIQUE");
+                    error_details.add_detail("email", ERR_NOT_UNIQUE);
                 }
                 Ok(())
             }))?;
@@ -153,7 +155,7 @@ impl<RepoManager: AuthRepositoryManager> AuthAccountService<RepoManager> {
             Validator::validate(|error_details: &ErrorDetails| {
                 match &token.data.token_type {
                     TokenType::AccountActivation => {}
-                    _ => error_details.add_detail("token_type", "WRONG_TYPE"),
+                    _ => error_details.add_detail("token_type", WRONG_TYPE),
                 };
                 Ok(())
             })?;
@@ -198,7 +200,7 @@ impl<RepoManager: AuthRepositoryManager> AuthAccountService<RepoManager> {
             Validator::validate(|error_details: &ErrorDetails| {
                 match &token.data.token_type {
                     TokenType::AccountActivation => {}
-                    _ => error_details.add_detail("token_type", "WRONG_TYPE"),
+                    _ => error_details.add_detail("token_type", WRONG_TYPE),
                 };
                 Ok(())
             })?;
@@ -281,7 +283,7 @@ impl<RepoManager: AuthRepositoryManager> AuthAccountService<RepoManager> {
             Validator::validate(|error_details: &ErrorDetails| {
                 match &token.data.token_type {
                     TokenType::ResetPassword => {}
-                    _ => error_details.add_detail("token_type", "WRONG_TYPE"),
+                    _ => error_details.add_detail("token_type", WRONG_TYPE),
                 };
                 Ok(())
             })?;

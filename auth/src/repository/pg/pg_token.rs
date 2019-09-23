@@ -22,7 +22,6 @@ impl Default for PgTokenRepository {
     fn default() -> Self {
         PgTokenRepository {
             repo: C3p0JsonBuilder::new("AUTH_TOKEN")
-                .with_data_field_name("data_json")
                 .build(),
         }
     }
@@ -37,8 +36,8 @@ impl TokenRepository for PgTokenRepository {
         token_string: &str,
     ) -> Result<TokenModel, LightSpeedError> {
         let sql = r#"
-            select id, version, data_json from AUTH_TOKEN
-            where AUTH_TOKEN.DATA_JSON ->> 'token' = $1
+            select id, version, data from AUTH_TOKEN
+            where AUTH_TOKEN.DATA ->> 'token' = $1
             limit 1
         "#;
         self.repo
@@ -52,11 +51,11 @@ impl TokenRepository for PgTokenRepository {
         &self,
         conn: &Self::CONN,
         model: NewModel<TokenData>,
-    ) -> Result<Model<TokenData>, C3p0Error> {
-        self.repo.save(conn, model)
+    ) -> Result<Model<TokenData>, LightSpeedError> {
+        Ok(self.repo.save(conn, model)?)
     }
 
-    fn delete(&self, conn: &Self::CONN, model: &Model<TokenData>) -> Result<u64, C3p0Error> {
-        self.repo.delete(conn, model)
+    fn delete(&self, conn: &Self::CONN, model: &Model<TokenData>) -> Result<u64, LightSpeedError> {
+        Ok(self.repo.delete(conn, model)?)
     }
 }

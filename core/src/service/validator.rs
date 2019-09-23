@@ -8,6 +8,10 @@ pub mod must_match;
 pub mod number;
 pub mod urls;
 
+pub const ERR_NOT_UNIQUE: &str = "NOT_UNIQUE";
+pub const ERR_VALUE_REQUIRED: &str = "VALUE_REQUIRED";
+pub const ERR_UNKNOWN_FIELD: &str = "UNKNOWN_FIELD";
+
 pub trait Validable {
     fn validate(&self, error_details: &ErrorDetails) -> Result<(), LightSpeedError>;
 }

@@ -1,10 +1,8 @@
 use c3p0::Model;
 use lightspeed_core::error::{ErrorDetails, LightSpeedError};
 use lightspeed_core::service::validator::number::validate_number_ge;
-use lightspeed_core::service::validator::Validable;
+use lightspeed_core::service::validator::{Validable, ERR_NOT_UNIQUE};
 use serde::{Deserialize, Serialize};
-
-const MUST_BE_UNIQUE: &str = "MUST_BE_UNIQUE";
 
 pub type SchemaModel = Model<SchemaData>;
 
@@ -37,7 +35,7 @@ impl Validable for &Schema {
         for (count, schema_field) in (&self.fields).iter().enumerate() {
             let scoped_err = error_details.with_scope(format!("fields[{}]", count));
             if field_names.contains(&&schema_field.name) {
-                scoped_err.add_detail("name", MUST_BE_UNIQUE);
+                scoped_err.add_detail("name", ERR_NOT_UNIQUE);
             }
             field_names.push(&schema_field.name);
             schema_field.validate(&scoped_err)?;
@@ -154,7 +152,7 @@ mod test {
                 );
                 assert_eq!(
                     details.details().borrow().get("schema.fields[2].name"),
-                    Some(&vec![ErrorDetail::new(MUST_BE_UNIQUE, vec![])])
+                    Some(&vec![ErrorDetail::new(ERR_NOT_UNIQUE, vec![])])
                 );
             }
             _ => assert!(false),

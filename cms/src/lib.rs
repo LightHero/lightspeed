@@ -1,6 +1,6 @@
 use crate::config::CmsConfig;
 use crate::repository::CmsRepositoryManager;
-use lightspeed_core::{config::UIConfig, error::LightSpeedError};
+use lightspeed_core::{error::LightSpeedError};
 use log::*;
 use crate::service::project::ProjectService;
 use crate::service::schema::SchemaService;
@@ -14,7 +14,7 @@ pub mod service;
 
 #[derive(Clone)]
 pub struct CmsModule<RepoManager: CmsRepositoryManager> {
-    pub ui_config: UIConfig,
+
     pub cms_config: CmsConfig,
 
     pub repo_manager: RepoManager,
@@ -25,16 +25,15 @@ pub struct CmsModule<RepoManager: CmsRepositoryManager> {
 }
 
 impl<RepoManager: CmsRepositoryManager> CmsModule<RepoManager> {
-    pub fn new(repo_manager: RepoManager, cms_config: CmsConfig, ui_config: UIConfig) -> Self {
+    pub fn new(repo_manager: RepoManager, cms_config: CmsConfig) -> Self {
         println!("Creating CmsModule");
         info!("Creating CmsModule");
 
-        let project_service = ProjectService::new(repo_manager.project_repo());
-        let schema_service = SchemaService::new(repo_manager.schema_repo());
-        let schema_content_mapping_service = SchemaContentMappingService::new(repo_manager.schema_content_repo());
+        let project_service = ProjectService::new(repo_manager.c3p0().clone(), repo_manager.project_repo());
+        let schema_service = SchemaService::new(repo_manager.c3p0().clone(), repo_manager.schema_repo());
+        let schema_content_mapping_service = SchemaContentMappingService::new(repo_manager.c3p0().clone(), repo_manager.schema_content_repo());
 
         CmsModule {
-            ui_config,
             cms_config,
 
             repo_manager,

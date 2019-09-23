@@ -37,7 +37,7 @@ impl<RepoManager: AuthRepositoryManager> TokenService<RepoManager> {
             username: username.into(),
             expire_at_epoch,
         });
-        Ok(self.token_repo.save(conn, token)?)
+        self.token_repo.save(conn, token)
     }
 
     pub fn generate_public_token_url(&self, token: &TokenModel) -> String {
@@ -64,7 +64,7 @@ impl<RepoManager: AuthRepositoryManager> TokenService<RepoManager> {
         conn: &RepoManager::CONN,
         token_model: TokenModel,
     ) -> Result<u64, LightSpeedError> {
-        Ok(self.token_repo.delete(conn, &token_model)?)
+        self.token_repo.delete(conn, &token_model)
     }
 }
 

@@ -7,7 +7,6 @@ use testcontainers::*;
 use lightspeed_cms::config::CmsConfig;
 use lightspeed_cms::repository::pg::PgCmsRepositoryManager;
 use lightspeed_cms::CmsModule;
-use lightspeed_core::config::UIConfig;
 use lightspeed_core::module::Module;
 
 mod tests;
@@ -42,8 +41,7 @@ fn init() -> (
 
     let cms_config = CmsConfig::build();
 
-    let ui_config = UIConfig::build();
-    let mut cms_module = CmsModule::new(repo_manager, cms_config, ui_config);
+    let mut cms_module = CmsModule::new(repo_manager, cms_config);
     cms_module.start().unwrap();
 
     ((cms_module), node)

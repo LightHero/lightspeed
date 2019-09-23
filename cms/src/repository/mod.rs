@@ -29,14 +29,12 @@ pub trait ProjectRepository: Clone {
         conn: &Self::CONN,
         id: i64,
     ) -> Result<ProjectModel, LightSpeedError>;
-/*
 
-    fn fetch_by_name(
+    fn exists_by_name(
         &self,
         conn: &Self::CONN,
         name: &str,
-    ) -> Result<ProjectModel, LightSpeedError>;
-    */
+    ) -> Result<bool, LightSpeedError>;
 
     fn save(
         &self,

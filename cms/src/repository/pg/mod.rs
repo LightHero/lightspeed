@@ -25,7 +25,6 @@ impl PgCmsRepositoryManager {
     }
 }
 
-
 impl CmsRepositoryManager for PgCmsRepositoryManager {
     type CONN = PgConnection;
     type C3P0 = C3p0PoolPg;
@@ -43,7 +42,7 @@ impl CmsRepositoryManager for PgCmsRepositoryManager {
             (&MIGRATIONS)
                 .try_into()
                 .map_err(|err| LightSpeedError::ModuleStartError {
-                    message: format!("CmsRepositoryManager failed to start: {}", err),
+                    message: format!("PgCmsRepositoryManager - failed to read db migrations: {}", err),
                 })?;
 
         let migrate = C3p0MigrateBuilder::new(self.c3p0().clone())
@@ -54,7 +53,7 @@ impl CmsRepositoryManager for PgCmsRepositoryManager {
         migrate
             .migrate()
             .map_err(|err| LightSpeedError::ModuleStartError {
-                message: format!("CmsRepositoryManager failed to start: {}", err),
+                message: format!("PgCmsRepositoryManager - db migration failed: {}", err),
             })
     }
 

@@ -22,7 +22,6 @@ impl Default for PgSchemaContentMappingRepository {
     fn default() -> Self {
         PgSchemaContentMappingRepository {
             repo: C3p0JsonBuilder::new("CMS_SCHEMA_CONTENT_MAPPING")
-                .with_data_field_name("data_json")
                 .build(),
         }
     }

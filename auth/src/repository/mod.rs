@@ -1,6 +1,6 @@
 use crate::model::auth_account::{AuthAccountData, AuthAccountModel};
 use crate::model::token::{TokenData, TokenModel};
-use c3p0::{C3p0Error, C3p0Pool, Connection, Model, NewModel};
+use c3p0::{C3p0Pool, Connection, Model, NewModel};
 use lightspeed_core::error::LightSpeedError;
 
 pub mod pg;
@@ -36,27 +36,27 @@ pub trait AuthAccountRepository: Clone {
         &self,
         conn: &Self::CONN,
         username: &str,
-    ) -> Result<Option<AuthAccountModel>, C3p0Error>;
+    ) -> Result<Option<AuthAccountModel>, LightSpeedError>;
 
     fn fetch_by_email_optional(
         &self,
         conn: &Self::CONN,
         email: &str,
-    ) -> Result<Option<AuthAccountModel>, C3p0Error>;
+    ) -> Result<Option<AuthAccountModel>, LightSpeedError>;
 
     fn save(
         &self,
         conn: &Self::CONN,
         model: NewModel<AuthAccountData>,
-    ) -> Result<AuthAccountModel, C3p0Error>;
+    ) -> Result<AuthAccountModel, LightSpeedError>;
 
     fn update(
         &self,
         conn: &Self::CONN,
         model: Model<AuthAccountData>,
-    ) -> Result<AuthAccountModel, C3p0Error>;
+    ) -> Result<AuthAccountModel, LightSpeedError>;
 
-    fn delete(&self, conn: &Self::CONN, model: &AuthAccountModel) -> Result<u64, C3p0Error>;
+    fn delete(&self, conn: &Self::CONN, model: &AuthAccountModel) -> Result<u64, LightSpeedError>;
 }
 
 pub trait TokenRepository: Clone {
@@ -68,7 +68,7 @@ pub trait TokenRepository: Clone {
         token_string: &str,
     ) -> Result<TokenModel, LightSpeedError>;
 
-    fn save(&self, conn: &Self::CONN, model: NewModel<TokenData>) -> Result<TokenModel, C3p0Error>;
+    fn save(&self, conn: &Self::CONN, model: NewModel<TokenData>) -> Result<TokenModel, LightSpeedError>;
 
-    fn delete(&self, conn: &Self::CONN, model: &TokenModel) -> Result<u64, C3p0Error>;
+    fn delete(&self, conn: &Self::CONN, model: &TokenModel) -> Result<u64, LightSpeedError>;
 }

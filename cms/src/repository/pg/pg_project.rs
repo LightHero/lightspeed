@@ -22,7 +22,6 @@ impl Default for PgProjectRepository {
     fn default() -> Self {
         PgProjectRepository {
             repo: C3p0JsonBuilder::new("CMS_PROJECT")
-                .with_data_field_name("data_json")
                 .build(),
         }
     }
@@ -37,6 +36,21 @@ impl ProjectRepository for PgProjectRepository {
             .ok_or_else(|| LightSpeedError::BadRequest {
                 message: format!("No project found with id [{}]", id),
             })
+    }
+
+    fn exists_by_name(
+        &self,
+        conn: &Self::CONN,
+        name: &str,
+    ) -> Result<bool, LightSpeedError> {
+        let sql = r#"
+            select count(*) from CMS_PROJECT
+            where CMS_PROJECT.DATA ->> 'name' = $1
+        "#;
+        Ok(conn.fetch_one(sql, &[&name], |row| {
+            let count: i64 = row.get(0);
+            Ok(count>0)
+        })?)
     }
 
     fn save(&self, conn: &Self::CONN, model: NewModel<ProjectData>) -> Result<Model<ProjectData>, LightSpeedError> {

@@ -39,7 +39,7 @@ impl AuthRepositoryManager for PgAuthRepositoryManager {
             (&MIGRATIONS)
                 .try_into()
                 .map_err(|err| LightSpeedError::ModuleStartError {
-                    message: format!("PgAuthRepositoryManager failed to start: {}", err),
+                    message: format!("PgAuthRepositoryManager - failed to read db migrations: {}", err),
                 })?;
 
         let migrate = C3p0MigrateBuilder::new(self.c3p0().clone())
@@ -50,7 +50,7 @@ impl AuthRepositoryManager for PgAuthRepositoryManager {
         migrate
             .migrate()
             .map_err(|err| LightSpeedError::ModuleStartError {
-                message: format!("PgAuthRepositoryManager failed to start: {}", err),
+                message: format!("PgAuthRepositoryManager - db migration failed: {}", err),
             })
     }
 

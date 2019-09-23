@@ -14,7 +14,6 @@ impl Default for PgAuthAccountRepository {
     fn default() -> Self {
         PgAuthAccountRepository {
             repo: C3p0JsonBuilder::new("AUTH_ACCOUNT")
-                .with_data_field_name("data_json")
                 .build(),
         }
     }
@@ -50,46 +49,46 @@ impl AuthAccountRepository for PgAuthAccountRepository {
         &self,
         conn: &Self::CONN,
         username: &str,
-    ) -> Result<Option<Model<AuthAccountData>>, C3p0Error> {
+    ) -> Result<Option<Model<AuthAccountData>>, LightSpeedError> {
         let sql = r#"
-            select id, version, data_json from AUTH_ACCOUNT
-            where DATA_JSON ->> 'username' = $1
+            select id, version, data from AUTH_ACCOUNT
+            where DATA ->> 'username' = $1
             limit 1
         "#;
-        self.repo.fetch_one_with_sql(conn, sql, &[&username])
+        Ok(self.repo.fetch_one_with_sql(conn, sql, &[&username])?)
     }
 
     fn fetch_by_email_optional(
         &self,
         conn: &PgConnection,
         email: &str,
-    ) -> Result<Option<AuthAccountModel>, C3p0Error> {
+    ) -> Result<Option<AuthAccountModel>, LightSpeedError> {
         let sql = r#"
-            select id, version, data_json from AUTH_ACCOUNT
-            where DATA_JSON ->> 'email' = $1
+            select id, version, data from AUTH_ACCOUNT
+            where DATA ->> 'email' = $1
             limit 1
         "#;
-        self.repo.fetch_one_with_sql(conn, sql, &[&email])
+        Ok(self.repo.fetch_one_with_sql(conn, sql, &[&email])?)
     }
 
     fn save(
         &self,
         conn: &Self::CONN,
         model: NewModel<AuthAccountData>,
-    ) -> Result<Model<AuthAccountData>, C3p0Error> {
-        self.repo.save(conn, model)
+    ) -> Result<Model<AuthAccountData>, LightSpeedError> {
+        Ok(self.repo.save(conn, model)?)
     }
 
     fn update(
         &self,
         conn: &Self::CONN,
         model: Model<AuthAccountData>,
-    ) -> Result<Model<AuthAccountData>, C3p0Error> {
-        self.repo.update(conn, model)
+    ) -> Result<Model<AuthAccountData>, LightSpeedError> {
+        Ok(self.repo.update(conn, model)?)
     }
 
-    fn delete(&self, conn: &Self::CONN, model: &Model<AuthAccountData>) -> Result<u64, C3p0Error> {
-        self.repo.delete(conn, model)
+    fn delete(&self, conn: &Self::CONN, model: &Model<AuthAccountData>) -> Result<u64, LightSpeedError> {
+        Ok(self.repo.delete(conn, model)?)
     }
 }
 

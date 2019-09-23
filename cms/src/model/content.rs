@@ -6,12 +6,10 @@ use lightspeed_core::error::ErrorDetails;
 use lightspeed_core::service::validator::number::{validate_number_ge, validate_number_le};
 use regex::Regex;
 use std::collections::{BTreeMap, HashMap};
+use lightspeed_core::service::validator::{ERR_NOT_UNIQUE, ERR_UNKNOWN_FIELD, ERR_VALUE_REQUIRED};
 
 pub const SLUG_VALIDATION_REGEX: &str = r#"^[a-z0-9]+(?:-[a-z0-9]+)*$"#;
 
-const VALUE_REQUIRED: &str = "VALUE_REQUIRED";
-const MUST_BE_UNIQUE: &str = "MUST_BE_UNIQUE";
-const UNKNOWN: &str = "UNKNOWN";
 const MUST_BE_OF_TYPE_BOOLEAN: &str = "MUST_BE_OF_TYPE_BOOLEAN";
 const MUST_BE_OF_TYPE_NUMBER: &str = "MUST_BE_OF_TYPE_NUMBER";
 const MUST_BE_OF_TYPE_SLUG: &str = "MUST_BE_OF_TYPE_SLUG";
@@ -62,11 +60,11 @@ impl Content {
                 let scoped_err = error_details.with_scope(format!("fields[{}]", count));
 
                 if field_names.contains(&&content_field.name) {
-                    scoped_err.add_detail("name", MUST_BE_UNIQUE);
+                    scoped_err.add_detail("name", ERR_NOT_UNIQUE);
                 } else if let Some(schema_field) = schema_fields.remove(&content_field.name) {
                     content_field.validate(schema_field, &scoped_err);
                 } else {
-                    scoped_err.add_detail("name", UNKNOWN);
+                    scoped_err.add_detail("name", ERR_UNKNOWN_FIELD);
                 }
                 field_names.push(&content_field.name);
             }
@@ -77,7 +75,7 @@ impl Content {
                 error_details.add_detail(
                     "fields",
                     (
-                        VALUE_REQUIRED,
+                        ERR_VALUE_REQUIRED,
                         schema_fields
                             .iter()
                             .filter(|(_, value)| value.required)
@@ -206,7 +204,7 @@ impl ContentField {
                                     if !values.contains_key(language) {
                                         error_details.add_detail(
                                             format!("{}[{}]", full_field_name, language),
-                                            VALUE_REQUIRED,
+                                            ERR_VALUE_REQUIRED,
                                         )
                                     }
                                 })
@@ -229,7 +227,7 @@ impl ContentField {
         error_details: &ErrorDetails,
     ) {
         if value.is_none() && required {
-            error_details.add_detail(full_field_name, VALUE_REQUIRED);
+            error_details.add_detail(full_field_name, ERR_VALUE_REQUIRED);
         }
     }
 
@@ -249,7 +247,7 @@ impl ContentField {
                 validate_number_le(error_details, full_field_name, *max, *value)
             }
         } else if required {
-            error_details.add_detail(full_field_name, VALUE_REQUIRED);
+            error_details.add_detail(full_field_name, ERR_VALUE_REQUIRED);
         }
     }
 
@@ -285,7 +283,7 @@ impl ContentField {
                 validate_number_le(error_details, full_field_name, *max_length, value.len())
             }
         } else if required {
-            error_details.add_detail(full_field_name, VALUE_REQUIRED);
+            error_details.add_detail(full_field_name, ERR_VALUE_REQUIRED);
         }
     }
 }
@@ -358,7 +356,7 @@ mod test {
                 assert_eq!(details.details().borrow().len(), 1);
                 assert_eq!(
                     details.details().borrow().get("fields[1].name"),
-                    Some(&vec![ErrorDetail::new(MUST_BE_UNIQUE, vec![])])
+                    Some(&vec![ErrorDetail::new(ERR_NOT_UNIQUE, vec![])])
                 );
             }
             _ => assert!(false),
@@ -422,7 +420,7 @@ mod test {
         match result {
             Err(LightSpeedError::ValidationError { details }) => assert_eq!(
                 details.details().borrow()["fields[1].name"],
-                vec![ErrorDetail::new(UNKNOWN, vec![])]
+                vec![ErrorDetail::new(ERR_UNKNOWN_FIELD, vec![])]
             ),
             _ => assert!(false),
         };
@@ -489,7 +487,7 @@ mod test {
             Err(LightSpeedError::ValidationError { details }) => assert_eq!(
                 details.details().borrow()["fields"],
                 vec![ErrorDetail::new(
-                    VALUE_REQUIRED,
+                    ERR_VALUE_REQUIRED,
                     vec!["four".to_owned(), "one".to_owned()]
                 )]
             ),
@@ -865,7 +863,7 @@ mod test {
         match result {
             Err(LightSpeedError::ValidationError { details }) => assert_eq!(
                 details.details().borrow()["fields[0].value"],
-                vec![ErrorDetail::new(VALUE_REQUIRED, vec![])]
+                vec![ErrorDetail::new(ERR_VALUE_REQUIRED, vec![])]
             ),
             _ => assert!(false),
         };
@@ -989,11 +987,11 @@ mod test {
             Err(LightSpeedError::ValidationError { details }) => {
                 assert_eq!(
                     details.details().borrow()["fields[0].value[FR]"],
-                    vec![ErrorDetail::new(VALUE_REQUIRED, vec![])]
+                    vec![ErrorDetail::new(ERR_VALUE_REQUIRED, vec![])]
                 );
                 assert_eq!(
                     details.details().borrow()["fields[0].value[EN]"],
-                    vec![ErrorDetail::new(VALUE_REQUIRED, vec![])]
+                    vec![ErrorDetail::new(ERR_VALUE_REQUIRED, vec![])]
                 );
             }
             _ => assert!(false),
