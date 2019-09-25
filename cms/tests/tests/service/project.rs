@@ -53,7 +53,7 @@ fn project_name_should_be_unique() {
 }
 
 #[test]
-fn should_return_not_unique_valdiation_error() {
+fn should_return_not_unique_validation_error() {
     test(|cms_module| {
         let project_service = &cms_module.project_service;
 

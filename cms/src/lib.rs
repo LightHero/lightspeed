@@ -4,7 +4,6 @@ use lightspeed_core::{error::LightSpeedError};
 use log::*;
 use crate::service::project::ProjectService;
 use crate::service::schema::SchemaService;
-use crate::service::schema_content_mapping::SchemaContentMappingService;
 
 pub mod config;
 pub mod dto;
@@ -21,7 +20,6 @@ pub struct CmsModule<RepoManager: CmsRepositoryManager> {
 
     pub project_service: ProjectService<RepoManager>,
     pub schema_service: SchemaService<RepoManager>,
-    pub schema_content_mapping_service: SchemaContentMappingService<RepoManager>,
 }
 
 impl<RepoManager: CmsRepositoryManager> CmsModule<RepoManager> {
@@ -31,7 +29,6 @@ impl<RepoManager: CmsRepositoryManager> CmsModule<RepoManager> {
 
         let project_service = ProjectService::new(repo_manager.c3p0().clone(), repo_manager.project_repo());
         let schema_service = SchemaService::new(repo_manager.c3p0().clone(), repo_manager.schema_repo());
-        let schema_content_mapping_service = SchemaContentMappingService::new(repo_manager.c3p0().clone(), repo_manager.schema_content_repo());
 
         CmsModule {
             cms_config,
@@ -40,7 +37,6 @@ impl<RepoManager: CmsRepositoryManager> CmsModule<RepoManager> {
 
             project_service,
             schema_service,
-            schema_content_mapping_service
         }
     }
 }

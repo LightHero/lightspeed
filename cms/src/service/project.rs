@@ -21,8 +21,6 @@ impl<RepoManager: CmsRepositoryManager> ProjectService<RepoManager> {
     }
 
     pub fn create_project(&self, create_project_dto: CreateProjectDto) -> Result<ProjectModel, LightSpeedError> {
-        Validator::validate(&create_project_dto)?;
-
         self.c3p0.transaction(move |conn| {
 
             let name_already_exists = self.project_repo.exists_by_name(conn, &create_project_dto.name)?;

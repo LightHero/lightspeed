@@ -6,3 +6,6 @@ authors = ["Francesco Cina <ufoscout@gmail.com>"]
 edition = "2018"
 
 [dependencies]
+lightspeed_auth = { version = "0.1", path = "../auth" }
+lightspeed_cms = { version = "0.1", path = "../cms" }
+lightspeed_scheduler = { version = "0.1", path = "../scheduler" }

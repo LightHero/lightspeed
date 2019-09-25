@@ -38,6 +38,22 @@ impl SchemaRepository for PgSchemaRepository {
             })
     }
 
+    fn exists_by_name_and_project_id(
+        &self,
+        conn: &Self::CONN,
+        name: &str,
+        project_id: i64,
+    ) -> Result<bool, LightSpeedError> {
+        let sql = r#"
+            select count(*) from CMS_SCHEMA
+            where DATA ->> 'name' = $1 AND (DATA ->> 'project_id')::bigint = $2
+        "#;
+        Ok(conn.fetch_one(sql, &[&name, &project_id], |row| {
+            let count: i64 = row.get(0);
+            Ok(count>0)
+        })?)
+    }
+
     fn save(&self, conn: &Self::CONN, model: NewModel<SchemaData>) -> Result<Model<SchemaData>, LightSpeedError> {
         Ok(self.repo.save(conn, model)?)
     }

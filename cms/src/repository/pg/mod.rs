@@ -6,11 +6,9 @@ use lightspeed_core::error::LightSpeedError;
 use std::convert::TryInto;
 use crate::repository::pg::pg_project::PgProjectRepository;
 use crate::repository::pg::pg_schema::PgSchemaRepository;
-use crate::repository::pg::pg_schema_content_mapping::PgSchemaContentMappingRepository;
 
 pub mod pg_project;
 pub mod pg_schema;
-pub mod pg_schema_content_mapping;
 
 const MIGRATIONS: Dir = include_dir!("./src_resources/db/pg/migrations");
 
@@ -30,7 +28,6 @@ impl CmsRepositoryManager for PgCmsRepositoryManager {
     type C3P0 = C3p0PoolPg;
     type PROJECT_REPO = PgProjectRepository;
     type SCHEMA_REPO = PgSchemaRepository;
-    type SCHEMA_CONTENT_MAPPING_REPO = PgSchemaContentMappingRepository;
 
     fn c3p0(&self) -> &C3p0PoolPg {
         &self.c3p0
@@ -65,7 +62,4 @@ impl CmsRepositoryManager for PgCmsRepositoryManager {
         PgSchemaRepository::default()
     }
 
-    fn schema_content_repo(&self) -> Self::SCHEMA_CONTENT_MAPPING_REPO {
-        PgSchemaContentMappingRepository::default()
-    }
 }
