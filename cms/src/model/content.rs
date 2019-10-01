@@ -4,9 +4,9 @@ use crate::model::schema::{
 use lazy_static::*;
 use lightspeed_core::error::ErrorDetails;
 use lightspeed_core::service::validator::number::{validate_number_ge, validate_number_le};
+use lightspeed_core::service::validator::{ERR_NOT_UNIQUE, ERR_UNKNOWN_FIELD, ERR_VALUE_REQUIRED};
 use regex::Regex;
 use std::collections::{BTreeMap, HashMap};
-use lightspeed_core::service::validator::{ERR_NOT_UNIQUE, ERR_UNKNOWN_FIELD, ERR_VALUE_REQUIRED};
 
 pub const SLUG_VALIDATION_REGEX: &str = r#"^[a-z0-9]+(?:-[a-z0-9]+)*$"#;
 
@@ -1062,5 +1062,4 @@ mod test {
             Ok(())
         })
     }
-
 }

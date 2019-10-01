@@ -1,7 +1,7 @@
+use crate::model::project::{ProjectData, ProjectModel};
+use crate::model::schema::{SchemaData, SchemaModel};
 use c3p0::{C3p0Pool, Connection, NewModel};
 use lightspeed_core::error::LightSpeedError;
-use crate::model::project::{ProjectModel, ProjectData};
-use crate::model::schema::{SchemaModel, SchemaData};
 
 pub mod pg;
 
@@ -16,23 +16,14 @@ pub trait CmsRepositoryManager: Clone {
 
     fn project_repo(&self) -> Self::PROJECT_REPO;
     fn schema_repo(&self) -> Self::SCHEMA_REPO;
-
 }
 
 pub trait ProjectRepository: Clone {
     type CONN: Connection;
 
-    fn fetch_by_id(
-        &self,
-        conn: &Self::CONN,
-        id: i64,
-    ) -> Result<ProjectModel, LightSpeedError>;
+    fn fetch_by_id(&self, conn: &Self::CONN, id: i64) -> Result<ProjectModel, LightSpeedError>;
 
-    fn exists_by_name(
-        &self,
-        conn: &Self::CONN,
-        name: &str,
-    ) -> Result<bool, LightSpeedError>;
+    fn exists_by_name(&self, conn: &Self::CONN, name: &str) -> Result<bool, LightSpeedError>;
 
     fn save(
         &self,
@@ -52,11 +43,7 @@ pub trait ProjectRepository: Clone {
 pub trait SchemaRepository: Clone {
     type CONN: Connection;
 
-    fn fetch_by_id(
-        &self,
-        conn: &Self::CONN,
-        id: i64,
-    ) -> Result<SchemaModel, LightSpeedError>;
+    fn fetch_by_id(&self, conn: &Self::CONN, id: i64) -> Result<SchemaModel, LightSpeedError>;
 
     fn exists_by_name_and_project_id(
         &self,
@@ -71,11 +58,14 @@ pub trait SchemaRepository: Clone {
         model: NewModel<SchemaData>,
     ) -> Result<SchemaModel, LightSpeedError>;
 
-    fn update(
-        &self,
-        conn: &Self::CONN,
-        model: SchemaModel,
-    ) -> Result<SchemaModel, LightSpeedError>;
+    fn update(&self, conn: &Self::CONN, model: SchemaModel)
+        -> Result<SchemaModel, LightSpeedError>;
 
     fn delete(&self, conn: &Self::CONN, model: &SchemaModel) -> Result<u64, LightSpeedError>;
+
+    fn delete_by_project_id(
+        &self,
+        conn: &Self::CONN,
+        project_id: i64,
+    ) -> Result<u64, LightSpeedError>;
 }

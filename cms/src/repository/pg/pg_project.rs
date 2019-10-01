@@ -1,9 +1,9 @@
+use crate::model::project::ProjectData;
 use crate::repository::ProjectRepository;
 use c3p0::pg::*;
 use c3p0::*;
-use crate::model::project::ProjectData;
-use std::ops::Deref;
 use lightspeed_core::error::LightSpeedError;
+use std::ops::Deref;
 
 #[derive(Clone)]
 pub struct PgProjectRepository {
@@ -21,8 +21,7 @@ impl Deref for PgProjectRepository {
 impl Default for PgProjectRepository {
     fn default() -> Self {
         PgProjectRepository {
-            repo: C3p0JsonBuilder::new("CMS_PROJECT")
-                .build(),
+            repo: C3p0JsonBuilder::new("CMS_PROJECT").build(),
         }
     }
 }
@@ -30,7 +29,11 @@ impl Default for PgProjectRepository {
 impl ProjectRepository for PgProjectRepository {
     type CONN = PgConnection;
 
-    fn fetch_by_id(&self, conn: &Self::CONN, id: i64) -> Result<Model<ProjectData>, LightSpeedError> {
+    fn fetch_by_id(
+        &self,
+        conn: &Self::CONN,
+        id: i64,
+    ) -> Result<Model<ProjectData>, LightSpeedError> {
         self.repo
             .fetch_one_by_id(conn, &id)?
             .ok_or_else(|| LightSpeedError::BadRequest {
@@ -38,30 +41,38 @@ impl ProjectRepository for PgProjectRepository {
             })
     }
 
-    fn exists_by_name(
-        &self,
-        conn: &Self::CONN,
-        name: &str,
-    ) -> Result<bool, LightSpeedError> {
+    fn exists_by_name(&self, conn: &Self::CONN, name: &str) -> Result<bool, LightSpeedError> {
         let sql = r#"
             select count(*) from CMS_PROJECT
             where CMS_PROJECT.DATA ->> 'name' = $1
         "#;
         Ok(conn.fetch_one(sql, &[&name], |row| {
             let count: i64 = row.get(0);
-            Ok(count>0)
+            Ok(count > 0)
         })?)
     }
 
-    fn save(&self, conn: &Self::CONN, model: NewModel<ProjectData>) -> Result<Model<ProjectData>, LightSpeedError> {
+    fn save(
+        &self,
+        conn: &Self::CONN,
+        model: NewModel<ProjectData>,
+    ) -> Result<Model<ProjectData>, LightSpeedError> {
         Ok(self.repo.save(conn, model)?)
     }
 
-    fn update(&self, conn: &Self::CONN, model: Model<ProjectData>) -> Result<Model<ProjectData>, LightSpeedError> {
+    fn update(
+        &self,
+        conn: &Self::CONN,
+        model: Model<ProjectData>,
+    ) -> Result<Model<ProjectData>, LightSpeedError> {
         Ok(self.repo.update(conn, model)?)
     }
 
-    fn delete(&self, conn: &Self::CONN, model: &Model<ProjectData>) -> Result<u64, LightSpeedError> {
+    fn delete(
+        &self,
+        conn: &Self::CONN,
+        model: &Model<ProjectData>,
+    ) -> Result<u64, LightSpeedError> {
         Ok(self.repo.delete(conn, model)?)
     }
 }

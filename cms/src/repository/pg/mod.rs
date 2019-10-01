@@ -1,11 +1,11 @@
+use crate::repository::pg::pg_project::PgProjectRepository;
+use crate::repository::pg::pg_schema::PgSchemaRepository;
 use crate::repository::CmsRepositoryManager;
 use c3p0::pg::*;
 use c3p0::*;
 use include_dir::*;
 use lightspeed_core::error::LightSpeedError;
 use std::convert::TryInto;
-use crate::repository::pg::pg_project::PgProjectRepository;
-use crate::repository::pg::pg_schema::PgSchemaRepository;
 
 pub mod pg_project;
 pub mod pg_schema;
@@ -39,7 +39,10 @@ impl CmsRepositoryManager for PgCmsRepositoryManager {
             (&MIGRATIONS)
                 .try_into()
                 .map_err(|err| LightSpeedError::ModuleStartError {
-                    message: format!("PgCmsRepositoryManager - failed to read db migrations: {}", err),
+                    message: format!(
+                        "PgCmsRepositoryManager - failed to read db migrations: {}",
+                        err
+                    ),
                 })?;
 
         let migrate = C3p0MigrateBuilder::new(self.c3p0().clone())
@@ -61,5 +64,4 @@ impl CmsRepositoryManager for PgCmsRepositoryManager {
     fn schema_repo(&self) -> Self::SCHEMA_REPO {
         PgSchemaRepository::default()
     }
-
 }

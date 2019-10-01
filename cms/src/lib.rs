@@ -1,9 +1,9 @@
 use crate::config::CmsConfig;
 use crate::repository::CmsRepositoryManager;
-use lightspeed_core::{error::LightSpeedError};
-use log::*;
 use crate::service::project::ProjectService;
 use crate::service::schema::SchemaService;
+use lightspeed_core::error::LightSpeedError;
+use log::*;
 
 pub mod config;
 pub mod dto;
@@ -13,7 +13,6 @@ pub mod service;
 
 #[derive(Clone)]
 pub struct CmsModule<RepoManager: CmsRepositoryManager> {
-
     pub cms_config: CmsConfig,
 
     pub repo_manager: RepoManager,
@@ -27,8 +26,13 @@ impl<RepoManager: CmsRepositoryManager> CmsModule<RepoManager> {
         println!("Creating CmsModule");
         info!("Creating CmsModule");
 
-        let project_service = ProjectService::new(repo_manager.c3p0().clone(), repo_manager.project_repo());
-        let schema_service = SchemaService::new(repo_manager.c3p0().clone(), repo_manager.schema_repo());
+        let schema_service =
+            SchemaService::new(repo_manager.c3p0().clone(), repo_manager.schema_repo());
+        let project_service = ProjectService::new(
+            repo_manager.c3p0().clone(),
+            repo_manager.project_repo(),
+            schema_service.clone(),
+        );
 
         CmsModule {
             cms_config,
@@ -81,5 +85,4 @@ pub mod test_root {
         };
         setup_logger(&conf).unwrap();
     }
-
 }
