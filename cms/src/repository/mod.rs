@@ -1,12 +1,12 @@
 use crate::model::project::{ProjectData, ProjectModel};
 use crate::model::schema::{SchemaData, SchemaModel};
-use c3p0::{C3p0Pool, Connection, NewModel};
+use c3p0::{C3p0Pool, NewModel};
 use lightspeed_core::error::LightSpeedError;
 
 pub mod pg;
 
 pub trait CmsRepositoryManager: Clone {
-    type CONN: Connection;
+    type CONN;
     type C3P0: C3p0Pool<CONN = Self::CONN>;
     type PROJECT_REPO: ProjectRepository<CONN = Self::CONN>;
     type SCHEMA_REPO: SchemaRepository<CONN = Self::CONN>;
@@ -19,7 +19,7 @@ pub trait CmsRepositoryManager: Clone {
 }
 
 pub trait ProjectRepository: Clone {
-    type CONN: Connection;
+    type CONN;
 
     fn fetch_by_id(&self, conn: &Self::CONN, id: i64) -> Result<ProjectModel, LightSpeedError>;
 
@@ -41,7 +41,7 @@ pub trait ProjectRepository: Clone {
 }
 
 pub trait SchemaRepository: Clone {
-    type CONN: Connection;
+    type CONN;
 
     fn fetch_by_id(&self, conn: &Self::CONN, id: i64) -> Result<SchemaModel, LightSpeedError>;
 

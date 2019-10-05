@@ -14,22 +14,22 @@ const MIGRATIONS: Dir = include_dir!("./src_resources/db/pg/migrations");
 
 #[derive(Clone)]
 pub struct PgCmsRepositoryManager {
-    c3p0: C3p0PoolPg,
+    c3p0: PgC3p0Pool,
 }
 
 impl PgCmsRepositoryManager {
-    pub fn new(c3p0: C3p0PoolPg) -> Self {
+    pub fn new(c3p0: PgC3p0Pool) -> Self {
         Self { c3p0 }
     }
 }
 
 impl CmsRepositoryManager for PgCmsRepositoryManager {
     type CONN = PgConnection;
-    type C3P0 = C3p0PoolPg;
+    type C3P0 = PgC3p0Pool;
     type PROJECT_REPO = PgProjectRepository;
     type SCHEMA_REPO = PgSchemaRepository;
 
-    fn c3p0(&self) -> &C3p0PoolPg {
+    fn c3p0(&self) -> &PgC3p0Pool {
         &self.c3p0
     }
 

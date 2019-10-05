@@ -36,7 +36,7 @@ fn init() -> (
     )
     .unwrap();
     let pool = Pool::builder().min_idle(Some(10)).build(manager).unwrap();
-    let c3p0 = C3p0PoolPg::new(pool);
+    let c3p0 = PgC3p0Pool::new(pool);
     let repo_manager = RepoManager::new(c3p0.clone());
 
     let cms_config = CmsConfig::build();

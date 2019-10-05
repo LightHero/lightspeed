@@ -7,11 +7,11 @@ use std::ops::Deref;
 
 #[derive(Clone)]
 pub struct PgTokenRepository {
-    repo: C3p0JsonPg<TokenData, DefaultJsonCodec>,
+    repo: PgC3p0Json<TokenData, DefaultJsonCodec>,
 }
 
 impl Deref for PgTokenRepository {
-    type Target = C3p0JsonPg<TokenData, DefaultJsonCodec>;
+    type Target = PgC3p0Json<TokenData, DefaultJsonCodec>;
 
     fn deref(&self) -> &Self::Target {
         &self.repo

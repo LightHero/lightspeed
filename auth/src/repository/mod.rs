@@ -1,12 +1,12 @@
 use crate::model::auth_account::{AuthAccountData, AuthAccountModel};
 use crate::model::token::{TokenData, TokenModel};
-use c3p0::{C3p0Pool, Connection, Model, NewModel};
+use c3p0::{C3p0Pool, Model, NewModel};
 use lightspeed_core::error::LightSpeedError;
 
 pub mod pg;
 
 pub trait AuthRepositoryManager: Clone {
-    type CONN: Connection;
+    type CONN;
     type C3P0: C3p0Pool<CONN = Self::CONN>;
     type AUTH_ACCOUNT_REPO: AuthAccountRepository<CONN = Self::CONN>;
     type TOKEN_REPO: TokenRepository<CONN = Self::CONN>;
@@ -18,7 +18,7 @@ pub trait AuthRepositoryManager: Clone {
 }
 
 pub trait AuthAccountRepository: Clone {
-    type CONN: Connection;
+    type CONN;
 
     fn fetch_by_id(
         &self,
@@ -60,7 +60,7 @@ pub trait AuthAccountRepository: Clone {
 }
 
 pub trait TokenRepository: Clone {
-    type CONN: Connection;
+    type CONN;
 
     fn fetch_by_token(
         &self,

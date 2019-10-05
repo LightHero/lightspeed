@@ -14,22 +14,22 @@ const MIGRATIONS: Dir = include_dir!("./src_resources/db/pg/migrations");
 
 #[derive(Clone)]
 pub struct PgAuthRepositoryManager {
-    c3p0: C3p0PoolPg,
+    c3p0: PgC3p0Pool,
 }
 
 impl PgAuthRepositoryManager {
-    pub fn new(c3p0: C3p0PoolPg) -> Self {
+    pub fn new(c3p0: PgC3p0Pool) -> Self {
         Self { c3p0 }
     }
 }
 
 impl AuthRepositoryManager for PgAuthRepositoryManager {
     type CONN = PgConnection;
-    type C3P0 = C3p0PoolPg;
+    type C3P0 = PgC3p0Pool;
     type AUTH_ACCOUNT_REPO = PgAuthAccountRepository;
     type TOKEN_REPO = PgTokenRepository;
 
-    fn c3p0(&self) -> &C3p0PoolPg {
+    fn c3p0(&self) -> &PgC3p0Pool {
         &self.c3p0
     }
 

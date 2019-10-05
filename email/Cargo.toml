@@ -7,7 +7,7 @@ edition = "2018"
 
 [dependencies]
 lightspeed_core = { version = "0.1", path = "../core" }
-c3p0 = { version = "0.20", features = ["pg"] }
+c3p0 = { version = "0.21", features = ["pg"] }
 #c3p0 = { version = "0.20", features = ["pg"], path = "../../../github_ufoscout/c3p0/c3p0"}
 err-derive = "0.1"
 include_dir="0.2"
