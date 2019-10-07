@@ -80,9 +80,9 @@ pub trait ContentRepository: Clone {
 
     fn drop_table(&self, conn: &Self::CONN) -> Result<(), LightSpeedError>;
 
-    fn crate_unique_constraint(&self, conn: &Self::CONN, field_name: &str) -> Result<(), LightSpeedError>;
+    fn crate_unique_constraint(&self, conn: &Self::CONN, index_name:&str, field_name: &str) -> Result<(), LightSpeedError>;
 
-    fn drop_unique_constraint(&self, conn: &Self::CONN, field_name: &str) -> Result<(), LightSpeedError>;
+    fn drop_unique_constraint(&self, conn: &Self::CONN, index_name: &str) -> Result<(), LightSpeedError>;
 
     fn fetch_by_id(&self, conn: &Self::CONN, id: i64) -> Result<ContentModel, LightSpeedError>;
 

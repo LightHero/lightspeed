@@ -6,7 +6,6 @@ use lightspeed_core::service::validator::{Validator, ERR_NOT_UNIQUE};
 use chashmap::{CHashMap, ReadGuard};
 use crate::dto::create_content_dto::CreateContentDto;
 use crate::model::content::ContentModel;
-use evmap::{ReadHandle, WriteHandle};
 
 #[derive(Clone)]
 pub struct ContentService<RepoManager: CmsRepositoryManager> {
@@ -69,6 +68,9 @@ impl<RepoManager: CmsRepositoryManager> ContentService<RepoManager> {
 
     fn content_table_name(&self, schema_id: &i64) -> String {
         format!("CMS_CONTENT_{}", schema_id)
+    }
+    fn unique_index_name(&self, schema_id: &i64, field_name: &str) -> String {
+        format!("CMS_CONTENT_{}_UNIQUE_{}", schema_id, field_name)
     }
 
 }

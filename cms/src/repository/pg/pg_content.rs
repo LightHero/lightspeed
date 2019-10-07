@@ -37,7 +37,7 @@ impl ContentRepository for PgContentRepository {
         Ok(self.repo.drop_table_if_exists(conn)?)
     }
 
-    fn crate_unique_constraint(&self, conn: &Self::CONN, index_name:&str, field_name: &str) -> Result<(), LightSpeedError> {
+    fn crate_unique_constraint(&self, conn: &Self::CONN, index_name: &str, field_name: &str) -> Result<(), LightSpeedError> {
         Ok(conn.batch_execute(&format!("CREATE UNIQUE INDEX {} ON {}( (DATA->>'name') )", index_name, self.repo.queries().qualified_table_name))?)
     }
 
