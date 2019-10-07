@@ -6,7 +6,9 @@ use c3p0::*;
 use include_dir::*;
 use lightspeed_core::error::LightSpeedError;
 use std::convert::TryInto;
+use crate::repository::pg::pg_content::PgContentRepository;
 
+pub mod pg_content;
 pub mod pg_project;
 pub mod pg_schema;
 
@@ -26,6 +28,7 @@ impl PgCmsRepositoryManager {
 impl CmsRepositoryManager for PgCmsRepositoryManager {
     type CONN = PgConnection;
     type C3P0 = PgC3p0Pool;
+    type CONTENT_REPO = PgContentRepository;
     type PROJECT_REPO = PgProjectRepository;
     type SCHEMA_REPO = PgSchemaRepository;
 
@@ -55,6 +58,10 @@ impl CmsRepositoryManager for PgCmsRepositoryManager {
             .map_err(|err| LightSpeedError::ModuleStartError {
                 message: format!("PgCmsRepositoryManager - db migration failed: {}", err),
             })
+    }
+
+    fn content_repo(&self, table_name: &str) -> Self::CONTENT_REPO {
+        PgContentRepository::new(table_name)
     }
 
     fn project_repo(&self) -> Self::PROJECT_REPO {

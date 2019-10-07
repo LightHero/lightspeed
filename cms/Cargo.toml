@@ -10,6 +10,7 @@ lightspeed_core = { version = "0.1", path = "../core" }
 actix-web = "1.0"
 c3p0 = { version = "0.21", features = ["pg_migrate"] }
 #c3p0 = { version = "0.20", features = ["pg_migrate"], path = "../../../github_ufoscout/c3p0/c3p0"}
+chashmap = "2.2" # to be replaced with crossbean-skiplist or another lock free map
 err-derive = "0.1"
 include_dir="0.2"
 lazy_static = "1.3"

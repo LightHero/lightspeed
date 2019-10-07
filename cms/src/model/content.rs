@@ -1,11 +1,13 @@
 use crate::model::schema::{
     LocalizableOptions, Schema, SchemaField, SchemaFieldArity, SchemaFieldType,
 };
+use c3p0::Model;
 use lazy_static::*;
 use lightspeed_core::error::ErrorDetails;
 use lightspeed_core::service::validator::number::{validate_number_ge, validate_number_le};
 use lightspeed_core::service::validator::{ERR_NOT_UNIQUE, ERR_UNKNOWN_FIELD, ERR_VALUE_REQUIRED};
 use regex::Regex;
+use serde::{Deserialize, Serialize};
 use std::collections::{BTreeMap, HashMap};
 
 pub const SLUG_VALIDATION_REGEX: &str = r#"^[a-z0-9]+(?:-[a-z0-9]+)*$"#;
@@ -23,17 +25,28 @@ lazy_static! {
         Regex::new(SLUG_VALIDATION_REGEX).expect("slug validation regex should be valid");
 }
 
+pub type ContentModel = Model<ContentData>;
+
+#[derive(Clone, Serialize, Deserialize)]
+pub struct ContentData {
+    pub schema_id: i64,
+    pub content: Content,
+}
+
+#[derive(Clone, Serialize, Deserialize)]
 pub struct Content {
     pub fields: Vec<ContentField>,
     pub created_ms: i64,
     pub updated_ms: i64,
 }
 
+#[derive(Clone, Serialize, Deserialize)]
 pub struct ContentField {
     pub name: String,
     pub value: ContentFieldValue,
 }
 
+#[derive(Clone, Serialize, Deserialize)]
 pub enum ContentFieldValue {
     Number(ContentFieldValueArity<Option<usize>>),
     Slug(String),
@@ -41,6 +54,7 @@ pub enum ContentFieldValue {
     Boolean(ContentFieldValueArity<Option<bool>>),
 }
 
+#[derive(Clone, Serialize, Deserialize)]
 pub enum ContentFieldValueArity<T> {
     Single { value: T },
     Localizable { values: HashMap<String, T> },
