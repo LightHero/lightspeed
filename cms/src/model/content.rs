@@ -35,15 +35,9 @@ pub struct ContentData {
 
 #[derive(Clone, Serialize, Deserialize)]
 pub struct Content {
-    pub fields: Vec<ContentField>,
+    pub fields: HashMap<String, ContentFieldValue>,
     pub created_ms: i64,
     pub updated_ms: i64,
-}
-
-#[derive(Clone, Serialize, Deserialize)]
-pub struct ContentField {
-    pub name: String,
-    pub value: ContentFieldValue,
 }
 
 #[derive(Clone, Serialize, Deserialize)]
@@ -70,17 +64,18 @@ impl Content {
         {
             let mut field_names = vec![];
 
-            for (count, content_field) in (&self.fields).iter().enumerate() {
-                let scoped_err = error_details.with_scope(format!("fields[{}]", count));
+            for (content_field_name, content_field_value) in (&self.fields).iter() {
+                let scoped_name = format!("fields[{}]", content_field_name);
+                let scoped_err = error_details.with_scope(&scoped_name);
 
-                if field_names.contains(&&content_field.name) {
-                    scoped_err.add_detail("name", ERR_NOT_UNIQUE);
-                } else if let Some(schema_field) = schema_fields.remove(&content_field.name) {
-                    content_field.validate(schema_field, &scoped_err);
+                if field_names.contains(&content_field_name) {
+                    error_details.add_detail(format!("fields[{}]", content_field_name), ERR_NOT_UNIQUE);
+                } else if let Some(schema_field) = schema_fields.remove(content_field_name) {
+                    validate_content_field(content_field_name, content_field_value, schema_field, &scoped_err);
                 } else {
-                    scoped_err.add_detail("name", ERR_UNKNOWN_FIELD);
+                    error_details.add_detail(&scoped_name, ERR_UNKNOWN_FIELD);
                 }
-                field_names.push(&content_field.name);
+                field_names.push(content_field_name);
             }
         }
 
@@ -102,25 +97,25 @@ impl Content {
     }
 }
 
-impl ContentField {
-    fn validate(&self, schema_field: &SchemaField, error_details: &ErrorDetails) {
-        validate_number_ge(error_details, "name", 1, self.name.len());
+
+    fn validate_content_field(content_field_name: &str, content_field_value: &ContentFieldValue, schema_field: &SchemaField, error_details: &ErrorDetails) {
+        validate_number_ge(error_details, "name", 1, content_field_name.len());
 
         let full_field_name = "value";
         match &schema_field.field_type {
             SchemaFieldType::Boolean {
                 arity: schema_arity,
                 default: _default,
-            } => match &self.value {
+            } => match content_field_value {
                 ContentFieldValue::Boolean(arity) => {
-                    ContentField::validate_arity(
+                    validate_arity(
                         schema_field.required,
                         schema_arity,
                         arity,
                         error_details,
                         full_field_name,
                         |field_name, value| {
-                            ContentField::validate_boolean(
+                            validate_boolean(
                                 schema_field.required,
                                 field_name,
                                 *value,
@@ -136,16 +131,16 @@ impl ContentField {
                 max,
                 arity: schema_arity,
                 default: _default,
-            } => match &self.value {
+            } => match content_field_value {
                 ContentFieldValue::Number(arity) => {
-                    ContentField::validate_arity(
+                    validate_arity(
                         schema_field.required,
                         schema_arity,
                         arity,
                         error_details,
                         full_field_name,
                         |field_name, value| {
-                            ContentField::validate_number(
+                            validate_number(
                                 schema_field.required,
                                 field_name,
                                 value,
@@ -158,9 +153,9 @@ impl ContentField {
                 }
                 _ => error_details.add_detail(full_field_name, MUST_BE_OF_TYPE_NUMBER),
             },
-            SchemaFieldType::Slug => match &self.value {
+            SchemaFieldType::Slug => match content_field_value {
                 ContentFieldValue::Slug(value) => {
-                    ContentField::validate_slug(full_field_name, value, error_details)
+                    validate_slug(full_field_name, value, error_details)
                 }
                 _ => error_details.add_detail(full_field_name, MUST_BE_OF_TYPE_SLUG),
             },
@@ -169,16 +164,16 @@ impl ContentField {
                 max_length,
                 arity: schema_arity,
                 default: _default,
-            } => match &self.value {
+            } => match content_field_value {
                 ContentFieldValue::String(arity) => {
-                    ContentField::validate_arity(
+                    validate_arity(
                         schema_field.required,
                         schema_arity,
                         arity,
                         error_details,
                         full_field_name,
                         |field_name, value| {
-                            ContentField::validate_string(
+                            validate_string(
                                 schema_field.required,
                                 field_name,
                                 value,
@@ -300,7 +295,7 @@ impl ContentField {
             error_details.add_detail(full_field_name, ERR_VALUE_REQUIRED);
         }
     }
-}
+
 
 #[cfg(test)]
 mod test {
@@ -313,26 +308,21 @@ mod test {
     use lightspeed_core::service::validator::Validator;
     use maplit::*;
 
+    /*
     #[test]
     fn content_validation_should_fail_if_fields_with_same_name() {
         // Arrange
         let mut content = Content {
             created_ms: 0,
             updated_ms: 0,
-            fields: vec![],
+            fields: HashMap::new(),
         };
-        content.fields.push(ContentField {
-            name: "one".to_owned(),
-            value: ContentFieldValue::Boolean(ContentFieldValueArity::Single { value: None }),
-        });
-        content.fields.push(ContentField {
-            name: "one".to_owned(),
-            value: ContentFieldValue::Boolean(ContentFieldValueArity::Single { value: None }),
-        });
-        content.fields.push(ContentField {
-            name: "two".to_owned(),
-            value: ContentFieldValue::Boolean(ContentFieldValueArity::Single { value: None }),
-        });
+        content.fields.insert("one".to_owned(),
+            ContentFieldValue::Boolean(ContentFieldValueArity::Single { value: None }));
+        content.fields.insert("one".to_owned(),
+                              ContentFieldValue::Boolean(ContentFieldValueArity::Single { value: None }));
+        content.fields.insert("two".to_owned(),
+                              ContentFieldValue::Boolean(ContentFieldValueArity::Single { value: None }));
 
         let schema = Schema {
             updated_ms: 0,
@@ -376,6 +366,7 @@ mod test {
             _ => assert!(false),
         }
     }
+*/
 
     #[test]
     fn empty_schema_should_validate_empty_content() {
@@ -388,7 +379,7 @@ mod test {
         let content = Content {
             updated_ms: 0,
             created_ms: 0,
-            fields: vec![],
+            fields: HashMap::new(),
         };
 
         let result = validate_content(&schema, &content);
@@ -413,29 +404,27 @@ mod test {
         let content = Content {
             updated_ms: 0,
             created_ms: 0,
-            fields: vec![
-                ContentField {
-                    name: "one".to_owned(),
-                    value: ContentFieldValue::Boolean(ContentFieldValueArity::Single {
+            fields: hashmap![
+                "one".to_owned() =>
+                    ContentFieldValue::Boolean(ContentFieldValueArity::Single {
                         value: Some(true),
                     }),
-                },
-                ContentField {
-                    name: "two".to_owned(),
-                    value: ContentFieldValue::Boolean(ContentFieldValueArity::Single {
+                "two".to_owned() =>
+                    ContentFieldValue::Boolean(ContentFieldValueArity::Single {
                         value: Some(true),
                     }),
-                },
             ],
         };
 
         let result = validate_content(&schema, &content);
         assert!(result.is_err());
         match result {
-            Err(LightSpeedError::ValidationError { details }) => assert_eq!(
-                details.details().borrow()["fields[1].name"],
+            Err(LightSpeedError::ValidationError { details }) => {
+                println!("details: {:#?}", details);
+                assert_eq!(
+                details.details().borrow()["fields[two]"],
                 vec![ErrorDetail::new(ERR_UNKNOWN_FIELD, vec![])]
-            ),
+            )},
             _ => assert!(false),
         };
     }
@@ -487,12 +476,11 @@ mod test {
         let content = Content {
             updated_ms: 0,
             created_ms: 0,
-            fields: vec![ContentField {
-                name: "two".to_owned(),
-                value: ContentFieldValue::Boolean(ContentFieldValueArity::Single {
+            fields: hashmap!["two".to_owned() =>
+                ContentFieldValue::Boolean(ContentFieldValueArity::Single {
                     value: Some(true),
                 }),
-            }],
+            ],
         };
 
         let result = validate_content(&schema, &content);
@@ -527,12 +515,11 @@ mod test {
         let content = Content {
             updated_ms: 0,
             created_ms: 0,
-            fields: vec![ContentField {
-                name: "one".to_owned(),
-                value: ContentFieldValue::String(ContentFieldValueArity::Single {
+            fields: hashmap!["one".to_owned() =>
+                ContentFieldValue::String(ContentFieldValueArity::Single {
                     value: Some("hello world".to_owned()),
                 }),
-            }],
+            ],
         };
 
         let result = validate_content(&schema, &content);
@@ -540,7 +527,7 @@ mod test {
         println!("{:?}", result);
         match result {
             Err(LightSpeedError::ValidationError { details }) => assert_eq!(
-                details.details().borrow()["fields[0].value"],
+                details.details().borrow()["fields[one].value"],
                 vec![ErrorDetail::new(MUST_BE_OF_TYPE_BOOLEAN, vec![])]
             ),
             _ => assert!(false),
@@ -567,19 +554,19 @@ mod test {
         let content = Content {
             updated_ms: 0,
             created_ms: 0,
-            fields: vec![ContentField {
-                name: "one".to_owned(),
-                value: ContentFieldValue::Boolean(ContentFieldValueArity::Single {
+            fields: hashmap![
+                "one".to_owned() =>
+                ContentFieldValue::Boolean(ContentFieldValueArity::Single {
                     value: Some(false),
                 }),
-            }],
+            ],
         };
 
         let result = validate_content(&schema, &content);
         assert!(result.is_err());
         match result {
             Err(LightSpeedError::ValidationError { details }) => assert_eq!(
-                details.details().borrow()["fields[0].value"],
+                details.details().borrow()["fields[one].value"],
                 vec![ErrorDetail::new(MUST_BE_OF_TYPE_STRING, vec![])]
             ),
             _ => assert!(false),
@@ -601,24 +588,25 @@ mod test {
         let content = Content {
             updated_ms: 0,
             created_ms: 0,
-            fields: vec![ContentField {
-                name: "one".to_owned(),
-                value: ContentFieldValue::Boolean(ContentFieldValueArity::Single {
+            fields: hashmap![
+                "one".to_owned() =>
+                ContentFieldValue::Boolean(ContentFieldValueArity::Single {
                     value: Some(false),
                 }),
-            }],
+            ],
         };
 
         let result = validate_content(&schema, &content);
         assert!(result.is_err());
         match result {
             Err(LightSpeedError::ValidationError { details }) => assert_eq!(
-                details.details().borrow()["fields[0].value"],
+                details.details().borrow()["fields[one].value"],
                 vec![ErrorDetail::new(MUST_BE_OF_TYPE_SLUG, vec![])]
             ),
             _ => assert!(false),
         };
     }
+
 
     #[test]
     fn validation_should_fail_if_content_has_fields_of_not_number_type() {
@@ -640,19 +628,19 @@ mod test {
         let content = Content {
             updated_ms: 0,
             created_ms: 0,
-            fields: vec![ContentField {
-                name: "one".to_owned(),
-                value: ContentFieldValue::String(ContentFieldValueArity::Single {
+            fields: hashmap![
+                "one".to_owned() =>
+                ContentFieldValue::String(ContentFieldValueArity::Single {
                     value: Some("hello world".to_owned()),
                 }),
-            }],
+            ],
         };
 
         let result = validate_content(&schema, &content);
         assert!(result.is_err());
         match result {
             Err(LightSpeedError::ValidationError { details }) => assert_eq!(
-                details.details().borrow()["fields[0].value"],
+                details.details().borrow()["fields[one].value"],
                 vec![ErrorDetail::new(MUST_BE_OF_TYPE_NUMBER, vec![])]
             ),
             _ => assert!(false),
@@ -679,19 +667,19 @@ mod test {
         let content = Content {
             updated_ms: 0,
             created_ms: 0,
-            fields: vec![ContentField {
-                name: "one".to_owned(),
-                value: ContentFieldValue::Number(ContentFieldValueArity::Single {
+            fields: hashmap![
+                "one".to_owned() =>
+                ContentFieldValue::Number(ContentFieldValueArity::Single {
                     value: Some(99),
                 }),
-            }],
+            ],
         };
 
         let result = validate_content(&schema, &content);
         assert!(result.is_err());
         match result {
             Err(LightSpeedError::ValidationError { details }) => assert_eq!(
-                details.details().borrow()["fields[0].value"],
+                details.details().borrow()["fields[one].value"],
                 vec![ErrorDetail::new(
                     MUST_BE_GREATER_OR_EQUAL,
                     vec!["100".to_owned()]
@@ -721,19 +709,19 @@ mod test {
         let content = Content {
             updated_ms: 0,
             created_ms: 0,
-            fields: vec![ContentField {
-                name: "one".to_owned(),
-                value: ContentFieldValue::Number(ContentFieldValueArity::Single {
+            fields: hashmap![
+                "one".to_owned() =>
+                ContentFieldValue::Number(ContentFieldValueArity::Single {
                     value: Some(1099),
                 }),
-            }],
+            ],
         };
 
         let result = validate_content(&schema, &content);
         assert!(result.is_err());
         match result {
             Err(LightSpeedError::ValidationError { details }) => assert_eq!(
-                details.details().borrow()["fields[0].value"],
+                details.details().borrow()["fields[one].value"],
                 vec![ErrorDetail::new(
                     MUST_BE_LESS_OR_EQUAL,
                     vec!["1000".to_owned()]
@@ -763,19 +751,19 @@ mod test {
         let content = Content {
             updated_ms: 0,
             created_ms: 0,
-            fields: vec![ContentField {
-                name: "one".to_owned(),
-                value: ContentFieldValue::String(ContentFieldValueArity::Single {
+            fields: hashmap![
+                "one".to_owned() =>
+                ContentFieldValue::String(ContentFieldValueArity::Single {
                     value: Some("hello world".to_owned()),
                 }),
-            }],
+            ],
         };
 
         let result = validate_content(&schema, &content);
         assert!(result.is_err());
         match result {
             Err(LightSpeedError::ValidationError { details }) => assert_eq!(
-                details.details().borrow()["fields[0].value"],
+                details.details().borrow()["fields[one].value"],
                 vec![ErrorDetail::new(
                     MUST_BE_GREATER_OR_EQUAL,
                     vec!["1000".to_owned()]
@@ -805,19 +793,19 @@ mod test {
         let content = Content {
             updated_ms: 0,
             created_ms: 0,
-            fields: vec![ContentField {
-                name: "one".to_owned(),
-                value: ContentFieldValue::String(ContentFieldValueArity::Single {
+            fields: hashmap![
+                "one".to_owned() =>
+                ContentFieldValue::String(ContentFieldValueArity::Single {
                     value: Some("hello world?!?!?!?!?!".to_owned()),
                 }),
-            }],
+            ],
         };
 
         let result = validate_content(&schema, &content);
         assert!(result.is_err());
         match result {
             Err(LightSpeedError::ValidationError { details }) => assert_eq!(
-                details.details().borrow()["fields[0].value"],
+                details.details().borrow()["fields[one].value"],
                 vec![ErrorDetail::new(
                     MUST_BE_LESS_OR_EQUAL,
                     vec!["10".to_owned()]
@@ -856,19 +844,15 @@ mod test {
         let content = Content {
             updated_ms: 0,
             created_ms: 0,
-            fields: vec![
-                ContentField {
-                    name: "one".to_owned(),
-                    value: ContentFieldValue::Boolean(ContentFieldValueArity::Single {
+            fields: hashmap![
+                "one".to_owned() =>
+                    ContentFieldValue::Boolean(ContentFieldValueArity::Single {
                         value: None,
                     }),
-                },
-                ContentField {
-                    name: "two".to_owned(),
-                    value: ContentFieldValue::Boolean(ContentFieldValueArity::Single {
+                "two".to_owned() =>
+                    ContentFieldValue::Boolean(ContentFieldValueArity::Single {
                         value: None,
                     }),
-                },
             ],
         };
 
@@ -876,7 +860,7 @@ mod test {
         assert!(result.is_err());
         match result {
             Err(LightSpeedError::ValidationError { details }) => assert_eq!(
-                details.details().borrow()["fields[0].value"],
+                details.details().borrow()["fields[one].value"],
                 vec![ErrorDetail::new(ERR_VALUE_REQUIRED, vec![])]
             ),
             _ => assert!(false),
@@ -901,12 +885,11 @@ mod test {
         let content = Content {
             updated_ms: 0,
             created_ms: 0,
-            fields: vec![ContentField {
-                name: "one".to_owned(),
-                value: ContentFieldValue::Boolean(ContentFieldValueArity::Localizable {
+            fields: hashmap!["one".to_owned() =>
+                ContentFieldValue::Boolean(ContentFieldValueArity::Localizable {
                     values: HashMap::new(),
                 }),
-            }],
+            ],
         };
 
         let result = validate_content(&schema, &content);
@@ -914,7 +897,7 @@ mod test {
         println!("{:?}", result);
         match result {
             Err(LightSpeedError::ValidationError { details }) => assert_eq!(
-                details.details().borrow()["fields[0].value"],
+                details.details().borrow()["fields[one].value"],
                 vec![ErrorDetail::new(SHOULD_HAVE_SINGLE_VALUE_ARITY, vec![])]
             ),
             _ => assert!(false),
@@ -941,12 +924,12 @@ mod test {
         let content = Content {
             updated_ms: 0,
             created_ms: 0,
-            fields: vec![ContentField {
-                name: "one".to_owned(),
-                value: ContentFieldValue::Boolean(ContentFieldValueArity::Single {
+            fields: hashmap![
+                "one".to_owned() =>
+                ContentFieldValue::Boolean(ContentFieldValueArity::Single {
                     value: Some(true),
                 }),
-            }],
+            ],
         };
 
         let result = validate_content(&schema, &content);
@@ -954,7 +937,7 @@ mod test {
         println!("{:?}", result);
         match result {
             Err(LightSpeedError::ValidationError { details }) => assert_eq!(
-                details.details().borrow()["fields[0].value"],
+                details.details().borrow()["fields[one].value"],
                 vec![ErrorDetail::new(SHOULD_HAVE_LOCALIZABLE_ARITY, vec![])]
             ),
             _ => assert!(false),
@@ -983,15 +966,14 @@ mod test {
         let content = Content {
             updated_ms: 0,
             created_ms: 0,
-            fields: vec![ContentField {
-                name: "one".to_owned(),
-                value: ContentFieldValue::Boolean(ContentFieldValueArity::Localizable {
+            fields: hashmap![ "one".to_owned() =>
+                ContentFieldValue::Boolean(ContentFieldValueArity::Localizable {
                     values: hashmap![
                         "IT".to_owned() => Some(true),
                         "EN".to_owned() => None,
                     ],
                 }),
-            }],
+            ],
         };
 
         let result = validate_content(&schema, &content);
@@ -1000,11 +982,11 @@ mod test {
         match result {
             Err(LightSpeedError::ValidationError { details }) => {
                 assert_eq!(
-                    details.details().borrow()["fields[0].value[FR]"],
+                    details.details().borrow()["fields[one].value[FR]"],
                     vec![ErrorDetail::new(ERR_VALUE_REQUIRED, vec![])]
                 );
                 assert_eq!(
-                    details.details().borrow()["fields[0].value[EN]"],
+                    details.details().borrow()["fields[one].value[EN]"],
                     vec![ErrorDetail::new(ERR_VALUE_REQUIRED, vec![])]
                 );
             }
@@ -1027,10 +1009,10 @@ mod test {
         let content = Content {
             updated_ms: 0,
             created_ms: 0,
-            fields: vec![ContentField {
-                name: "slug".to_owned(),
-                value: ContentFieldValue::Slug("a-valid-slug".to_owned()),
-            }],
+            fields: hashmap![
+                "slug".to_owned() =>
+                ContentFieldValue::Slug("a-valid-slug".to_owned()),
+            ],
         };
 
         let result = validate_content(&schema, &content);
@@ -1052,10 +1034,9 @@ mod test {
         let content = Content {
             updated_ms: 0,
             created_ms: 0,
-            fields: vec![ContentField {
-                name: "slug".to_owned(),
-                value: ContentFieldValue::Slug("a---notvalid-slug!".to_owned()),
-            }],
+            fields: hashmap!["slug".to_owned()
+                => ContentFieldValue::Slug("a---notvalid-slug!".to_owned()),
+            ],
         };
 
         let result = validate_content(&schema, &content);
@@ -1063,12 +1044,13 @@ mod test {
         println!("{:?}", result);
         match result {
             Err(LightSpeedError::ValidationError { details }) => assert_eq!(
-                details.details().borrow()["fields[0].value"],
+                details.details().borrow()["fields[slug].value"],
                 vec![ErrorDetail::new(NOT_VALID_SLUG, vec![])]
             ),
             _ => assert!(false),
         };
     }
+
 
     pub fn validate_content(schema: &Schema, content: &Content) -> Result<(), LightSpeedError> {
         Validator::validate(|error_details: &ErrorDetails| {
