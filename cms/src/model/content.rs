@@ -62,21 +62,18 @@ impl Content {
         });
 
         {
-            let mut field_names = vec![];
 
             for (content_field_name, content_field_value) in (&self.fields).iter() {
                 let scoped_name = format!("fields[{}]", content_field_name);
                 let scoped_err = error_details.with_scope(&scoped_name);
 
-                if field_names.contains(&content_field_name) {
-                    error_details.add_detail(format!("fields[{}]", content_field_name), ERR_NOT_UNIQUE);
-                } else if let Some(schema_field) = schema_fields.remove(content_field_name) {
+                if let Some(schema_field) = schema_fields.remove(content_field_name) {
                     validate_content_field(content_field_name, content_field_value, schema_field, &scoped_err);
                 } else {
                     error_details.add_detail(&scoped_name, ERR_UNKNOWN_FIELD);
                 }
-                field_names.push(content_field_name);
             }
+
         }
 
         {
