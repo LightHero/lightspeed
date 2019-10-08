@@ -454,15 +454,15 @@ dependencies = [
 
 [[package]]
 name = "c3p0"
-version = "0.21.0"
+version = "0.22.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 dependencies = [
- "c3p0_pg 0.21.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "c3p0_pg 0.22.0 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
 [[package]]
 name = "c3p0_common"
-version = "0.21.0"
+version = "0.22.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 dependencies = [
  "err-derive 0.1.5 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -478,10 +478,10 @@ dependencies = [
 
 [[package]]
 name = "c3p0_pg"
-version = "0.21.0"
+version = "0.22.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 dependencies = [
- "c3p0_common 0.21.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "c3p0_common 0.22.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "log 0.4.8 (registry+https://github.com/rust-lang/crates.io-index)",
  "postgres 0.15.2 (registry+https://github.com/rust-lang/crates.io-index)",
  "r2d2 0.8.5 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -1135,7 +1135,7 @@ version = "0.1.0"
 dependencies = [
  "actix-web 1.0.7 (registry+https://github.com/rust-lang/crates.io-index)",
  "bcrypt 0.5.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "c3p0 0.21.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "c3p0 0.22.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "err-derive 0.1.5 (registry+https://github.com/rust-lang/crates.io-index)",
  "include_dir 0.2.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "lazy_static 1.4.0 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -1156,7 +1156,7 @@ name = "lightspeed_cms"
 version = "0.1.0"
 dependencies = [
  "actix-web 1.0.7 (registry+https://github.com/rust-lang/crates.io-index)",
- "c3p0 0.21.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "c3p0 0.22.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "chashmap 2.2.2 (registry+https://github.com/rust-lang/crates.io-index)",
  "err-derive 0.1.5 (registry+https://github.com/rust-lang/crates.io-index)",
  "include_dir 0.2.1 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -1180,7 +1180,7 @@ version = "0.1.0"
 dependencies = [
  "actix-service 0.4.2 (registry+https://github.com/rust-lang/crates.io-index)",
  "actix-web 1.0.7 (registry+https://github.com/rust-lang/crates.io-index)",
- "c3p0_common 0.21.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "c3p0_common 0.22.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "chrono 0.4.9 (registry+https://github.com/rust-lang/crates.io-index)",
  "err-derive 0.1.5 (registry+https://github.com/rust-lang/crates.io-index)",
  "jsonwebtoken 6.0.1 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -1199,7 +1199,7 @@ dependencies = [
 name = "lightspeed_email"
 version = "0.1.0"
 dependencies = [
- "c3p0 0.21.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "c3p0 0.22.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "err-derive 0.1.5 (registry+https://github.com/rust-lang/crates.io-index)",
  "include_dir 0.2.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "lazy_static 1.4.0 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -2710,9 +2710,9 @@ dependencies = [
 "checksum byteorder 1.3.2 (registry+https://github.com/rust-lang/crates.io-index)" = "a7c3dd8985a7111efc5c80b44e23ecdd8c007de8ade3b96595387e812b957cf5"
 "checksum bytes 0.4.12 (registry+https://github.com/rust-lang/crates.io-index)" = "206fdffcfa2df7cbe15601ef46c813fce0965eb3286db6b56c583b814b51c81c"
 "checksum c2-chacha 0.2.2 (registry+https://github.com/rust-lang/crates.io-index)" = "7d64d04786e0f528460fc884753cf8dddcc466be308f6026f8e355c41a0e4101"
-"checksum c3p0 0.21.0 (registry+https://github.com/rust-lang/crates.io-index)" = "2235668e1ca0bd6d8727b577e2d7ed4ab079d87a3920be2b0711b480ac4c9a85"
-"checksum c3p0_common 0.21.0 (registry+https://github.com/rust-lang/crates.io-index)" = "690e33f22947e8b017f6690a83ced7674e048ad31e83bb0cdcdf082e4ed5491a"
-"checksum c3p0_pg 0.21.0 (registry+https://github.com/rust-lang/crates.io-index)" = "27234a5f4a0e55c60215993859c02b500e521ef2ea8fa1bdf0bd8dcbbf02695a"
+"checksum c3p0 0.22.0 (registry+https://github.com/rust-lang/crates.io-index)" = "d48e5849cefbd3852e74137cc47a4388ad065f7a6ff573cfe2ffff7cf618fe5e"
+"checksum c3p0_common 0.22.0 (registry+https://github.com/rust-lang/crates.io-index)" = "8bfd76b83a83b67d3bb2330b68d0691afe99707001ad12ad84e1cf9594bc07aa"
+"checksum c3p0_pg 0.22.0 (registry+https://github.com/rust-lang/crates.io-index)" = "695dcda6b37f430f8a15e72901e02d155f149354986c66b50a63c1f615296203"
 "checksum cc 1.0.45 (registry+https://github.com/rust-lang/crates.io-index)" = "4fc9a35e1f4290eb9e5fc54ba6cf40671ed2a2514c3eeb2b2a908dda2ea5a1be"
 "checksum cfg-if 0.1.9 (registry+https://github.com/rust-lang/crates.io-index)" = "b486ce3ccf7ffd79fdeb678eac06a9e6c09fc88d33836340becb8fffe87c5e33"
 "checksum chashmap 2.2.2 (registry+https://github.com/rust-lang/crates.io-index)" = "ff41a3c2c1e39921b9003de14bf0439c7b63a9039637c291e1a64925d8ddfa45"

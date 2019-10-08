@@ -34,7 +34,7 @@ impl ContentRepository for PgContentRepository {
     }
 
     fn drop_table(&self, conn: &Self::CONN) -> Result<(), LightSpeedError> {
-        Ok(self.repo.drop_table_if_exists(conn)?)
+        Ok(self.repo.drop_table_if_exists(conn, true)?)
     }
 
     fn create_unique_constraint(
