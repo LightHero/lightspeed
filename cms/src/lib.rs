@@ -1,10 +1,10 @@
 use crate::config::CmsConfig;
 use crate::repository::CmsRepositoryManager;
+use crate::service::content::ContentService;
 use crate::service::project::ProjectService;
 use crate::service::schema::SchemaService;
 use lightspeed_core::error::LightSpeedError;
 use log::*;
-use crate::service::content::ContentService;
 
 pub mod config;
 pub mod dto;
@@ -28,8 +28,8 @@ impl<RepoManager: CmsRepositoryManager> CmsModule<RepoManager> {
         println!("Creating CmsModule");
         info!("Creating CmsModule");
 
-
-        let content_service = ContentService::new(repo_manager.c3p0().clone(), repo_manager.clone());
+        let content_service =
+            ContentService::new(repo_manager.c3p0().clone(), repo_manager.clone());
 
         let schema_service =
             SchemaService::new(repo_manager.c3p0().clone(), repo_manager.schema_repo());

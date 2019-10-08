@@ -1,8 +1,8 @@
+use crate::model::content::{ContentData, ContentModel};
 use crate::model::project::{ProjectData, ProjectModel};
 use crate::model::schema::{SchemaData, SchemaModel};
 use c3p0::{C3p0Pool, NewModel};
 use lightspeed_core::error::LightSpeedError;
-use crate::model::content::{ContentModel, ContentData};
 
 pub mod pg;
 
@@ -80,9 +80,18 @@ pub trait ContentRepository: Clone {
 
     fn drop_table(&self, conn: &Self::CONN) -> Result<(), LightSpeedError>;
 
-    fn crate_unique_constraint(&self, conn: &Self::CONN, index_name:&str, field_name: &str) -> Result<(), LightSpeedError>;
+    fn create_unique_constraint(
+        &self,
+        conn: &Self::CONN,
+        index_name: &str,
+        field_name: &str,
+    ) -> Result<(), LightSpeedError>;
 
-    fn drop_unique_constraint(&self, conn: &Self::CONN, index_name: &str) -> Result<(), LightSpeedError>;
+    fn drop_unique_constraint(
+        &self,
+        conn: &Self::CONN,
+        index_name: &str,
+    ) -> Result<(), LightSpeedError>;
 
     fn fetch_by_id(&self, conn: &Self::CONN, id: i64) -> Result<ContentModel, LightSpeedError>;
 
@@ -92,9 +101,11 @@ pub trait ContentRepository: Clone {
         model: NewModel<ContentData>,
     ) -> Result<ContentModel, LightSpeedError>;
 
-    fn update(&self, conn: &Self::CONN, model: ContentModel)
-              -> Result<ContentModel, LightSpeedError>;
+    fn update(
+        &self,
+        conn: &Self::CONN,
+        model: ContentModel,
+    ) -> Result<ContentModel, LightSpeedError>;
 
     fn delete(&self, conn: &Self::CONN, model: &ContentModel) -> Result<u64, LightSpeedError>;
-
 }

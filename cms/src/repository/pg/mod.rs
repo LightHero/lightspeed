@@ -1,3 +1,4 @@
+use crate::repository::pg::pg_content::PgContentRepository;
 use crate::repository::pg::pg_project::PgProjectRepository;
 use crate::repository::pg::pg_schema::PgSchemaRepository;
 use crate::repository::CmsRepositoryManager;
@@ -6,7 +7,6 @@ use c3p0::*;
 use include_dir::*;
 use lightspeed_core::error::LightSpeedError;
 use std::convert::TryInto;
-use crate::repository::pg::pg_content::PgContentRepository;
 
 pub mod pg_content;
 pub mod pg_project;

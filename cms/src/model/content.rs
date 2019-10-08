@@ -5,7 +5,7 @@ use c3p0::Model;
 use lazy_static::*;
 use lightspeed_core::error::ErrorDetails;
 use lightspeed_core::service::validator::number::{validate_number_ge, validate_number_le};
-use lightspeed_core::service::validator::{ERR_NOT_UNIQUE, ERR_UNKNOWN_FIELD, ERR_VALUE_REQUIRED};
+use lightspeed_core::service::validator::{ERR_UNKNOWN_FIELD, ERR_VALUE_REQUIRED};
 use regex::Regex;
 use serde::{Deserialize, Serialize};
 use std::collections::{BTreeMap, HashMap};
@@ -62,18 +62,21 @@ impl Content {
         });
 
         {
-
             for (content_field_name, content_field_value) in (&self.fields).iter() {
                 let scoped_name = format!("fields[{}]", content_field_name);
                 let scoped_err = error_details.with_scope(&scoped_name);
 
                 if let Some(schema_field) = schema_fields.remove(content_field_name) {
-                    validate_content_field(content_field_name, content_field_value, schema_field, &scoped_err);
+                    validate_content_field(
+                        content_field_name,
+                        content_field_value,
+                        schema_field,
+                        &scoped_err,
+                    );
                 } else {
                     error_details.add_detail(&scoped_name, ERR_UNKNOWN_FIELD);
                 }
             }
-
         }
 
         {
@@ -94,205 +97,195 @@ impl Content {
     }
 }
 
+fn validate_content_field(
+    content_field_name: &str,
+    content_field_value: &ContentFieldValue,
+    schema_field: &SchemaField,
+    error_details: &ErrorDetails,
+) {
+    validate_number_ge(error_details, "name", 1, content_field_name.len());
 
-    fn validate_content_field(content_field_name: &str, content_field_value: &ContentFieldValue, schema_field: &SchemaField, error_details: &ErrorDetails) {
-        validate_number_ge(error_details, "name", 1, content_field_name.len());
-
-        let full_field_name = "value";
-        match &schema_field.field_type {
-            SchemaFieldType::Boolean {
-                arity: schema_arity,
-                default: _default,
-            } => match content_field_value {
-                ContentFieldValue::Boolean(arity) => {
-                    validate_arity(
-                        schema_field.required,
-                        schema_arity,
-                        arity,
-                        error_details,
-                        full_field_name,
-                        |field_name, value| {
-                            validate_boolean(
-                                schema_field.required,
-                                field_name,
-                                *value,
-                                error_details,
-                            )
-                        },
-                    );
-                }
-                _ => error_details.add_detail(full_field_name, MUST_BE_OF_TYPE_BOOLEAN),
-            },
-            SchemaFieldType::Number {
-                min,
-                max,
-                arity: schema_arity,
-                default: _default,
-            } => match content_field_value {
-                ContentFieldValue::Number(arity) => {
-                    validate_arity(
-                        schema_field.required,
-                        schema_arity,
-                        arity,
-                        error_details,
-                        full_field_name,
-                        |field_name, value| {
-                            validate_number(
-                                schema_field.required,
-                                field_name,
-                                value,
-                                min,
-                                max,
-                                error_details,
-                            )
-                        },
-                    );
-                }
-                _ => error_details.add_detail(full_field_name, MUST_BE_OF_TYPE_NUMBER),
-            },
-            SchemaFieldType::Slug => match content_field_value {
-                ContentFieldValue::Slug(value) => {
-                    validate_slug(full_field_name, value, error_details)
-                }
-                _ => error_details.add_detail(full_field_name, MUST_BE_OF_TYPE_SLUG),
-            },
-            SchemaFieldType::String {
-                min_length,
-                max_length,
-                arity: schema_arity,
-                default: _default,
-            } => match content_field_value {
-                ContentFieldValue::String(arity) => {
-                    validate_arity(
-                        schema_field.required,
-                        schema_arity,
-                        arity,
-                        error_details,
-                        full_field_name,
-                        |field_name, value| {
-                            validate_string(
-                                schema_field.required,
-                                field_name,
-                                value,
-                                min_length,
-                                max_length,
-                                error_details,
-                            )
-                        },
-                    );
-                }
-                _ => error_details.add_detail(full_field_name, MUST_BE_OF_TYPE_STRING),
-            },
-        }
+    let full_field_name = "value";
+    match &schema_field.field_type {
+        SchemaFieldType::Boolean {
+            arity: schema_arity,
+            default: _default,
+        } => match content_field_value {
+            ContentFieldValue::Boolean(arity) => {
+                validate_arity(
+                    schema_field.required,
+                    schema_arity,
+                    arity,
+                    error_details,
+                    full_field_name,
+                    |field_name, value| {
+                        validate_boolean(schema_field.required, field_name, *value, error_details)
+                    },
+                );
+            }
+            _ => error_details.add_detail(full_field_name, MUST_BE_OF_TYPE_BOOLEAN),
+        },
+        SchemaFieldType::Number {
+            min,
+            max,
+            arity: schema_arity,
+            default: _default,
+        } => match content_field_value {
+            ContentFieldValue::Number(arity) => {
+                validate_arity(
+                    schema_field.required,
+                    schema_arity,
+                    arity,
+                    error_details,
+                    full_field_name,
+                    |field_name, value| {
+                        validate_number(
+                            schema_field.required,
+                            field_name,
+                            value,
+                            min,
+                            max,
+                            error_details,
+                        )
+                    },
+                );
+            }
+            _ => error_details.add_detail(full_field_name, MUST_BE_OF_TYPE_NUMBER),
+        },
+        SchemaFieldType::Slug => match content_field_value {
+            ContentFieldValue::Slug(value) => validate_slug(full_field_name, value, error_details),
+            _ => error_details.add_detail(full_field_name, MUST_BE_OF_TYPE_SLUG),
+        },
+        SchemaFieldType::String {
+            min_length,
+            max_length,
+            arity: schema_arity,
+            default: _default,
+        } => match content_field_value {
+            ContentFieldValue::String(arity) => {
+                validate_arity(
+                    schema_field.required,
+                    schema_arity,
+                    arity,
+                    error_details,
+                    full_field_name,
+                    |field_name, value| {
+                        validate_string(
+                            schema_field.required,
+                            field_name,
+                            value,
+                            min_length,
+                            max_length,
+                            error_details,
+                        )
+                    },
+                );
+            }
+            _ => error_details.add_detail(full_field_name, MUST_BE_OF_TYPE_STRING),
+        },
     }
+}
 
-    fn validate_arity<T, F: Fn(&str, &Option<T>)>(
-        required: bool,
-        schema_arity: &SchemaFieldArity,
-        arity: &ContentFieldValueArity<Option<T>>,
-        error_details: &ErrorDetails,
-        full_field_name: &str,
-        value_validation: F,
-    ) {
-        match schema_arity {
-            SchemaFieldArity::Single | SchemaFieldArity::Unique => match arity {
-                ContentFieldValueArity::Single { value } => {
-                    value_validation(full_field_name, value)
-                }
-                _ => error_details.add_detail(full_field_name, SHOULD_HAVE_SINGLE_VALUE_ARITY),
-            },
-            SchemaFieldArity::Localizable { options } => match arity {
-                ContentFieldValueArity::Localizable { values } => {
-                    match options {
-                        LocalizableOptions::Languages { languages } => {
-                            if required {
-                                languages.iter().for_each(|language| {
-                                    if !values.contains_key(language) {
-                                        error_details.add_detail(
-                                            format!("{}[{}]", full_field_name, language),
-                                            ERR_VALUE_REQUIRED,
-                                        )
-                                    }
-                                })
-                            }
+fn validate_arity<T, F: Fn(&str, &Option<T>)>(
+    required: bool,
+    schema_arity: &SchemaFieldArity,
+    arity: &ContentFieldValueArity<Option<T>>,
+    error_details: &ErrorDetails,
+    full_field_name: &str,
+    value_validation: F,
+) {
+    match schema_arity {
+        SchemaFieldArity::Single | SchemaFieldArity::Unique => match arity {
+            ContentFieldValueArity::Single { value } => value_validation(full_field_name, value),
+            _ => error_details.add_detail(full_field_name, SHOULD_HAVE_SINGLE_VALUE_ARITY),
+        },
+        SchemaFieldArity::Localizable { options } => match arity {
+            ContentFieldValueArity::Localizable { values } => {
+                match options {
+                    LocalizableOptions::Languages { languages } => {
+                        if required {
+                            languages.iter().for_each(|language| {
+                                if !values.contains_key(language) {
+                                    error_details.add_detail(
+                                        format!("{}[{}]", full_field_name, language),
+                                        ERR_VALUE_REQUIRED,
+                                    )
+                                }
+                            })
                         }
                     }
-                    values.iter().for_each(|(key, value)| {
-                        value_validation(&format!("{}[{}]", full_field_name, key), value)
-                    })
                 }
-                _ => error_details.add_detail(full_field_name, SHOULD_HAVE_LOCALIZABLE_ARITY),
-            },
-        }
-    }
-
-    fn validate_boolean<S: Into<String>>(
-        required: bool,
-        full_field_name: S,
-        value: Option<bool>,
-        error_details: &ErrorDetails,
-    ) {
-        if value.is_none() && required {
-            error_details.add_detail(full_field_name, ERR_VALUE_REQUIRED);
-        }
-    }
-
-    fn validate_number<S: Into<String> + Clone>(
-        required: bool,
-        full_field_name: S,
-        value: &Option<usize>,
-        min: &Option<usize>,
-        max: &Option<usize>,
-        error_details: &ErrorDetails,
-    ) {
-        if let Some(value) = value {
-            if let Some(min) = min {
-                validate_number_ge(error_details, full_field_name.clone(), *min, *value)
+                values.iter().for_each(|(key, value)| {
+                    value_validation(&format!("{}[{}]", full_field_name, key), value)
+                })
             }
-            if let Some(max) = max {
-                validate_number_le(error_details, full_field_name, *max, *value)
-            }
-        } else if required {
-            error_details.add_detail(full_field_name, ERR_VALUE_REQUIRED);
-        }
+            _ => error_details.add_detail(full_field_name, SHOULD_HAVE_LOCALIZABLE_ARITY),
+        },
     }
+}
 
-    fn validate_slug<S: Into<String>>(
-        full_field_name: S,
-        value: &str,
-        error_details: &ErrorDetails,
-    ) {
-        //let reg: &Regex = &SLUG_REGEX;
-        if !SLUG_REGEX.is_match(value) {
-            error_details.add_detail(full_field_name, NOT_VALID_SLUG);
-        }
+fn validate_boolean<S: Into<String>>(
+    required: bool,
+    full_field_name: S,
+    value: Option<bool>,
+    error_details: &ErrorDetails,
+) {
+    if value.is_none() && required {
+        error_details.add_detail(full_field_name, ERR_VALUE_REQUIRED);
     }
+}
 
-    fn validate_string<S: Into<String> + Clone>(
-        required: bool,
-        full_field_name: S,
-        value: &Option<String>,
-        min_length: &Option<usize>,
-        max_length: &Option<usize>,
-        error_details: &ErrorDetails,
-    ) {
-        if let Some(value) = value {
-            if let Some(min_length) = min_length {
-                validate_number_ge(
-                    error_details,
-                    full_field_name.clone(),
-                    *min_length,
-                    value.len(),
-                )
-            }
-            if let Some(max_length) = max_length {
-                validate_number_le(error_details, full_field_name, *max_length, value.len())
-            }
-        } else if required {
-            error_details.add_detail(full_field_name, ERR_VALUE_REQUIRED);
+fn validate_number<S: Into<String> + Clone>(
+    required: bool,
+    full_field_name: S,
+    value: &Option<usize>,
+    min: &Option<usize>,
+    max: &Option<usize>,
+    error_details: &ErrorDetails,
+) {
+    if let Some(value) = value {
+        if let Some(min) = min {
+            validate_number_ge(error_details, full_field_name.clone(), *min, *value)
         }
+        if let Some(max) = max {
+            validate_number_le(error_details, full_field_name, *max, *value)
+        }
+    } else if required {
+        error_details.add_detail(full_field_name, ERR_VALUE_REQUIRED);
     }
+}
 
+fn validate_slug<S: Into<String>>(full_field_name: S, value: &str, error_details: &ErrorDetails) {
+    //let reg: &Regex = &SLUG_REGEX;
+    if !SLUG_REGEX.is_match(value) {
+        error_details.add_detail(full_field_name, NOT_VALID_SLUG);
+    }
+}
+
+fn validate_string<S: Into<String> + Clone>(
+    required: bool,
+    full_field_name: S,
+    value: &Option<String>,
+    min_length: &Option<usize>,
+    max_length: &Option<usize>,
+    error_details: &ErrorDetails,
+) {
+    if let Some(value) = value {
+        if let Some(min_length) = min_length {
+            validate_number_ge(
+                error_details,
+                full_field_name.clone(),
+                *min_length,
+                value.len(),
+            )
+        }
+        if let Some(max_length) = max_length {
+            validate_number_le(error_details, full_field_name, *max_length, value.len())
+        }
+    } else if required {
+        error_details.add_detail(full_field_name, ERR_VALUE_REQUIRED);
+    }
+}
 
 #[cfg(test)]
 mod test {
@@ -306,64 +299,64 @@ mod test {
     use maplit::*;
 
     /*
-    #[test]
-    fn content_validation_should_fail_if_fields_with_same_name() {
-        // Arrange
-        let mut content = Content {
-            created_ms: 0,
-            updated_ms: 0,
-            fields: HashMap::new(),
-        };
-        content.fields.insert("one".to_owned(),
-            ContentFieldValue::Boolean(ContentFieldValueArity::Single { value: None }));
-        content.fields.insert("one".to_owned(),
-                              ContentFieldValue::Boolean(ContentFieldValueArity::Single { value: None }));
-        content.fields.insert("two".to_owned(),
-                              ContentFieldValue::Boolean(ContentFieldValueArity::Single { value: None }));
+        #[test]
+        fn content_validation_should_fail_if_fields_with_same_name() {
+            // Arrange
+            let mut content = Content {
+                created_ms: 0,
+                updated_ms: 0,
+                fields: HashMap::new(),
+            };
+            content.fields.insert("one".to_owned(),
+                ContentFieldValue::Boolean(ContentFieldValueArity::Single { value: None }));
+            content.fields.insert("one".to_owned(),
+                                  ContentFieldValue::Boolean(ContentFieldValueArity::Single { value: None }));
+            content.fields.insert("two".to_owned(),
+                                  ContentFieldValue::Boolean(ContentFieldValueArity::Single { value: None }));
 
-        let schema = Schema {
-            updated_ms: 0,
-            created_ms: 0,
-            fields: vec![
-                SchemaField {
-                    name: "one".to_owned(),
-                    description: "".to_owned(),
-                    field_type: SchemaFieldType::Boolean {
-                        arity: SchemaFieldArity::Single,
-                        default: None,
+            let schema = Schema {
+                updated_ms: 0,
+                created_ms: 0,
+                fields: vec![
+                    SchemaField {
+                        name: "one".to_owned(),
+                        description: "".to_owned(),
+                        field_type: SchemaFieldType::Boolean {
+                            arity: SchemaFieldArity::Single,
+                            default: None,
+                        },
+                        required: false,
                     },
-                    required: false,
-                },
-                SchemaField {
-                    name: "two".to_owned(),
-                    description: "".to_owned(),
-                    field_type: SchemaFieldType::Boolean {
-                        arity: SchemaFieldArity::Single,
-                        default: None,
+                    SchemaField {
+                        name: "two".to_owned(),
+                        description: "".to_owned(),
+                        field_type: SchemaFieldType::Boolean {
+                            arity: SchemaFieldArity::Single,
+                            default: None,
+                        },
+                        required: false,
                     },
-                    required: false,
-                },
-            ],
-        };
+                ],
+            };
 
-        // Act
-        let result = Validator::validate(|error_details: &ErrorDetails| {
-            content.validate(&schema, error_details);
-            Ok(())
-        });
+            // Act
+            let result = Validator::validate(|error_details: &ErrorDetails| {
+                content.validate(&schema, error_details);
+                Ok(())
+            });
 
-        match result {
-            Err(LightSpeedError::ValidationError { details }) => {
-                assert_eq!(details.details().borrow().len(), 1);
-                assert_eq!(
-                    details.details().borrow().get("fields[1].name"),
-                    Some(&vec![ErrorDetail::new(ERR_NOT_UNIQUE, vec![])])
-                );
+            match result {
+                Err(LightSpeedError::ValidationError { details }) => {
+                    assert_eq!(details.details().borrow().len(), 1);
+                    assert_eq!(
+                        details.details().borrow().get("fields[1].name"),
+                        Some(&vec![ErrorDetail::new(ERR_NOT_UNIQUE, vec![])])
+                    );
+                }
+                _ => assert!(false),
             }
-            _ => assert!(false),
         }
-    }
-*/
+    */
 
     #[test]
     fn empty_schema_should_validate_empty_content() {
@@ -419,9 +412,10 @@ mod test {
             Err(LightSpeedError::ValidationError { details }) => {
                 println!("details: {:#?}", details);
                 assert_eq!(
-                details.details().borrow()["fields[two]"],
-                vec![ErrorDetail::new(ERR_UNKNOWN_FIELD, vec![])]
-            )},
+                    details.details().borrow()["fields[two]"],
+                    vec![ErrorDetail::new(ERR_UNKNOWN_FIELD, vec![])]
+                )
+            }
             _ => assert!(false),
         };
     }
@@ -603,7 +597,6 @@ mod test {
             _ => assert!(false),
         };
     }
-
 
     #[test]
     fn validation_should_fail_if_content_has_fields_of_not_number_type() {
@@ -1047,7 +1040,6 @@ mod test {
             _ => assert!(false),
         };
     }
-
 
     pub fn validate_content(schema: &Schema, content: &Content) -> Result<(), LightSpeedError> {
         Validator::validate(|error_details: &ErrorDetails| {
