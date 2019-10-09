@@ -80,6 +80,8 @@ pub trait ContentRepository: Clone {
 
     fn drop_table(&self, conn: &Self::CONN) -> Result<(), LightSpeedError>;
 
+    fn count_all(&self, conn: &Self::CONN) -> Result<i64, LightSpeedError>;
+
     fn create_unique_constraint(
         &self,
         conn: &Self::CONN,

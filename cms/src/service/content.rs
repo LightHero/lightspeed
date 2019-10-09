@@ -62,6 +62,13 @@ impl<RepoManager: CmsRepositoryManager> ContentService<RepoManager> {
         })
     }
 
+    pub fn count_all_by_schema_id(&self, schema_id: i64) -> Result<i64, LightSpeedError> {
+        self.c3p0.transaction(move |conn| {
+            let repo = self.get_content_repo_by_schema_id(schema_id);
+            repo.count_all(conn)
+        })
+    }
+
     pub fn create_content(
         &self,
         schema: &Schema,

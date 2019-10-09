@@ -161,15 +161,10 @@ fn validate_content_field(
                     error_details,
                     full_field_name,
                     |field_name, value| {
-                        validate_slug(
-                            schema_field.required,
-                            field_name,
-                            value,
-                            error_details,
-                        )
+                        validate_slug(schema_field.required, field_name, value, error_details)
                     },
                 );
-            },
+            }
             _ => error_details.add_detail(full_field_name, MUST_BE_OF_TYPE_SLUG),
         },
         SchemaFieldType::String {
@@ -275,8 +270,8 @@ fn validate_slug<S: Into<String>>(
     required: bool,
     full_field_name: S,
     value: &Option<String>,
-    error_details: &ErrorDetails) {
-
+    error_details: &ErrorDetails,
+) {
     if let Some(value) = value {
         //let reg: &Regex = &SLUG_REGEX;
         if !SLUG_REGEX.is_match(value) {
@@ -285,8 +280,6 @@ fn validate_slug<S: Into<String>>(
     } else if required {
         error_details.add_detail(full_field_name, ERR_VALUE_REQUIRED);
     }
-
-
 }
 
 fn validate_string<S: Into<String> + Clone>(
@@ -1101,7 +1094,6 @@ mod test {
             _ => assert!(false),
         };
     }
-
 
     pub fn validate_content(schema: &Schema, content: &Content) -> Result<(), LightSpeedError> {
         Validator::validate(|error_details: &ErrorDetails| {
