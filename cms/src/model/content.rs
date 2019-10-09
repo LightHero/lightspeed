@@ -43,7 +43,7 @@ pub struct Content {
 #[derive(Clone, Serialize, Deserialize)]
 pub enum ContentFieldValue {
     Number(ContentFieldValueArity<Option<usize>>),
-    Slug(String),
+    Slug(ContentFieldValueArity<Option<String>>),
     String(ContentFieldValueArity<Option<String>>),
     Boolean(ContentFieldValueArity<Option<bool>>),
 }
@@ -153,7 +153,23 @@ fn validate_content_field(
             _ => error_details.add_detail(full_field_name, MUST_BE_OF_TYPE_NUMBER),
         },
         SchemaFieldType::Slug => match content_field_value {
-            ContentFieldValue::Slug(value) => validate_slug(full_field_name, value, error_details),
+            ContentFieldValue::Slug(arity) => {
+                validate_arity(
+                    schema_field.required,
+                    &SchemaFieldArity::Unique,
+                    arity,
+                    error_details,
+                    full_field_name,
+                    |field_name, value| {
+                        validate_slug(
+                            schema_field.required,
+                            field_name,
+                            value,
+                            error_details,
+                        )
+                    },
+                );
+            },
             _ => error_details.add_detail(full_field_name, MUST_BE_OF_TYPE_SLUG),
         },
         SchemaFieldType::String {
@@ -255,11 +271,22 @@ fn validate_number<S: Into<String> + Clone>(
     }
 }
 
-fn validate_slug<S: Into<String>>(full_field_name: S, value: &str, error_details: &ErrorDetails) {
-    //let reg: &Regex = &SLUG_REGEX;
-    if !SLUG_REGEX.is_match(value) {
-        error_details.add_detail(full_field_name, NOT_VALID_SLUG);
+fn validate_slug<S: Into<String>>(
+    required: bool,
+    full_field_name: S,
+    value: &Option<String>,
+    error_details: &ErrorDetails) {
+
+    if let Some(value) = value {
+        //let reg: &Regex = &SLUG_REGEX;
+        if !SLUG_REGEX.is_match(value) {
+            error_details.add_detail(full_field_name, NOT_VALID_SLUG);
+        }
+    } else if required {
+        error_details.add_detail(full_field_name, ERR_VALUE_REQUIRED);
     }
+
+
 }
 
 fn validate_string<S: Into<String> + Clone>(
@@ -1001,7 +1028,7 @@ mod test {
             created_ms: 0,
             fields: hashmap![
                 "slug".to_owned() =>
-                ContentFieldValue::Slug("a-valid-slug".to_owned()),
+                ContentFieldValue::Slug(ContentFieldValueArity::Single { value: Some("a-valid-slug".to_owned()) }),
             ],
         };
 
@@ -1025,7 +1052,7 @@ mod test {
             updated_ms: 0,
             created_ms: 0,
             fields: hashmap!["slug".to_owned()
-                => ContentFieldValue::Slug("a---notvalid-slug!".to_owned()),
+                => ContentFieldValue::Slug(ContentFieldValueArity::Single { value: Some("a---notvalid-slug!".to_owned()) }) ,
             ],
         };
 
@@ -1040,6 +1067,41 @@ mod test {
             _ => assert!(false),
         };
     }
+    #[test]
+    fn validation_should_accept_valid_single_arity_slug() {
+        let schema = Schema {
+            created_ms: 0,
+            updated_ms: 0,
+            fields: vec![SchemaField {
+                name: "slug".to_owned(),
+                required: true,
+                description: "".to_owned(),
+                field_type: SchemaFieldType::Slug,
+            }],
+        };
+        let content = Content {
+            updated_ms: 0,
+            created_ms: 0,
+            fields: hashmap![
+                "slug".to_owned() =>
+                ContentFieldValue::Slug(ContentFieldValueArity::Localizable {
+                    values: HashMap::new(),
+                }),
+            ],
+        };
+
+        let result = validate_content(&schema, &content);
+        assert!(result.is_err());
+        println!("{:?}", result);
+        match result {
+            Err(LightSpeedError::ValidationError { details }) => assert_eq!(
+                details.details().borrow()["fields[slug].value"],
+                vec![ErrorDetail::new(SHOULD_HAVE_SINGLE_VALUE_ARITY, vec![])]
+            ),
+            _ => assert!(false),
+        };
+    }
+
 
     pub fn validate_content(schema: &Schema, content: &Content) -> Result<(), LightSpeedError> {
         Validator::validate(|error_details: &ErrorDetails| {
