@@ -38,7 +38,7 @@ impl<RepoManager: CmsRepositoryManager> ContentService<RepoManager> {
         })
     }
 
-    pub fn create_unique_index(
+    fn create_unique_index(
         &self,
         schema_id: i64,
         field_name: &str,
@@ -50,7 +50,8 @@ impl<RepoManager: CmsRepositoryManager> ContentService<RepoManager> {
         })
     }
 
-    pub fn drop_unique_index(
+    /*
+    fn drop_unique_index(
         &self,
         schema_id: i64,
         field_name: &str,
@@ -61,8 +62,8 @@ impl<RepoManager: CmsRepositoryManager> ContentService<RepoManager> {
             repo.drop_unique_constraint(conn, &index_name)
         })
     }
-
-    pub fn count_all_by_schema_id(&self, schema_id: i64) -> Result<i64, LightSpeedError> {
+*/
+    pub fn count_all_by_schema_id(&self, schema_id: i64) -> Result<u64, LightSpeedError> {
         self.c3p0.transaction(move |conn| {
             let repo = self.get_content_repo_by_schema_id(schema_id);
             repo.count_all(conn)
