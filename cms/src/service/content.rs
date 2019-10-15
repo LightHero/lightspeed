@@ -1,5 +1,5 @@
 use crate::dto::create_content_dto::CreateContentDto;
-use crate::model::content::ContentModel;
+use crate::model::content::{ContentModel, ContentFieldValue, ContentFieldValueArity};
 use crate::model::schema::{Schema, SchemaModel, SchemaFieldArity};
 use crate::repository::CmsRepositoryManager;
 use crate::repository::ContentRepository;
@@ -64,11 +64,53 @@ impl<RepoManager: CmsRepositoryManager> ContentService<RepoManager> {
         create_content_dto: CreateContentDto,
     ) -> Result<ContentModel, LightSpeedError> {
         self.c3p0.transaction(move |conn| {
+
+            let repo = self.get_content_repo_by_schema_id(create_content_dto.schema_id);
+
+                            // TODO: refactor and implement
+            for field in &schema.fields {
+                match field.field_type.get_arity() {
+                    SchemaFieldArity::Unique => {
+                        if let Some(content_field) = create_content_dto.content.fields.get(&field.name) {
+
+                            let field_value = match content_field {
+                                ContentFieldValue::Slug {value} |ContentFieldValue::String {value} => {
+                                    match value {
+                                        ContentFieldValueArity::Single{value: Some(field_value)} => Some(field_value.to_string()),
+                                        _ => None
+                                    }
+                                },
+                                ContentFieldValue::Boolean {value} => {
+                                    match value {
+                                        ContentFieldValueArity::Single{value: Some(field_value)} => Some(field_value.to_string()),
+                                        _ => None
+                                    }
+                                },
+                                ContentFieldValue::Number {value} => {
+                                    match value {
+                                        ContentFieldValueArity::Single{value: Some(field_value)} => Some(field_value.to_string()),
+                                        _ => None
+                                    }
+                                },
+                            };
+
+                            if let Some (value) =  field_value {
+                                let count = repo.count_all_by_field_value(conn, &field.name, &value)?;
+                                println!("------------------");
+                                println!("Found {} entries with field [{}] value [{}]", count, &field.name, value);
+                                println!("------------------");
+                            }
+
+                        }
+                    },
+                    _ => {}
+                }
+            }
+
             Validator::validate(|error_details: &ErrorDetails| {
                 create_content_dto.content.validate(&schema, error_details);
                 Ok(())
             })?;
-            let repo = self.get_content_repo_by_schema_id(create_content_dto.schema_id);
             repo.save(conn, NewModel::new(create_content_dto))
         })
     }

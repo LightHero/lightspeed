@@ -82,6 +82,8 @@ pub trait ContentRepository: Clone {
 
     fn count_all(&self, conn: &Self::CONN) -> Result<u64, LightSpeedError>;
 
+    fn count_all_by_field_value(&self, conn: &Self::CONN, field_name: &str, field_value: &str) -> Result<u64, LightSpeedError>;
+
     fn create_unique_constraint(
         &self,
         conn: &Self::CONN,

@@ -41,6 +41,14 @@ impl ContentRepository for PgContentRepository {
         Ok(self.repo.count_all(conn)?)
     }
 
+    fn count_all_by_field_value(&self, conn: &Self::CONN, field_name: &str, field_value: &str) -> Result<u64, LightSpeedError> {
+        Ok(conn.fetch_one_value(&format!(
+            "SELECT COUNT(*) FROM {} WHERE  (DATA -> 'content' -> 'fields' -> '{}' -> 'value' ->> 'value') = $1 ",
+            self.repo.queries().qualified_table_name,
+            field_name
+        ), &[&field_value]).map(|val: i64| val as u64)?)
+    }
+
     fn create_unique_constraint(
         &self,
         conn: &Self::CONN,

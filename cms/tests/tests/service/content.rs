@@ -266,7 +266,7 @@ fn should_create_unique_constraints_for_slug_schema_fields() {
             },
         };
 
-        assert!( content_service.create_content(&saved_schema_1.data.schema, content.clone()).is_ok() );
+        content_service.create_content(&saved_schema_1.data.schema, content.clone())?;
 
         let result = content_service.create_content(&saved_schema_1.data.schema, content.clone());
         assert!(result.is_err());
