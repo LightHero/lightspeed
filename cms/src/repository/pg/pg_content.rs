@@ -48,7 +48,7 @@ impl ContentRepository for PgContentRepository {
         field_name: &str,
     ) -> Result<(), LightSpeedError> {
         Ok(conn.batch_execute(&format!(
-            "CREATE UNIQUE INDEX {} ON {}( (DATA -> '{}' --> 'value') )",
+            "CREATE UNIQUE INDEX {} ON {}( (DATA -> 'content' -> 'fields' -> '{}' -> 'value' ->> 'value') )",
             index_name,
             self.repo.queries().qualified_table_name,
             field_name

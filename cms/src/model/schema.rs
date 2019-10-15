@@ -1,9 +1,10 @@
 use c3p0::Model;
 use lightspeed_core::error::{ErrorDetails, LightSpeedError};
-use lightspeed_core::service::validator::number::validate_number_ge;
+use lightspeed_core::service::validator::number::{validate_number_ge, validate_number_le};
 use lightspeed_core::service::validator::{Validable, ERR_NOT_UNIQUE};
 use serde::{Deserialize, Serialize};
 
+pub const SCHEMA_FIELD_NAME_MAX_LENGHT: usize = 32;
 pub type SchemaModel = Model<SchemaData>;
 
 #[derive(Clone, Serialize, Deserialize)]
@@ -56,6 +57,7 @@ pub struct SchemaField {
 impl Validable for &SchemaField {
     fn validate(&self, error_details: &ErrorDetails) -> Result<(), LightSpeedError> {
         validate_number_ge(error_details, "name", 1, self.name.len());
+        validate_number_le(error_details, "name", SCHEMA_FIELD_NAME_MAX_LENGHT, self.name.len());
         Ok(())
     }
 }
@@ -79,6 +81,17 @@ pub enum SchemaFieldType {
         default: Option<String>,
         arity: SchemaFieldArity,
     },
+}
+
+impl SchemaFieldType {
+    pub fn get_arity(&self) -> &SchemaFieldArity {
+        match self {
+            SchemaFieldType::Boolean {arity, ..} | SchemaFieldType::Number {arity, ..} | SchemaFieldType::String {arity, ..} => {
+                arity
+            },
+            SchemaFieldType::Slug => &SchemaFieldArity::Unique
+        }
+    }
 }
 
 #[derive(Clone, Serialize, Deserialize)]

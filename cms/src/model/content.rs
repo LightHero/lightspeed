@@ -41,14 +41,16 @@ pub struct Content {
 }
 
 #[derive(Clone, Serialize, Deserialize)]
+#[serde(tag = "tag")]
 pub enum ContentFieldValue {
-    Number(ContentFieldValueArity<Option<usize>>),
-    Slug(ContentFieldValueArity<Option<String>>),
-    String(ContentFieldValueArity<Option<String>>),
-    Boolean(ContentFieldValueArity<Option<bool>>),
+    Number{value: ContentFieldValueArity<Option<usize>>},
+    Slug{value: ContentFieldValueArity<Option<String>>},
+    String{value: ContentFieldValueArity<Option<String>>},
+    Boolean{value: ContentFieldValueArity<Option<bool>>},
 }
 
 #[derive(Clone, Serialize, Deserialize)]
+#[serde(tag = "tag")]
 pub enum ContentFieldValueArity<T> {
     Single { value: T },
     Localizable { values: HashMap<String, T> },
@@ -111,7 +113,7 @@ fn validate_content_field(
             arity: schema_arity,
             default: _default,
         } => match content_field_value {
-            ContentFieldValue::Boolean(arity) => {
+            ContentFieldValue::Boolean{value: arity} => {
                 validate_arity(
                     schema_field.required,
                     schema_arity,
@@ -131,7 +133,7 @@ fn validate_content_field(
             arity: schema_arity,
             default: _default,
         } => match content_field_value {
-            ContentFieldValue::Number(arity) => {
+            ContentFieldValue::Number{value: arity} => {
                 validate_arity(
                     schema_field.required,
                     schema_arity,
@@ -153,10 +155,10 @@ fn validate_content_field(
             _ => error_details.add_detail(full_field_name, MUST_BE_OF_TYPE_NUMBER),
         },
         SchemaFieldType::Slug => match content_field_value {
-            ContentFieldValue::Slug(arity) => {
+            ContentFieldValue::Slug{value: arity} => {
                 validate_arity(
                     schema_field.required,
-                    &SchemaFieldArity::Unique,
+                    schema_field.field_type.get_arity(),
                     arity,
                     error_details,
                     full_field_name,
@@ -173,7 +175,7 @@ fn validate_content_field(
             arity: schema_arity,
             default: _default,
         } => match content_field_value {
-            ContentFieldValue::String(arity) => {
+            ContentFieldValue::String{value: arity} => {
                 validate_arity(
                     schema_field.required,
                     schema_arity,
@@ -416,13 +418,13 @@ mod test {
             created_ms: 0,
             fields: hashmap![
                 "one".to_owned() =>
-                    ContentFieldValue::Boolean(ContentFieldValueArity::Single {
+                    ContentFieldValue::Boolean{value: ContentFieldValueArity::Single {
                         value: Some(true),
-                    }),
+                    }},
                 "two".to_owned() =>
-                    ContentFieldValue::Boolean(ContentFieldValueArity::Single {
+                    ContentFieldValue::Boolean{value: ContentFieldValueArity::Single {
                         value: Some(true),
-                    }),
+                    }},
             ],
         };
 
@@ -488,9 +490,9 @@ mod test {
             updated_ms: 0,
             created_ms: 0,
             fields: hashmap!["two".to_owned() =>
-                ContentFieldValue::Boolean(ContentFieldValueArity::Single {
+                ContentFieldValue::Boolean{value: ContentFieldValueArity::Single {
                     value: Some(true),
-                }),
+                }},
             ],
         };
 
@@ -527,9 +529,9 @@ mod test {
             updated_ms: 0,
             created_ms: 0,
             fields: hashmap!["one".to_owned() =>
-                ContentFieldValue::String(ContentFieldValueArity::Single {
+                ContentFieldValue::String{value: ContentFieldValueArity::Single {
                     value: Some("hello world".to_owned()),
-                }),
+                }},
             ],
         };
 
@@ -567,9 +569,9 @@ mod test {
             created_ms: 0,
             fields: hashmap![
                 "one".to_owned() =>
-                ContentFieldValue::Boolean(ContentFieldValueArity::Single {
+                ContentFieldValue::Boolean{value: ContentFieldValueArity::Single {
                     value: Some(false),
-                }),
+                }},
             ],
         };
 
@@ -601,9 +603,9 @@ mod test {
             created_ms: 0,
             fields: hashmap![
                 "one".to_owned() =>
-                ContentFieldValue::Boolean(ContentFieldValueArity::Single {
+                ContentFieldValue::Boolean{value: ContentFieldValueArity::Single {
                     value: Some(false),
-                }),
+                }},
             ],
         };
 
@@ -640,9 +642,9 @@ mod test {
             created_ms: 0,
             fields: hashmap![
                 "one".to_owned() =>
-                ContentFieldValue::String(ContentFieldValueArity::Single {
+                ContentFieldValue::String{value: ContentFieldValueArity::Single {
                     value: Some("hello world".to_owned()),
-                }),
+                }},
             ],
         };
 
@@ -679,9 +681,9 @@ mod test {
             created_ms: 0,
             fields: hashmap![
                 "one".to_owned() =>
-                ContentFieldValue::Number(ContentFieldValueArity::Single {
+                ContentFieldValue::Number{value: ContentFieldValueArity::Single {
                     value: Some(99),
-                }),
+                }},
             ],
         };
 
@@ -721,9 +723,9 @@ mod test {
             created_ms: 0,
             fields: hashmap![
                 "one".to_owned() =>
-                ContentFieldValue::Number(ContentFieldValueArity::Single {
+                ContentFieldValue::Number{value: ContentFieldValueArity::Single {
                     value: Some(1099),
-                }),
+                }},
             ],
         };
 
@@ -763,9 +765,9 @@ mod test {
             created_ms: 0,
             fields: hashmap![
                 "one".to_owned() =>
-                ContentFieldValue::String(ContentFieldValueArity::Single {
+                ContentFieldValue::String{value: ContentFieldValueArity::Single {
                     value: Some("hello world".to_owned()),
-                }),
+                }},
             ],
         };
 
@@ -805,9 +807,9 @@ mod test {
             created_ms: 0,
             fields: hashmap![
                 "one".to_owned() =>
-                ContentFieldValue::String(ContentFieldValueArity::Single {
+                ContentFieldValue::String{value: ContentFieldValueArity::Single {
                     value: Some("hello world?!?!?!?!?!".to_owned()),
-                }),
+                }},
             ],
         };
 
@@ -856,13 +858,13 @@ mod test {
             created_ms: 0,
             fields: hashmap![
                 "one".to_owned() =>
-                    ContentFieldValue::Boolean(ContentFieldValueArity::Single {
+                    ContentFieldValue::Boolean{value: ContentFieldValueArity::Single {
                         value: None,
-                    }),
+                    }},
                 "two".to_owned() =>
-                    ContentFieldValue::Boolean(ContentFieldValueArity::Single {
+                    ContentFieldValue::Boolean{value: ContentFieldValueArity::Single {
                         value: None,
-                    }),
+                    }},
             ],
         };
 
@@ -896,9 +898,9 @@ mod test {
             updated_ms: 0,
             created_ms: 0,
             fields: hashmap!["one".to_owned() =>
-                ContentFieldValue::Boolean(ContentFieldValueArity::Localizable {
+                ContentFieldValue::Boolean{value: ContentFieldValueArity::Localizable {
                     values: HashMap::new(),
-                }),
+                }},
             ],
         };
 
@@ -936,9 +938,9 @@ mod test {
             created_ms: 0,
             fields: hashmap![
                 "one".to_owned() =>
-                ContentFieldValue::Boolean(ContentFieldValueArity::Single {
+                ContentFieldValue::Boolean{value: ContentFieldValueArity::Single {
                     value: Some(true),
-                }),
+                }},
             ],
         };
 
@@ -977,12 +979,12 @@ mod test {
             updated_ms: 0,
             created_ms: 0,
             fields: hashmap![ "one".to_owned() =>
-                ContentFieldValue::Boolean(ContentFieldValueArity::Localizable {
+                ContentFieldValue::Boolean{value: ContentFieldValueArity::Localizable {
                     values: hashmap![
                         "IT".to_owned() => Some(true),
                         "EN".to_owned() => None,
                     ],
-                }),
+                }},
             ],
         };
 
@@ -1021,7 +1023,7 @@ mod test {
             created_ms: 0,
             fields: hashmap![
                 "slug".to_owned() =>
-                ContentFieldValue::Slug(ContentFieldValueArity::Single { value: Some("a-valid-slug".to_owned()) }),
+                ContentFieldValue::Slug{value: ContentFieldValueArity::Single { value: Some("a-valid-slug".to_owned()) }},
             ],
         };
 
@@ -1045,7 +1047,7 @@ mod test {
             updated_ms: 0,
             created_ms: 0,
             fields: hashmap!["slug".to_owned()
-                => ContentFieldValue::Slug(ContentFieldValueArity::Single { value: Some("a---notvalid-slug!".to_owned()) }) ,
+                => ContentFieldValue::Slug{value: ContentFieldValueArity::Single { value: Some("a---notvalid-slug!".to_owned()) }} ,
             ],
         };
 
@@ -1077,9 +1079,9 @@ mod test {
             created_ms: 0,
             fields: hashmap![
                 "slug".to_owned() =>
-                ContentFieldValue::Slug(ContentFieldValueArity::Localizable {
+                ContentFieldValue::Slug{value: ContentFieldValueArity::Localizable {
                     values: HashMap::new(),
-                }),
+                }},
             ],
         };
 

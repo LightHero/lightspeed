@@ -1,10 +1,12 @@
 use crate::test;
 use lightspeed_cms::dto::create_schema_dto::CreateSchemaDto;
-use lightspeed_cms::model::content::{Content, ContentData};
+use lightspeed_cms::model::content::{Content, ContentData, ContentFieldValue, ContentFieldValueArity};
 use lightspeed_cms::model::schema::{Schema, SchemaField, SchemaFieldType, SchemaFieldArity};
 use lightspeed_core::utils::new_hyphenated_uuid;
 use std::collections::HashMap;
-use lightspeed_core::error::LightSpeedError;
+use lightspeed_core::error::{LightSpeedError, ErrorDetail};
+use maplit::*;
+use lightspeed_core::service::validator::ERR_NOT_UNIQUE;
 
 #[test]
 fn should_create_and_drop_content_table() {
@@ -35,7 +37,7 @@ fn should_create_and_drop_content_table() {
             .is_err());
 
         assert!(content_service
-            .create_content_table(saved_schema_1.id)
+            .create_content_table(&saved_schema_1)
             .is_ok());
         assert!(content_service
             .count_all_by_schema_id(saved_schema_1.id)
@@ -45,7 +47,7 @@ fn should_create_and_drop_content_table() {
             .is_err());
 
         assert!(content_service
-            .create_content_table(saved_schema_2.id)
+            .create_content_table(&saved_schema_2)
             .is_ok());
         assert!(content_service
             .count_all_by_schema_id(saved_schema_1.id)
@@ -96,13 +98,13 @@ fn should_save_and_delete_content() {
 
         let saved_schema_1 = schema_service.create_schema(schema.clone())?;
         assert!(content_service
-            .create_content_table(saved_schema_1.id)
+            .create_content_table(&saved_schema_1)
             .is_ok());
 
         schema.name = new_hyphenated_uuid();
         let saved_schema_2 = schema_service.create_schema(schema)?;
         assert!(content_service
-            .create_content_table(saved_schema_2.id)
+            .create_content_table(&saved_schema_2)
             .is_ok());
 
         assert_eq!(
@@ -196,7 +198,7 @@ fn should_validate_content_on_save() {
 
         let saved_schema_1 = schema_service.create_schema(schema.clone())?;
         assert!(content_service
-            .create_content_table(saved_schema_1.id)
+            .create_content_table(&saved_schema_1)
             .is_ok());
 
         let content = ContentData {
@@ -226,6 +228,80 @@ fn should_validate_content_on_save() {
 }
 
 #[test]
-fn should_create_unique_constraints_for_unique_schema_fields() {
+fn should_create_unique_constraints_for_slug_schema_fields() {
+    test(|cms_module| {
+        let content_service = &cms_module.content_service;
+        let schema_service = &cms_module.schema_service;
+
+        let field_name = "slug";
+        let schema = CreateSchemaDto {
+            name: new_hyphenated_uuid(),
+            project_id: -1,
+            schema: Schema {
+                created_ms: 0,
+                updated_ms: 0,
+                fields: vec![
+                    SchemaField{
+                        name: field_name.to_owned(),
+                        required: true,
+                        description: "".to_owned(),
+                        field_type: SchemaFieldType::Slug
+                    }
+                ],
+            },
+        };
+
+        let saved_schema_1 = schema_service.create_schema(schema.clone())?;
+        content_service.create_content_table(&saved_schema_1)?;
+
+        let content = ContentData {
+            schema_id: saved_schema_1.id,
+            content: Content {
+                fields: hashmap![
+                    field_name.to_owned() =>
+                    ContentFieldValue::Slug{value: ContentFieldValueArity::Single { value: Some("a-valid-slug".to_owned()) }},
+                ],
+                created_ms: 0,
+                updated_ms: 0,
+            },
+        };
+
+        assert!( content_service.create_content(&saved_schema_1.data.schema, content.clone()).is_ok() );
+
+        let result = content_service.create_content(&saved_schema_1.data.schema, content.clone());
+        assert!(result.is_err());
+
+        match result {
+            Err(LightSpeedError::ValidationError { details }) => {
+                println!("details: {:#?}", details);
+                assert_eq!(
+                    details.details().borrow()[&format!("fields[{}]", field_name)],
+                    vec![ErrorDetail::new(ERR_NOT_UNIQUE, vec![])]
+                )
+            }
+            _ => assert!(false),
+        };
+
+        Ok(())
+    });
+}
+
+#[test]
+fn should_create_unique_constraints_for_string_unique_schema_fields() {
+    unimplemented!()
+}
+
+#[test]
+fn should_create_unique_constraints_for_number_unique_schema_fields() {
+    unimplemented!()
+}
+
+#[test]
+fn should_create_unique_constraints_for_boolean_unique_schema_fields() {
+    unimplemented!()
+}
+
+#[test]
+fn should_create_unique_constraints_for_field_name_with_max_length() {
     unimplemented!()
 }
