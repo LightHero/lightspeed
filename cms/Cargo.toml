@@ -25,6 +25,5 @@ structopt = "0.2"
 maybe-single = "0.4"
 maplit = "1"
 testcontainers = "0.8"
-rand = "0.7"
 
 ls_logger = { version = "0.1", package = "lightspeed_logger", path = "../logger" }

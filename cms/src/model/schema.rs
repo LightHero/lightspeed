@@ -4,8 +4,8 @@ use lightspeed_core::service::validator::number::{validate_number_ge, validate_n
 use lightspeed_core::service::validator::{Validable, ERR_NOT_UNIQUE};
 use serde::{Deserialize, Serialize};
 
-pub const SCHEMA_FIELD_NAME_MAX_LENGHT: usize = 32;
 pub type SchemaModel = Model<SchemaData>;
+pub const SCHEMA_FIELD_NAME_MAX_LENGHT: usize = 32;
 
 #[derive(Clone, Serialize, Deserialize)]
 pub struct SchemaData {
