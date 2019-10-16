@@ -1,11 +1,21 @@
 use c3p0::Model;
+use lazy_static::*;
 use lightspeed_core::error::{ErrorDetails, LightSpeedError};
 use lightspeed_core::service::validator::number::{validate_number_ge, validate_number_le};
 use lightspeed_core::service::validator::{Validable, ERR_NOT_UNIQUE};
+use regex::Regex;
 use serde::{Deserialize, Serialize};
 
 pub type SchemaModel = Model<SchemaData>;
 pub const SCHEMA_FIELD_NAME_MAX_LENGHT: usize = 32;
+pub const SCHAME_FIELD_NAME_VALIDATION_REGEX: &str = r#"^[a-z0-9_]+$"#;
+
+const NOT_VALID_FIELD_NAME: &str = "NOT_VALID_FIELD_NAME";
+
+lazy_static! {
+     static ref FIELD_NAME_REGEX: Regex =
+        Regex::new(SCHAME_FIELD_NAME_VALIDATION_REGEX).expect("field name validation regex should be valid");
+}
 
 #[derive(Clone, Serialize, Deserialize)]
 pub struct SchemaData {
@@ -58,6 +68,11 @@ impl Validable for &SchemaField {
     fn validate(&self, error_details: &ErrorDetails) -> Result<(), LightSpeedError> {
         validate_number_ge(error_details, "name", 1, self.name.len());
         validate_number_le(error_details, "name", SCHEMA_FIELD_NAME_MAX_LENGHT, self.name.len());
+
+        if !FIELD_NAME_REGEX.is_match(&self.name) {
+            error_details.add_detail("name", NOT_VALID_FIELD_NAME);
+        }
+
         Ok(())
     }
 }
@@ -207,11 +222,80 @@ mod test {
                 assert_eq!(details.details().borrow().len(), 1);
                 assert_eq!(
                     details.details().borrow().get("fields[1].name"),
-                    Some(&vec![ErrorDetail::new(
+                    Some(&vec![
+                        ErrorDetail::new(
                         MUST_BE_GREATER_OR_EQUAL,
                         vec!["1".to_owned()]
-                    )])
+                        ),
+                        ErrorDetail::new(
+                            NOT_VALID_FIELD_NAME,
+                            vec![]
+                        ),
+                    ])
                 );
+            }
+            _ => assert!(false),
+        }
+    }
+
+    #[test]
+    fn schema_field_names_should_contain_only_lowercased_chars_and_undercores() {
+        let schema = Schema {
+            updated_ms: 0,
+            created_ms: 0,
+            fields: vec![
+                SchemaField {
+                    name: "label1".to_owned(),
+                    description: "".to_owned(),
+                    field_type: SchemaFieldType::Slug,
+                    required: false,
+                },
+                SchemaField {
+                    name: "SomeUppercase".to_owned(),
+                    description: "".to_owned(),
+                    field_type: SchemaFieldType::Slug,
+                    required: false,
+                },
+                SchemaField {
+                    name: "1123".to_owned(),
+                    description: "".to_owned(),
+                    field_type: SchemaFieldType::Slug,
+                    required: false,
+                },
+                SchemaField {
+                    name: "with whitespaces".to_owned(),
+                    description: "".to_owned(),
+                    field_type: SchemaFieldType::Slug,
+                    required: false,
+                },
+            ],
+        };
+
+        // Act
+        let result = Validator::validate(&schema);
+
+        match result {
+            Err(LightSpeedError::ValidationError { details }) => {
+                assert_eq!(details.details().borrow().len(), 2);
+                assert_eq!(
+                    details.details().borrow().get("fields[1].name"),
+                    Some(&vec![
+                        ErrorDetail::new(
+                            NOT_VALID_FIELD_NAME,
+                            vec![]
+                        ),
+                    ])
+                );
+                assert_eq!(
+                    details.details().borrow().get("fields[3].name"),
+                    Some(&vec![
+                        ErrorDetail::new(
+                            NOT_VALID_FIELD_NAME,
+                            vec![]
+                        ),
+                    ])
+                );
+
             }
             _ => assert!(false),
         }

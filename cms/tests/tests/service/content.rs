@@ -484,7 +484,7 @@ fn should_create_unique_constraints_for_field_name_with_max_length() {
         let content_service = &cms_module.content_service;
         let schema_service = &cms_module.schema_service;
 
-        let field_name = random_string(SCHEMA_FIELD_NAME_MAX_LENGHT);
+        let field_name = random_string(SCHEMA_FIELD_NAME_MAX_LENGHT).to_lowercase();
         let schema = CreateSchemaDto {
             name: new_hyphenated_uuid(),
             project_id: -1,
