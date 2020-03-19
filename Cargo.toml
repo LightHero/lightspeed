@@ -1,12 +1,13 @@
 [workspace]
 
 members = [
-    "logger",
-    "scheduler",
+    "auth",
+    "cache",
+    "cms",
     "core",
     "email",
-    "auth",
-    "cms",
+    "logger",
+    "scheduler",
 ]
 
 # Link-time optimization (LTO) is a feature that lets the optimizer run on the entire program at once
