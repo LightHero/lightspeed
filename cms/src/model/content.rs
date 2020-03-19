@@ -76,7 +76,7 @@ impl Content {
                         &scoped_err,
                     );
                 } else {
-                    error_details.add_detail(&scoped_name, ERR_UNKNOWN_FIELD);
+                    error_details.add_detail(scoped_name.into(), ERR_UNKNOWN_FIELD.into());
                 }
             }
         }
@@ -84,7 +84,7 @@ impl Content {
         {
             if !schema_fields.is_empty() {
                 error_details.add_detail(
-                    "fields",
+                    "fields".into(),
                     (
                         ERR_VALUE_REQUIRED,
                         schema_fields
@@ -92,7 +92,7 @@ impl Content {
                             .filter(|(_, value)| value.required)
                             .map(|(key, _)| key.to_string())
                             .collect(),
-                    ),
+                    ).into(),
                 );
             }
         }
@@ -125,7 +125,7 @@ fn validate_content_field(
                     },
                 );
             }
-            _ => error_details.add_detail(full_field_name, MUST_BE_OF_TYPE_BOOLEAN),
+            _ => error_details.add_detail(full_field_name.into(), MUST_BE_OF_TYPE_BOOLEAN.into()),
         },
         SchemaFieldType::Number {
             min,
@@ -152,7 +152,7 @@ fn validate_content_field(
                     },
                 );
             }
-            _ => error_details.add_detail(full_field_name, MUST_BE_OF_TYPE_NUMBER),
+            _ => error_details.add_detail(full_field_name.into(), MUST_BE_OF_TYPE_NUMBER.into()),
         },
         SchemaFieldType::Slug => match content_field_value {
             ContentFieldValue::Slug{value: arity} => {
@@ -167,7 +167,7 @@ fn validate_content_field(
                     },
                 );
             }
-            _ => error_details.add_detail(full_field_name, MUST_BE_OF_TYPE_SLUG),
+            _ => error_details.add_detail(full_field_name.into(), MUST_BE_OF_TYPE_SLUG.into()),
         },
         SchemaFieldType::String {
             min_length,
@@ -194,7 +194,7 @@ fn validate_content_field(
                     },
                 );
             }
-            _ => error_details.add_detail(full_field_name, MUST_BE_OF_TYPE_STRING),
+            _ => error_details.add_detail(full_field_name.into(), MUST_BE_OF_TYPE_STRING.into()),
         },
     }
 }
@@ -210,7 +210,7 @@ fn validate_arity<T, F: Fn(&str, &Option<T>)>(
     match schema_arity {
         SchemaFieldArity::Single | SchemaFieldArity::Unique => match arity {
             ContentFieldValueArity::Single { value } => value_validation(full_field_name, value),
-            _ => error_details.add_detail(full_field_name, SHOULD_HAVE_SINGLE_VALUE_ARITY),
+            _ => error_details.add_detail(full_field_name.into(), SHOULD_HAVE_SINGLE_VALUE_ARITY.into()),
         },
         SchemaFieldArity::Localizable { options } => match arity {
             ContentFieldValueArity::Localizable { values } => {
@@ -221,7 +221,7 @@ fn validate_arity<T, F: Fn(&str, &Option<T>)>(
                                 if !values.contains_key(language) {
                                     error_details.add_detail(
                                         format!("{}[{}]", full_field_name, language),
-                                        ERR_VALUE_REQUIRED,
+                                        ERR_VALUE_REQUIRED.into(),
                                     )
                                 }
                             })
@@ -232,7 +232,7 @@ fn validate_arity<T, F: Fn(&str, &Option<T>)>(
                     value_validation(&format!("{}[{}]", full_field_name, key), value)
                 })
             }
-            _ => error_details.add_detail(full_field_name, SHOULD_HAVE_LOCALIZABLE_ARITY),
+            _ => error_details.add_detail(full_field_name.into(), SHOULD_HAVE_LOCALIZABLE_ARITY.into()),
         },
     }
 }
@@ -244,7 +244,7 @@ fn validate_boolean<S: Into<String>>(
     error_details: &mut dyn ErrorDetails,
 ) {
     if value.is_none() && required {
-        error_details.add_detail(full_field_name, ERR_VALUE_REQUIRED);
+        error_details.add_detail(full_field_name, ERR_VALUE_REQUIRED.into());
     }
 }
 
@@ -264,7 +264,7 @@ fn validate_number<S: Into<String> + Clone>(
             validate_number_le(error_details, full_field_name, *max, *value)
         }
     } else if required {
-        error_details.add_detail(full_field_name, ERR_VALUE_REQUIRED);
+        error_details.add_detail(full_field_name, ERR_VALUE_REQUIRED.into());
     }
 }
 
@@ -277,10 +277,10 @@ fn validate_slug<S: Into<String>>(
     if let Some(value) = value {
         //let reg: &Regex = &SLUG_REGEX;
         if !SLUG_REGEX.is_match(value) {
-            error_details.add_detail(full_field_name, NOT_VALID_SLUG);
+            error_details.add_detail(full_field_name, NOT_VALID_SLUG.into());
         }
     } else if required {
-        error_details.add_detail(full_field_name, ERR_VALUE_REQUIRED);
+        error_details.add_detail(full_field_name, ERR_VALUE_REQUIRED.into());
     }
 }
 
@@ -305,7 +305,7 @@ fn validate_string<S: Into<String> + Clone>(
             validate_number_le(error_details, full_field_name, *max_length, value.len())
         }
     } else if required {
-        error_details.add_detail(full_field_name, ERR_VALUE_REQUIRED);
+        error_details.add_detail(full_field_name, ERR_VALUE_REQUIRED.into());
     }
 }
 
