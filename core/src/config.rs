@@ -1,27 +1,11 @@
 use structopt::StructOpt;
 
-/// Global Web configuration.
-#[derive(Debug, Clone, StructOpt)]
-#[structopt(rename_all = "kebab-case")]
-pub struct UIConfig {
-    /// The public site URL
-    #[structopt(long, default_value = "http://127.0.0.1")]
-    pub public_domain: String,
-}
-
-impl UIConfig {
-    pub fn build() -> Self {
-        let app = Self::clap().setting(structopt::clap::AppSettings::AllowExternalSubcommands);
-        Self::from_clap(&app.get_matches())
-    }
-}
-
 /// Defines the JSON Web Token configuration.
 #[derive(Debug, Clone, StructOpt)]
 #[structopt(rename_all = "kebab-case")]
 pub struct JwtConfig {
     /// The secret key used to encode and decode the JWT
-    #[structopt(long)]
+    #[structopt(long, env = "LS_CORE_JWS_SECRET", default_value = "")]
     pub secret: String,
 
     /// Determines the JWT signature algorithm.
@@ -36,11 +20,11 @@ pub struct JwtConfig {
     /// - RS384 -> RSASSA-PKCS1-v1_5 using SHA-384,
     /// - RS512 -> RSASSA-PKCS1-v1_5 using SHA-512,
      */
-    #[structopt(long, default_value = "HS256")]
+    #[structopt(long, env = "LS_CORE_JWS_SIGNATURE_ALGORITHM", default_value = "HS512")]
     pub signature_algorithm: jsonwebtoken::Algorithm,
 
     /// Determines the token validity minutes
-    #[structopt(long, default_value = "60")]
+    #[structopt(long, env = "LS_CORE_JWS_TOKEN_VALIDITY_MINUTES", default_value = "60")]
     pub token_validity_minutes: u32,
 }
 
@@ -60,4 +44,13 @@ impl CoreConfig {
 }
 
 #[cfg(test)]
-mod test {}
+mod test {
+
+    use super::*;
+
+    #[test]
+    fn should_build_config() {
+        let config = CoreConfig::build();
+        assert!(config.jwt.token_validity_minutes > 0);
+    }
+}

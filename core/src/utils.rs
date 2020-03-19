@@ -1,7 +1,7 @@
 use chrono::prelude::Local;
-use uuid::Uuid;
-use rand::Rng;
 use rand::distributions::Alphanumeric;
+use rand::Rng;
+use uuid::Uuid;
 
 /// Returns the number of non-leap seconds since January 1, 1970 0:00:00 UTC
 /// (aka "UNIX timestamp").
@@ -16,10 +16,7 @@ pub fn new_hyphenated_uuid() -> String {
 }
 
 pub fn random_string(length: usize) -> String {
-    rand::thread_rng()
-        .sample_iter(&Alphanumeric)
-        .take(length)
-        .collect::<String>()
+    rand::thread_rng().sample_iter(&Alphanumeric).take(length).collect::<String>()
 }
 
 #[cfg(test)]

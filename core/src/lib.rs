@@ -4,6 +4,8 @@ pub mod model;
 pub mod module;
 pub mod service;
 pub mod utils;
+
+#[cfg(feature = "actix-web")]
 pub mod web;
 
 use crate::error::LightSpeedError;
@@ -17,13 +19,13 @@ pub struct CoreModule {
 }
 
 impl CoreModule {
-    pub fn new(config: config::CoreConfig) -> CoreModule {
-        println!("Creating CoreModule with configuration:\n{:#?}", config);
-        info!("Creating CoreModule with configuration:\n{:#?}", config);
+    pub fn new(config: config::CoreConfig) -> Result<CoreModule, LightSpeedError> {
+        println!("Creating CoreModule");
+        info!("Creating CoreModule");
 
-        let jwt = service::jwt::JwtService::new(&config.jwt);
+        let jwt = service::jwt::JwtService::new(&config.jwt)?;
         let auth = service::auth::AuthService::new(InMemoryRolesProvider::new(vec![]));
-        CoreModule { jwt, auth }
+        Ok(CoreModule { jwt, auth })
     }
 }
 
@@ -38,8 +40,8 @@ impl module::Module for CoreModule {
 pub mod test_root {
 
     use lazy_static::lazy_static;
-    use ls_logger::config::LoggerConfig;
-    use ls_logger::setup_logger;
+    use lightspeed_logger::config::LoggerConfig;
+    use lightspeed_logger::setup_logger;
     use std::sync::Mutex;
 
     lazy_static! {
@@ -58,13 +60,7 @@ pub mod test_root {
     fn start_logger() {
         println!("Init logger");
 
-        let conf = LoggerConfig {
-            level: String::from("trace"),
-            stdout_output: true,
-            stderr_output: false,
-            file_output_path: None,
-        };
+        let conf = LoggerConfig { level: String::from("trace"), stdout_output: true, stderr_output: false, file_output_path: None };
         setup_logger(&conf).unwrap();
     }
-
 }

@@ -28,15 +28,8 @@ mod test {
     fn should_start_all() {
         let output = Rc::new(Mutex::new(vec![]));
 
-        let mut mod1 = SimpleModOne {
-            output: output.clone(),
-            name: "one".to_string(),
-        };
-        let mut mod2 = SimpleModTwo {
-            output: output.clone(),
-            name: "two".to_string(),
-            fail: false,
-        };
+        let mut mod1 = SimpleModOne { output: output.clone(), name: "one".to_string() };
+        let mut mod2 = SimpleModTwo { output: output.clone(), name: "two".to_string(), fail: false };
 
         let mut modules: Vec<&mut dyn super::Module> = vec![&mut mod1, &mut mod2];
 
@@ -44,29 +37,16 @@ mod test {
 
         assert!(result.is_ok());
         assert_eq!(2, output.lock().unwrap().len());
-        assert_eq!(
-            &"one-start".to_string(),
-            output.lock().unwrap().get(0).unwrap()
-        );
-        assert_eq!(
-            &"two-start".to_string(),
-            output.lock().unwrap().get(1).unwrap()
-        );
+        assert_eq!(&"one-start".to_string(), output.lock().unwrap().get(0).unwrap());
+        assert_eq!(&"two-start".to_string(), output.lock().unwrap().get(1).unwrap());
     }
 
     #[test]
     fn should_fail_on_start() {
         let output = Rc::new(Mutex::new(vec![]));
 
-        let mut mod1 = SimpleModOne {
-            output: output.clone(),
-            name: "one".to_string(),
-        };
-        let mut mod2 = SimpleModTwo {
-            output: output.clone(),
-            name: "two".to_string(),
-            fail: true,
-        };
+        let mut mod1 = SimpleModOne { output: output.clone(), name: "one".to_string() };
+        let mut mod2 = SimpleModTwo { output: output.clone(), name: "two".to_string(), fail: true };
 
         let mut modules: Vec<&mut dyn super::Module> = vec![&mut mod1, &mut mod2];
 
@@ -76,19 +56,14 @@ mod test {
 
         match result {
             Err(err) => match err {
-                LightSpeedError::ModuleStartError { message } => {
-                    assert_eq!("test_failure", message)
-                }
+                LightSpeedError::ModuleStartError { message } => assert_eq!("test_failure", message),
                 _ => assert!(false),
             },
             _ => assert!(false),
         }
 
         assert_eq!(1, output.lock().unwrap().len());
-        assert_eq!(
-            &"one-start".to_string(),
-            output.lock().unwrap().get(0).unwrap()
-        );
+        assert_eq!(&"one-start".to_string(), output.lock().unwrap().get(0).unwrap());
     }
 
     #[derive(Clone)]
@@ -116,9 +91,7 @@ mod test {
     impl super::Module for SimpleModTwo {
         fn start(&mut self) -> Result<(), LightSpeedError> {
             if self.fail {
-                return Err(LightSpeedError::ModuleStartError {
-                    message: "test_failure".to_owned(),
-                });
+                return Err(LightSpeedError::ModuleStartError { message: "test_failure".to_owned() });
             }
 
             let mut owned = self.name.to_owned();
@@ -128,5 +101,4 @@ mod test {
             Ok(())
         }
     }
-
 }

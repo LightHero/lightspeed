@@ -1,33 +1,27 @@
-use crate::error::{ErrorDetail, ErrorDetails, LightSpeedError};
-use actix_web::dev::HttpResponseBuilder;
-use actix_web::{HttpResponse, ResponseError};
-use serde_derive::Serialize;
-use std::cell::RefCell;
-use std::collections::HashMap;
-use std::ops::Deref;
+use crate::error::{LightSpeedError, WebErrorDetails};
+use actix_web_external::dev::HttpResponseBuilder;
+use actix_web_external::error::BlockingError;
+use actix_web_external::web::Json;
+use actix_web_external::{http, HttpResponse, ResponseError};
+use log::*;
 
-#[derive(Serialize)]
-pub struct WebErrorDetails<'a> {
-    pub code: u16,
-    pub message: &'a Option<String>,
-    pub details: &'a RefCell<HashMap<String, Vec<ErrorDetail>>>,
+pub async fn web_block<I, F>(f: F) -> Result<I, LightSpeedError>
+where
+    F: FnOnce() -> Result<I, LightSpeedError> + Send + 'static,
+    I: Send + 'static,
+{
+    actix_web_external::web::block(f).await.map_err(|err| match err {
+        BlockingError::Error(e) => e,
+        _ => LightSpeedError::InternalServerError { message: format!("{}", err) },
+    })
 }
 
-impl<'a> WebErrorDetails<'a> {
-    pub fn from(code: u16, error_details: &'a ErrorDetails) -> Self {
-        match error_details {
-            ErrorDetails::Root { message, details } => WebErrorDetails {
-                code,
-                message,
-                details: details.deref(),
-            },
-            ErrorDetails::Child { details, .. } => WebErrorDetails {
-                code,
-                message: &None,
-                details: details.deref(),
-            },
-        }
-    }
+pub async fn web_block_json<I, F>(f: F) -> Result<Json<I>, LightSpeedError>
+where
+    F: FnOnce() -> Result<I, LightSpeedError> + Send + 'static,
+    I: Send + 'static,
+{
+    web_block(f).await.map(Json)
 }
 
 impl ResponseError for LightSpeedError {
@@ -40,15 +34,28 @@ impl ResponseError for LightSpeedError {
             | LightSpeedError::ParseAuthHeaderError { .. }
             | LightSpeedError::UnauthenticatedError => HttpResponse::Unauthorized().finish(),
             LightSpeedError::ForbiddenError { .. } => HttpResponse::Forbidden().finish(),
-            LightSpeedError::InternalServerError { .. } => {
+            LightSpeedError::InternalServerError { message } => {
+                error!("Internal server error: {}", message);
                 HttpResponse::InternalServerError().finish()
             }
             LightSpeedError::ValidationError { details } => {
-                let code = actix_web::http::StatusCode::UNPROCESSABLE_ENTITY;
-                HttpResponseBuilder::new(code).json(WebErrorDetails::from(code.as_u16(), details))
+                let http_code = http::StatusCode::UNPROCESSABLE_ENTITY;
+                HttpResponseBuilder::new(http_code).json(WebErrorDetails::from_error_details(http_code.as_u16(), details))
             }
             LightSpeedError::BadRequest { .. } => HttpResponse::BadRequest().finish(),
-            _ => HttpResponse::InternalServerError().finish(),
+            LightSpeedError::RequestConflict { code, .. } => {
+                let http_code = http::StatusCode::CONFLICT;
+                HttpResponseBuilder::new(http_code).json(WebErrorDetails::from_message(http_code.as_u16(), &Some((*code).to_string())))
+            }
+            LightSpeedError::ServiceUnavailable { code, .. } => {
+                let http_code = http::StatusCode::CONFLICT;
+                HttpResponseBuilder::new(http_code).json(WebErrorDetails::from_message(http_code.as_u16(), &Some((*code).to_string())))
+            }
+            LightSpeedError::ModuleBuilderError { .. }
+            | LightSpeedError::ModuleStartError { .. }
+            | LightSpeedError::ConfigurationError { .. }
+            | LightSpeedError::PasswordEncryptionError { .. }
+            | LightSpeedError::RepositoryError { .. } => HttpResponse::InternalServerError().finish(),
         }
     }
 }

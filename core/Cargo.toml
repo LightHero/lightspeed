@@ -6,22 +6,34 @@ authors = ["Francesco Cina <ufoscout@gmail.com>"]
 edition = "2018"
 
 [dependencies]
-actix-web = "1.0"
-c3p0_common = "0.22"
-#c3p0_common = { version = "0.20", path = "../../../github_ufoscout/c3p0/c3p0_common"}
+c3p0_common = { version = "0.28" }
 chrono = "0.4"
-err-derive= "0.1"
-jsonwebtoken = "6.0"
+jsonwebtoken = "7.0"
 log = "0.4"
 rand = "0.7"
 serde = { version = "1.0" , features = ["rc"] }
 serde_derive = "1.0"
 serde_json = "1.0"
-structopt = "0.2"
-uuid = { version = "0.7", features = ["serde", "v4"] }
-validator = "0.9"
+structopt = "0.3"
+strum = "0.17.0"
+strum_macros = "0.17.0"
+thiserror = "1.0"
+uuid = { version = "0.8", features = ["v4"] }
+validator = "0.10"
+
+# See
+#typescript-definitions = "0.1.10"
+typescript-definitions = {git = "https://github.com/ufoscout/typescript-definitions.git", branch = "no-debug-attrs"}
+
+actix_web_external = {package = "actix-web", version = "2.0.0", optional = true }
 
 [dev-dependencies]
-actix-service = "0.4"
-lazy_static = "1.0"
-ls_logger = { version = "0.1", package = "lightspeed_logger", path = "../logger" }
+actix-service = "1.0.1"
+actix-rt = "1.0.0"
+lazy_static = "1.4"
+lightspeed_logger = { version = "0.1", path = "../logger" }
+
+[features]
+default = []
+
+actix-web = ["actix_web_external"]
