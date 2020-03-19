@@ -10,14 +10,14 @@ use lightspeed_core::service::validator::{Validator, ERR_NOT_UNIQUE};
 #[derive(Clone)]
 pub struct ProjectService<RepoManager: CmsRepositoryManager> {
     c3p0: RepoManager::C3P0,
-    project_repo: RepoManager::PROJECT_REPO,
+    project_repo: RepoManager::ProjectRepo,
     schema_service: SchemaService<RepoManager>,
 }
 
 impl<RepoManager: CmsRepositoryManager> ProjectService<RepoManager> {
     pub fn new(
         c3p0: RepoManager::C3P0,
-        project_repo: RepoManager::PROJECT_REPO,
+        project_repo: RepoManager::ProjectRepo,
         schema_service: SchemaService<RepoManager>,
     ) -> Self {
         ProjectService {

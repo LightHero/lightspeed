@@ -27,21 +27,21 @@ impl Deref for PgContentRepository {
 }
 
 impl ContentRepository for PgContentRepository {
-    type CONN = PgConnection;
+    type Conn = PgConnection;
 
-    fn create_table(&self, conn: &mut Self::CONN) -> Result<(), LightSpeedError> {
+    fn create_table(&self, conn: &mut Self::Conn) -> Result<(), LightSpeedError> {
         Ok(self.repo.create_table_if_not_exists(conn)?)
     }
 
-    fn drop_table(&self, conn: &mut Self::CONN) -> Result<(), LightSpeedError> {
+    fn drop_table(&self, conn: &mut Self::Conn) -> Result<(), LightSpeedError> {
         Ok(self.repo.drop_table_if_exists(conn, true)?)
     }
 
-    fn count_all(&self, conn: &mut Self::CONN) -> Result<u64, LightSpeedError> {
+    fn count_all(&self, conn: &mut Self::Conn) -> Result<u64, LightSpeedError> {
         Ok(self.repo.count_all(conn)?)
     }
 
-    fn count_all_by_field_value(&self, conn: &mut Self::CONN, field_name: &str, field_value: &str) -> Result<u64, LightSpeedError> {
+    fn count_all_by_field_value(&self, conn: &mut Self::Conn, field_name: &str, field_value: &str) -> Result<u64, LightSpeedError> {
         Ok(conn.fetch_one_value(&format!(
             "SELECT COUNT(*) FROM {} WHERE  (DATA -> 'content' -> 'fields' -> '{}' -> 'value' ->> 'value') = $1 ",
             self.repo.queries().qualified_table_name,
@@ -51,7 +51,7 @@ impl ContentRepository for PgContentRepository {
 
     fn create_unique_constraint(
         &self,
-        conn: &mut Self::CONN,
+        conn: &mut Self::Conn,
         index_name: &str,
         field_name: &str,
     ) -> Result<(), LightSpeedError> {
@@ -65,7 +65,7 @@ impl ContentRepository for PgContentRepository {
 
     fn drop_unique_constraint(
         &self,
-        conn: &mut Self::CONN,
+        conn: &mut Self::Conn,
         index_name: &str,
     ) -> Result<(), LightSpeedError> {
         Ok(conn.batch_execute(&format!("DROP INDEX {} IF EXISTS", index_name))?)
@@ -73,7 +73,7 @@ impl ContentRepository for PgContentRepository {
 
     fn fetch_by_id(
         &self,
-        conn: &mut Self::CONN,
+        conn: &mut Self::Conn,
         id: i64,
     ) -> Result<Model<ContentData>, LightSpeedError> {
         Ok(self.repo
@@ -82,7 +82,7 @@ impl ContentRepository for PgContentRepository {
 
     fn save(
         &self,
-        conn: &mut Self::CONN,
+        conn: &mut Self::Conn,
         model: NewModel<ContentData>,
     ) -> Result<Model<ContentData>, LightSpeedError> {
         Ok(self.repo.save(conn, model)?)
@@ -90,7 +90,7 @@ impl ContentRepository for PgContentRepository {
 
     fn update(
         &self,
-        conn: &mut Self::CONN,
+        conn: &mut Self::Conn,
         model: Model<ContentData>,
     ) -> Result<Model<ContentData>, LightSpeedError> {
         Ok(self.repo.update(conn, model)?)
@@ -98,7 +98,7 @@ impl ContentRepository for PgContentRepository {
 
     fn delete(
         &self,
-        conn: &mut Self::CONN,
+        conn: &mut Self::Conn,
         model: Model<ContentData>,
     ) -> Result<Model<ContentData>, LightSpeedError> {
         Ok(self.repo.delete(conn, model)?)

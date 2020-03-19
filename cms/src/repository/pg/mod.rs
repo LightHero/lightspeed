@@ -26,11 +26,11 @@ impl PgCmsRepositoryManager {
 }
 
 impl CmsRepositoryManager for PgCmsRepositoryManager {
-    type CONN = PgConnection;
+    type Conn = PgConnection;
     type C3P0 = PgC3p0Pool;
-    type CONTENT_REPO = PgContentRepository;
-    type PROJECT_REPO = PgProjectRepository;
-    type SCHEMA_REPO = PgSchemaRepository;
+    type ContentRepo = PgContentRepository;
+    type ProjectRepo = PgProjectRepository;
+    type SchemaRepo = PgSchemaRepository;
 
     fn c3p0(&self) -> &PgC3p0Pool {
         &self.c3p0
@@ -60,15 +60,15 @@ impl CmsRepositoryManager for PgCmsRepositoryManager {
             })
     }
 
-    fn content_repo(&self, table_name: &str) -> Self::CONTENT_REPO {
+    fn content_repo(&self, table_name: &str) -> Self::ContentRepo {
         PgContentRepository::new(table_name)
     }
 
-    fn project_repo(&self) -> Self::PROJECT_REPO {
+    fn project_repo(&self) -> Self::ProjectRepo {
         PgProjectRepository::default()
     }
 
-    fn schema_repo(&self) -> Self::SCHEMA_REPO {
+    fn schema_repo(&self) -> Self::SchemaRepo {
         PgSchemaRepository::default()
     }
 }

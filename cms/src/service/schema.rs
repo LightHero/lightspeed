@@ -9,11 +9,11 @@ use lightspeed_core::service::validator::{Validator, ERR_NOT_UNIQUE};
 #[derive(Clone)]
 pub struct SchemaService<RepoManager: CmsRepositoryManager> {
     c3p0: RepoManager::C3P0,
-    schema_repo: RepoManager::SCHEMA_REPO,
+    schema_repo: RepoManager::SchemaRepo,
 }
 
 impl<RepoManager: CmsRepositoryManager> SchemaService<RepoManager> {
-    pub fn new(c3p0: RepoManager::C3P0, schema_repo: RepoManager::SCHEMA_REPO) -> Self {
+    pub fn new(c3p0: RepoManager::C3P0, schema_repo: RepoManager::SchemaRepo) -> Self {
         SchemaService { c3p0, schema_repo }
     }
 
@@ -50,7 +50,7 @@ impl<RepoManager: CmsRepositoryManager> SchemaService<RepoManager> {
 
     pub fn delete_by_project_id(
         &self,
-        conn: &mut RepoManager::CONN,
+        conn: &mut RepoManager::Conn,
         project_id: i64,
     ) -> Result<u64, LightSpeedError> {
         self.schema_repo.delete_by_project_id(conn, project_id)

@@ -120,7 +120,7 @@ fn validate_content_field<E: ErrorDetails>(
                     arity,
                     error_details,
                     full_field_name,
-                    |field_name, value| {
+                    |field_name, value, error_details| {
                         validate_boolean(schema_field.required, field_name, *value, error_details)
                     },
                 );
@@ -140,7 +140,7 @@ fn validate_content_field<E: ErrorDetails>(
                     arity,
                     error_details,
                     full_field_name,
-                    |field_name, value| {
+                    |field_name, value, error_details| {
                         validate_number(
                             schema_field.required,
                             field_name,
@@ -162,7 +162,7 @@ fn validate_content_field<E: ErrorDetails>(
                     arity,
                     error_details,
                     full_field_name,
-                    |field_name, value| {
+                    |field_name, value, error_details| {
                         validate_slug(schema_field.required, field_name, value, error_details)
                     },
                 );
@@ -182,7 +182,7 @@ fn validate_content_field<E: ErrorDetails>(
                     arity,
                     error_details,
                     full_field_name,
-                    |field_name, value| {
+                    |field_name, value, error_details| {
                         validate_string(
                             schema_field.required,
                             field_name,
@@ -199,7 +199,7 @@ fn validate_content_field<E: ErrorDetails>(
     }
 }
 
-fn validate_arity<T, F: Fn(&str, &Option<T>), E: ErrorDetails>(
+fn validate_arity<T, F: Fn(&str, &Option<T>, &mut E), E: ErrorDetails>(
     required: bool,
     schema_arity: &SchemaFieldArity,
     arity: &ContentFieldValueArity<Option<T>>,
@@ -209,7 +209,7 @@ fn validate_arity<T, F: Fn(&str, &Option<T>), E: ErrorDetails>(
 ) {
     match schema_arity {
         SchemaFieldArity::Single | SchemaFieldArity::Unique => match arity {
-            ContentFieldValueArity::Single { value } => value_validation(full_field_name, value),
+            ContentFieldValueArity::Single { value } => value_validation(full_field_name, value, error_details),
             _ => error_details.add_detail(full_field_name.into(), SHOULD_HAVE_SINGLE_VALUE_ARITY.into()),
         },
         SchemaFieldArity::Localizable { options } => match arity {
@@ -229,7 +229,7 @@ fn validate_arity<T, F: Fn(&str, &Option<T>), E: ErrorDetails>(
                     }
                 }
                 values.iter().for_each(|(key, value)| {
-                    value_validation(&format!("{}[{}]", full_field_name, key), value)
+                    value_validation(&format!("{}[{}]", full_field_name, key), value, error_details)
                 })
             }
             _ => error_details.add_detail(full_field_name.into(), SHOULD_HAVE_LOCALIZABLE_ARITY.into()),

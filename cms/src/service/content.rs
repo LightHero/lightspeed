@@ -7,12 +7,14 @@ use c3p0::*;
 use chashmap::{CHashMap, ReadGuard};
 use lightspeed_core::error::{ErrorDetails, LightSpeedError};
 use lightspeed_core::service::validator::{Validator, ERR_NOT_UNIQUE};
+use std::cell::RefCell;
+use std::ops::DerefMut;
 
 #[derive(Clone)]
 pub struct ContentService<RepoManager: CmsRepositoryManager> {
     c3p0: RepoManager::C3P0,
     repo_factory: RepoManager,
-    content_repos: CHashMap<i64, RepoManager::CONTENT_REPO>,
+    content_repos: CHashMap<i64, RepoManager::ContentRepo>,
 }
 
 impl<RepoManager: CmsRepositoryManager> ContentService<RepoManager> {
@@ -65,6 +67,7 @@ impl<RepoManager: CmsRepositoryManager> ContentService<RepoManager> {
     ) -> Result<ContentModel, LightSpeedError> {
         self.c3p0.transaction(move |conn| {
 
+            let conn = RefCell::new(conn);
             let repo = self.get_content_repo_by_schema_id(create_content_dto.schema_id);
 
             Validator::validate(|error_details: &mut dyn ErrorDetails| {
@@ -97,7 +100,8 @@ impl<RepoManager: CmsRepositoryManager> ContentService<RepoManager> {
                                 };
 
                                 if let Some (value) =  field_value {
-                                    let count = repo.count_all_by_field_value(conn, &field.name, &value)?;
+                                    let mut conn_borrow = conn.borrow_mut();
+                                    let count = repo.count_all_by_field_value(conn_borrow.deref_mut(), &field.name, &value)?;
                                     if count > 0 {
                                         let scoped_name = format!("fields[{}]", &field.name);
                                         error_details.add_detail(scoped_name, ERR_NOT_UNIQUE.into());
@@ -112,7 +116,8 @@ impl<RepoManager: CmsRepositoryManager> ContentService<RepoManager> {
 
                 Ok(())
             })?;
-            repo.save(conn, NewModel::new(create_content_dto))
+            let mut conn_borrow = conn.borrow_mut();
+            repo.save(conn_borrow.deref_mut(), NewModel::new(create_content_dto))
         })
     }
 
@@ -127,7 +132,7 @@ impl<RepoManager: CmsRepositoryManager> ContentService<RepoManager> {
     fn get_content_repo_by_schema_id(
         &self,
         schema_id: i64,
-    ) -> ReadGuard<'_, i64, RepoManager::CONTENT_REPO> {
+    ) -> ReadGuard<'_, i64, RepoManager::ContentRepo> {
         let content_repo = self.content_repos.get(&schema_id);
         if content_repo.is_none() {
             {
