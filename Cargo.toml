@@ -7,7 +7,6 @@ members = [
     "email",
     "auth",
     "cms",
-    "app",
 ]
 
 # Link-time optimization (LTO) is a feature that lets the optimizer run on the entire program at once

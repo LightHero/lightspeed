@@ -1139,15 +1139,6 @@ version = "0.2.62"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 
 [[package]]
-name = "lightspeed_app"
-version = "0.1.0"
-dependencies = [
- "lightspeed_auth 0.1.0",
- "lightspeed_cms 0.1.0",
- "lightspeed_scheduler 0.1.0",
-]
-
-[[package]]
 name = "lightspeed_auth"
 version = "0.1.0"
 dependencies = [
