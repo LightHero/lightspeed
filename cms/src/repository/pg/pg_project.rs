@@ -31,7 +31,7 @@ impl ProjectRepository for PgProjectRepository {
 
     fn fetch_by_id(
         &self,
-        conn: &Self::CONN,
+        conn: &mut Self::CONN,
         id: i64,
     ) -> Result<Model<ProjectData>, LightSpeedError> {
         self.repo
@@ -41,7 +41,7 @@ impl ProjectRepository for PgProjectRepository {
             })
     }
 
-    fn exists_by_name(&self, conn: &Self::CONN, name: &str) -> Result<bool, LightSpeedError> {
+    fn exists_by_name(&self, conn: &mut Self::CONN, name: &str) -> Result<bool, LightSpeedError> {
         let sql = r#"
             select count(*) from CMS_PROJECT
             where CMS_PROJECT.DATA ->> 'name' = $1
@@ -54,7 +54,7 @@ impl ProjectRepository for PgProjectRepository {
 
     fn save(
         &self,
-        conn: &Self::CONN,
+        conn: &mut Self::CONN,
         model: NewModel<ProjectData>,
     ) -> Result<Model<ProjectData>, LightSpeedError> {
         Ok(self.repo.save(conn, model)?)
@@ -62,7 +62,7 @@ impl ProjectRepository for PgProjectRepository {
 
     fn update(
         &self,
-        conn: &Self::CONN,
+        conn: &mut Self::CONN,
         model: Model<ProjectData>,
     ) -> Result<Model<ProjectData>, LightSpeedError> {
         Ok(self.repo.update(conn, model)?)
@@ -70,7 +70,7 @@ impl ProjectRepository for PgProjectRepository {
 
     fn delete(
         &self,
-        conn: &Self::CONN,
+        conn: &mut Self::CONN,
         model: &Model<ProjectData>,
     ) -> Result<u64, LightSpeedError> {
         Ok(self.repo.delete(conn, model)?)

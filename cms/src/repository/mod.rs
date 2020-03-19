@@ -24,51 +24,51 @@ pub trait CmsRepositoryManager: Clone {
 pub trait ProjectRepository: Clone {
     type CONN;
 
-    fn fetch_by_id(&self, conn: &Self::CONN, id: i64) -> Result<ProjectModel, LightSpeedError>;
+    fn fetch_by_id(&self, conn: &mut Self::CONN, id: i64) -> Result<ProjectModel, LightSpeedError>;
 
-    fn exists_by_name(&self, conn: &Self::CONN, name: &str) -> Result<bool, LightSpeedError>;
+    fn exists_by_name(&self, conn: &mut Self::CONN, name: &str) -> Result<bool, LightSpeedError>;
 
     fn save(
         &self,
-        conn: &Self::CONN,
+        conn: &mut Self::CONN,
         model: NewModel<ProjectData>,
     ) -> Result<ProjectModel, LightSpeedError>;
 
     fn update(
         &self,
-        conn: &Self::CONN,
+        conn: &mut Self::CONN,
         model: ProjectModel,
     ) -> Result<ProjectModel, LightSpeedError>;
 
-    fn delete(&self, conn: &Self::CONN, model: &ProjectModel) -> Result<u64, LightSpeedError>;
+    fn delete(&self, conn: &mut Self::CONN, model: &ProjectModel) -> Result<u64, LightSpeedError>;
 }
 
 pub trait SchemaRepository: Clone {
     type CONN;
 
-    fn fetch_by_id(&self, conn: &Self::CONN, id: i64) -> Result<SchemaModel, LightSpeedError>;
+    fn fetch_by_id(&self, conn: &mut Self::CONN, id: i64) -> Result<SchemaModel, LightSpeedError>;
 
     fn exists_by_name_and_project_id(
         &self,
-        conn: &Self::CONN,
+        conn: &mut Self::CONN,
         name: &str,
         project_id: i64,
     ) -> Result<bool, LightSpeedError>;
 
     fn save(
         &self,
-        conn: &Self::CONN,
+        conn: &mut Self::CONN,
         model: NewModel<SchemaData>,
     ) -> Result<SchemaModel, LightSpeedError>;
 
-    fn update(&self, conn: &Self::CONN, model: SchemaModel)
+    fn update(&self, conn: &mut Self::CONN, model: SchemaModel)
         -> Result<SchemaModel, LightSpeedError>;
 
-    fn delete(&self, conn: &Self::CONN, model: &SchemaModel) -> Result<u64, LightSpeedError>;
+    fn delete(&self, conn: &mut Self::CONN, model: &SchemaModel) -> Result<u64, LightSpeedError>;
 
     fn delete_by_project_id(
         &self,
-        conn: &Self::CONN,
+        conn: &mut Self::CONN,
         project_id: i64,
     ) -> Result<u64, LightSpeedError>;
 }
@@ -76,40 +76,40 @@ pub trait SchemaRepository: Clone {
 pub trait ContentRepository: Clone {
     type CONN;
 
-    fn create_table(&self, conn: &Self::CONN) -> Result<(), LightSpeedError>;
+    fn create_table(&self, conn: &mut Self::CONN) -> Result<(), LightSpeedError>;
 
-    fn drop_table(&self, conn: &Self::CONN) -> Result<(), LightSpeedError>;
+    fn drop_table(&self, conn: &mut Self::CONN) -> Result<(), LightSpeedError>;
 
-    fn count_all(&self, conn: &Self::CONN) -> Result<u64, LightSpeedError>;
+    fn count_all(&self, conn: &mut Self::CONN) -> Result<u64, LightSpeedError>;
 
-    fn count_all_by_field_value(&self, conn: &Self::CONN, field_name: &str, field_value: &str) -> Result<u64, LightSpeedError>;
+    fn count_all_by_field_value(&self, conn: &mut Self::CONN, field_name: &str, field_value: &str) -> Result<u64, LightSpeedError>;
 
     fn create_unique_constraint(
         &self,
-        conn: &Self::CONN,
+        conn: &mut Self::CONN,
         index_name: &str,
         field_name: &str,
     ) -> Result<(), LightSpeedError>;
 
     fn drop_unique_constraint(
         &self,
-        conn: &Self::CONN,
+        conn: &mut Self::CONN,
         index_name: &str,
     ) -> Result<(), LightSpeedError>;
 
-    fn fetch_by_id(&self, conn: &Self::CONN, id: i64) -> Result<ContentModel, LightSpeedError>;
+    fn fetch_by_id(&self, conn: &mut Self::CONN, id: i64) -> Result<ContentModel, LightSpeedError>;
 
     fn save(
         &self,
-        conn: &Self::CONN,
+        conn: &mut Self::CONN,
         model: NewModel<ContentData>,
     ) -> Result<ContentModel, LightSpeedError>;
 
     fn update(
         &self,
-        conn: &Self::CONN,
+        conn: &mut Self::CONN,
         model: ContentModel,
     ) -> Result<ContentModel, LightSpeedError>;
 
-    fn delete(&self, conn: &Self::CONN, model: &ContentModel) -> Result<u64, LightSpeedError>;
+    fn delete(&self, conn: &mut Self::CONN, model: &ContentModel) -> Result<u64, LightSpeedError>;
 }

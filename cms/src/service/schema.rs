@@ -50,7 +50,7 @@ impl<RepoManager: CmsRepositoryManager> SchemaService<RepoManager> {
 
     pub fn delete_by_project_id(
         &self,
-        conn: &RepoManager::CONN,
+        conn: &mut RepoManager::CONN,
         project_id: i64,
     ) -> Result<u64, LightSpeedError> {
         self.schema_repo.delete_by_project_id(conn, project_id)

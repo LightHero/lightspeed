@@ -31,7 +31,7 @@ impl SchemaRepository for PgSchemaRepository {
 
     fn fetch_by_id(
         &self,
-        conn: &Self::CONN,
+        conn: &mut Self::CONN,
         id: i64,
     ) -> Result<Model<SchemaData>, LightSpeedError> {
         self.repo
@@ -43,7 +43,7 @@ impl SchemaRepository for PgSchemaRepository {
 
     fn exists_by_name_and_project_id(
         &self,
-        conn: &Self::CONN,
+        conn: &mut Self::CONN,
         name: &str,
         project_id: i64,
     ) -> Result<bool, LightSpeedError> {
@@ -59,7 +59,7 @@ impl SchemaRepository for PgSchemaRepository {
 
     fn save(
         &self,
-        conn: &Self::CONN,
+        conn: &mut Self::CONN,
         model: NewModel<SchemaData>,
     ) -> Result<Model<SchemaData>, LightSpeedError> {
         Ok(self.repo.save(conn, model)?)
@@ -67,19 +67,19 @@ impl SchemaRepository for PgSchemaRepository {
 
     fn update(
         &self,
-        conn: &Self::CONN,
+        conn: &mut Self::CONN,
         model: Model<SchemaData>,
     ) -> Result<Model<SchemaData>, LightSpeedError> {
         Ok(self.repo.update(conn, model)?)
     }
 
-    fn delete(&self, conn: &Self::CONN, model: &Model<SchemaData>) -> Result<u64, LightSpeedError> {
+    fn delete(&self, conn: &mut Self::CONN, model: &Model<SchemaData>) -> Result<u64, LightSpeedError> {
         Ok(self.repo.delete(conn, model)?)
     }
 
     fn delete_by_project_id(
         &self,
-        conn: &Self::CONN,
+        conn: &mut Self::CONN,
         project_id: i64,
     ) -> Result<u64, LightSpeedError> {
         let sql = r#"
