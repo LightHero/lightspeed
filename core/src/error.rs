@@ -121,6 +121,7 @@ impl From<C3p0Error> for LightSpeedError {
 
 pub trait ErrorDetails {
     fn add_detail(&mut self, key: String, value: ErrorDetail);
+    fn with_scope(&mut self, scope: String) -> ScopedErrorDetails<'_>;
 }
 
 #[derive(Debug)]
@@ -146,10 +147,6 @@ impl RootErrorDetails {
         RootErrorDetails { message: None, details: HashMap::new() }
     }
 
-    pub fn with_scope<S: Into<String>>(&mut self, scope: S) -> ScopedErrorDetails<'_> {
-        ScopedErrorDetails { scope: scope.into(), details: self }
-    }
-
     pub fn add_into_detail<K: Into<String>, V: Into<ErrorDetail>>(&mut self, key: K, value: V) {
         self.add_detail(key.into(), value.into())
     }
@@ -166,13 +163,13 @@ impl ErrorDetails for RootErrorDetails {
             }
         }
     }
+
+    fn with_scope(&mut self, scope: String) -> ScopedErrorDetails<'_> {
+        ScopedErrorDetails { scope: scope.into(), details: self }
+    }
 }
 
 impl<'a> ScopedErrorDetails<'a> {
-    pub fn with_scope<S: Into<String>>(&mut self, scope: S) -> ScopedErrorDetails<'_> {
-        ScopedErrorDetails { scope: format!("{}.{}", self.scope, scope.into()), details: self.details }
-    }
-
     pub fn add_into_detail<K: Into<String>, V: Into<ErrorDetail>>(&mut self, key: K, value: V) {
         self.details.add_detail(key.into(), value.into())
     }
@@ -182,6 +179,10 @@ impl<'a> ErrorDetails for ScopedErrorDetails<'a> {
     fn add_detail(&mut self, key: String, value: ErrorDetail) {
         let scoped_key = format!("{}.{}", self.scope, key);
         self.details.add_detail(scoped_key, value)
+    }
+
+    fn with_scope(&mut self, scope: String) -> ScopedErrorDetails<'_> {
+        ScopedErrorDetails { scope: format!("{}.{}", self.scope, scope), details: self.details }
     }
 }
 
@@ -217,21 +218,21 @@ pub mod test {
         root.add_detail("root".into(), "world_1".into());
 
         {
-            let mut child_one = root.with_scope("one");
+            let mut child_one = root.with_scope("one".into());
             child_one.add_detail("A".into(), "child one.A".into());
             child_one.add_detail("B".into(), "child one.B".into());
             {
-                let mut child_one_one = child_one.with_scope("inner");
+                let mut child_one_one = child_one.with_scope("inner".into());
                 child_one_one.add_detail("A".into(), "child one.inner.A".into());
             }
         }
 
         {
-            let mut child_two = root.with_scope("two");
+            let mut child_two = root.with_scope("two".into());
             child_two.add_detail("A".into(), "child two.A".into());
         }
 
-        use_validator(&mut root.with_scope("some"), "", "");
+        use_validator(&mut root.with_scope("some".into()), "", "");
         use_validator(&mut root, "", "");
         use_validator(&mut root, "", "");
 
