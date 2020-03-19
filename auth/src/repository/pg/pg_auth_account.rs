@@ -1,4 +1,4 @@
-use crate::model::auth_account::{AuthAccountData, AuthAccountModel};
+use crate::model::auth_account::{AuthAccountData, AuthAccountDataCodec, AuthAccountModel};
 use crate::repository::AuthAccountRepository;
 use c3p0::pg::*;
 use c3p0::*;
@@ -7,93 +7,60 @@ use std::ops::Deref;
 
 #[derive(Clone)]
 pub struct PgAuthAccountRepository {
-    repo: PgC3p0Json<AuthAccountData, DefaultJsonCodec>,
+    repo: PgC3p0Json<AuthAccountData, AuthAccountDataCodec>,
 }
 
 impl Default for PgAuthAccountRepository {
     fn default() -> Self {
-        PgAuthAccountRepository {
-            repo: C3p0JsonBuilder::new("AUTH_ACCOUNT")
-                .build(),
-        }
+        PgAuthAccountRepository { repo: C3p0JsonBuilder::new("LS_AUTH_ACCOUNT").build_with_codec(AuthAccountDataCodec {}) }
     }
 }
 
 impl AuthAccountRepository for PgAuthAccountRepository {
-    type CONN = PgConnection;
+    type Conn = PgConnection;
 
-    fn fetch_by_id(
-        &self,
-        conn: &Self::CONN,
-        user_id: i64,
-    ) -> Result<Model<AuthAccountData>, LightSpeedError> {
-        self.repo
-            .fetch_one_by_id(conn, &user_id)?
-            .ok_or_else(|| LightSpeedError::BadRequest {
-                message: format!("No user found with id [{}]", user_id),
-            })
+    fn fetch_by_id(&self, conn: &mut Self::Conn, user_id: i64) -> Result<Model<AuthAccountData>, LightSpeedError> {
+        Ok(self.repo.fetch_one_by_id(conn, &user_id)?)
     }
 
-    fn fetch_by_username(
-        &self,
-        conn: &PgConnection,
-        username: &str,
-    ) -> Result<AuthAccountModel, LightSpeedError> {
+    fn fetch_by_username(&self, conn: &mut PgConnection, username: &str) -> Result<AuthAccountModel, LightSpeedError> {
         self.fetch_by_username_optional(conn, username)?
-            .ok_or_else(|| LightSpeedError::BadRequest {
-                message: format!("No user found with username [{}]", username),
-            })
+            .ok_or_else(|| LightSpeedError::BadRequest { message: format!("No user found with username [{}]", username) })
     }
 
-    fn fetch_by_username_optional(
-        &self,
-        conn: &Self::CONN,
-        username: &str,
-    ) -> Result<Option<Model<AuthAccountData>>, LightSpeedError> {
+    fn fetch_by_username_optional(&self, conn: &mut Self::Conn, username: &str) -> Result<Option<Model<AuthAccountData>>, LightSpeedError> {
         let sql = r#"
-            select id, version, data from AUTH_ACCOUNT
+            select id, version, data from LS_AUTH_ACCOUNT
             where DATA ->> 'username' = $1
             limit 1
         "#;
-        Ok(self.repo.fetch_one_with_sql(conn, sql, &[&username])?)
+        Ok(self.repo.fetch_one_optional_with_sql(conn, sql, &[&username])?)
     }
 
-    fn fetch_by_email_optional(
-        &self,
-        conn: &PgConnection,
-        email: &str,
-    ) -> Result<Option<AuthAccountModel>, LightSpeedError> {
+    fn fetch_by_email_optional(&self, conn: &mut PgConnection, email: &str) -> Result<Option<AuthAccountModel>, LightSpeedError> {
         let sql = r#"
-            select id, version, data from AUTH_ACCOUNT
+            select id, version, data from LS_AUTH_ACCOUNT
             where DATA ->> 'email' = $1
             limit 1
         "#;
-        Ok(self.repo.fetch_one_with_sql(conn, sql, &[&email])?)
+        Ok(self.repo.fetch_one_optional_with_sql(conn, sql, &[&email])?)
     }
 
-    fn save(
-        &self,
-        conn: &Self::CONN,
-        model: NewModel<AuthAccountData>,
-    ) -> Result<Model<AuthAccountData>, LightSpeedError> {
+    fn save(&self, conn: &mut Self::Conn, model: NewModel<AuthAccountData>) -> Result<Model<AuthAccountData>, LightSpeedError> {
         Ok(self.repo.save(conn, model)?)
     }
 
-    fn update(
-        &self,
-        conn: &Self::CONN,
-        model: Model<AuthAccountData>,
-    ) -> Result<Model<AuthAccountData>, LightSpeedError> {
+    fn update(&self, conn: &mut Self::Conn, model: Model<AuthAccountData>) -> Result<Model<AuthAccountData>, LightSpeedError> {
         Ok(self.repo.update(conn, model)?)
     }
 
-    fn delete(&self, conn: &Self::CONN, model: &Model<AuthAccountData>) -> Result<u64, LightSpeedError> {
+    fn delete(&self, conn: &mut Self::Conn, model: Model<AuthAccountData>) -> Result<Model<AuthAccountData>, LightSpeedError> {
         Ok(self.repo.delete(conn, model)?)
     }
 }
 
 impl Deref for PgAuthAccountRepository {
-    type Target = PgC3p0Json<AuthAccountData, DefaultJsonCodec>;
+    type Target = PgC3p0Json<AuthAccountData, AuthAccountDataCodec>;
 
     fn deref(&self) -> &Self::Target {
         &self.repo

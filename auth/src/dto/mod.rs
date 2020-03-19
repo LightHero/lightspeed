@@ -1,3 +1,9 @@
+pub mod auth_dto;
 pub mod change_password_dto;
-pub mod create_user_dto;
+pub mod create_login_dto;
+pub mod login_dto;
+pub mod login_response_dto;
 pub mod reset_password_dto;
+pub mod send_new_activation_token_dto;
+pub mod send_reset_password_dto;
+pub mod token_dto;

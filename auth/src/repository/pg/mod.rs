@@ -24,41 +24,33 @@ impl PgAuthRepositoryManager {
 }
 
 impl AuthRepositoryManager for PgAuthRepositoryManager {
-    type CONN = PgConnection;
+    type Conn = PgConnection;
     type C3P0 = PgC3p0Pool;
-    type AUTH_ACCOUNT_REPO = PgAuthAccountRepository;
-    type TOKEN_REPO = PgTokenRepository;
+    type AuthAccountRepo = PgAuthAccountRepository;
+    type TokenRepo = PgTokenRepository;
 
     fn c3p0(&self) -> &PgC3p0Pool {
         &self.c3p0
     }
 
     fn start(&self) -> Result<(), LightSpeedError> {
-        let migrate_table_name = format!("AUTH_{}", C3P0_MIGRATE_TABLE_DEFAULT);
-        let migrations: Migrations =
-            (&MIGRATIONS)
-                .try_into()
-                .map_err(|err| LightSpeedError::ModuleStartError {
-                    message: format!("PgAuthRepositoryManager - failed to read db migrations: {}", err),
-                })?;
+        let migrate_table_name = format!("LS_AUTH_{}", C3P0_MIGRATE_TABLE_DEFAULT);
+        let migrations: Migrations = (&MIGRATIONS).try_into().map_err(|err| LightSpeedError::ModuleStartError {
+            message: format!("PgAuthRepositoryManager - failed to read db migrations: {}", err),
+        })?;
 
-        let migrate = C3p0MigrateBuilder::new(self.c3p0().clone())
-            .with_table_name(migrate_table_name)
-            .with_migrations(migrations)
-            .build();
+        let migrate = C3p0MigrateBuilder::new(self.c3p0().clone()).with_table_name(migrate_table_name).with_migrations(migrations).build();
 
         migrate
             .migrate()
-            .map_err(|err| LightSpeedError::ModuleStartError {
-                message: format!("PgAuthRepositoryManager - db migration failed: {}", err),
-            })
+            .map_err(|err| LightSpeedError::ModuleStartError { message: format!("PgAuthRepositoryManager - db migration failed: {}", err) })
     }
 
-    fn auth_account_repo(&self) -> Self::AUTH_ACCOUNT_REPO {
+    fn auth_account_repo(&self) -> Self::AuthAccountRepo {
         PgAuthAccountRepository::default()
     }
 
-    fn token_repo(&self) -> Self::TOKEN_REPO {
+    fn token_repo(&self) -> Self::TokenRepo {
         PgTokenRepository::default()
     }
 }

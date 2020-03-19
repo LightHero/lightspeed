@@ -3,26 +3,32 @@ use structopt::StructOpt;
 #[derive(Debug, Clone, StructOpt)]
 #[structopt(rename_all = "kebab-case")]
 pub struct AuthConfig {
-    /// Determines the token validity minutes
-    #[structopt(long, default_value = "120")]
-    pub token_activation_validity_minutes: i64,
+    /// Determines the activation token validity minutes
+    #[structopt(long, env = "LS_AUTH_TOKEN_VALIDITY_MINUTES", default_value = "120")]
+    pub token_validity_minutes: i64,
 
-    #[structopt(long, default_value = "/auth/token/activation/")]
-    pub activation_token_ui_url: String,
-
-    #[structopt(long, default_value = "/auth/token/resetPassword/")]
-    pub reset_password_token_ui_url: String,
-
-    #[structopt(long, default_value = "test@test.com")]
-    pub auth_email_account_created_recipient: String,
-
-    #[structopt(long, default_value = "10")]
+    #[structopt(long, env = "LS_AUTH_PASSWORD_HASH_COST", default_value = "10")]
     pub bcrypt_password_hash_cost: u32,
+
+    #[structopt(long, env = "LS_AUTH_DEFAULT_ROLES_ON_ACCOUNT_CREATION")]
+    pub default_roles_on_account_creation: Vec<String>,
 }
 
 impl AuthConfig {
     pub fn build() -> Self {
         let app = Self::clap().setting(structopt::clap::AppSettings::AllowExternalSubcommands);
         Self::from_clap(&app.get_matches())
+    }
+}
+
+#[cfg(test)]
+mod test {
+
+    use super::*;
+
+    #[test]
+    fn should_build_config() {
+        let config = AuthConfig::build();
+        assert!(config.default_roles_on_account_creation.is_empty());
     }
 }

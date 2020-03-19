@@ -7,23 +7,22 @@ edition = "2018"
 
 [dependencies]
 lightspeed_core = { version = "0.1", path = "../core" }
-lightspeed_email = { version = "0.1", path = "../email" }
-actix-web = "1.0"
-bcrypt = "0.5.0"
-c3p0 = { version = "0.22", features = ["pg_migrate"] }
-#c3p0 = { version = "0.20", features = ["pg_migrate"], path = "../../../github_ufoscout/c3p0/c3p0"}
-err-derive = "0.1"
-include_dir="0.2"
+bcrypt = "0.6.0"
+c3p0 = { version = "0.28", features = ["pg_migrate"] }
+include_dir="0.4"
 log = "0.4"
-serde = "1"
+serde = { version = "1.0" , features = ["rc"] }
 serde_derive = "1"
-structopt = "0.2"
+serde_json = "1"
+structopt = "0.3"
 
+# See
+#typescript-definitions = "0.1.10"
+typescript-definitions = {git = "https://github.com/ufoscout/typescript-definitions.git", branch = "no-debug-attrs"}
 
 [dev-dependencies]
 lazy_static = "1.3"
-maybe-single = "0.4"
+maybe-single = "0.7"
 testcontainers = "0.8"
 
-
-ls_logger = { version = "0.1", package = "lightspeed_logger", path = "../logger" }
+lightspeed_logger = { version = "0.1", path = "../logger" }

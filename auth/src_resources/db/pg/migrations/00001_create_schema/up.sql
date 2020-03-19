@@ -1,31 +1,31 @@
 -- Your SQL goes here
 
----------------------------
--- Begin - AUTH_ACCOUNT -
----------------------------
+-----------------------------
+-- Begin - LS_AUTH_ACCOUNT -
+-----------------------------
 
-create table AUTH_ACCOUNT (
+create table LS_AUTH_ACCOUNT (
     ID bigserial primary key,
     VERSION int not null,
     DATA JSONB
 );
 
-CREATE UNIQUE INDEX AUTH_ACCOUNT_UNIQUE_USERNAME ON AUTH_ACCOUNT( (DATA->>'username') );
-CREATE UNIQUE INDEX AUTH_ACCOUNT_UNIQUE_EMAIL ON AUTH_ACCOUNT( (DATA->>'email') );
+CREATE UNIQUE INDEX LS_AUTH_ACCOUNT_UNIQUE_USERNAME ON LS_AUTH_ACCOUNT( (DATA->>'username') );
+CREATE UNIQUE INDEX LS_AUTH_ACCOUNT_UNIQUE_EMAIL ON LS_AUTH_ACCOUNT( (DATA->>'email') );
 
--- End - AUTH_ACCOUNT -
+-- End - LS_AUTH_ACCOUNT -
 
 
 ---------------------------
--- Begin - AUTH_TOKEN -
+-- Begin - LS_AUTH_TOKEN -
 ---------------------------
 
-create table AUTH_TOKEN (
+create table LS_AUTH_TOKEN (
     ID bigserial primary key,
     VERSION int not null,
     DATA JSONB
 );
 
-CREATE UNIQUE INDEX AUTH_TOKEN_TOKEN ON AUTH_TOKEN( (DATA->>'token') );
+CREATE UNIQUE INDEX LS_AUTH_TOKEN_UNIQUE_TOKEN ON LS_AUTH_TOKEN( (DATA->>'token') );
 
--- End - AUTH_TOKEN -
+-- End - LS_AUTH_TOKEN -

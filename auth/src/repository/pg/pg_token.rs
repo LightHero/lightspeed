@@ -1,4 +1,4 @@
-use crate::model::token::{TokenData, TokenModel};
+use crate::model::token::{TokenData, TokenDataCodec, TokenModel};
 use crate::repository::TokenRepository;
 use c3p0::pg::*;
 use c3p0::*;
@@ -7,11 +7,11 @@ use std::ops::Deref;
 
 #[derive(Clone)]
 pub struct PgTokenRepository {
-    repo: PgC3p0Json<TokenData, DefaultJsonCodec>,
+    repo: PgC3p0Json<TokenData, TokenDataCodec>,
 }
 
 impl Deref for PgTokenRepository {
-    type Target = PgC3p0Json<TokenData, DefaultJsonCodec>;
+    type Target = PgC3p0Json<TokenData, TokenDataCodec>;
 
     fn deref(&self) -> &Self::Target {
         &self.repo
@@ -20,42 +20,27 @@ impl Deref for PgTokenRepository {
 
 impl Default for PgTokenRepository {
     fn default() -> Self {
-        PgTokenRepository {
-            repo: C3p0JsonBuilder::new("AUTH_TOKEN")
-                .build(),
-        }
+        PgTokenRepository { repo: C3p0JsonBuilder::new("LS_AUTH_TOKEN").build_with_codec(TokenDataCodec {}) }
     }
 }
 
 impl TokenRepository for PgTokenRepository {
-    type CONN = PgConnection;
+    type Conn = PgConnection;
 
-    fn fetch_by_token(
-        &self,
-        conn: &PgConnection,
-        token_string: &str,
-    ) -> Result<TokenModel, LightSpeedError> {
+    fn fetch_by_token(&self, conn: &mut PgConnection, token_string: &str) -> Result<TokenModel, LightSpeedError> {
         let sql = r#"
-            select id, version, data from AUTH_TOKEN
-            where AUTH_TOKEN.DATA ->> 'token' = $1
+            select id, version, data from LS_AUTH_TOKEN
+            where data ->> 'token' = $1
             limit 1
         "#;
-        self.repo
-            .fetch_one_with_sql(conn, sql, &[&token_string])?
-            .ok_or_else(|| LightSpeedError::BadRequest {
-                message: format!("No token found with code [{}]", token_string),
-            })
+        Ok(self.repo.fetch_one_with_sql(conn, sql, &[&token_string])?)
     }
 
-    fn save(
-        &self,
-        conn: &Self::CONN,
-        model: NewModel<TokenData>,
-    ) -> Result<Model<TokenData>, LightSpeedError> {
+    fn save(&self, conn: &mut Self::Conn, model: NewModel<TokenData>) -> Result<Model<TokenData>, LightSpeedError> {
         Ok(self.repo.save(conn, model)?)
     }
 
-    fn delete(&self, conn: &Self::CONN, model: &Model<TokenData>) -> Result<u64, LightSpeedError> {
+    fn delete(&self, conn: &mut Self::Conn, model: Model<TokenData>) -> Result<Model<TokenData>, LightSpeedError> {
         Ok(self.repo.delete(conn, model)?)
     }
 }
