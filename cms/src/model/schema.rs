@@ -25,7 +25,7 @@ pub struct SchemaData {
 }
 
 impl Validable for &SchemaData {
-    fn validate(&self, error_details: &ErrorDetails) -> Result<(), LightSpeedError> {
+    fn validate<E: ErrorDetails>(&self, error_details: &mut E) -> Result<(), LightSpeedError> {
         validate_number_ge(error_details, "name", 3, self.name.len());
         (&self.schema).validate(&error_details.with_scope("schema"))?;
         Ok(())
@@ -40,7 +40,7 @@ pub struct Schema {
 }
 
 impl Validable for &Schema {
-    fn validate(&self, error_details: &ErrorDetails) -> Result<(), LightSpeedError> {
+    fn validate<E: ErrorDetails>(&self, error_details: &mut E) -> Result<(), LightSpeedError> {
         let mut field_names = vec![];
 
         for (count, schema_field) in (&self.fields).iter().enumerate() {
@@ -65,12 +65,12 @@ pub struct SchemaField {
 }
 
 impl Validable for &SchemaField {
-    fn validate(&self, error_details: &ErrorDetails) -> Result<(), LightSpeedError> {
+    fn validate<E: ErrorDetails>(&self, error_details: &mut E) -> Result<(), LightSpeedError> {
         validate_number_ge(error_details, "name", 1, self.name.len());
         validate_number_le(error_details, "name", SCHEMA_FIELD_NAME_MAX_LENGHT, self.name.len());
 
         if !FIELD_NAME_REGEX.is_match(&self.name) {
-            error_details.add_detail("name", NOT_VALID_FIELD_NAME);
+            error_details.add_detail("name".into(), NOT_VALID_FIELD_NAME.into());
         }
 
         Ok(())

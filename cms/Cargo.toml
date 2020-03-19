@@ -7,17 +7,15 @@ edition = "2018"
 
 [dependencies]
 lightspeed_core = { version = "0.1", path = "../core" }
-actix-web = "1.0"
 c3p0 = { version = "0.28", features = ["pg_migrate"] }
 chashmap = "2.2" # to be replaced with crossbean-skiplist or another lock free map
-err-derive = "0.1"
-include_dir="0.2"
-lazy_static = "1.3"
+include_dir="0.4"
+lazy_static = "1.4"
 log = "0.4"
 regex = "1.3"
 serde = "1"
 serde_derive = "1"
-structopt = "0.2"
+structopt = "0.3"
 
 
 [dev-dependencies]

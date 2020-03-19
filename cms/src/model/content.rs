@@ -57,7 +57,7 @@ pub enum ContentFieldValueArity<T> {
 }
 
 impl Content {
-    pub fn validate(&self, schema: &Schema, error_details: &ErrorDetails) {
+    pub fn validate(&self, schema: &Schema, error_details: &mut dyn ErrorDetails) {
         let mut schema_fields = BTreeMap::new();
         schema.fields.iter().for_each(|field| {
             schema_fields.insert(&field.name, field);
@@ -103,7 +103,7 @@ fn validate_content_field(
     content_field_name: &str,
     content_field_value: &ContentFieldValue,
     schema_field: &SchemaField,
-    error_details: &ErrorDetails,
+    error_details: &mut dyn ErrorDetails,
 ) {
     validate_number_ge(error_details, "name", 1, content_field_name.len());
 
@@ -203,7 +203,7 @@ fn validate_arity<T, F: Fn(&str, &Option<T>)>(
     required: bool,
     schema_arity: &SchemaFieldArity,
     arity: &ContentFieldValueArity<Option<T>>,
-    error_details: &ErrorDetails,
+    error_details: &mut dyn ErrorDetails,
     full_field_name: &str,
     value_validation: F,
 ) {
@@ -241,7 +241,7 @@ fn validate_boolean<S: Into<String>>(
     required: bool,
     full_field_name: S,
     value: Option<bool>,
-    error_details: &ErrorDetails,
+    error_details: &mut dyn ErrorDetails,
 ) {
     if value.is_none() && required {
         error_details.add_detail(full_field_name, ERR_VALUE_REQUIRED);
@@ -254,7 +254,7 @@ fn validate_number<S: Into<String> + Clone>(
     value: &Option<usize>,
     min: &Option<usize>,
     max: &Option<usize>,
-    error_details: &ErrorDetails,
+    error_details: &mut dyn ErrorDetails,
 ) {
     if let Some(value) = value {
         if let Some(min) = min {
@@ -272,7 +272,7 @@ fn validate_slug<S: Into<String>>(
     required: bool,
     full_field_name: S,
     value: &Option<String>,
-    error_details: &ErrorDetails,
+    error_details: &mut dyn ErrorDetails,
 ) {
     if let Some(value) = value {
         //let reg: &Regex = &SLUG_REGEX;
@@ -290,7 +290,7 @@ fn validate_string<S: Into<String> + Clone>(
     value: &Option<String>,
     min_length: &Option<usize>,
     max_length: &Option<usize>,
-    error_details: &ErrorDetails,
+    error_details: &mut dyn ErrorDetails,
 ) {
     if let Some(value) = value {
         if let Some(min_length) = min_length {
@@ -362,7 +362,7 @@ mod test {
             };
 
             // Act
-            let result = Validator::validate(|error_details: &ErrorDetails| {
+            let result = Validator::validate(|error_details: &mut dyn ErrorDetails| {
                 content.validate(&schema, error_details);
                 Ok(())
             });
@@ -1098,7 +1098,7 @@ mod test {
     }
 
     pub fn validate_content(schema: &Schema, content: &Content) -> Result<(), LightSpeedError> {
-        Validator::validate(|error_details: &ErrorDetails| {
+        Validator::validate(|error_details: &mut dyn ErrorDetails| {
             content.validate(schema, error_details);
             Ok(())
         })
