@@ -27,7 +27,7 @@ pub struct SchemaData {
 impl Validable for &SchemaData {
     fn validate<E: ErrorDetails>(&self, error_details: &mut E) -> Result<(), LightSpeedError> {
         validate_number_ge(error_details, "name", 3, self.name.len());
-        (&self.schema).validate(&error_details.with_scope("schema"))?;
+        (&self.schema).validate(&mut error_details.with_scope("schema".into()))?;
         Ok(())
     }
 }
@@ -44,12 +44,12 @@ impl Validable for &Schema {
         let mut field_names = vec![];
 
         for (count, schema_field) in (&self.fields).iter().enumerate() {
-            let scoped_err = error_details.with_scope(format!("fields[{}]", count));
+            let mut scoped_err = error_details.with_scope(format!("fields[{}]", count));
             if field_names.contains(&&schema_field.name) {
-                scoped_err.add_detail("name", ERR_NOT_UNIQUE);
+                scoped_err.add_detail("name".into(), ERR_NOT_UNIQUE.into());
             }
             field_names.push(&schema_field.name);
-            schema_field.validate(&scoped_err)?;
+            schema_field.validate(&mut scoped_err)?;
         }
 
         Ok(())

@@ -66,7 +66,7 @@ impl Content {
         {
             for (content_field_name, content_field_value) in (&self.fields).iter() {
                 let scoped_name = format!("fields[{}]", content_field_name);
-                let mut scoped_err = error_details.with_scope(&scoped_name);
+                let mut scoped_err = error_details.with_scope(scoped_name.clone());
 
                 if let Some(schema_field) = schema_fields.remove(content_field_name) {
                     validate_content_field(
