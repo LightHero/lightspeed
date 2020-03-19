@@ -14,7 +14,10 @@ pub fn validate_must_be_equals<E: ErrorDetails, A: Into<String>, B: Into<String>
     if !validator::validate_must_match(a_value, b_value) {
         let a_name = a_name.into();
         let b_name = b_name.into();
-        error_details.add_detail(a_name.clone(), ErrorDetail::new(NOT_EQUALS, vec![a_name, b_name]))
+        error_details.add_detail(
+            a_name.clone(),
+            ErrorDetail::new(NOT_EQUALS, vec![a_name, b_name]),
+        )
     }
 }
 
@@ -36,6 +39,9 @@ mod tests {
         let mut error_details = RootErrorDetails::new();
         validate_must_be_equals(&mut error_details, "A", 1, "B", 2);
         assert_eq!(1, error_details.details.len());
-        assert_eq!(ErrorDetail::new(NOT_EQUALS, vec!["A".to_string(), "B".to_string()]), error_details.details["A"][0])
+        assert_eq!(
+            ErrorDetail::new(NOT_EQUALS, vec!["A".to_string(), "B".to_string()]),
+            error_details.details["A"][0]
+        )
     }
 }

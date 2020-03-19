@@ -87,7 +87,9 @@ pub mod test {
 
         assert!(result.is_err());
         match result {
-            Err(LightSpeedError::ValidationError { details }) => assert_eq!("expired", details.details["expire_at_epoch"][0]),
+            Err(LightSpeedError::ValidationError { details }) => {
+                assert_eq!("expired", details.details["expire_at_epoch"][0])
+            }
             _ => assert!(false),
         }
     }

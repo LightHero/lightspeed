@@ -13,8 +13,8 @@ pub const SCHAME_FIELD_NAME_VALIDATION_REGEX: &str = r#"^[a-z0-9_]+$"#;
 const NOT_VALID_FIELD_NAME: &str = "NOT_VALID_FIELD_NAME";
 
 lazy_static! {
-     static ref FIELD_NAME_REGEX: Regex =
-        Regex::new(SCHAME_FIELD_NAME_VALIDATION_REGEX).expect("field name validation regex should be valid");
+    static ref FIELD_NAME_REGEX: Regex = Regex::new(SCHAME_FIELD_NAME_VALIDATION_REGEX)
+        .expect("field name validation regex should be valid");
 }
 
 #[derive(Clone, Serialize, Deserialize)]
@@ -67,7 +67,12 @@ pub struct SchemaField {
 impl Validable for &SchemaField {
     fn validate<E: ErrorDetails>(&self, error_details: &mut E) -> Result<(), LightSpeedError> {
         validate_number_ge(error_details, "name", 1, self.name.len());
-        validate_number_le(error_details, "name", SCHEMA_FIELD_NAME_MAX_LENGHT, self.name.len());
+        validate_number_le(
+            error_details,
+            "name",
+            SCHEMA_FIELD_NAME_MAX_LENGHT,
+            self.name.len(),
+        );
 
         if !FIELD_NAME_REGEX.is_match(&self.name) {
             error_details.add_detail("name".into(), NOT_VALID_FIELD_NAME.into());
@@ -101,10 +106,10 @@ pub enum SchemaFieldType {
 impl SchemaFieldType {
     pub fn get_arity(&self) -> &SchemaFieldArity {
         match self {
-            SchemaFieldType::Boolean {arity, ..} | SchemaFieldType::Number {arity, ..} | SchemaFieldType::String {arity, ..} => {
-                arity
-            },
-            SchemaFieldType::Slug => &SchemaFieldArity::Unique
+            SchemaFieldType::Boolean { arity, .. }
+            | SchemaFieldType::Number { arity, .. }
+            | SchemaFieldType::String { arity, .. } => arity,
+            SchemaFieldType::Slug => &SchemaFieldArity::Unique,
         }
     }
 }
@@ -223,14 +228,8 @@ mod test {
                 assert_eq!(
                     details.details.get("fields[1].name"),
                     Some(&vec![
-                        ErrorDetail::new(
-                        MUST_BE_GREATER_OR_EQUAL,
-                        vec!["1".to_owned()]
-                        ),
-                        ErrorDetail::new(
-                            NOT_VALID_FIELD_NAME,
-                            vec![]
-                        ),
+                        ErrorDetail::new(MUST_BE_GREATER_OR_EQUAL, vec!["1".to_owned()]),
+                        ErrorDetail::new(NOT_VALID_FIELD_NAME, vec![]),
                     ])
                 );
             }
@@ -279,23 +278,12 @@ mod test {
                 assert_eq!(details.details.len(), 2);
                 assert_eq!(
                     details.details.get("fields[1].name"),
-                    Some(&vec![
-                        ErrorDetail::new(
-                            NOT_VALID_FIELD_NAME,
-                            vec![]
-                        ),
-                    ])
+                    Some(&vec![ErrorDetail::new(NOT_VALID_FIELD_NAME, vec![]),])
                 );
                 assert_eq!(
                     details.details.get("fields[3].name"),
-                    Some(&vec![
-                        ErrorDetail::new(
-                            NOT_VALID_FIELD_NAME,
-                            vec![]
-                        ),
-                    ])
+                    Some(&vec![ErrorDetail::new(NOT_VALID_FIELD_NAME, vec![]),])
                 );
-
             }
             _ => assert!(false),
         }

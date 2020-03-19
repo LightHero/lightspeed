@@ -1,12 +1,16 @@
 use crate::test;
 use lightspeed_cms::dto::create_schema_dto::CreateSchemaDto;
-use lightspeed_cms::model::content::{Content, ContentData, ContentFieldValue, ContentFieldValueArity};
-use lightspeed_cms::model::schema::{Schema, SchemaField, SchemaFieldType, SchemaFieldArity, SCHEMA_FIELD_NAME_MAX_LENGHT};
-use lightspeed_core::utils::{new_hyphenated_uuid, random_string};
-use std::collections::HashMap;
-use lightspeed_core::error::{LightSpeedError, ErrorDetail};
-use maplit::*;
+use lightspeed_cms::model::content::{
+    Content, ContentData, ContentFieldValue, ContentFieldValueArity,
+};
+use lightspeed_cms::model::schema::{
+    Schema, SchemaField, SchemaFieldArity, SchemaFieldType, SCHEMA_FIELD_NAME_MAX_LENGHT,
+};
+use lightspeed_core::error::{ErrorDetail, LightSpeedError};
 use lightspeed_core::service::validator::ERR_NOT_UNIQUE;
+use lightspeed_core::utils::{new_hyphenated_uuid, random_string};
+use maplit::*;
+use std::collections::HashMap;
 
 #[test]
 fn should_create_and_drop_content_table() {
@@ -210,11 +214,10 @@ fn should_validate_content_on_save() {
             },
         };
 
-        let result =
-            content_service.create_content(&saved_schema_1.data.schema, content);
+        let result = content_service.create_content(&saved_schema_1.data.schema, content);
 
         match result {
-            Err(LightSpeedError::ValidationError { .. }) => {},
+            Err(LightSpeedError::ValidationError { .. }) => {}
             _ => assert!(false),
         }
 
@@ -240,14 +243,12 @@ fn should_create_unique_constraints_for_slug_schema_fields() {
             schema: Schema {
                 created_ms: 0,
                 updated_ms: 0,
-                fields: vec![
-                    SchemaField{
-                        name: field_name.to_owned(),
-                        required: true,
-                        description: "".to_owned(),
-                        field_type: SchemaFieldType::Slug
-                    }
-                ],
+                fields: vec![SchemaField {
+                    name: field_name.to_owned(),
+                    required: true,
+                    description: "".to_owned(),
+                    field_type: SchemaFieldType::Slug,
+                }],
             },
         };
 
@@ -299,19 +300,17 @@ fn should_create_unique_constraints_for_string_unique_schema_fields() {
             schema: Schema {
                 created_ms: 0,
                 updated_ms: 0,
-                fields: vec![
-                    SchemaField{
-                        name: field_name.to_owned(),
-                        required: true,
-                        description: "".to_owned(),
-                        field_type: SchemaFieldType::String {
-                            default: None,
-                            max_length: None,
-                            min_length: None,
-                            arity: SchemaFieldArity::Unique
-                        }
-                    }
-                ],
+                fields: vec![SchemaField {
+                    name: field_name.to_owned(),
+                    required: true,
+                    description: "".to_owned(),
+                    field_type: SchemaFieldType::String {
+                        default: None,
+                        max_length: None,
+                        min_length: None,
+                        arity: SchemaFieldArity::Unique,
+                    },
+                }],
             },
         };
 
@@ -363,19 +362,17 @@ fn should_create_unique_constraints_for_number_unique_schema_fields() {
             schema: Schema {
                 created_ms: 0,
                 updated_ms: 0,
-                fields: vec![
-                    SchemaField{
-                        name: field_name.to_owned(),
-                        required: true,
-                        description: "".to_owned(),
-                        field_type: SchemaFieldType::Number {
-                            default: None,
-                            max: None,
-                            min: None,
-                            arity: SchemaFieldArity::Unique
-                        }
-                    }
-                ],
+                fields: vec![SchemaField {
+                    name: field_name.to_owned(),
+                    required: true,
+                    description: "".to_owned(),
+                    field_type: SchemaFieldType::Number {
+                        default: None,
+                        max: None,
+                        min: None,
+                        arity: SchemaFieldArity::Unique,
+                    },
+                }],
             },
         };
 
@@ -416,7 +413,6 @@ fn should_create_unique_constraints_for_number_unique_schema_fields() {
 
 #[test]
 fn should_create_unique_constraints_for_boolean_unique_schema_fields() {
-
     test(|cms_module| {
         let content_service = &cms_module.content_service;
         let schema_service = &cms_module.schema_service;
@@ -428,17 +424,15 @@ fn should_create_unique_constraints_for_boolean_unique_schema_fields() {
             schema: Schema {
                 created_ms: 0,
                 updated_ms: 0,
-                fields: vec![
-                    SchemaField{
-                        name: field_name.to_owned(),
-                        required: true,
-                        description: "".to_owned(),
-                        field_type: SchemaFieldType::Boolean {
-                            default: None,
-                            arity: SchemaFieldArity::Unique
-                        }
-                    }
-                ],
+                fields: vec![SchemaField {
+                    name: field_name.to_owned(),
+                    required: true,
+                    description: "".to_owned(),
+                    field_type: SchemaFieldType::Boolean {
+                        default: None,
+                        arity: SchemaFieldArity::Unique,
+                    },
+                }],
             },
         };
 
@@ -475,7 +469,6 @@ fn should_create_unique_constraints_for_boolean_unique_schema_fields() {
 
         Ok(())
     });
-
 }
 
 #[test]
@@ -491,24 +484,24 @@ fn should_create_unique_constraints_for_field_name_with_max_length() {
             schema: Schema {
                 created_ms: 0,
                 updated_ms: 0,
-                fields: vec![
-                    SchemaField{
-                        name: field_name.to_owned(),
-                        required: true,
-                        description: "".to_owned(),
-                        field_type: SchemaFieldType::String {
-                            default: None,
-                            max_length: None,
-                            min_length: None,
-                            arity: SchemaFieldArity::Unique
-                        }
-                    }
-                ],
+                fields: vec![SchemaField {
+                    name: field_name.to_owned(),
+                    required: true,
+                    description: "".to_owned(),
+                    field_type: SchemaFieldType::String {
+                        default: None,
+                        max_length: None,
+                        min_length: None,
+                        arity: SchemaFieldArity::Unique,
+                    },
+                }],
             },
         };
 
         let saved_schema_1 = schema_service.create_schema(schema.clone())?;
-        assert!(content_service.create_content_table(&saved_schema_1).is_ok());
+        assert!(content_service
+            .create_content_table(&saved_schema_1)
+            .is_ok());
 
         Ok(())
     });

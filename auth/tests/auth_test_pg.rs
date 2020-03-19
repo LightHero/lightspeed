@@ -15,15 +15,23 @@ pub type RepoManager = PgAuthRepositoryManager;
 
 lazy_static! {
     static ref DOCKER: clients::Cli = clients::Cli::default();
-    pub static ref SINGLETON: MaybeSingle<(AuthModule<RepoManager>, Container<'static, clients::Cli, images::postgres::Postgres>)> =
-        MaybeSingle::new(|| init());
+    pub static ref SINGLETON: MaybeSingle<(
+        AuthModule<RepoManager>,
+        Container<'static, clients::Cli, images::postgres::Postgres>
+    )> = MaybeSingle::new(|| init());
 }
 
-fn init() -> (AuthModule<RepoManager>, Container<'static, clients::Cli, images::postgres::Postgres>) {
+fn init() -> (
+    AuthModule<RepoManager>,
+    Container<'static, clients::Cli, images::postgres::Postgres>,
+) {
     let node = DOCKER.run(images::postgres::Postgres::default());
 
     let manager = PostgresConnectionManager::new(
-        format!("postgres://postgres:postgres@127.0.0.1:{}/postgres", node.get_host_port(5432).unwrap()),
+        format!(
+            "postgres://postgres:postgres@127.0.0.1:{}/postgres",
+            node.get_host_port(5432).unwrap()
+        ),
         TlsMode::None,
     )
     .unwrap();
@@ -40,7 +48,10 @@ fn init() -> (AuthModule<RepoManager>, Container<'static, clients::Cli, images::
     (auth_module, node)
 }
 
-pub fn test(no_parallel: bool, callback: fn(&AuthModule<RepoManager>) -> Result<(), Box<dyn std::error::Error>>) {
+pub fn test(
+    no_parallel: bool,
+    callback: fn(&AuthModule<RepoManager>) -> Result<(), Box<dyn std::error::Error>>,
+) {
     SINGLETON.get(no_parallel, |(auth_module, _)| {
         callback(&auth_module).unwrap();
     });

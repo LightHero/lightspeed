@@ -20,7 +20,10 @@ impl EmailClientModule {
 
         let email_service = Arc::new(service::email::new(email_config.clone())?);
 
-        Ok(EmailClientModule { email_config, email_client: email_service })
+        Ok(EmailClientModule {
+            email_config,
+            email_client: email_service,
+        })
     }
 }
 
@@ -55,7 +58,12 @@ pub mod test_root {
     fn start_logger() {
         println!("Init logger");
 
-        let conf = LoggerConfig { level: String::from("trace"), stdout_output: true, stderr_output: false, file_output_path: None };
+        let conf = LoggerConfig {
+            level: String::from("trace"),
+            stdout_output: true,
+            stderr_output: false,
+            file_output_path: None,
+        };
         setup_logger(&conf).unwrap();
     }
 }

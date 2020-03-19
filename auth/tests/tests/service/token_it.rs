@@ -23,7 +23,10 @@ fn should_delete_token() {
         let saved_token = token_repo.save(&mut c3p0.connection()?, token)?;
 
         assert!(token_repo.exists_by_id(&mut c3p0.connection()?, &saved_token.id)?);
-        assert!(auth_module.token_service.delete(&mut c3p0.connection()?, saved_token.clone()).is_ok());
+        assert!(auth_module
+            .token_service
+            .delete(&mut c3p0.connection()?, saved_token.clone())
+            .is_ok());
         assert!(!token_repo.exists_by_id(&mut c3p0.connection()?, &saved_token.id)?);
 
         Ok(())
@@ -39,7 +42,11 @@ fn should_generate_token() {
             let token_type = TokenType::ACCOUNT_ACTIVATION;
 
             let before = current_epoch_seconds();
-            let token = auth_module.token_service.generate_and_save_token(conn, username.clone(), token_type.clone())?;
+            let token = auth_module.token_service.generate_and_save_token(
+                conn,
+                username.clone(),
+                token_type.clone(),
+            )?;
             let after = current_epoch_seconds();
 
             let expiration_seconds = &auth_module.auth_config.token_validity_minutes * 60;
@@ -53,9 +60,18 @@ fn should_generate_token() {
             assert!((before + expiration_seconds) <= token.data.expire_at_epoch_seconds);
             assert!((after + expiration_seconds) >= token.data.expire_at_epoch_seconds);
 
-            assert!(auth_module.token_service.fetch_by_token(conn, &token.data.token, true).is_ok());
-            assert!(auth_module.token_service.delete(conn, token.clone()).is_ok());
-            assert!(auth_module.token_service.fetch_by_token(conn, &token.data.token, true).is_err());
+            assert!(auth_module
+                .token_service
+                .fetch_by_token(conn, &token.data.token, true)
+                .is_ok());
+            assert!(auth_module
+                .token_service
+                .delete(conn, token.clone())
+                .is_ok());
+            assert!(auth_module
+                .token_service
+                .fetch_by_token(conn, &token.data.token, true)
+                .is_err());
             Ok(())
         })
     });
@@ -80,7 +96,10 @@ fn should_validate_token_on_fetch() {
 
             let saved_token = token_repo.save(conn, token)?;
 
-            assert!(auth_module.token_service.fetch_by_token(conn, &saved_token.data.token, true).is_err());
+            assert!(auth_module
+                .token_service
+                .fetch_by_token(conn, &saved_token.data.token, true)
+                .is_err());
 
             Ok(())
         })

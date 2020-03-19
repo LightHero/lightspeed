@@ -11,13 +11,17 @@ pub enum LoggerError {
 
 impl From<log::SetLoggerError> for LoggerError {
     fn from(error: log::SetLoggerError) -> Self {
-        LoggerError::LoggerConfigurationError { message: format!("{}", error) }
+        LoggerError::LoggerConfigurationError {
+            message: format!("{}", error),
+        }
     }
 }
 
 impl From<std::io::Error> for LoggerError {
     fn from(error: std::io::Error) -> Self {
-        LoggerError::LoggerConfigurationError { message: format!("{}", error) }
+        LoggerError::LoggerConfigurationError {
+            message: format!("{}", error),
+        }
     }
 }
 
@@ -32,9 +36,16 @@ pub fn setup_logger(logger_config: &config::LoggerConfig) -> Result<(), LoggerEr
                 message
             ))
         })
-        .level(log::LevelFilter::from_str(&logger_config.level).map_err(|err| LoggerError::LoggerConfigurationError {
-            message: format!("The specified logger level is not valid: [{}]. err: {}", &logger_config.level, err),
-        })?);
+        .level(
+            log::LevelFilter::from_str(&logger_config.level).map_err(|err| {
+                LoggerError::LoggerConfigurationError {
+                    message: format!(
+                        "The specified logger level is not valid: [{}]. err: {}",
+                        &logger_config.level, err
+                    ),
+                }
+            })?,
+        );
     /*
     .level_for(
         "rust_actix",

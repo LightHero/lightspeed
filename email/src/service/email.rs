@@ -10,7 +10,10 @@ pub trait EmailClient: Send + Sync {
     fn send(&self, email_message: EmailMessage) -> Result<(), LightSpeedError>;
     fn get_emails(&self) -> Result<Vec<EmailMessage>, LightSpeedError>;
     fn clear_emails(&self) -> Result<(), LightSpeedError>;
-    fn retain_emails(&self, retain: Box<dyn FnMut(&EmailMessage) -> bool>) -> Result<(), LightSpeedError>;
+    fn retain_emails(
+        &self,
+        retain: Box<dyn FnMut(&EmailMessage) -> bool>,
+    ) -> Result<(), LightSpeedError>;
 }
 
 pub fn new(email_config: EmailClientConfig) -> Result<Box<dyn EmailClient>, LightSpeedError> {
@@ -36,7 +39,9 @@ impl FromStr for EmailClientType {
             "full" => Ok(EmailClientType::Full),
             "in_memory" => Ok(EmailClientType::InMemory),
             "no_ops" => Ok(EmailClientType::NoOps),
-            _ => Err(LightSpeedError::ConfigurationError { message: format!("Unknown Email client_type [{}]", s) }),
+            _ => Err(LightSpeedError::ConfigurationError {
+                message: format!("Unknown Email client_type [{}]", s),
+            }),
         }
     }
 }

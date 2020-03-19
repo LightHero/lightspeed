@@ -16,7 +16,10 @@ pub fn new_hyphenated_uuid() -> String {
 }
 
 pub fn random_string(length: usize) -> String {
-    rand::thread_rng().sample_iter(&Alphanumeric).take(length).collect::<String>()
+    rand::thread_rng()
+        .sample_iter(&Alphanumeric)
+        .take(length)
+        .collect::<String>()
 }
 
 #[cfg(test)]

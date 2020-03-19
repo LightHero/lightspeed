@@ -60,7 +60,12 @@ pub mod test_root {
     fn start_logger() {
         println!("Init logger");
 
-        let conf = LoggerConfig { level: String::from("trace"), stdout_output: true, stderr_output: false, file_output_path: None };
+        let conf = LoggerConfig {
+            level: String::from("trace"),
+            stdout_output: true,
+            stderr_output: false,
+            file_output_path: None,
+        };
         setup_logger(&conf).unwrap();
     }
 }

@@ -43,6 +43,7 @@ impl JsonCodec<AuthAccountData> for AuthAccountDataCodec {
     }
 
     fn to_value(&self, data: &AuthAccountData) -> Result<Value, C3p0Error> {
-        serde_json::to_value(AuthAccountDataVersioning::V1(Cow::Borrowed(data))).map_err(C3p0Error::from)
+        serde_json::to_value(AuthAccountDataVersioning::V1(Cow::Borrowed(data)))
+            .map_err(C3p0Error::from)
     }
 }

@@ -30,7 +30,10 @@ pub fn new_executor_with_utc_tz() -> JobExecutor {
 /// Creates a new Executor that uses a custom time zone for the execution times evaluation.
 /// For example, the cron expressions will refer to the specified time zone.
 pub fn new_executor_with_tz(timezone: Option<Tz>) -> JobExecutor {
-    JobExecutor { timezone, jobs: vec![] }
+    JobExecutor {
+        timezone,
+        jobs: vec![],
+    }
 }
 
 impl JobExecutor {
@@ -70,7 +73,11 @@ impl JobExecutor {
                         if !is_running {
                             let job_clone = job_scheduler.clone();
                             std::thread::spawn(move || {
-                                info!("Start execution of Job [{}/{}]", job_clone.job.group(), job_clone.job.name());
+                                info!(
+                                    "Start execution of Job [{}/{}]",
+                                    job_clone.job.group(),
+                                    job_clone.job.name()
+                                );
                                 match job_clone.run() {
                                     Ok(()) => {
                                         info!(
@@ -109,7 +116,11 @@ impl JobExecutor {
     }
 
     /// Adds a job to the JobExecutor.
-    pub fn add_job<S: TryInto<Scheduler>>(&mut self, schedule: S, job: Job) -> Result<(), SchedulerError>
+    pub fn add_job<S: TryInto<Scheduler>>(
+        &mut self,
+        schedule: S,
+        job: Job,
+    ) -> Result<(), SchedulerError>
     where
         SchedulerError: std::convert::From<<S as std::convert::TryInto<Scheduler>>::Error>,
     {
@@ -119,7 +130,8 @@ impl JobExecutor {
 
     /// Adds a job to the JobExecutor.
     pub fn add_job_with_scheduler(&mut self, schedule: Scheduler, job: Job) {
-        self.jobs.push(Arc::new(JobScheduler::new(schedule, self.timezone, job)));
+        self.jobs
+            .push(Arc::new(JobScheduler::new(schedule, self.timezone, job)));
     }
 }
 

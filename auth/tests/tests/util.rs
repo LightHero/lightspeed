@@ -23,18 +23,22 @@ pub fn create_user_with_password<RepoManager: AuthRepositoryManager>(
     let username = new_hyphenated_uuid();
     let email = format!("{}@email.fake", username);
 
-    let (user, token) = auth_module.auth_account_service.create_user(CreateLoginDto {
-        username: Some(username),
-        email,
-        data: HashMap::new(),
-        accept_privacy_policy: true,
-        language: Language::EN,
-        password: password.to_string(),
-        password_confirm: password.to_string(),
-    })?;
+    let (user, token) = auth_module
+        .auth_account_service
+        .create_user(CreateLoginDto {
+            username: Some(username),
+            email,
+            data: HashMap::new(),
+            accept_privacy_policy: true,
+            language: Language::EN,
+            password: password.to_string(),
+            password_confirm: password.to_string(),
+        })?;
 
     if activate {
-        let activated_user = auth_module.auth_account_service.activate_user(&token.data.token)?;
+        let activated_user = auth_module
+            .auth_account_service
+            .activate_user(&token.data.token)?;
         Ok((activated_user, token))
     } else {
         Ok((user, token))

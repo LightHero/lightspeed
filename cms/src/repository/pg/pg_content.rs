@@ -41,7 +41,12 @@ impl ContentRepository for PgContentRepository {
         Ok(self.repo.count_all(conn)?)
     }
 
-    fn count_all_by_field_value(&self, conn: &mut Self::Conn, field_name: &str, field_value: &str) -> Result<u64, LightSpeedError> {
+    fn count_all_by_field_value(
+        &self,
+        conn: &mut Self::Conn,
+        field_name: &str,
+        field_value: &str,
+    ) -> Result<u64, LightSpeedError> {
         Ok(conn.fetch_one_value(&format!(
             "SELECT COUNT(*) FROM {} WHERE  (DATA -> 'content' -> 'fields' -> '{}' -> 'value' ->> 'value') = $1 ",
             self.repo.queries().qualified_table_name,
@@ -76,8 +81,7 @@ impl ContentRepository for PgContentRepository {
         conn: &mut Self::Conn,
         id: i64,
     ) -> Result<Model<ContentData>, LightSpeedError> {
-        Ok(self.repo
-            .fetch_one_by_id(conn, &id)?)
+        Ok(self.repo.fetch_one_by_id(conn, &id)?)
     }
 
     fn save(

@@ -15,7 +15,15 @@ pub struct EmailMessage {
 
 impl Default for EmailMessage {
     fn default() -> Self {
-        EmailMessage { from: None, to: vec![], cc: vec![], bcc: vec![], subject: None, text: None, html: None }
+        EmailMessage {
+            from: None,
+            to: vec![],
+            cc: vec![],
+            bcc: vec![],
+            subject: None,
+            text: None,
+            html: None,
+        }
     }
 }
 

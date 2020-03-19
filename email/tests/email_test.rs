@@ -4,10 +4,13 @@ use lightspeed_email::model::email::EmailMessage;
 use lightspeed_email::service::email::{new, EmailClientType};
 use testcontainers::*;
 
-pub fn new_mail_server(docker: &clients::Cli) -> (u16, Container<clients::Cli, images::generic::GenericImage>) {
+pub fn new_mail_server(
+    docker: &clients::Cli,
+) -> (u16, Container<clients::Cli, images::generic::GenericImage>) {
     let node = docker.run(
-        images::generic::GenericImage::new("mailhog/mailhog:v1.0.0")
-            .with_wait_for(images::generic::WaitFor::message_on_stdout("Creating API v2 with WebPath:")),
+        images::generic::GenericImage::new("mailhog/mailhog:v1.0.0").with_wait_for(
+            images::generic::WaitFor::message_on_stdout("Creating API v2 with WebPath:"),
+        ),
     );
 
     (node.get_host_port(1025).unwrap() as u16, node)

@@ -34,8 +34,7 @@ impl SchemaRepository for PgSchemaRepository {
         conn: &mut Self::Conn,
         id: i64,
     ) -> Result<Model<SchemaData>, LightSpeedError> {
-        Ok(self.repo
-            .fetch_one_by_id(conn, &id)?)
+        Ok(self.repo.fetch_one_by_id(conn, &id)?)
     }
 
     fn exists_by_name_and_project_id(
@@ -70,7 +69,11 @@ impl SchemaRepository for PgSchemaRepository {
         Ok(self.repo.update(conn, model)?)
     }
 
-    fn delete(&self, conn: &mut Self::Conn, model: Model<SchemaData>) -> Result<Model<SchemaData>, LightSpeedError> {
+    fn delete(
+        &self,
+        conn: &mut Self::Conn,
+        model: Model<SchemaData>,
+    ) -> Result<Model<SchemaData>, LightSpeedError> {
         Ok(self.repo.delete(conn, model)?)
     }
 

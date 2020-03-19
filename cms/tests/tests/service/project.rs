@@ -22,7 +22,10 @@ fn should_create_project() {
         let saved_project = cms_module.project_service.create_project(project)?;
 
         assert!(project_repo.exists_by_id(&mut c3p0.connection()?, &saved_project.id)?);
-        assert!(cms_module.project_service.delete(saved_project.clone()).is_ok());
+        assert!(cms_module
+            .project_service
+            .delete(saved_project.clone())
+            .is_ok());
         assert!(!project_repo.exists_by_id(&mut c3p0.connection()?, &saved_project.id)?);
 
         Ok(())

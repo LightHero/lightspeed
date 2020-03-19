@@ -11,12 +11,22 @@ pub struct LoggerConfig {
 
     /// Determines whether the Logger should print to standard output.
     /// Valid values: true, false
-    #[structopt(long, env = "LS_LOGGER_ENABLE_STDOUT_OUTPUT", parse(try_from_str), default_value = "true")]
+    #[structopt(
+        long,
+        env = "LS_LOGGER_ENABLE_STDOUT_OUTPUT",
+        parse(try_from_str),
+        default_value = "true"
+    )]
     pub stdout_output: bool,
 
     /// Determines whether the Logger should print to standard error.
     /// Valid values: true, false
-    #[structopt(long, env = "LS_LOGGER_ENABLE_STDERR_OUTPUT", parse(try_from_str), default_value = "false")]
+    #[structopt(
+        long,
+        env = "LS_LOGGER_ENABLE_STDERR_OUTPUT",
+        parse(try_from_str),
+        default_value = "false"
+    )]
     pub stderr_output: bool,
 
     /// A file path in the file system; if provided, the Logger will append any output to it.

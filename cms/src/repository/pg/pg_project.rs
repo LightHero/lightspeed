@@ -34,8 +34,7 @@ impl ProjectRepository for PgProjectRepository {
         conn: &mut Self::Conn,
         id: i64,
     ) -> Result<Model<ProjectData>, LightSpeedError> {
-        Ok(self.repo
-            .fetch_one_by_id(conn, &id)?)
+        Ok(self.repo.fetch_one_by_id(conn, &id)?)
     }
 
     fn exists_by_name(&self, conn: &mut Self::Conn, name: &str) -> Result<bool, LightSpeedError> {

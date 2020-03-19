@@ -22,7 +22,13 @@ impl Owned for ChangePasswordDto {
 
 impl Validable for &ChangePasswordDto {
     fn validate<E: ErrorDetails>(&self, error_details: &mut E) -> Result<(), LightSpeedError> {
-        validate_must_be_equals(error_details, "new_password", &self.new_password, "new_password_confirm", &self.new_password_confirm);
+        validate_must_be_equals(
+            error_details,
+            "new_password",
+            &self.new_password,
+            "new_password_confirm",
+            &self.new_password_confirm,
+        );
         Ok(())
     }
 }

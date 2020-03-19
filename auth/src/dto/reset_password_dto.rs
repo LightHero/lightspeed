@@ -14,7 +14,13 @@ pub struct ResetPasswordDto {
 
 impl Validable for &ResetPasswordDto {
     fn validate<E: ErrorDetails>(&self, error_details: &mut E) -> Result<(), LightSpeedError> {
-        validate_must_be_equals(error_details, "password", &self.password, "password_confirm", &self.password_confirm);
+        validate_must_be_equals(
+            error_details,
+            "password",
+            &self.password,
+            "password_confirm",
+            &self.password_confirm,
+        );
         Ok(())
     }
 }

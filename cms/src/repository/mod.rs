@@ -40,7 +40,11 @@ pub trait ProjectRepository: Clone {
         model: ProjectModel,
     ) -> Result<ProjectModel, LightSpeedError>;
 
-    fn delete(&self, conn: &mut Self::Conn, model: ProjectModel) -> Result<ProjectModel, LightSpeedError>;
+    fn delete(
+        &self,
+        conn: &mut Self::Conn,
+        model: ProjectModel,
+    ) -> Result<ProjectModel, LightSpeedError>;
 }
 
 pub trait SchemaRepository: Clone {
@@ -61,10 +65,17 @@ pub trait SchemaRepository: Clone {
         model: NewModel<SchemaData>,
     ) -> Result<SchemaModel, LightSpeedError>;
 
-    fn update(&self, conn: &mut Self::Conn, model: SchemaModel)
-              -> Result<SchemaModel, LightSpeedError>;
+    fn update(
+        &self,
+        conn: &mut Self::Conn,
+        model: SchemaModel,
+    ) -> Result<SchemaModel, LightSpeedError>;
 
-    fn delete(&self, conn: &mut Self::Conn, model: SchemaModel) -> Result<SchemaModel, LightSpeedError>;
+    fn delete(
+        &self,
+        conn: &mut Self::Conn,
+        model: SchemaModel,
+    ) -> Result<SchemaModel, LightSpeedError>;
 
     fn delete_by_project_id(
         &self,
@@ -82,7 +93,12 @@ pub trait ContentRepository: Clone {
 
     fn count_all(&self, conn: &mut Self::Conn) -> Result<u64, LightSpeedError>;
 
-    fn count_all_by_field_value(&self, conn: &mut Self::Conn, field_name: &str, field_value: &str) -> Result<u64, LightSpeedError>;
+    fn count_all_by_field_value(
+        &self,
+        conn: &mut Self::Conn,
+        field_name: &str,
+        field_value: &str,
+    ) -> Result<u64, LightSpeedError>;
 
     fn create_unique_constraint(
         &self,
@@ -111,5 +127,9 @@ pub trait ContentRepository: Clone {
         model: ContentModel,
     ) -> Result<ContentModel, LightSpeedError>;
 
-    fn delete(&self, conn: &mut Self::Conn, model: ContentModel) -> Result<ContentModel, LightSpeedError>;
+    fn delete(
+        &self,
+        conn: &mut Self::Conn,
+        model: ContentModel,
+    ) -> Result<ContentModel, LightSpeedError>;
 }

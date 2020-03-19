@@ -26,7 +26,10 @@ fn should_create_schema() {
         let saved_schema = cms_module.schema_service.create_schema(schema)?;
 
         assert!(schema_repo.exists_by_id(&mut c3p0.connection()?, &saved_schema.id)?);
-        assert!(cms_module.schema_service.delete(saved_schema.clone()).is_ok());
+        assert!(cms_module
+            .schema_service
+            .delete(saved_schema.clone())
+            .is_ok());
         assert!(!schema_repo.exists_by_id(&mut c3p0.connection()?, &saved_schema.id)?);
 
         Ok(())

@@ -14,7 +14,10 @@ pub struct TokenService<RepoManager: AuthRepositoryManager> {
 
 impl<RepoManager: AuthRepositoryManager> TokenService<RepoManager> {
     pub fn new(auth_config: AuthConfig, token_repo: RepoManager::TokenRepo) -> Self {
-        TokenService { auth_config, token_repo }
+        TokenService {
+            auth_config,
+            token_repo,
+        }
     }
 
     pub fn generate_and_save_token<S: Into<String>>(
@@ -34,7 +37,12 @@ impl<RepoManager: AuthRepositoryManager> TokenService<RepoManager> {
         self.token_repo.save(conn, token)
     }
 
-    pub fn fetch_by_token(&self, conn: &mut RepoManager::Conn, token: &str, validate: bool) -> Result<TokenModel, LightSpeedError> {
+    pub fn fetch_by_token(
+        &self,
+        conn: &mut RepoManager::Conn,
+        token: &str,
+        validate: bool,
+    ) -> Result<TokenModel, LightSpeedError> {
         let token_model = self.token_repo.fetch_by_token(conn, token)?;
 
         if validate {
@@ -44,7 +52,11 @@ impl<RepoManager: AuthRepositoryManager> TokenService<RepoManager> {
         Ok(token_model)
     }
 
-    pub fn delete(&self, conn: &mut RepoManager::Conn, token_model: TokenModel) -> Result<TokenModel, LightSpeedError> {
+    pub fn delete(
+        &self,
+        conn: &mut RepoManager::Conn,
+        token_model: TokenModel,
+    ) -> Result<TokenModel, LightSpeedError> {
         self.token_repo.delete(conn, token_model)
     }
 }

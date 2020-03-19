@@ -17,7 +17,13 @@ impl JobScheduler {
     pub fn new(schedule: Scheduler, timezone: Option<Tz>, job: Job) -> Self {
         // Determine the next time it should run
         let next_run_at = schedule.next(&Utc::now(), timezone);
-        JobScheduler { job, schedule, timezone, next_run_at: Mutex::new(next_run_at), last_run_at: Mutex::new(None) }
+        JobScheduler {
+            job,
+            schedule,
+            timezone,
+            next_run_at: Mutex::new(next_run_at),
+            last_run_at: Mutex::new(None),
+        }
     }
 
     /// Returns true if this job is pending execution.
@@ -66,7 +72,11 @@ pub struct Job {
 }
 
 impl Job {
-    pub fn new<G: Into<String>, N: Into<String>, F: Fn() -> Result<(), Box<dyn std::error::Error>> + Send>(
+    pub fn new<
+        G: Into<String>,
+        N: Into<String>,
+        F: Fn() -> Result<(), Box<dyn std::error::Error>> + Send,
+    >(
         group: G,
         name: N,
         retries_after_failure: Option<usize>,
@@ -87,9 +97,15 @@ impl Job {
 
     /// Returns true if this job is currently running.
     pub fn is_running(&self) -> Result<bool, SchedulerError> {
-        let read = self.is_running.read().map_err(|err| SchedulerError::JobLockError {
-            message: format!("Cannot read is_running status of job [{}/{}]. Err: {}", self.group, self.name, err),
-        })?;
+        let read = self
+            .is_running
+            .read()
+            .map_err(|err| SchedulerError::JobLockError {
+                message: format!(
+                    "Cannot read is_running status of job [{}/{}]. Err: {}",
+                    self.group, self.name, err
+                ),
+            })?;
         Ok(*read)
     }
 
@@ -128,20 +144,35 @@ impl Job {
     }
 
     fn exec(&self) -> Result<(), Box<dyn std::error::Error>> {
-        let function = self.function.lock().map_err(|err| SchedulerError::JobLockError {
-            message: format!("Cannot execute job [{}/{}]. Err: {}", self.group, self.name, err),
-        })?;
+        let function = self
+            .function
+            .lock()
+            .map_err(|err| SchedulerError::JobLockError {
+                message: format!(
+                    "Cannot execute job [{}/{}]. Err: {}",
+                    self.group, self.name, err
+                ),
+            })?;
         (function)()
     }
 
     fn set_running(&self, is_running: bool) -> Result<(), SchedulerError> {
-        let mut write = self.is_running.write().map_err(|err| SchedulerError::JobLockError {
-            message: format!("Cannot write is_running status of job [{}/{}]. Err: {}", self.group, self.name, err),
-        })?;
+        let mut write = self
+            .is_running
+            .write()
+            .map_err(|err| SchedulerError::JobLockError {
+                message: format!(
+                    "Cannot write is_running status of job [{}/{}]. Err: {}",
+                    self.group, self.name, err
+                ),
+            })?;
 
         if is_running.eq(&*write) {
             return Err(SchedulerError::JobLockError {
-                message: format!("Wrong Job status found for job [{}/{}]. Expected: {}", self.group, self.name, !is_running),
+                message: format!(
+                    "Wrong Job status found for job [{}/{}]. Expected: {}",
+                    self.group, self.name, !is_running
+                ),
             });
         }
 
@@ -238,7 +269,9 @@ pub mod test {
             let count = *lock;
             *lock = count + 1;
             println!("job - count {}", count);
-            Err(SchedulerError::JobLockError { message: "".to_owned() })?
+            Err(SchedulerError::JobLockError {
+                message: "".to_owned(),
+            })?
         });
 
         let result = job.run();
@@ -269,7 +302,9 @@ pub mod test {
             if count == succeed_at {
                 Ok(())
             } else {
-                Err(SchedulerError::JobLockError { message: "".to_owned() })?
+                Err(SchedulerError::JobLockError {
+                    message: "".to_owned(),
+                })?
             }
         });
 

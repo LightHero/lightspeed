@@ -22,7 +22,9 @@ impl Scheduler {
         match *self {
             Scheduler::Cron(ref cs) => {
                 if let Some(tz) = timezone {
-                    cs.after(&after.with_timezone(&tz)).next().map(|date| date.with_timezone(&Utc))
+                    cs.after(&after.with_timezone(&tz))
+                        .next()
+                        .map(|date| date.with_timezone(&Utc))
                 } else {
                     cs.after(&after).next()
                 }
@@ -46,8 +48,10 @@ impl Scheduler {
 impl<'a> TryFrom<&'a str> for Scheduler {
     type Error = SchedulerError;
     fn try_from(value: &str) -> Result<Self, Self::Error> {
-        Ok(Scheduler::Cron(value.parse().map_err(|err| SchedulerError::ScheduleDefinitionError {
-            message: format!("Cannot create schedule for [{}]. Err: {}", value, err),
+        Ok(Scheduler::Cron(value.parse().map_err(|err| {
+            SchedulerError::ScheduleDefinitionError {
+                message: format!("Cannot create schedule for [{}]. Err: {}", value, err),
+            }
         })?))
     }
 }

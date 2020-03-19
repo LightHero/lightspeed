@@ -20,27 +20,67 @@ pub trait AuthRepositoryManager: Clone {
 pub trait AuthAccountRepository: Clone {
     type Conn;
 
-    fn fetch_by_id(&self, conn: &mut Self::Conn, user_id: i64) -> Result<AuthAccountModel, LightSpeedError>;
+    fn fetch_by_id(
+        &self,
+        conn: &mut Self::Conn,
+        user_id: i64,
+    ) -> Result<AuthAccountModel, LightSpeedError>;
 
-    fn fetch_by_username(&self, conn: &mut Self::Conn, username: &str) -> Result<AuthAccountModel, LightSpeedError>;
+    fn fetch_by_username(
+        &self,
+        conn: &mut Self::Conn,
+        username: &str,
+    ) -> Result<AuthAccountModel, LightSpeedError>;
 
-    fn fetch_by_username_optional(&self, conn: &mut Self::Conn, username: &str) -> Result<Option<AuthAccountModel>, LightSpeedError>;
+    fn fetch_by_username_optional(
+        &self,
+        conn: &mut Self::Conn,
+        username: &str,
+    ) -> Result<Option<AuthAccountModel>, LightSpeedError>;
 
-    fn fetch_by_email_optional(&self, conn: &mut Self::Conn, email: &str) -> Result<Option<AuthAccountModel>, LightSpeedError>;
+    fn fetch_by_email_optional(
+        &self,
+        conn: &mut Self::Conn,
+        email: &str,
+    ) -> Result<Option<AuthAccountModel>, LightSpeedError>;
 
-    fn save(&self, conn: &mut Self::Conn, model: NewModel<AuthAccountData>) -> Result<AuthAccountModel, LightSpeedError>;
+    fn save(
+        &self,
+        conn: &mut Self::Conn,
+        model: NewModel<AuthAccountData>,
+    ) -> Result<AuthAccountModel, LightSpeedError>;
 
-    fn update(&self, conn: &mut Self::Conn, model: Model<AuthAccountData>) -> Result<AuthAccountModel, LightSpeedError>;
+    fn update(
+        &self,
+        conn: &mut Self::Conn,
+        model: Model<AuthAccountData>,
+    ) -> Result<AuthAccountModel, LightSpeedError>;
 
-    fn delete(&self, conn: &mut Self::Conn, model: AuthAccountModel) -> Result<AuthAccountModel, LightSpeedError>;
+    fn delete(
+        &self,
+        conn: &mut Self::Conn,
+        model: AuthAccountModel,
+    ) -> Result<AuthAccountModel, LightSpeedError>;
 }
 
 pub trait TokenRepository: Clone {
     type Conn;
 
-    fn fetch_by_token(&self, conn: &mut Self::Conn, token_string: &str) -> Result<TokenModel, LightSpeedError>;
+    fn fetch_by_token(
+        &self,
+        conn: &mut Self::Conn,
+        token_string: &str,
+    ) -> Result<TokenModel, LightSpeedError>;
 
-    fn save(&self, conn: &mut Self::Conn, model: NewModel<TokenData>) -> Result<TokenModel, LightSpeedError>;
+    fn save(
+        &self,
+        conn: &mut Self::Conn,
+        model: NewModel<TokenData>,
+    ) -> Result<TokenModel, LightSpeedError>;
 
-    fn delete(&self, conn: &mut Self::Conn, model: TokenModel) -> Result<TokenModel, LightSpeedError>;
+    fn delete(
+        &self,
+        conn: &mut Self::Conn,
+        model: TokenModel,
+    ) -> Result<TokenModel, LightSpeedError>;
 }

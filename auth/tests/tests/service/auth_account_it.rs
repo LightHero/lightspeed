@@ -20,19 +20,23 @@ fn should_create_pending_user() {
         let email = format!("{}@email.fake", username);
         let password = new_hyphenated_uuid();
 
-        let (user, token) = auth_module.auth_account_service.create_user(CreateLoginDto {
-            username: Some(username.clone()),
-            email: email.clone(),
-            data: HashMap::new(),
-            accept_privacy_policy: true,
-            language: Language::EN,
-            password: password.clone(),
-            password_confirm: password.clone(),
-        })?;
+        let (user, token) = auth_module
+            .auth_account_service
+            .create_user(CreateLoginDto {
+                username: Some(username.clone()),
+                email: email.clone(),
+                data: HashMap::new(),
+                accept_privacy_policy: true,
+                language: Language::EN,
+                password: password.clone(),
+                password_confirm: password.clone(),
+            })?;
 
         assert_eq!(username, user.data.username);
 
-        assert!(auth_module.password_codec.verify_match(&password, &user.data.password)?);
+        assert!(auth_module
+            .password_codec
+            .verify_match(&password, &user.data.password)?);
 
         assert!(user.data.roles.is_empty());
 
@@ -74,7 +78,10 @@ fn should_assign_default_roles_at_account_creation() {
         })?;
 
         assert_eq!(username, user.data.username);
-        assert_eq!(auth_config.default_roles_on_account_creation, user.data.roles);
+        assert_eq!(
+            auth_config.default_roles_on_account_creation,
+            user.data.roles
+        );
 
         Ok(())
     });
@@ -86,7 +93,9 @@ fn should_return_user_by_id() {
         let (user, _) = create_user(&auth_module, false)?;
 
         let conn = &mut auth_module.repo_manager.c3p0().connection()?;
-        let user_by_id = auth_module.auth_account_service.fetch_by_user_id_with_conn(conn, user.id)?;
+        let user_by_id = auth_module
+            .auth_account_service
+            .fetch_by_user_id_with_conn(conn, user.id)?;
 
         assert_eq!(user.data.username, user_by_id.data.username);
         Ok(())
@@ -99,7 +108,9 @@ fn should_return_user_by_username() {
         let (user, _) = create_user(&auth_module, false)?;
 
         let conn = &mut auth_module.repo_manager.c3p0().connection()?;
-        let user_by_id = auth_module.auth_account_service.fetch_by_username_with_conn(conn, &user.data.username)?;
+        let user_by_id = auth_module
+            .auth_account_service
+            .fetch_by_username_with_conn(conn, &user.data.username)?;
 
         assert_eq!(user.id, user_by_id.id);
         Ok(())
@@ -112,20 +123,25 @@ fn should_use_the_email_as_username_if_not_provided() {
         let email = format!("{}@email.fake", new_hyphenated_uuid());
         let password = new_hyphenated_uuid();
 
-        let (user, _token) = auth_module.auth_account_service.create_user(CreateLoginDto {
-            username: None,
-            email: email.clone(),
-            data: HashMap::new(),
-            accept_privacy_policy: true,
-            language: Language::EN,
-            password: password.clone(),
-            password_confirm: password.clone(),
-        })?;
+        let (user, _token) = auth_module
+            .auth_account_service
+            .create_user(CreateLoginDto {
+                username: None,
+                email: email.clone(),
+                data: HashMap::new(),
+                accept_privacy_policy: true,
+                language: Language::EN,
+                password: password.clone(),
+                password_confirm: password.clone(),
+            })?;
 
         assert_eq!(email, user.data.username);
         assert_eq!(email, user.data.email);
 
-        assert!(auth_module.auth_account_service.fetch_by_username(&user.data.username).is_ok());
+        assert!(auth_module
+            .auth_account_service
+            .fetch_by_username(&user.data.username)
+            .is_ok());
 
         Ok(())
     });
@@ -137,20 +153,25 @@ fn should_use_the_email_as_username_if_username_is_empty() {
         let email = format!("{}@email.fake", new_hyphenated_uuid());
         let password = new_hyphenated_uuid();
 
-        let (user, _token) = auth_module.auth_account_service.create_user(CreateLoginDto {
-            username: Some("".to_owned()),
-            email: email.clone(),
-            data: HashMap::new(),
-            accept_privacy_policy: true,
-            language: Language::EN,
-            password: password.clone(),
-            password_confirm: password.clone(),
-        })?;
+        let (user, _token) = auth_module
+            .auth_account_service
+            .create_user(CreateLoginDto {
+                username: Some("".to_owned()),
+                email: email.clone(),
+                data: HashMap::new(),
+                accept_privacy_policy: true,
+                language: Language::EN,
+                password: password.clone(),
+                password_confirm: password.clone(),
+            })?;
 
         assert_eq!(email, user.data.username);
         assert_eq!(email, user.data.email);
 
-        assert!(auth_module.auth_account_service.fetch_by_username(&user.data.username).is_ok());
+        assert!(auth_module
+            .auth_account_service
+            .fetch_by_username(&user.data.username)
+            .is_ok());
 
         Ok(())
     });
@@ -164,17 +185,25 @@ fn should_activate_user() {
         assert_eq!(AuthAccountStatus::PENDING_ACTIVATION, user.data.status);
         assert_eq!(TokenType::ACCOUNT_ACTIVATION, token.data.token_type);
 
-        let activated_user = auth_module.auth_account_service.activate_user(&token.data.token)?;
+        let activated_user = auth_module
+            .auth_account_service
+            .activate_user(&token.data.token)?;
 
         assert_eq!(AuthAccountStatus::ACTIVE, activated_user.data.status);
 
         assert_eq!(user.data.username, activated_user.data.username);
 
-        assert!(auth_module.auth_account_service.activate_user(&token.data.token).is_err());
+        assert!(auth_module
+            .auth_account_service
+            .activate_user(&token.data.token)
+            .is_err());
 
         let conn = &mut auth_module.repo_manager.c3p0().connection()?;
 
-        assert!(auth_module.token_service.fetch_by_token(conn, &token.data.token, false).is_err());
+        assert!(auth_module
+            .token_service
+            .fetch_by_token(conn, &token.data.token, false)
+            .is_err());
 
         Ok(())
     });
@@ -187,9 +216,15 @@ fn should_activate_user_only_if_activation_token_type() {
         assert_eq!(AuthAccountStatus::PENDING_ACTIVATION, user.data.status);
 
         auth_module.repo_manager.c3p0().transaction(|conn| {
-            let token = auth_module.token_service.generate_and_save_token(conn, &user.data.username, TokenType::RESET_PASSWORD)?;
+            let token = auth_module.token_service.generate_and_save_token(
+                conn,
+                &user.data.username,
+                TokenType::RESET_PASSWORD,
+            )?;
 
-            let activation_result = auth_module.auth_account_service.activate_user(&token.data.token);
+            let activation_result = auth_module
+                .auth_account_service
+                .activate_user(&token.data.token);
 
             assert!(activation_result.is_err());
 
@@ -205,9 +240,15 @@ fn should_activate_user_only_if_pending_activation() {
         assert_eq!(AuthAccountStatus::ACTIVE, user.data.status);
 
         auth_module.repo_manager.c3p0().transaction(|conn| {
-            let token = auth_module.token_service.generate_and_save_token(conn, &user.data.username, TokenType::ACCOUNT_ACTIVATION)?;
+            let token = auth_module.token_service.generate_and_save_token(
+                conn,
+                &user.data.username,
+                TokenType::ACCOUNT_ACTIVATION,
+            )?;
 
-            let activation_result = auth_module.auth_account_service.activate_user(&token.data.token);
+            let activation_result = auth_module
+                .auth_account_service
+                .activate_user(&token.data.token);
 
             assert!(activation_result.is_err());
 
@@ -221,14 +262,21 @@ fn should_regenerate_activation_token() {
     test(false, |auth_module| {
         let (user, token) = create_user(&auth_module, false)?;
 
-        let (new_user, new_token) = auth_module.auth_account_service.generate_new_activation_token(&token.data.token)?;
+        let (new_user, new_token) = auth_module
+            .auth_account_service
+            .generate_new_activation_token(&token.data.token)?;
         assert_eq!(user.id, new_user.id);
         assert!(!(token.id == new_token.id));
         assert!(!(token.data.token == new_token.data.token));
 
-        assert!(auth_module.auth_account_service.activate_user(&token.data.token).is_err());
+        assert!(auth_module
+            .auth_account_service
+            .activate_user(&token.data.token)
+            .is_err());
 
-        let activated_user = auth_module.auth_account_service.activate_user(&new_token.data.token)?;
+        let activated_user = auth_module
+            .auth_account_service
+            .activate_user(&new_token.data.token)?;
 
         assert_eq!(AuthAccountStatus::ACTIVE, activated_user.data.status);
         assert_eq!(user.id, activated_user.id);
@@ -243,19 +291,33 @@ fn should_regenerate_activation_token_even_if_token_expired() {
         let (_, mut token) = create_user(&auth_module, false)?;
         token.data.expire_at_epoch_seconds = 0;
 
-        let token_model =
-            auth_module.repo_manager.token_repo().update(&mut auth_module.repo_manager.c3p0().connection()?, token.clone())?;
+        let token_model = auth_module.repo_manager.token_repo().update(
+            &mut auth_module.repo_manager.c3p0().connection()?,
+            token.clone(),
+        )?;
 
         assert!(auth_module
             .token_service
-            .fetch_by_token(&mut auth_module.repo_manager.c3p0().connection()?, &token_model.data.token, true)
+            .fetch_by_token(
+                &mut auth_module.repo_manager.c3p0().connection()?,
+                &token_model.data.token,
+                true
+            )
             .is_err());
 
-        assert!(auth_module.auth_account_service.activate_user(&token_model.data.token).is_err());
+        assert!(auth_module
+            .auth_account_service
+            .activate_user(&token_model.data.token)
+            .is_err());
 
-        let (_, new_token) = auth_module.auth_account_service.generate_new_activation_token(&token_model.data.token)?;
+        let (_, new_token) = auth_module
+            .auth_account_service
+            .generate_new_activation_token(&token_model.data.token)?;
 
-        assert!(auth_module.auth_account_service.activate_user(&new_token.data.token).is_ok());
+        assert!(auth_module
+            .auth_account_service
+            .activate_user(&new_token.data.token)
+            .is_ok());
 
         Ok(())
     });
@@ -272,7 +334,10 @@ fn should_resend_activation_token_only_if_correct_token_type() {
             TokenType::RESET_PASSWORD,
         )?;
 
-        assert!(auth_module.auth_account_service.generate_new_activation_token(&token.data.token).is_err());
+        assert!(auth_module
+            .auth_account_service
+            .generate_new_activation_token(&token.data.token)
+            .is_err());
 
         Ok(())
     });
@@ -284,7 +349,9 @@ fn should_login_active_user() {
         let password = "123456789";
         let (user, _) = create_user_with_password(&auth_module, password, true)?;
 
-        let auth = auth_module.auth_account_service.login(&user.data.username, password)?;
+        let auth = auth_module
+            .auth_account_service
+            .login(&user.data.username, password)?;
         assert_eq!(user.data.username, auth.username);
         Ok(())
     });
@@ -296,7 +363,10 @@ fn should_not_login_inactive_user() {
         let password = "123456789";
         let (user, _) = create_user_with_password(&auth_module, password, false)?;
 
-        assert!(auth_module.auth_account_service.login(&user.data.username, password).is_err());
+        assert!(auth_module
+            .auth_account_service
+            .login(&user.data.username, password)
+            .is_err());
 
         Ok(())
     });
@@ -308,7 +378,10 @@ fn should_not_login_with_wrong_username() {
         let password = "123456789";
         let (user, _) = create_user_with_password(&auth_module, password, true)?;
 
-        assert!(auth_module.auth_account_service.login(&format!("{}_", user.data.username), password).is_err());
+        assert!(auth_module
+            .auth_account_service
+            .login(&format!("{}_", user.data.username), password)
+            .is_err());
 
         Ok(())
     });
@@ -320,7 +393,10 @@ fn should_not_login_with_wrong_password() {
         let password = "123456789";
         let (user, _) = create_user_with_password(&auth_module, password, true)?;
 
-        assert!(auth_module.auth_account_service.login(&user.data.username, &format!("{}_", password)).is_err());
+        assert!(auth_module
+            .auth_account_service
+            .login(&user.data.username, &format!("{}_", password))
+            .is_err());
 
         Ok(())
     });
@@ -332,20 +408,24 @@ fn create_user_should_fail_if_passwords_do_not_match() {
         let username = new_hyphenated_uuid();
         let email = format!("{}@email.fake", username);
 
-        let result = auth_module.auth_account_service.create_user(CreateLoginDto {
-            username: Some(username.clone()),
-            email: email.clone(),
-            data: HashMap::new(),
-            accept_privacy_policy: true,
-            language: Language::EN,
-            password: new_hyphenated_uuid(),
-            password_confirm: new_hyphenated_uuid(),
-        });
+        let result = auth_module
+            .auth_account_service
+            .create_user(CreateLoginDto {
+                username: Some(username.clone()),
+                email: email.clone(),
+                data: HashMap::new(),
+                accept_privacy_policy: true,
+                language: Language::EN,
+                password: new_hyphenated_uuid(),
+                password_confirm: new_hyphenated_uuid(),
+            });
 
         assert!(result.is_err());
 
         match &result {
-            Err(LightSpeedError::ValidationError { details }) => assert!(details.details.contains_key("password")),
+            Err(LightSpeedError::ValidationError { details }) => {
+                assert!(details.details.contains_key("password"))
+            }
             _ => assert!(false),
         }
 
@@ -360,20 +440,24 @@ fn create_user_should_fail_if_not_valid_email() {
         let email = new_hyphenated_uuid();
         let password = new_hyphenated_uuid();
 
-        let result = auth_module.auth_account_service.create_user(CreateLoginDto {
-            username: Some(username.clone()),
-            email: email.clone(),
-            data: HashMap::new(),
-            accept_privacy_policy: true,
-            language: Language::EN,
-            password: password.clone(),
-            password_confirm: password.clone(),
-        });
+        let result = auth_module
+            .auth_account_service
+            .create_user(CreateLoginDto {
+                username: Some(username.clone()),
+                email: email.clone(),
+                data: HashMap::new(),
+                accept_privacy_policy: true,
+                language: Language::EN,
+                password: password.clone(),
+                password_confirm: password.clone(),
+            });
 
         assert!(result.is_err());
 
         match &result {
-            Err(LightSpeedError::ValidationError { details }) => assert!(details.details.contains_key("email")),
+            Err(LightSpeedError::ValidationError { details }) => {
+                assert!(details.details.contains_key("email"))
+            }
             _ => assert!(false),
         }
 
@@ -388,20 +472,24 @@ fn create_user_should_fail_if_not_accepted_privacy_policy() {
         let email = format!("{}@email.fake", username);
         let password = new_hyphenated_uuid();
 
-        let result = auth_module.auth_account_service.create_user(CreateLoginDto {
-            username: Some(username.clone()),
-            email: email.clone(),
-            data: HashMap::new(),
-            accept_privacy_policy: false,
-            language: Language::EN,
-            password: password.clone(),
-            password_confirm: password.clone(),
-        });
+        let result = auth_module
+            .auth_account_service
+            .create_user(CreateLoginDto {
+                username: Some(username.clone()),
+                email: email.clone(),
+                data: HashMap::new(),
+                accept_privacy_policy: false,
+                language: Language::EN,
+                password: password.clone(),
+                password_confirm: password.clone(),
+            });
 
         assert!(result.is_err());
 
         match &result {
-            Err(LightSpeedError::ValidationError { details }) => assert!(details.details.contains_key("accept_privacy_policy")),
+            Err(LightSpeedError::ValidationError { details }) => {
+                assert!(details.details.contains_key("accept_privacy_policy"))
+            }
             _ => assert!(false),
         }
 
@@ -424,7 +512,10 @@ fn create_user_should_fail_if_username_not_unique() {
             password_confirm: password.clone(),
         };
 
-        assert!(auth_module.auth_account_service.create_user(dto.clone()).is_ok());
+        assert!(auth_module
+            .auth_account_service
+            .create_user(dto.clone())
+            .is_ok());
 
         dto.email = format!("{}@email.fake", new_hyphenated_uuid());
 
@@ -432,7 +523,9 @@ fn create_user_should_fail_if_username_not_unique() {
         assert!(result.is_err());
 
         match &result {
-            Err(LightSpeedError::ValidationError { details }) => assert!(details.details.contains_key("username")),
+            Err(LightSpeedError::ValidationError { details }) => {
+                assert!(details.details.contains_key("username"))
+            }
             _ => assert!(false),
         }
 
@@ -455,14 +548,19 @@ fn create_user_should_fail_if_email_not_unique() {
             password_confirm: password.clone(),
         };
 
-        assert!(auth_module.auth_account_service.create_user(dto.clone()).is_ok());
+        assert!(auth_module
+            .auth_account_service
+            .create_user(dto.clone())
+            .is_ok());
 
         dto.username = Some(new_hyphenated_uuid());
         let result = auth_module.auth_account_service.create_user(dto);
         assert!(result.is_err());
 
         match &result {
-            Err(LightSpeedError::ValidationError { details }) => assert!(details.details.contains_key("email")),
+            Err(LightSpeedError::ValidationError { details }) => {
+                assert!(details.details.contains_key("email"))
+            }
             _ => assert!(false),
         }
 
@@ -484,17 +582,26 @@ fn should_reset_password_by_token() {
 
         let password_new = new_hyphenated_uuid();
 
-        let updated_user = auth_module.auth_account_service.reset_password_by_token(ResetPasswordDto {
-            password: password_new.clone(),
-            token: token.data.token,
-            password_confirm: password_new.clone(),
-        })?;
+        let updated_user =
+            auth_module
+                .auth_account_service
+                .reset_password_by_token(ResetPasswordDto {
+                    password: password_new.clone(),
+                    token: token.data.token,
+                    password_confirm: password_new.clone(),
+                })?;
 
         assert_eq!(user.id, updated_user.id);
 
-        assert!(auth_module.auth_account_service.login(&user.data.username, &password).is_err());
+        assert!(auth_module
+            .auth_account_service
+            .login(&user.data.username, &password)
+            .is_err());
 
-        assert!(auth_module.auth_account_service.login(&user.data.username, &password_new).is_ok());
+        assert!(auth_module
+            .auth_account_service
+            .login(&user.data.username, &password_new)
+            .is_ok());
 
         Ok(())
     });
@@ -514,11 +621,13 @@ fn should_reset_password_only_if_correct_token_type() {
 
         let password_new = new_hyphenated_uuid();
 
-        let result = auth_module.auth_account_service.reset_password_by_token(ResetPasswordDto {
-            password: password_new.clone(),
-            token: token.data.token,
-            password_confirm: password_new.clone(),
-        });
+        let result = auth_module
+            .auth_account_service
+            .reset_password_by_token(ResetPasswordDto {
+                password: password_new.clone(),
+                token: token.data.token,
+                password_confirm: password_new.clone(),
+            });
 
         assert!(result.is_err());
 
@@ -540,11 +649,13 @@ fn should_reset_password_only_if_user_is_active() {
 
         let password_new = new_hyphenated_uuid();
 
-        let result = auth_module.auth_account_service.reset_password_by_token(ResetPasswordDto {
-            password: password_new.clone(),
-            token: token.data.token,
-            password_confirm: password_new.clone(),
-        });
+        let result = auth_module
+            .auth_account_service
+            .reset_password_by_token(ResetPasswordDto {
+                password: password_new.clone(),
+                token: token.data.token,
+                password_confirm: password_new.clone(),
+            });
 
         assert!(result.is_err());
 
@@ -566,16 +677,20 @@ fn should_reset_password_only_if_passwords_match() {
 
         let password_new = new_hyphenated_uuid();
 
-        let result = auth_module.auth_account_service.reset_password_by_token(ResetPasswordDto {
-            password: password_new.clone(),
-            token: token.data.token,
-            password_confirm: format!("{}_", password_new.clone()),
-        });
+        let result = auth_module
+            .auth_account_service
+            .reset_password_by_token(ResetPasswordDto {
+                password: password_new.clone(),
+                token: token.data.token,
+                password_confirm: format!("{}_", password_new.clone()),
+            });
 
         assert!(result.is_err());
 
         match &result {
-            Err(LightSpeedError::ValidationError { details }) => assert!(details.details.contains_key("password")),
+            Err(LightSpeedError::ValidationError { details }) => {
+                assert!(details.details.contains_key("password"))
+            }
             _ => assert!(false),
         }
 
@@ -588,7 +703,9 @@ fn should_generate_reset_password_token() {
     test(false, |auth_module| {
         let (user, _) = create_user(&auth_module, true)?;
 
-        let (new_user, token) = auth_module.auth_account_service.generate_reset_password_token(&user.data.username)?;
+        let (new_user, token) = auth_module
+            .auth_account_service
+            .generate_reset_password_token(&user.data.username)?;
         assert_eq!(user.id, new_user.id);
         assert_eq!(TokenType::RESET_PASSWORD, token.data.token_type);
 
@@ -601,7 +718,10 @@ fn should_not_generate_reset_password_token_if_user_not_active() {
     test(false, |auth_module| {
         let (user, _) = create_user(&auth_module, false)?;
 
-        assert!(auth_module.auth_account_service.generate_reset_password_token(&user.data.username).is_err());
+        assert!(auth_module
+            .auth_account_service
+            .generate_reset_password_token(&user.data.username)
+            .is_err());
 
         Ok(())
     });
@@ -615,18 +735,26 @@ fn should_change_user_password() {
 
         let password_new = new_hyphenated_uuid();
 
-        let updated_user = auth_module.auth_account_service.change_password(ChangePasswordDto {
-            user_id: user.id,
-            old_password: password.clone(),
-            new_password: password_new.clone(),
-            new_password_confirm: password_new.clone(),
-        })?;
+        let updated_user = auth_module
+            .auth_account_service
+            .change_password(ChangePasswordDto {
+                user_id: user.id,
+                old_password: password.clone(),
+                new_password: password_new.clone(),
+                new_password_confirm: password_new.clone(),
+            })?;
 
         assert_eq!(updated_user.id, user.id);
 
-        assert!(auth_module.auth_account_service.login(&user.data.username, &password).is_err());
+        assert!(auth_module
+            .auth_account_service
+            .login(&user.data.username, &password)
+            .is_err());
 
-        assert!(auth_module.auth_account_service.login(&user.data.username, &password_new).is_ok());
+        assert!(auth_module
+            .auth_account_service
+            .login(&user.data.username, &password_new)
+            .is_ok());
 
         Ok(())
     });
@@ -640,18 +768,26 @@ fn should_not_change_user_password_if_wrong_old_password() {
 
         let password_new = new_hyphenated_uuid();
 
-        let result = auth_module.auth_account_service.change_password(ChangePasswordDto {
-            user_id: user.id,
-            old_password: format!("__{}__", password),
-            new_password: password_new.clone(),
-            new_password_confirm: password_new.clone(),
-        });
+        let result = auth_module
+            .auth_account_service
+            .change_password(ChangePasswordDto {
+                user_id: user.id,
+                old_password: format!("__{}__", password),
+                new_password: password_new.clone(),
+                new_password_confirm: password_new.clone(),
+            });
 
         assert!(result.is_err());
 
-        assert!(auth_module.auth_account_service.login(&user.data.username, &password).is_ok());
+        assert!(auth_module
+            .auth_account_service
+            .login(&user.data.username, &password)
+            .is_ok());
 
-        assert!(auth_module.auth_account_service.login(&user.data.username, &password_new).is_err());
+        assert!(auth_module
+            .auth_account_service
+            .login(&user.data.username, &password_new)
+            .is_err());
 
         Ok(())
     });
@@ -665,12 +801,14 @@ fn should_not_change_user_password_if_inactive_user() {
 
         let password_new = new_hyphenated_uuid();
 
-        let result = auth_module.auth_account_service.change_password(ChangePasswordDto {
-            user_id: user.id,
-            old_password: password,
-            new_password: password_new.clone(),
-            new_password_confirm: password_new.clone(),
-        });
+        let result = auth_module
+            .auth_account_service
+            .change_password(ChangePasswordDto {
+                user_id: user.id,
+                old_password: password,
+                new_password: password_new.clone(),
+                new_password_confirm: password_new.clone(),
+            });
 
         assert!(result.is_err());
 
@@ -686,17 +824,21 @@ fn should_not_change_user_password_if_new_passwords_do_not_match() {
 
         let password_new = new_hyphenated_uuid();
 
-        let result = auth_module.auth_account_service.change_password(ChangePasswordDto {
-            user_id: user.id,
-            old_password: password,
-            new_password: password_new.clone(),
-            new_password_confirm: format!("__{}", password_new.clone()),
-        });
+        let result = auth_module
+            .auth_account_service
+            .change_password(ChangePasswordDto {
+                user_id: user.id,
+                old_password: password,
+                new_password: password_new.clone(),
+                new_password_confirm: format!("__{}", password_new.clone()),
+            });
 
         assert!(result.is_err());
 
         match &result {
-            Err(LightSpeedError::ValidationError { details }) => assert!(details.details.contains_key("new_password")),
+            Err(LightSpeedError::ValidationError { details }) => {
+                assert!(details.details.contains_key("new_password"))
+            }
             _ => assert!(false),
         }
 
@@ -713,15 +855,17 @@ fn should_add_and_remove_roles() {
         let email = format!("{}@email.fake", username);
         let password = new_hyphenated_uuid();
 
-        let (user, _) = auth_module.auth_account_service.create_user(CreateLoginDto {
-            username: Some(username.clone()),
-            email: email.clone(),
-            data: HashMap::new(),
-            accept_privacy_policy: true,
-            language: Language::EN,
-            password: password.clone(),
-            password_confirm: password.clone(),
-        })?;
+        let (user, _) = auth_module
+            .auth_account_service
+            .create_user(CreateLoginDto {
+                username: Some(username.clone()),
+                email: email.clone(),
+                data: HashMap::new(),
+                accept_privacy_policy: true,
+                language: Language::EN,
+                password: password.clone(),
+                password_confirm: password.clone(),
+            })?;
 
         assert!(user.data.roles.is_empty());
 
@@ -735,12 +879,16 @@ fn should_add_and_remove_roles() {
         assert_eq!(vec!["one".to_owned()], user.data.roles);
 
         let user = auh_service.add_roles(user.id, &vec!["two".to_owned(), "three".to_owned()])?;
-        assert_eq!(vec!["one".to_owned(), "two".to_owned(), "three".to_owned()], user.data.roles);
+        assert_eq!(
+            vec!["one".to_owned(), "two".to_owned(), "three".to_owned()],
+            user.data.roles
+        );
 
         let user = auh_service.delete_roles(user.id, &vec!["two".to_owned(), "four".to_owned()])?;
         assert_eq!(vec!["one".to_owned(), "three".to_owned()], user.data.roles);
 
-        let user = auh_service.delete_roles(user.id, &vec!["one".to_owned(), "three".to_owned()])?;
+        let user =
+            auh_service.delete_roles(user.id, &vec!["one".to_owned(), "three".to_owned()])?;
         assert!(user.data.roles.is_empty());
 
         Ok(())

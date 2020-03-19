@@ -42,21 +42,32 @@ pub struct WebAuthService<T: RolesProvider> {
 
 impl<T: RolesProvider> WebAuthService<T> {
     pub fn new(auth_service: AuthService<T>, jwt_service: JwtService) -> Self {
-        Self { auth_service, jwt_service }
+        Self {
+            auth_service,
+            jwt_service,
+        }
     }
 
-    pub fn token_string_from_request<'a>(&self, req: &'a HttpRequest) -> Result<&'a str, LightSpeedError> {
+    pub fn token_string_from_request<'a>(
+        &self,
+        req: &'a HttpRequest,
+    ) -> Result<&'a str, LightSpeedError> {
         if let Some(header) = req.headers().get(JWT_TOKEN_HEADER) {
-            return header.to_str().map_err(|err| LightSpeedError::ParseAuthHeaderError { message: format!("{}", err) }).and_then(
-                |header| {
+            return header
+                .to_str()
+                .map_err(|err| LightSpeedError::ParseAuthHeaderError {
+                    message: format!("{}", err),
+                })
+                .and_then(|header| {
                     trace!("Token found in request: [{}]", header);
                     if header.len() > JWT_TOKEN_HEADER_SUFFIX_LEN {
                         Ok(&header[JWT_TOKEN_HEADER_SUFFIX_LEN..])
                     } else {
-                        Err(LightSpeedError::ParseAuthHeaderError { message: format!("Unexpected auth header: {}", header) })
+                        Err(LightSpeedError::ParseAuthHeaderError {
+                            message: format!("Unexpected auth header: {}", header),
+                        })
                     }
-                },
-            );
+                });
         };
         Err(LightSpeedError::MissingAuthTokenError)
     }
@@ -66,7 +77,8 @@ impl<T: RolesProvider> WebAuthService<T> {
     }
 
     pub fn auth_from_request(&self, req: &HttpRequest) -> Result<AuthContext, LightSpeedError> {
-        self.token_string_from_request(req).and_then(|token| self.auth_from_token_string(token))
+        self.token_string_from_request(req)
+            .and_then(|token| self.auth_from_token_string(token))
     }
 
     pub fn auth_from_token_string(&self, token: &str) -> Result<AuthContext, LightSpeedError> {
@@ -107,13 +119,30 @@ mod test {
         crate::test_root::init_context();
 
         // Arrange
-        let token = JWT { payload: Auth { username: "Amelia".to_owned(), id: 100, roles: vec![] }, exp: 0, iat: 0, sub: "".to_owned() };
-        let token = new_service().jwt_service.generate_from_token(&token).unwrap();
+        let token = JWT {
+            payload: Auth {
+                username: "Amelia".to_owned(),
+                id: 100,
+                roles: vec![],
+            },
+            exp: 0,
+            iat: 0,
+            sub: "".to_owned(),
+        };
+        let token = new_service()
+            .jwt_service
+            .generate_from_token(&token)
+            .unwrap();
 
         let mut srv = init_service(App::new().service(web::resource("/auth").to(username))).await;
 
-        let request =
-            TestRequest::get().uri("/auth").header(JWT_TOKEN_HEADER, format!("{}{}", JWT_TOKEN_HEADER_SUFFIX, token)).to_request();
+        let request = TestRequest::get()
+            .uri("/auth")
+            .header(
+                JWT_TOKEN_HEADER,
+                format!("{}{}", JWT_TOKEN_HEADER_SUFFIX, token),
+            )
+            .to_request();
 
         // Act
         let resp = srv.call(request).await.unwrap();
@@ -127,13 +156,22 @@ mod test {
         crate::test_root::init_context();
 
         // Arrange
-        let auth = Auth { username: "Amelia".to_owned(), id: 100, roles: vec![] };
+        let auth = Auth {
+            username: "Amelia".to_owned(),
+            id: 100,
+            roles: vec![],
+        };
         let token = new_service().token_from_auth(&auth).unwrap();
 
         let mut srv = init_service(App::new().service(web::resource("/auth").to(username))).await;
 
-        let request =
-            TestRequest::get().uri("/auth").header(JWT_TOKEN_HEADER, format!("{}{}", JWT_TOKEN_HEADER_SUFFIX, token)).to_request();
+        let request = TestRequest::get()
+            .uri("/auth")
+            .header(
+                JWT_TOKEN_HEADER,
+                format!("{}{}", JWT_TOKEN_HEADER_SUFFIX, token),
+            )
+            .to_request();
 
         // Act
         let resp = srv.call(request).await.unwrap();
@@ -147,13 +185,22 @@ mod test {
         crate::test_root::init_context();
 
         // Arrange
-        let auth = Auth { username: "Amelia".to_owned(), id: 100, roles: vec![] };
+        let auth = Auth {
+            username: "Amelia".to_owned(),
+            id: 100,
+            roles: vec![],
+        };
         let token = new_service().token_from_auth(&auth).unwrap();
 
         let mut srv = init_service(App::new().service(web::resource("/auth").to(admin))).await;
 
-        let request =
-            TestRequest::get().uri("/auth").header(JWT_TOKEN_HEADER, format!("{}{}", JWT_TOKEN_HEADER_SUFFIX, token)).to_request();
+        let request = TestRequest::get()
+            .uri("/auth")
+            .header(
+                JWT_TOKEN_HEADER,
+                format!("{}{}", JWT_TOKEN_HEADER_SUFFIX, token),
+            )
+            .to_request();
 
         // Act
         let resp = srv.call(request).await.unwrap();
@@ -177,7 +224,10 @@ mod test {
 
     fn new_service() -> WebAuthService<InMemoryRolesProvider> {
         WebAuthService {
-            auth_service: AuthService::new(InMemoryRolesProvider::new(vec![Role { name: "admin".to_owned(), permissions: vec![] }])),
+            auth_service: AuthService::new(InMemoryRolesProvider::new(vec![Role {
+                name: "admin".to_owned(),
+                permissions: vec![],
+            }])),
             jwt_service: JwtService::new(&JwtConfig {
                 secret: "secret".to_owned(),
                 signature_algorithm: Algorithm::HS256,

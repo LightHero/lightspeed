@@ -29,7 +29,10 @@ impl EmailClient for NoOpsEmailClient {
         Ok(())
     }
 
-    fn retain_emails(&self, _: Box<dyn FnMut(&EmailMessage) -> bool>) -> Result<(), LightSpeedError> {
+    fn retain_emails(
+        &self,
+        _: Box<dyn FnMut(&EmailMessage) -> bool>,
+    ) -> Result<(), LightSpeedError> {
         warn!("NoOpsEmailService.retain_emails - This is a no ops");
         Ok(())
     }

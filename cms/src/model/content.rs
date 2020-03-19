@@ -43,10 +43,18 @@ pub struct Content {
 #[derive(Clone, Serialize, Deserialize)]
 #[serde(tag = "tag")]
 pub enum ContentFieldValue {
-    Number{value: ContentFieldValueArity<Option<usize>>},
-    Slug{value: ContentFieldValueArity<Option<String>>},
-    String{value: ContentFieldValueArity<Option<String>>},
-    Boolean{value: ContentFieldValueArity<Option<bool>>},
+    Number {
+        value: ContentFieldValueArity<Option<usize>>,
+    },
+    Slug {
+        value: ContentFieldValueArity<Option<String>>,
+    },
+    String {
+        value: ContentFieldValueArity<Option<String>>,
+    },
+    Boolean {
+        value: ContentFieldValueArity<Option<bool>>,
+    },
 }
 
 #[derive(Clone, Serialize, Deserialize)]
@@ -92,7 +100,8 @@ impl Content {
                             .filter(|(_, value)| value.required)
                             .map(|(key, _)| key.to_string())
                             .collect(),
-                    ).into(),
+                    )
+                        .into(),
                 );
             }
         }
@@ -113,7 +122,7 @@ fn validate_content_field<E: ErrorDetails>(
             arity: schema_arity,
             default: _default,
         } => match content_field_value {
-            ContentFieldValue::Boolean{value: arity} => {
+            ContentFieldValue::Boolean { value: arity } => {
                 validate_arity(
                     schema_field.required,
                     schema_arity,
@@ -133,7 +142,7 @@ fn validate_content_field<E: ErrorDetails>(
             arity: schema_arity,
             default: _default,
         } => match content_field_value {
-            ContentFieldValue::Number{value: arity} => {
+            ContentFieldValue::Number { value: arity } => {
                 validate_arity(
                     schema_field.required,
                     schema_arity,
@@ -155,7 +164,7 @@ fn validate_content_field<E: ErrorDetails>(
             _ => error_details.add_detail(full_field_name.into(), MUST_BE_OF_TYPE_NUMBER.into()),
         },
         SchemaFieldType::Slug => match content_field_value {
-            ContentFieldValue::Slug{value: arity} => {
+            ContentFieldValue::Slug { value: arity } => {
                 validate_arity(
                     schema_field.required,
                     schema_field.field_type.get_arity(),
@@ -175,7 +184,7 @@ fn validate_content_field<E: ErrorDetails>(
             arity: schema_arity,
             default: _default,
         } => match content_field_value {
-            ContentFieldValue::String{value: arity} => {
+            ContentFieldValue::String { value: arity } => {
                 validate_arity(
                     schema_field.required,
                     schema_arity,
@@ -209,8 +218,13 @@ fn validate_arity<T, F: Fn(&str, &Option<T>, &mut E), E: ErrorDetails>(
 ) {
     match schema_arity {
         SchemaFieldArity::Single | SchemaFieldArity::Unique => match arity {
-            ContentFieldValueArity::Single { value } => value_validation(full_field_name, value, error_details),
-            _ => error_details.add_detail(full_field_name.into(), SHOULD_HAVE_SINGLE_VALUE_ARITY.into()),
+            ContentFieldValueArity::Single { value } => {
+                value_validation(full_field_name, value, error_details)
+            }
+            _ => error_details.add_detail(
+                full_field_name.into(),
+                SHOULD_HAVE_SINGLE_VALUE_ARITY.into(),
+            ),
         },
         SchemaFieldArity::Localizable { options } => match arity {
             ContentFieldValueArity::Localizable { values } => {
@@ -229,10 +243,15 @@ fn validate_arity<T, F: Fn(&str, &Option<T>, &mut E), E: ErrorDetails>(
                     }
                 }
                 values.iter().for_each(|(key, value)| {
-                    value_validation(&format!("{}[{}]", full_field_name, key), value, error_details)
+                    value_validation(
+                        &format!("{}[{}]", full_field_name, key),
+                        value,
+                        error_details,
+                    )
                 })
             }
-            _ => error_details.add_detail(full_field_name.into(), SHOULD_HAVE_LOCALIZABLE_ARITY.into()),
+            _ => error_details
+                .add_detail(full_field_name.into(), SHOULD_HAVE_LOCALIZABLE_ARITY.into()),
         },
     }
 }
