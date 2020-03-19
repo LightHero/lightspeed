@@ -148,7 +148,7 @@ fn should_save_and_delete_content() {
             content_service.count_all_by_schema_id(saved_schema_2.id)?
         );
 
-        assert_eq!(1, content_service.delete_content(content_model_1)?);
+        assert!(content_service.delete_content(content_model_1).is_ok());
         assert_eq!(
             0,
             content_service.count_all_by_schema_id(saved_schema_1.id)?
@@ -158,7 +158,7 @@ fn should_save_and_delete_content() {
             content_service.count_all_by_schema_id(saved_schema_2.id)?
         );
 
-        assert_eq!(1, content_service.delete_content(content_model_2)?);
+        assert!(content_service.delete_content(content_model_2).is_ok());
         assert_eq!(
             0,
             content_service.count_all_by_schema_id(saved_schema_1.id)?
@@ -275,7 +275,7 @@ fn should_create_unique_constraints_for_slug_schema_fields() {
             Err(LightSpeedError::ValidationError { details }) => {
                 println!("details: {:#?}", details);
                 assert_eq!(
-                    details.details().borrow()[&format!("fields[{}]", field_name)],
+                    details.details[&format!("fields[{}]", field_name)],
                     vec![ErrorDetail::new(ERR_NOT_UNIQUE, vec![])]
                 )
             }
@@ -339,7 +339,7 @@ fn should_create_unique_constraints_for_string_unique_schema_fields() {
             Err(LightSpeedError::ValidationError { details }) => {
                 println!("details: {:#?}", details);
                 assert_eq!(
-                    details.details().borrow()[&format!("fields[{}]", field_name)],
+                    details.details[&format!("fields[{}]", field_name)],
                     vec![ErrorDetail::new(ERR_NOT_UNIQUE, vec![])]
                 )
             }
@@ -403,7 +403,7 @@ fn should_create_unique_constraints_for_number_unique_schema_fields() {
             Err(LightSpeedError::ValidationError { details }) => {
                 println!("details: {:#?}", details);
                 assert_eq!(
-                    details.details().borrow()[&format!("fields[{}]", field_name)],
+                    details.details[&format!("fields[{}]", field_name)],
                     vec![ErrorDetail::new(ERR_NOT_UNIQUE, vec![])]
                 )
             }
@@ -466,7 +466,7 @@ fn should_create_unique_constraints_for_boolean_unique_schema_fields() {
             Err(LightSpeedError::ValidationError { details }) => {
                 println!("details: {:#?}", details);
                 assert_eq!(
-                    details.details().borrow()[&format!("fields[{}]", field_name)],
+                    details.details[&format!("fields[{}]", field_name)],
                     vec![ErrorDetail::new(ERR_NOT_UNIQUE, vec![])]
                 )
             }

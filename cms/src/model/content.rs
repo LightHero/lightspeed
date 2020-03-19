@@ -369,9 +369,9 @@ mod test {
 
             match result {
                 Err(LightSpeedError::ValidationError { details }) => {
-                    assert_eq!(details.details().borrow().len(), 1);
+                    assert_eq!(details.details.len(), 1);
                     assert_eq!(
-                        details.details().borrow().get("fields[1].name"),
+                        details.details.get("fields[1].name"),
                         Some(&vec![ErrorDetail::new(ERR_NOT_UNIQUE, vec![])])
                     );
                 }
@@ -434,7 +434,7 @@ mod test {
             Err(LightSpeedError::ValidationError { details }) => {
                 println!("details: {:#?}", details);
                 assert_eq!(
-                    details.details().borrow()["fields[two]"],
+                    details.details["fields[two]"],
                     vec![ErrorDetail::new(ERR_UNKNOWN_FIELD, vec![])]
                 )
             }
@@ -500,7 +500,7 @@ mod test {
         assert!(result.is_err());
         match result {
             Err(LightSpeedError::ValidationError { details }) => assert_eq!(
-                details.details().borrow()["fields"],
+                details.details["fields"],
                 vec![ErrorDetail::new(
                     ERR_VALUE_REQUIRED,
                     vec!["four".to_owned(), "one".to_owned()]
@@ -540,7 +540,7 @@ mod test {
         println!("{:?}", result);
         match result {
             Err(LightSpeedError::ValidationError { details }) => assert_eq!(
-                details.details().borrow()["fields[one].value"],
+                details.details["fields[one].value"],
                 vec![ErrorDetail::new(MUST_BE_OF_TYPE_BOOLEAN, vec![])]
             ),
             _ => assert!(false),
@@ -579,7 +579,7 @@ mod test {
         assert!(result.is_err());
         match result {
             Err(LightSpeedError::ValidationError { details }) => assert_eq!(
-                details.details().borrow()["fields[one].value"],
+                details.details["fields[one].value"],
                 vec![ErrorDetail::new(MUST_BE_OF_TYPE_STRING, vec![])]
             ),
             _ => assert!(false),
@@ -613,7 +613,7 @@ mod test {
         assert!(result.is_err());
         match result {
             Err(LightSpeedError::ValidationError { details }) => assert_eq!(
-                details.details().borrow()["fields[one].value"],
+                details.details["fields[one].value"],
                 vec![ErrorDetail::new(MUST_BE_OF_TYPE_SLUG, vec![])]
             ),
             _ => assert!(false),
@@ -652,7 +652,7 @@ mod test {
         assert!(result.is_err());
         match result {
             Err(LightSpeedError::ValidationError { details }) => assert_eq!(
-                details.details().borrow()["fields[one].value"],
+                details.details["fields[one].value"],
                 vec![ErrorDetail::new(MUST_BE_OF_TYPE_NUMBER, vec![])]
             ),
             _ => assert!(false),
@@ -691,7 +691,7 @@ mod test {
         assert!(result.is_err());
         match result {
             Err(LightSpeedError::ValidationError { details }) => assert_eq!(
-                details.details().borrow()["fields[one].value"],
+                details.details["fields[one].value"],
                 vec![ErrorDetail::new(
                     MUST_BE_GREATER_OR_EQUAL,
                     vec!["100".to_owned()]
@@ -733,7 +733,7 @@ mod test {
         assert!(result.is_err());
         match result {
             Err(LightSpeedError::ValidationError { details }) => assert_eq!(
-                details.details().borrow()["fields[one].value"],
+                details.details["fields[one].value"],
                 vec![ErrorDetail::new(
                     MUST_BE_LESS_OR_EQUAL,
                     vec!["1000".to_owned()]
@@ -775,7 +775,7 @@ mod test {
         assert!(result.is_err());
         match result {
             Err(LightSpeedError::ValidationError { details }) => assert_eq!(
-                details.details().borrow()["fields[one].value"],
+                details.details["fields[one].value"],
                 vec![ErrorDetail::new(
                     MUST_BE_GREATER_OR_EQUAL,
                     vec!["1000".to_owned()]
@@ -817,7 +817,7 @@ mod test {
         assert!(result.is_err());
         match result {
             Err(LightSpeedError::ValidationError { details }) => assert_eq!(
-                details.details().borrow()["fields[one].value"],
+                details.details["fields[one].value"],
                 vec![ErrorDetail::new(
                     MUST_BE_LESS_OR_EQUAL,
                     vec!["10".to_owned()]
@@ -872,7 +872,7 @@ mod test {
         assert!(result.is_err());
         match result {
             Err(LightSpeedError::ValidationError { details }) => assert_eq!(
-                details.details().borrow()["fields[one].value"],
+                details.details["fields[one].value"],
                 vec![ErrorDetail::new(ERR_VALUE_REQUIRED, vec![])]
             ),
             _ => assert!(false),
@@ -909,7 +909,7 @@ mod test {
         println!("{:?}", result);
         match result {
             Err(LightSpeedError::ValidationError { details }) => assert_eq!(
-                details.details().borrow()["fields[one].value"],
+                details.details["fields[one].value"],
                 vec![ErrorDetail::new(SHOULD_HAVE_SINGLE_VALUE_ARITY, vec![])]
             ),
             _ => assert!(false),
@@ -949,7 +949,7 @@ mod test {
         println!("{:?}", result);
         match result {
             Err(LightSpeedError::ValidationError { details }) => assert_eq!(
-                details.details().borrow()["fields[one].value"],
+                details.details["fields[one].value"],
                 vec![ErrorDetail::new(SHOULD_HAVE_LOCALIZABLE_ARITY, vec![])]
             ),
             _ => assert!(false),
@@ -994,11 +994,11 @@ mod test {
         match result {
             Err(LightSpeedError::ValidationError { details }) => {
                 assert_eq!(
-                    details.details().borrow()["fields[one].value[FR]"],
+                    details.details["fields[one].value[FR]"],
                     vec![ErrorDetail::new(ERR_VALUE_REQUIRED, vec![])]
                 );
                 assert_eq!(
-                    details.details().borrow()["fields[one].value[EN]"],
+                    details.details["fields[one].value[EN]"],
                     vec![ErrorDetail::new(ERR_VALUE_REQUIRED, vec![])]
                 );
             }
@@ -1056,7 +1056,7 @@ mod test {
         println!("{:?}", result);
         match result {
             Err(LightSpeedError::ValidationError { details }) => assert_eq!(
-                details.details().borrow()["fields[slug].value"],
+                details.details["fields[slug].value"],
                 vec![ErrorDetail::new(NOT_VALID_SLUG, vec![])]
             ),
             _ => assert!(false),
@@ -1090,7 +1090,7 @@ mod test {
         println!("{:?}", result);
         match result {
             Err(LightSpeedError::ValidationError { details }) => assert_eq!(
-                details.details().borrow()["fields[slug].value"],
+                details.details["fields[slug].value"],
                 vec![ErrorDetail::new(SHOULD_HAVE_SINGLE_VALUE_ARITY, vec![])]
             ),
             _ => assert!(false),

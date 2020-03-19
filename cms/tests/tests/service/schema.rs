@@ -25,9 +25,9 @@ fn should_create_schema() {
 
         let saved_schema = cms_module.schema_service.create_schema(schema)?;
 
-        assert!(schema_repo.exists_by_id(&c3p0.connection()?, &saved_schema.id)?);
-        assert_eq!(1, cms_module.schema_service.delete(saved_schema.clone())?);
-        assert!(!schema_repo.exists_by_id(&c3p0.connection()?, &saved_schema.id)?);
+        assert!(schema_repo.exists_by_id(&mut c3p0.connection()?, &saved_schema.id)?);
+        assert!(cms_module.schema_service.delete(saved_schema.clone()).is_ok());
+        assert!(!schema_repo.exists_by_id(&mut c3p0.connection()?, &saved_schema.id)?);
 
         Ok(())
     });
@@ -50,16 +50,16 @@ fn schema_name_should_be_unique_per_project() {
         };
 
         assert!(schema_repo
-            .save(&c3p0.connection()?, NewModel::new(schema.clone()))
+            .save(&mut c3p0.connection()?, NewModel::new(schema.clone()))
             .is_ok());
         assert!(schema_repo
-            .save(&c3p0.connection()?, NewModel::new(schema.clone()))
+            .save(&mut c3p0.connection()?, NewModel::new(schema.clone()))
             .is_err());
 
         schema.project_id = -2;
 
         assert!(schema_repo
-            .save(&c3p0.connection()?, NewModel::new(schema.clone()))
+            .save(&mut c3p0.connection()?, NewModel::new(schema.clone()))
             .is_ok());
 
         Ok(())
@@ -85,9 +85,9 @@ fn should_return_not_unique_validation_error() {
 
         match schema_service.create_schema(schema) {
             Err(LightSpeedError::ValidationError { details }) => {
-                assert_eq!(details.details().borrow().len(), 1);
+                assert_eq!(details.details.len(), 1);
                 assert_eq!(
-                    details.details().borrow().get("name").unwrap()[0],
+                    details.details.get("name").unwrap()[0],
                     ErrorDetail::from(ERR_NOT_UNIQUE)
                 );
             }
@@ -130,13 +130,13 @@ fn should_delete_schemas_by_project_id() {
             2,
             cms_module
                 .schema_service
-                .delete_by_project_id(&c3p0.connection()?, project_id)?
+                .delete_by_project_id(&mut c3p0.connection()?, project_id)?
         );
 
         // Assert
-        assert!(!schema_repo.exists_by_id(&c3p0.connection()?, &saved_schema_1.id)?);
-        assert!(!schema_repo.exists_by_id(&c3p0.connection()?, &saved_schema_2.id)?);
-        assert!(schema_repo.exists_by_id(&c3p0.connection()?, &saved_schema_other.id)?);
+        assert!(!schema_repo.exists_by_id(&mut c3p0.connection()?, &saved_schema_1.id)?);
+        assert!(!schema_repo.exists_by_id(&mut c3p0.connection()?, &saved_schema_2.id)?);
+        assert!(schema_repo.exists_by_id(&mut c3p0.connection()?, &saved_schema_other.id)?);
 
         Ok(())
     });

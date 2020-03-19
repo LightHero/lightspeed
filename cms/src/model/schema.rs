@@ -170,16 +170,16 @@ mod test {
 
         match result {
             Err(LightSpeedError::ValidationError { details }) => {
-                assert_eq!(details.details().borrow().len(), 2);
+                assert_eq!(details.details.len(), 2);
                 assert_eq!(
-                    details.details().borrow().get("name"),
+                    details.details.get("name"),
                     Some(&vec![ErrorDetail::new(
                         MUST_BE_GREATER_OR_EQUAL,
                         vec!["3".to_owned()]
                     )])
                 );
                 assert_eq!(
-                    details.details().borrow().get("schema.fields[2].name"),
+                    details.details.get("schema.fields[2].name"),
                     Some(&vec![ErrorDetail::new(ERR_NOT_UNIQUE, vec![])])
                 );
             }
@@ -219,9 +219,9 @@ mod test {
 
         match result {
             Err(LightSpeedError::ValidationError { details }) => {
-                assert_eq!(details.details().borrow().len(), 1);
+                assert_eq!(details.details.len(), 1);
                 assert_eq!(
-                    details.details().borrow().get("fields[1].name"),
+                    details.details.get("fields[1].name"),
                     Some(&vec![
                         ErrorDetail::new(
                         MUST_BE_GREATER_OR_EQUAL,
@@ -276,9 +276,9 @@ mod test {
 
         match result {
             Err(LightSpeedError::ValidationError { details }) => {
-                assert_eq!(details.details().borrow().len(), 2);
+                assert_eq!(details.details.len(), 2);
                 assert_eq!(
-                    details.details().borrow().get("fields[1].name"),
+                    details.details.get("fields[1].name"),
                     Some(&vec![
                         ErrorDetail::new(
                             NOT_VALID_FIELD_NAME,
@@ -287,7 +287,7 @@ mod test {
                     ])
                 );
                 assert_eq!(
-                    details.details().borrow().get("fields[3].name"),
+                    details.details.get("fields[3].name"),
                     Some(&vec![
                         ErrorDetail::new(
                             NOT_VALID_FIELD_NAME,

@@ -21,9 +21,9 @@ fn should_create_project() {
 
         let saved_project = cms_module.project_service.create_project(project)?;
 
-        assert!(project_repo.exists_by_id(&c3p0.connection()?, &saved_project.id)?);
-        assert_eq!(1, cms_module.project_service.delete(saved_project.clone())?);
-        assert!(!project_repo.exists_by_id(&c3p0.connection()?, &saved_project.id)?);
+        assert!(project_repo.exists_by_id(&mut c3p0.connection()?, &saved_project.id)?);
+        assert!(cms_module.project_service.delete(saved_project.clone()).is_ok());
+        assert!(!project_repo.exists_by_id(&mut c3p0.connection()?, &saved_project.id)?);
 
         Ok(())
     });
@@ -43,9 +43,9 @@ fn project_name_should_be_unique() {
         };
 
         assert!(project_repo
-            .save(&c3p0.connection()?, project.clone())
+            .save(&mut c3p0.connection()?, project.clone())
             .is_ok());
-        assert!(project_repo.save(&c3p0.connection()?, project).is_err());
+        assert!(project_repo.save(&mut c3p0.connection()?, project).is_err());
 
         Ok(())
     });
@@ -64,9 +64,9 @@ fn should_return_not_unique_validation_error() {
 
         match project_service.create_project(project) {
             Err(LightSpeedError::ValidationError { details }) => {
-                assert_eq!(details.details().borrow().len(), 1);
+                assert_eq!(details.details.len(), 1);
                 assert_eq!(
-                    details.details().borrow().get("name").unwrap()[0],
+                    details.details.get("name").unwrap()[0],
                     ErrorDetail::from(ERR_NOT_UNIQUE)
                 );
             }
@@ -110,12 +110,12 @@ fn should_delete_all_schemas_when_project_is_deleted() {
         let saved_schema_other = cms_module.schema_service.create_schema(schema)?;
 
         // Act
-        assert!(project_service.delete(saved_project)? == 1);
+        assert!(project_service.delete(saved_project).is_ok());
 
         // Assert
-        assert!(!schema_repo.exists_by_id(&c3p0.connection()?, &saved_schema_1.id)?);
-        assert!(!schema_repo.exists_by_id(&c3p0.connection()?, &saved_schema_2.id)?);
-        assert!(schema_repo.exists_by_id(&c3p0.connection()?, &saved_schema_other.id)?);
+        assert!(!schema_repo.exists_by_id(&mut c3p0.connection()?, &saved_schema_1.id)?);
+        assert!(!schema_repo.exists_by_id(&mut c3p0.connection()?, &saved_schema_2.id)?);
+        assert!(schema_repo.exists_by_id(&mut c3p0.connection()?, &saved_schema_other.id)?);
 
         Ok(())
     });

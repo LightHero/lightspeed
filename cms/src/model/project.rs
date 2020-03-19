@@ -37,9 +37,9 @@ pub mod test {
 
         match result {
             Err(LightSpeedError::ValidationError { details }) => {
-                assert_eq!(details.details().borrow().len(), 1);
+                assert_eq!(details.details.len(), 1);
                 assert_eq!(
-                    details.details().borrow().get("name"),
+                    details.details.get("name"),
                     Some(&vec![ErrorDetail::new(
                         MUST_BE_GREATER_OR_EQUAL,
                         vec!["3".to_owned()]
