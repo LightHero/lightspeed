@@ -10,6 +10,7 @@ keywords = ["schedule", "cron", "job", "periodic"]
 [dependencies]
 cron = "0.6"
 chrono = "0.4"
-err-derive= "0.1"
+chrono-tz = "0.5"
 log = "0.4"
+thiserror = "1.0"
 time = "0.1"

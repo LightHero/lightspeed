@@ -1,51 +1,39 @@
-pub mod error;
-pub mod job;
-pub mod scheduler;
-
 use crate::error::SchedulerError;
 use crate::job::{Job, JobScheduler};
 use crate::scheduler::Scheduler;
-use chrono::{Local, TimeZone, Utc};
+use chrono_tz::{Tz, UTC};
 use log::*;
 use std::convert::TryInto;
 use std::sync::Arc;
 
-pub struct JobExecutor<T: TimeZone + Send + Sync + 'static>
-where
-    <T as chrono::offset::TimeZone>::Offset: std::marker::Send,
-{
-    timezone: T,
-    jobs: Vec<Arc<JobScheduler<T>>>,
+pub mod error;
+pub mod job;
+pub mod scheduler;
+
+pub struct JobExecutor {
+    timezone: Option<Tz>,
+    jobs: Vec<Arc<JobScheduler>>,
 }
 
 /// Creates a new Executor that uses the Local time zone for the execution times evaluation.
 /// For example, the cron expressions will refer to the Local time zone.
-pub fn new_executor_with_local_tz() -> JobExecutor<Local> {
-    new_executor_with_tz(Local)
+pub fn new_executor_with_local_tz() -> JobExecutor {
+    new_executor_with_tz(None)
 }
 
 /// Creates a new Executor that uses the UTC time zone for the execution times evaluation.
 /// For example, the cron expressions will refer to the UTC time zone.
-pub fn new_executor_with_utc_tz() -> JobExecutor<Utc> {
-    new_executor_with_tz(Utc)
+pub fn new_executor_with_utc_tz() -> JobExecutor {
+    new_executor_with_tz(Some(UTC))
 }
 
 /// Creates a new Executor that uses a custom time zone for the execution times evaluation.
 /// For example, the cron expressions will refer to the specified time zone.
-pub fn new_executor_with_tz<T: TimeZone + Send + Sync + 'static>(timezone: T) -> JobExecutor<T>
-where
-    <T as chrono::offset::TimeZone>::Offset: std::marker::Send,
-{
-    JobExecutor {
-        timezone,
-        jobs: vec![],
-    }
+pub fn new_executor_with_tz(timezone: Option<Tz>) -> JobExecutor {
+    JobExecutor { timezone, jobs: vec![] }
 }
 
-impl<T: TimeZone + Send + Sync + 'static> JobExecutor<T>
-where
-    <T as chrono::offset::TimeZone>::Offset: std::marker::Send,
-{
+impl JobExecutor {
     /// Returns true if the JobExecutor contains no jobs.
     pub fn is_empty(&self) -> bool {
         self.jobs.is_empty()
@@ -82,11 +70,7 @@ where
                         if !is_running {
                             let job_clone = job_scheduler.clone();
                             std::thread::spawn(move || {
-                                info!(
-                                    "Start execution of Job [{}/{}]",
-                                    job_clone.job.group(),
-                                    job_clone.job.name()
-                                );
+                                info!("Start execution of Job [{}/{}]", job_clone.job.group(), job_clone.job.name());
                                 match job_clone.run() {
                                     Ok(()) => {
                                         info!(
@@ -106,7 +90,11 @@ where
                                 }
                             });
                         } else {
-                            debug!("Job [{}/{}] is pending but already running. It will not be executed.", job_scheduler.job.group(), job_scheduler.job.name())
+                            debug!(
+                                "Job [{}/{}] is pending but already running. It will not be executed.",
+                                job_scheduler.job.group(),
+                                job_scheduler.job.name()
+                            )
                         }
                     }
                     Err(err) => error!(
@@ -121,20 +109,17 @@ where
     }
 
     /// Adds a job to the JobExecutor.
-    pub fn add_job<S: TryInto<Scheduler>>(
-        &mut self,
-        schedule: S,
-        job: Job,
-    ) -> Result<(), SchedulerError>
+    pub fn add_job<S: TryInto<Scheduler>>(&mut self, schedule: S, job: Job) -> Result<(), SchedulerError>
     where
         SchedulerError: std::convert::From<<S as std::convert::TryInto<Scheduler>>::Error>,
     {
-        self.jobs.push(Arc::new(JobScheduler::new(
-            schedule,
-            self.timezone.clone(),
-            job,
-        )?));
+        self.add_job_with_scheduler(schedule.try_into()?, job);
         Ok(())
+    }
+
+    /// Adds a job to the JobExecutor.
+    pub fn add_job_with_scheduler(&mut self, schedule: Scheduler, job: Job) {
+        self.jobs.push(Arc::new(JobScheduler::new(schedule, self.timezone, job)));
     }
 }
 
@@ -159,7 +144,7 @@ pub mod test {
         executor
             .add_job(
                 Duration::new(0, 1),
-                Job::new("g", "n", move || {
+                Job::new("g", "n", None, move || {
                     tx.send("").unwrap();
                     println!("job - started");
                     count_clone.fetch_add(1, Ordering::SeqCst);
@@ -193,7 +178,7 @@ pub mod test {
         executor
             .add_job(
                 Duration::new(0, 1),
-                Job::new("g", "n", move || {
+                Job::new("g", "n", None, move || {
                     tx_1.send("").unwrap();
                     println!("job 1 - started");
                     count_clone_1.fetch_add(1, Ordering::SeqCst);
@@ -209,7 +194,7 @@ pub mod test {
         executor
             .add_job(
                 Duration::new(0, 1),
-                Job::new("g", "n", move || {
+                Job::new("g", "n", None, move || {
                     tx_2.send("").unwrap();
                     println!("job 2 - started");
                     count_2_clone.fetch_add(1, Ordering::SeqCst);
@@ -225,7 +210,7 @@ pub mod test {
         executor
             .add_job(
                 Duration::new(0, 1),
-                Job::new("g", "n", move || {
+                Job::new("g", "n", None, move || {
                     tx_3.send("").unwrap();
                     println!("job 3 - started");
                     count_3_clone.fetch_add(1, Ordering::SeqCst);
@@ -253,4 +238,9 @@ pub mod test {
         assert_eq!(count_3.load(Ordering::SeqCst), 1);
     }
 
+    #[test]
+    fn should_add_with_explicit_scheduler() {
+        let mut executor = new_executor_with_utc_tz();
+        executor.add_job_with_scheduler(Scheduler::Never, Job::new("g", "n", None, move || Ok(())));
+    }
 }

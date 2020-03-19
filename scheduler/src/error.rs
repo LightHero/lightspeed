@@ -1,9 +1,9 @@
-use err_derive::Error;
+use thiserror::Error;
 
 #[derive(Error, Debug)]
 pub enum SchedulerError {
-    #[error(display = "ScheduleDefinitionError: [{}]", message)]
+    #[error("ScheduleDefinitionError: [{message}]")]
     ScheduleDefinitionError { message: String },
-    #[error(display = "JobLockError: [{}]", message)]
+    #[error("JobLockError: [{message}]")]
     JobLockError { message: String },
 }
