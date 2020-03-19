@@ -1,27 +1,23 @@
 pub mod config;
 
-use err_derive::Error;
 use std::str::FromStr;
+use thiserror::Error;
 
 #[derive(Error, Debug)]
 pub enum LoggerError {
-    #[error(display = "LoggerConfigurationError: [{}]", message)]
+    #[error("LoggerConfigurationError: [{message}]")]
     LoggerConfigurationError { message: String },
 }
 
 impl From<log::SetLoggerError> for LoggerError {
     fn from(error: log::SetLoggerError) -> Self {
-        LoggerError::LoggerConfigurationError {
-            message: format!("{}", error),
-        }
+        LoggerError::LoggerConfigurationError { message: format!("{}", error) }
     }
 }
 
 impl From<std::io::Error> for LoggerError {
     fn from(error: std::io::Error) -> Self {
-        LoggerError::LoggerConfigurationError {
-            message: format!("{}", error),
-        }
+        LoggerError::LoggerConfigurationError { message: format!("{}", error) }
     }
 }
 
@@ -36,16 +32,9 @@ pub fn setup_logger(logger_config: &config::LoggerConfig) -> Result<(), LoggerEr
                 message
             ))
         })
-        .level(
-            log::LevelFilter::from_str(&logger_config.level).map_err(|err| {
-                LoggerError::LoggerConfigurationError {
-                    message: format!(
-                        "The specified logger level is not valid: [{}]. err: {}",
-                        &logger_config.level, err
-                    ),
-                }
-            })?,
-        );
+        .level(log::LevelFilter::from_str(&logger_config.level).map_err(|err| LoggerError::LoggerConfigurationError {
+            message: format!("The specified logger level is not valid: [{}]. err: {}", &logger_config.level, err),
+        })?);
     /*
     .level_for(
         "rust_actix",
@@ -58,6 +47,16 @@ pub fn setup_logger(logger_config: &config::LoggerConfig) -> Result<(), LoggerEr
             }
         })?);
         */
+
+    log_dispatcher = log_dispatcher
+        .level_for("lettre".to_owned(), log::LevelFilter::Warn)
+        .level_for("postgres".to_owned(), log::LevelFilter::Warn)
+        .level_for("hyper".to_owned(), log::LevelFilter::Warn)
+        .level_for("mio".to_owned(), log::LevelFilter::Warn)
+        .level_for("tokio_io".to_owned(), log::LevelFilter::Warn)
+        .level_for("tokio_reactor".to_owned(), log::LevelFilter::Warn)
+        .level_for("tokio_tcp".to_owned(), log::LevelFilter::Warn)
+        .level_for("tokio_uds".to_owned(), log::LevelFilter::Warn);
 
     if logger_config.stdout_output {
         log_dispatcher = log_dispatcher.chain(std::io::stdout());

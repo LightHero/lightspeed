@@ -6,33 +6,42 @@ use structopt::StructOpt;
 pub struct LoggerConfig {
     /// The Logger level
     /// Valid values: trace, debug, info, warn, error
-    #[structopt(long, default_value = "info")]
+    #[structopt(long, env = "LS_LOGGER_LEVEL", default_value = "info")]
     pub level: String,
 
     /// Determines whether the Logger should print to standard output.
     /// Valid values: true, false
-    #[structopt(long)]
+    #[structopt(long, env = "LS_LOGGER_ENABLE_STDOUT_OUTPUT", parse(try_from_str), default_value = "true")]
     pub stdout_output: bool,
 
     /// Determines whether the Logger should print to standard error.
     /// Valid values: true, false
-    #[structopt(long)]
+    #[structopt(long, env = "LS_LOGGER_ENABLE_STDERR_OUTPUT", parse(try_from_str), default_value = "false")]
     pub stderr_output: bool,
 
     /// A file path in the file system; if provided, the Logger will append any output to it.
-    #[structopt(long)]
+    #[structopt(long, env = "LS_LOGGER_FILE_OUTPUT_PATH")]
     pub file_output_path: Option<String>,
     // #[structopt(short = "o", long = "value_one", default_value = "10000")]
     // pub module_level: HashMap<String, String>,
 }
 
-impl Default for LoggerConfig {
-    fn default() -> Self {
-        LoggerConfig {
-            level: "info".to_owned(),
-            stdout_output: false,
-            stderr_output: false,
-            file_output_path: None,
-        }
+impl LoggerConfig {
+    pub fn build() -> Self {
+        let app = Self::clap().setting(structopt::clap::AppSettings::AllowExternalSubcommands);
+        Self::from_clap(&app.get_matches())
+    }
+}
+
+#[cfg(test)]
+mod test {
+
+    use super::*;
+
+    #[test]
+    fn should_build_config() {
+        let config = LoggerConfig::build();
+        assert!(config.stdout_output);
+        assert!(!config.stderr_output);
     }
 }
