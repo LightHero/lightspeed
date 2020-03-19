@@ -34,11 +34,8 @@ impl ProjectRepository for PgProjectRepository {
         conn: &mut Self::CONN,
         id: i64,
     ) -> Result<Model<ProjectData>, LightSpeedError> {
-        self.repo
-            .fetch_one_by_id(conn, &id)?
-            .ok_or_else(|| LightSpeedError::BadRequest {
-                message: format!("No project found with id [{}]", id),
-            })
+        Ok(self.repo
+            .fetch_one_by_id(conn, &id)?)
     }
 
     fn exists_by_name(&self, conn: &mut Self::CONN, name: &str) -> Result<bool, LightSpeedError> {
@@ -71,8 +68,8 @@ impl ProjectRepository for PgProjectRepository {
     fn delete(
         &self,
         conn: &mut Self::CONN,
-        model: &Model<ProjectData>,
-    ) -> Result<u64, LightSpeedError> {
+        model: Model<ProjectData>,
+    ) -> Result<Model<ProjectData>, LightSpeedError> {
         Ok(self.repo.delete(conn, model)?)
     }
 }

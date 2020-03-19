@@ -66,14 +66,14 @@ impl Content {
         {
             for (content_field_name, content_field_value) in (&self.fields).iter() {
                 let scoped_name = format!("fields[{}]", content_field_name);
-                let scoped_err = error_details.with_scope(&scoped_name);
+                let mut scoped_err = error_details.with_scope(&scoped_name);
 
                 if let Some(schema_field) = schema_fields.remove(content_field_name) {
                     validate_content_field(
                         content_field_name,
                         content_field_value,
                         schema_field,
-                        &scoped_err,
+                        &mut scoped_err,
                     );
                 } else {
                     error_details.add_detail(scoped_name.into(), ERR_UNKNOWN_FIELD.into());
@@ -99,11 +99,11 @@ impl Content {
     }
 }
 
-fn validate_content_field(
+fn validate_content_field<E: ErrorDetails>(
     content_field_name: &str,
     content_field_value: &ContentFieldValue,
     schema_field: &SchemaField,
-    error_details: &mut dyn ErrorDetails,
+    error_details: &mut E,
 ) {
     validate_number_ge(error_details, "name", 1, content_field_name.len());
 
@@ -199,11 +199,11 @@ fn validate_content_field(
     }
 }
 
-fn validate_arity<T, F: Fn(&str, &Option<T>)>(
+fn validate_arity<T, F: Fn(&str, &Option<T>), E: ErrorDetails>(
     required: bool,
     schema_arity: &SchemaFieldArity,
     arity: &ContentFieldValueArity<Option<T>>,
-    error_details: &mut dyn ErrorDetails,
+    error_details: &mut E,
     full_field_name: &str,
     value_validation: F,
 ) {
@@ -237,24 +237,24 @@ fn validate_arity<T, F: Fn(&str, &Option<T>)>(
     }
 }
 
-fn validate_boolean<S: Into<String>>(
+fn validate_boolean<S: Into<String>, E: ErrorDetails>(
     required: bool,
     full_field_name: S,
     value: Option<bool>,
-    error_details: &mut dyn ErrorDetails,
+    error_details: &mut E,
 ) {
     if value.is_none() && required {
-        error_details.add_detail(full_field_name, ERR_VALUE_REQUIRED.into());
+        error_details.add_detail(full_field_name.into(), ERR_VALUE_REQUIRED.into());
     }
 }
 
-fn validate_number<S: Into<String> + Clone>(
+fn validate_number<S: Into<String> + Clone, E: ErrorDetails>(
     required: bool,
     full_field_name: S,
     value: &Option<usize>,
     min: &Option<usize>,
     max: &Option<usize>,
-    error_details: &mut dyn ErrorDetails,
+    error_details: &mut E,
 ) {
     if let Some(value) = value {
         if let Some(min) = min {
@@ -264,33 +264,33 @@ fn validate_number<S: Into<String> + Clone>(
             validate_number_le(error_details, full_field_name, *max, *value)
         }
     } else if required {
-        error_details.add_detail(full_field_name, ERR_VALUE_REQUIRED.into());
+        error_details.add_detail(full_field_name.into(), ERR_VALUE_REQUIRED.into());
     }
 }
 
-fn validate_slug<S: Into<String>>(
+fn validate_slug<S: Into<String>, E: ErrorDetails>(
     required: bool,
     full_field_name: S,
     value: &Option<String>,
-    error_details: &mut dyn ErrorDetails,
+    error_details: &mut E,
 ) {
     if let Some(value) = value {
         //let reg: &Regex = &SLUG_REGEX;
         if !SLUG_REGEX.is_match(value) {
-            error_details.add_detail(full_field_name, NOT_VALID_SLUG.into());
+            error_details.add_detail(full_field_name.into(), NOT_VALID_SLUG.into());
         }
     } else if required {
-        error_details.add_detail(full_field_name, ERR_VALUE_REQUIRED.into());
+        error_details.add_detail(full_field_name.into(), ERR_VALUE_REQUIRED.into());
     }
 }
 
-fn validate_string<S: Into<String> + Clone>(
+fn validate_string<S: Into<String> + Clone, E: ErrorDetails>(
     required: bool,
     full_field_name: S,
     value: &Option<String>,
     min_length: &Option<usize>,
     max_length: &Option<usize>,
-    error_details: &mut dyn ErrorDetails,
+    error_details: &mut E,
 ) {
     if let Some(value) = value {
         if let Some(min_length) = min_length {

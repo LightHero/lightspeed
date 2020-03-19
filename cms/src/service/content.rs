@@ -116,10 +116,10 @@ impl<RepoManager: CmsRepositoryManager> ContentService<RepoManager> {
         })
     }
 
-    pub fn delete_content(&self, content_model: ContentModel) -> Result<u64, LightSpeedError> {
+    pub fn delete_content(&self, content_model: ContentModel) -> Result<ContentModel, LightSpeedError> {
         self.c3p0.transaction(move |conn| {
             let repo = self.get_content_repo_by_schema_id(content_model.data.schema_id);
-            repo.delete(conn, &content_model)
+            repo.delete(conn, content_model)
         })
     }
 

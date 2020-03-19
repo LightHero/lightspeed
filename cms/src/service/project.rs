@@ -49,11 +49,11 @@ impl<RepoManager: CmsRepositoryManager> ProjectService<RepoManager> {
         })
     }
 
-    pub fn delete(&self, project_model: ProjectModel) -> Result<u64, LightSpeedError> {
+    pub fn delete(&self, project_model: ProjectModel) -> Result<ProjectModel, LightSpeedError> {
         self.c3p0.transaction(move |conn| {
             self.schema_service
                 .delete_by_project_id(conn, project_model.id)?;
-            self.project_repo.delete(conn, &project_model)
+            self.project_repo.delete(conn, project_model)
         })
     }
 }

@@ -40,7 +40,7 @@ pub trait ProjectRepository: Clone {
         model: ProjectModel,
     ) -> Result<ProjectModel, LightSpeedError>;
 
-    fn delete(&self, conn: &mut Self::CONN, model: &ProjectModel) -> Result<u64, LightSpeedError>;
+    fn delete(&self, conn: &mut Self::CONN, model: ProjectModel) -> Result<ProjectModel, LightSpeedError>;
 }
 
 pub trait SchemaRepository: Clone {
@@ -64,7 +64,7 @@ pub trait SchemaRepository: Clone {
     fn update(&self, conn: &mut Self::CONN, model: SchemaModel)
         -> Result<SchemaModel, LightSpeedError>;
 
-    fn delete(&self, conn: &mut Self::CONN, model: &SchemaModel) -> Result<u64, LightSpeedError>;
+    fn delete(&self, conn: &mut Self::CONN, model: SchemaModel) -> Result<SchemaModel, LightSpeedError>;
 
     fn delete_by_project_id(
         &self,
@@ -111,5 +111,5 @@ pub trait ContentRepository: Clone {
         model: ContentModel,
     ) -> Result<ContentModel, LightSpeedError>;
 
-    fn delete(&self, conn: &mut Self::CONN, model: &ContentModel) -> Result<u64, LightSpeedError>;
+    fn delete(&self, conn: &mut Self::CONN, model: ContentModel) -> Result<ContentModel, LightSpeedError>;
 }

@@ -76,15 +76,8 @@ impl ContentRepository for PgContentRepository {
         conn: &mut Self::CONN,
         id: i64,
     ) -> Result<Model<ContentData>, LightSpeedError> {
-        self.repo
-            .fetch_one_by_id(conn, &id)?
-            .ok_or_else(|| LightSpeedError::BadRequest {
-                message: format!(
-                    "No content found with id [{}] in [{}]",
-                    id,
-                    self.repo.queries().qualified_table_name
-                ),
-            })
+        Ok(self.repo
+            .fetch_one_by_id(conn, &id)?)
     }
 
     fn save(
@@ -106,8 +99,8 @@ impl ContentRepository for PgContentRepository {
     fn delete(
         &self,
         conn: &mut Self::CONN,
-        model: &Model<ContentData>,
-    ) -> Result<u64, LightSpeedError> {
+        model: Model<ContentData>,
+    ) -> Result<Model<ContentData>, LightSpeedError> {
         Ok(self.repo.delete(conn, model)?)
     }
 }
