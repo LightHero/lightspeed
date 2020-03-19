@@ -1,43 +1,42 @@
-use crate::config::EmailConfig;
+use crate::config::EmailClientConfig;
 use crate::model::email::EmailMessage;
-use crate::service::full_email::FullEmailService;
-use crate::service::in_memory_email::InMemoryEmailService;
-use crate::service::no_ops_email::NoOpsEmailService;
+use crate::service::full_email::FullEmailClient;
+use crate::service::in_memory_email::InMemoryEmailClient;
+use crate::service::no_ops_email::NoOpsEmailClient;
 use lightspeed_core::error::LightSpeedError;
 use std::str::FromStr;
 
-pub trait EmailService: Send + Sync {
+pub trait EmailClient: Send + Sync {
     fn send(&self, email_message: EmailMessage) -> Result<(), LightSpeedError>;
     fn get_emails(&self) -> Result<Vec<EmailMessage>, LightSpeedError>;
     fn clear_emails(&self) -> Result<(), LightSpeedError>;
+    fn retain_emails(&self, retain: Box<dyn FnMut(&EmailMessage) -> bool>) -> Result<(), LightSpeedError>;
 }
 
-pub fn new(email_config: EmailConfig) -> Result<Box<dyn EmailService>, LightSpeedError> {
-    match &email_config.service_type {
-        EmailServiceType::Full => Ok(Box::new(FullEmailService::new(email_config)?)),
-        EmailServiceType::InMemory => Ok(Box::new(InMemoryEmailService::new())),
-        EmailServiceType::NoOps => Ok(Box::new(NoOpsEmailService::new())),
+pub fn new(email_config: EmailClientConfig) -> Result<Box<dyn EmailClient>, LightSpeedError> {
+    match &email_config.client_type {
+        EmailClientType::Full => Ok(Box::new(FullEmailClient::new(email_config)?)),
+        EmailClientType::InMemory => Ok(Box::new(InMemoryEmailClient::new())),
+        EmailClientType::NoOps => Ok(Box::new(NoOpsEmailClient::new())),
     }
 }
 
 #[derive(Debug, PartialEq, Copy, Clone)]
-pub enum EmailServiceType {
+pub enum EmailClientType {
     Full,
     InMemory,
     NoOps,
 }
 
-impl FromStr for EmailServiceType {
+impl FromStr for EmailClientType {
     type Err = LightSpeedError;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        match s {
-            "Full" => Ok(EmailServiceType::Full),
-            "InMemory" => Ok(EmailServiceType::InMemory),
-            "NoOps" => Ok(EmailServiceType::NoOps),
-            _ => Err(LightSpeedError::ConfigurationError {
-                message: format!("Unknown Email service_type [{}]", s),
-            }),
+        match s.to_lowercase().as_str() {
+            "full" => Ok(EmailClientType::Full),
+            "in_memory" => Ok(EmailClientType::InMemory),
+            "no_ops" => Ok(EmailClientType::NoOps),
+            _ => Err(LightSpeedError::ConfigurationError { message: format!("Unknown Email client_type [{}]", s) }),
         }
     }
 }

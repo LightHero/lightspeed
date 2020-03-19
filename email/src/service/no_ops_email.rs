@@ -1,18 +1,18 @@
 use crate::model::email::EmailMessage;
-use crate::service::email::EmailService;
+use crate::service::email::EmailClient;
 use lightspeed_core::error::LightSpeedError;
 use log::warn;
 
 #[derive(Clone, Default)]
-pub struct NoOpsEmailService {}
+pub struct NoOpsEmailClient {}
 
-impl NoOpsEmailService {
+impl NoOpsEmailClient {
     pub fn new() -> Self {
         Self::default()
     }
 }
 
-impl EmailService for NoOpsEmailService {
+impl EmailClient for NoOpsEmailClient {
     fn send(&self, _email_message: EmailMessage) -> Result<(), LightSpeedError> {
         warn!("NoOpsEmailService.send - Received an email but the email is NOT going to be sent");
         Ok(())
@@ -26,6 +26,11 @@ impl EmailService for NoOpsEmailService {
 
     fn clear_emails(&self) -> Result<(), LightSpeedError> {
         warn!("NoOpsEmailService.clear_emails - This is a no ops");
+        Ok(())
+    }
+
+    fn retain_emails(&self, _: Box<dyn FnMut(&EmailMessage) -> bool>) -> Result<(), LightSpeedError> {
+        warn!("NoOpsEmailService.retain_emails - This is a no ops");
         Ok(())
     }
 }

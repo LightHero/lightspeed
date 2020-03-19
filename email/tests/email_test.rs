@@ -1,15 +1,13 @@
-use lightspeed_email::config::EmailConfig;
+use lightspeed_core::model::boolean::Boolean;
+use lightspeed_email::config::EmailClientConfig;
 use lightspeed_email::model::email::EmailMessage;
-use lightspeed_email::service::email::{new, EmailServiceType};
+use lightspeed_email::service::email::{new, EmailClientType};
 use testcontainers::*;
 
-pub fn new_mail_server(
-    docker: &clients::Cli,
-) -> (u16, Container<clients::Cli, images::generic::GenericImage>) {
+pub fn new_mail_server(docker: &clients::Cli) -> (u16, Container<clients::Cli, images::generic::GenericImage>) {
     let node = docker.run(
-        images::generic::GenericImage::new("mailhog/mailhog:v1.0.0").with_wait_for(
-            images::generic::WaitFor::message_on_stdout("Creating API v2 with WebPath:"),
-        ),
+        images::generic::GenericImage::new("mailhog/mailhog:v1.0.0")
+            .with_wait_for(images::generic::WaitFor::message_on_stdout("Creating API v2 with WebPath:")),
     );
 
     (node.get_host_port(1025).unwrap() as u16, node)
@@ -23,17 +21,21 @@ pub fn should_start_the_mailserver() {
     let server_port = server.0;
     println!("using port: {}", server_port);
 
-    let config = EmailConfig {
+    let config = EmailClientConfig {
         server_port,
         server_address: "127.0.0.1".to_owned(),
-        service_type: EmailServiceType::Full,
+        client_type: EmailClientType::Full,
+        server_username: "".to_owned(),
+        server_password: "".to_owned(),
+        server_use_tls: Boolean::False,
     };
 
     let email_service = new(config).unwrap();
 
     let mut message = EmailMessage::new();
-    message.from = Some("ufoscout@gmail.com".to_owned());
+    message.from = Some("UFO <ufoscout@gmail.com>".to_owned());
     message.to.push("ufoscout@gmail.com".to_owned());
+    message.to.push("NAME <test@gmail.com>".to_owned());
     message.subject = Some("subject".to_owned());
 
     // Act
@@ -42,3 +44,28 @@ pub fn should_start_the_mailserver() {
     assert!(email_service.send(message.clone()).is_ok());
     assert!(email_service.send(message.clone()).is_ok());
 }
+
+// #[test]
+// pub fn full_client_should_use_gmail() {
+//     // Arrange
+//
+//     let config = EmailClientConfig {
+//         server_port: 465,
+//         server_address: "smtp.gmail.com".to_owned(),
+//         client_type: EmailClientType::Full,
+//         server_username: "ufoscout@gmail.com".to_owned(),
+//         server_password: "".to_owned(),
+//         server_use_tls: Boolean::True,
+//     };
+//
+//     let email_service = new(config).unwrap();
+//
+//     let mut message = EmailMessage::new();
+//     message.from = Some("UFOSCOUT <ufoscout@gmail.com>".to_owned());
+//     message.to.push("FRANCESCO <francesco.cina@yahoo.it>".to_owned());
+//     message.subject = Some("EMAIL FROM RUST!!".to_owned());
+//
+//     // Act
+//     assert!(email_service.send(message.clone()).is_ok());
+//
+// }
