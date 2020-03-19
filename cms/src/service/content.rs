@@ -100,7 +100,7 @@ impl<RepoManager: CmsRepositoryManager> ContentService<RepoManager> {
                                     let count = repo.count_all_by_field_value(conn, &field.name, &value)?;
                                     if count > 0 {
                                         let scoped_name = format!("fields[{}]", &field.name);
-                                        error_details.add_detail(scoped_name, ERR_NOT_UNIQUE);
+                                        error_details.add_detail(scoped_name, ERR_NOT_UNIQUE.into());
                                     }
                                 }
 

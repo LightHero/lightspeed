@@ -35,7 +35,7 @@ impl<RepoManager: CmsRepositoryManager> SchemaService<RepoManager> {
             };
             Validator::validate((&data, |error_details: &mut dyn ErrorDetails| {
                 if name_already_exists {
-                    error_details.add_detail("name", ERR_NOT_UNIQUE);
+                    error_details.add_detail("name".into(), ERR_NOT_UNIQUE.into());
                 }
                 Ok(())
             }))?;

@@ -305,7 +305,7 @@ fn validate_string<S: Into<String> + Clone>(
             validate_number_le(error_details, full_field_name, *max_length, value.len())
         }
     } else if required {
-        error_details.add_detail(full_field_name, ERR_VALUE_REQUIRED.into());
+        error_details.add_detail(full_field_name.into(), ERR_VALUE_REQUIRED.into());
     }
 }
 
