@@ -4,11 +4,12 @@ use crate::model::schema::{Schema, SchemaFieldArity, SchemaModel};
 use crate::repository::CmsRepositoryManager;
 use crate::repository::ContentRepository;
 use c3p0::*;
-use chashmap::{CHashMap, ReadGuard};
 use lightspeed_core::error::{ErrorDetails, LightSpeedError};
 use lightspeed_core::service::validator::{Validator, ERR_NOT_UNIQUE};
 use std::cell::RefCell;
 use std::ops::DerefMut;
+use lightspeed_cache::Cache;
+use std::sync::Arc;
 
 const CMS_CONTENT_TABLE_PREFIX: &str = "LS_CMS_CONTENT_";
 
@@ -16,7 +17,7 @@ const CMS_CONTENT_TABLE_PREFIX: &str = "LS_CMS_CONTENT_";
 pub struct ContentService<RepoManager: CmsRepositoryManager> {
     c3p0: RepoManager::C3P0,
     repo_factory: RepoManager,
-    content_repos: CHashMap<i64, RepoManager::ContentRepo>,
+    content_repos: Cache<i64, RepoManager::ContentRepo>,
 }
 
 impl<RepoManager: CmsRepositoryManager> ContentService<RepoManager> {
@@ -24,7 +25,7 @@ impl<RepoManager: CmsRepositoryManager> ContentService<RepoManager> {
         ContentService {
             c3p0,
             repo_factory,
-            content_repos: CHashMap::new(),
+            content_repos: Cache::new(u32::max_value()),
         }
     }
 
@@ -137,24 +138,14 @@ impl<RepoManager: CmsRepositoryManager> ContentService<RepoManager> {
         })
     }
 
-    // ToDo: remove unwraps!! AND REWRITE...
     fn get_content_repo_by_schema_id(
         &self,
         schema_id: i64,
-    ) -> ReadGuard<'_, i64, RepoManager::ContentRepo> {
-        let content_repo = self.content_repos.get(&schema_id);
-        if content_repo.is_none() {
-            {
-                self.content_repos.insert(
-                    schema_id,
-                    self.repo_factory
-                        .content_repo(&self.content_table_name(schema_id)),
-                );
-            }
-            self.content_repos.get(&schema_id).unwrap()
-        } else {
-            content_repo.unwrap()
-        }
+    ) -> Arc<RepoManager::ContentRepo> {
+        self.content_repos.get_or_insert_with(schema_id, || {
+            self.repo_factory
+                .content_repo(&self.content_table_name(schema_id))
+        })
     }
 
     fn content_table_name(&self, schema_id: i64) -> String {
