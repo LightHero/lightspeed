@@ -9,7 +9,7 @@ use lightspeed_core::utils::new_hyphenated_uuid;
 
 #[test]
 fn should_create_schema() {
-    test(|cms_module| {
+    test(false, |cms_module| {
         let c3p0 = cms_module.repo_manager.c3p0();
         let schema_repo = cms_module.repo_manager.schema_repo();
 
@@ -38,7 +38,7 @@ fn should_create_schema() {
 
 #[test]
 fn schema_name_should_be_unique_per_project() {
-    test(|cms_module| {
+    test(false, |cms_module| {
         let c3p0 = cms_module.repo_manager.c3p0();
         let schema_repo = cms_module.repo_manager.schema_repo();
 
@@ -71,7 +71,7 @@ fn schema_name_should_be_unique_per_project() {
 
 #[test]
 fn should_return_not_unique_validation_error() {
-    test(|cms_module| {
+    test(false, |cms_module| {
         let schema_service = &cms_module.schema_service;
 
         let schema = CreateSchemaDto {
@@ -103,7 +103,7 @@ fn should_return_not_unique_validation_error() {
 
 #[test]
 fn should_delete_schemas_by_project_id() {
-    test(|cms_module| {
+    test(false, |cms_module| {
         // Arrange
         let c3p0 = cms_module.repo_manager.c3p0();
         let schema_repo = cms_module.repo_manager.schema_repo();

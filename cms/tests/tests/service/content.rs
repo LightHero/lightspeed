@@ -14,7 +14,7 @@ use std::collections::HashMap;
 
 #[test]
 fn should_create_and_drop_content_table() {
-    test(|cms_module| {
+    test(false, |cms_module| {
         let content_service = &cms_module.content_service;
         let schema_service = &cms_module.schema_service;
 
@@ -86,7 +86,7 @@ fn should_create_and_drop_content_table() {
 
 #[test]
 fn should_save_and_delete_content() {
-    test(|cms_module| {
+    test(false, |cms_module| {
         let content_service = &cms_module.content_service;
         let schema_service = &cms_module.schema_service;
 
@@ -178,7 +178,7 @@ fn should_save_and_delete_content() {
 
 #[test]
 fn should_validate_content_on_save() {
-    test(|cms_module| {
+    test(false, |cms_module| {
         let content_service = &cms_module.content_service;
         let schema_service = &cms_module.schema_service;
 
@@ -232,7 +232,7 @@ fn should_validate_content_on_save() {
 
 #[test]
 fn should_create_unique_constraints_for_slug_schema_fields() {
-    test(|cms_module| {
+    test(false, |cms_module| {
         let content_service = &cms_module.content_service;
         let schema_service = &cms_module.schema_service;
 
@@ -289,7 +289,7 @@ fn should_create_unique_constraints_for_slug_schema_fields() {
 
 #[test]
 fn should_create_unique_constraints_for_string_unique_schema_fields() {
-    test(|cms_module| {
+    test(false, |cms_module| {
         let content_service = &cms_module.content_service;
         let schema_service = &cms_module.schema_service;
 
@@ -351,7 +351,7 @@ fn should_create_unique_constraints_for_string_unique_schema_fields() {
 
 #[test]
 fn should_create_unique_constraints_for_number_unique_schema_fields() {
-    test(|cms_module| {
+    test(false, |cms_module| {
         let content_service = &cms_module.content_service;
         let schema_service = &cms_module.schema_service;
 
@@ -413,7 +413,7 @@ fn should_create_unique_constraints_for_number_unique_schema_fields() {
 
 #[test]
 fn should_create_unique_constraints_for_boolean_unique_schema_fields() {
-    test(|cms_module| {
+    test(false, |cms_module| {
         let content_service = &cms_module.content_service;
         let schema_service = &cms_module.schema_service;
 
@@ -473,7 +473,7 @@ fn should_create_unique_constraints_for_boolean_unique_schema_fields() {
 
 #[test]
 fn should_create_unique_constraints_for_field_name_with_max_length() {
-    test(|cms_module| {
+    test(false, |cms_module| {
         let content_service = &cms_module.content_service;
         let schema_service = &cms_module.schema_service;
 

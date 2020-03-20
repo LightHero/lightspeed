@@ -21,7 +21,7 @@ impl<K: Hash + Eq, V> Cache<K, V> {
     pub fn new(ttl_seconds: u32) -> Self {
         Self {
             map: Arc::new(DashMap::default()),
-            ttl_ms: (ttl_seconds * 1000) as i64,
+            ttl_ms: (ttl_seconds as i64) * 1000,
         }
     }
 
@@ -247,5 +247,10 @@ mod test {
 
         cache.remove(&"hello");
         assert!(cloned_cache.get(&"hello").is_none());
+    }
+
+    #[test]
+    fn should_not_overflow_when_ttl_is_max() {
+        Cache::new(u32::max_value());
     }
 }
