@@ -8,7 +8,8 @@ use lettre_email::{Email, Mailbox};
 use lightspeed_core::error::LightSpeedError;
 use log::*;
 use native_tls::TlsConnector;
-use std::sync::{Arc, Mutex};
+use std::sync::{Arc};
+use parking_lot::Mutex;
 
 #[derive(Clone)]
 pub struct FullEmailClient {
@@ -114,13 +115,7 @@ impl EmailClient for FullEmailClient {
 
         let mut client =
             self.client
-                .lock()
-                .map_err(|err| LightSpeedError::InternalServerError {
-                    message: format!(
-                        "FullEmailService.send - Cannot obtain SMTP client lock. Err: {}",
-                        err
-                    ),
-                })?;
+                .lock();
 
         let response =
             client

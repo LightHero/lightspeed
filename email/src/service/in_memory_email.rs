@@ -2,7 +2,8 @@ use crate::model::email::EmailMessage;
 use crate::service::email::EmailClient;
 use lightspeed_core::error::LightSpeedError;
 use log::warn;
-use std::sync::{Arc, Mutex};
+use std::sync::{Arc};
+use parking_lot::Mutex;
 
 #[derive(Clone, Default)]
 pub struct InMemoryEmailClient {
@@ -21,13 +22,7 @@ impl EmailClient for InMemoryEmailClient {
 
         let mut lock = self
             .emails
-            .lock()
-            .map_err(|err| LightSpeedError::InternalServerError {
-                message: format!(
-                    "InMemoryEmailService.send - Cannot obtain lock. Err: [{}]",
-                    err
-                ),
-            })?;
+            .lock();
 
         lock.push(email_message);
         Ok(())
@@ -36,26 +31,14 @@ impl EmailClient for InMemoryEmailClient {
     fn get_emails(&self) -> Result<Vec<EmailMessage>, LightSpeedError> {
         let lock = self
             .emails
-            .lock()
-            .map_err(|err| LightSpeedError::InternalServerError {
-                message: format!(
-                    "InMemoryEmailService.clear_emails - Cannot obtain lock . Err: [{}]",
-                    err
-                ),
-            })?;
+            .lock();
         Ok(lock.clone())
     }
 
     fn clear_emails(&self) -> Result<(), LightSpeedError> {
         let mut lock = self
             .emails
-            .lock()
-            .map_err(|err| LightSpeedError::InternalServerError {
-                message: format!(
-                    "InMemoryEmailService.clear_emails - Cannot obtain lock . Err: [{}]",
-                    err
-                ),
-            })?;
+            .lock();
         lock.clear();
         Ok(())
     }
@@ -66,13 +49,7 @@ impl EmailClient for InMemoryEmailClient {
     ) -> Result<(), LightSpeedError> {
         let mut lock = self
             .emails
-            .lock()
-            .map_err(|err| LightSpeedError::InternalServerError {
-                message: format!(
-                    "InMemoryEmailService.clear_emails - Cannot obtain lock . Err: [{}]",
-                    err
-                ),
-            })?;
+            .lock();
         lock.retain(|email| retain(email));
         Ok(())
     }

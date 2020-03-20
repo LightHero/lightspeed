@@ -3,7 +3,7 @@ use crate::scheduler::Scheduler;
 use chrono::{DateTime, Utc};
 use chrono_tz::Tz;
 use log::*;
-use std::sync::{Mutex, RwLock};
+use parking_lot::{RwLock, Mutex};
 
 pub struct JobScheduler {
     pub job: Job,
@@ -34,7 +34,7 @@ impl JobScheduler {
         }
 
         // Check if NOW is on or after next_run_at
-        if let Some(next_run_at) = self.next_run_at.lock().unwrap().as_ref() {
+        if let Some(next_run_at) = self.next_run_at.lock().as_ref() {
             *next_run_at < Utc::now()
         } else {
             false
@@ -49,11 +49,11 @@ impl JobScheduler {
         let now = Utc::now();
 
         // Determine the next time it should run
-        let mut next_run_at = self.next_run_at.lock().unwrap();
+        let mut next_run_at = self.next_run_at.lock();
         *next_run_at = self.schedule.next(&now, self.timezone);
 
         // Save the last time this ran
-        let mut last_run_at = self.last_run_at.lock().unwrap();
+        let mut last_run_at = self.last_run_at.lock();
         *last_run_at = Some(now);
 
         run_result
@@ -99,13 +99,7 @@ impl Job {
     pub fn is_running(&self) -> Result<bool, SchedulerError> {
         let read = self
             .is_running
-            .read()
-            .map_err(|err| SchedulerError::JobLockError {
-                message: format!(
-                    "Cannot read is_running status of job [{}/{}]. Err: {}",
-                    self.group, self.name, err
-                ),
-            })?;
+            .read();
         Ok(*read)
     }
 
@@ -146,26 +140,14 @@ impl Job {
     fn exec(&self) -> Result<(), Box<dyn std::error::Error>> {
         let function = self
             .function
-            .lock()
-            .map_err(|err| SchedulerError::JobLockError {
-                message: format!(
-                    "Cannot execute job [{}/{}]. Err: {}",
-                    self.group, self.name, err
-                ),
-            })?;
+            .lock();
         (function)()
     }
 
     fn set_running(&self, is_running: bool) -> Result<(), SchedulerError> {
         let mut write = self
             .is_running
-            .write()
-            .map_err(|err| SchedulerError::JobLockError {
-                message: format!(
-                    "Cannot write is_running status of job [{}/{}]. Err: {}",
-                    self.group, self.name, err
-                ),
-            })?;
+            .write();
 
         if is_running.eq(&*write) {
             return Err(SchedulerError::JobLockError {
@@ -204,7 +186,7 @@ pub mod test {
                 println!("job - started");
                 tx_clone.send("").unwrap();
                 println!("job - Trying to get the lock");
-                let _lock = lock_clone.lock().unwrap();
+                let _lock = lock_clone.lock();
                 println!("job - lock acquired");
                 Ok(())
             }),
@@ -213,7 +195,7 @@ pub mod test {
         assert!(!job_scheduler.job.is_running().unwrap());
 
         {
-            let _lock = lock.lock().unwrap();
+            let _lock = lock.lock();
             let job_clone = job_scheduler.clone();
             std::thread::spawn(move || {
                 println!("starting job");
@@ -239,7 +221,7 @@ pub mod test {
         let job = Job::new("g", "n", Some(max_retries), move || {
             println!("job - started");
             println!("job - Trying to get the lock");
-            let mut lock = lock_clone.lock().unwrap();
+            let mut lock = lock_clone.lock();
             let count = *lock;
             *lock = count + 1;
             println!("job - count {}", count);
@@ -250,7 +232,7 @@ pub mod test {
 
         assert!(result.is_ok());
 
-        let lock = lock.lock().unwrap();
+        let lock = lock.lock();
         let count = *lock;
         assert_eq!(1, count);
     }
@@ -265,7 +247,7 @@ pub mod test {
         let job = Job::new("g", "n", Some(max_retries), move || {
             println!("job - started");
             println!("job - Trying to get the lock");
-            let mut lock = lock_clone.lock().unwrap();
+            let mut lock = lock_clone.lock();
             let count = *lock;
             *lock = count + 1;
             println!("job - count {}", count);
@@ -278,7 +260,7 @@ pub mod test {
 
         assert!(result.is_err());
 
-        let lock = lock.lock().unwrap();
+        let lock = lock.lock();
         let count = *lock;
         assert_eq!(max_retries + 1, count);
     }
@@ -294,7 +276,7 @@ pub mod test {
         let job = Job::new("g", "n", Some(max_retries), move || {
             println!("job - started");
             println!("job - Trying to get the lock");
-            let mut lock = lock_clone.lock().unwrap();
+            let mut lock = lock_clone.lock();
             let count = *lock;
             *lock = count + 1;
             println!("job - count {}", count);
@@ -312,7 +294,7 @@ pub mod test {
 
         assert!(result.is_ok());
 
-        let lock = lock.lock().unwrap();
+        let lock = lock.lock();
         let count = *lock;
         assert_eq!(succeed_at + 1, count);
     }
