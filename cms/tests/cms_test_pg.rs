@@ -16,13 +16,13 @@ pub type RepoManager = PgCmsRepositoryManager;
 lazy_static! {
     static ref DOCKER: clients::Cli = clients::Cli::default();
     pub static ref SINGLETON: MaybeSingle<(
-        (CmsModule<RepoManager>),
+        CmsModule<RepoManager>,
         Container<'static, clients::Cli, images::postgres::Postgres>
     )> = MaybeSingle::new(|| init());
 }
 
 fn init() -> (
-    (CmsModule<RepoManager>),
+    CmsModule<RepoManager>,
     Container<'static, clients::Cli, images::postgres::Postgres>,
 ) {
     let node = DOCKER.run(images::postgres::Postgres::default());

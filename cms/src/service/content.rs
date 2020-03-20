@@ -10,6 +10,8 @@ use lightspeed_core::service::validator::{Validator, ERR_NOT_UNIQUE};
 use std::cell::RefCell;
 use std::ops::DerefMut;
 
+const CMS_CONTENT_TABLE_PREFIX: &str = "LS_CMS_CONTENT_";
+
 #[derive(Clone)]
 pub struct ContentService<RepoManager: CmsRepositoryManager> {
     c3p0: RepoManager::C3P0,
@@ -156,10 +158,11 @@ impl<RepoManager: CmsRepositoryManager> ContentService<RepoManager> {
     }
 
     fn content_table_name(&self, schema_id: i64) -> String {
-        format!("CMS_CONTENT_{}", schema_id)
+        format!("{}{}", CMS_CONTENT_TABLE_PREFIX, schema_id)
     }
+
     fn unique_index_name(&self, schema_id: i64, field_name: &str) -> String {
-        format!("CMS_CONTENT_{}_UNIQUE_{}", schema_id, field_name)
+        format!("{}{}_UNIQUE_{}", CMS_CONTENT_TABLE_PREFIX, schema_id, field_name)
     }
 }
 

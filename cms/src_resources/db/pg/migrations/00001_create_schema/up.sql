@@ -1,29 +1,29 @@
 -- Your SQL goes here
 
 ---------------------------
--- Begin - CMS_PROJECT -
+-- Begin - LS_CMS_PROJECT -
 ---------------------------
 
-create table CMS_PROJECT (
+create table LS_CMS_PROJECT (
     ID bigserial primary key,
     VERSION int not null,
     DATA JSONB
 );
 
-CREATE UNIQUE INDEX CMS_PROJECT_UNIQUE_NAME ON CMS_PROJECT( (DATA->>'name') );
+CREATE UNIQUE INDEX LS_CMS_PROJECT_UNIQUE_NAME ON LS_CMS_PROJECT( (DATA->>'name') );
 
--- End - CMS_PROJECT -
+-- End - LS_CMS_PROJECT -
 
 ---------------------------
--- Begin - CMS_SCHEMA -
+-- Begin - LS_CMS_SCHEMA -
 ---------------------------
 
-create table CMS_SCHEMA (
+create table LS_CMS_SCHEMA (
     ID bigserial primary key,
     VERSION int not null,
     DATA JSONB
 );
 
-CREATE UNIQUE INDEX CMS_SCHEMA_UNIQUE_NAME_PROJECT_ID ON CMS_SCHEMA( (DATA->>'name'), (DATA->>'project_id') );
+CREATE UNIQUE INDEX LS_CMS_SCHEMA_UNIQUE_NAME_PROJECT_ID ON LS_CMS_SCHEMA( (DATA->>'name'), (DATA->>'project_id') );
 
--- End - CMS_SCHEMA -
+-- End - LS_CMS_SCHEMA -

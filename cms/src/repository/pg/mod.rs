@@ -37,7 +37,7 @@ impl CmsRepositoryManager for PgCmsRepositoryManager {
     }
 
     fn start(&self) -> Result<(), LightSpeedError> {
-        let migrate_table_name = format!("CMS_{}", C3P0_MIGRATE_TABLE_DEFAULT);
+        let migrate_table_name = format!("LS_CMS_{}", C3P0_MIGRATE_TABLE_DEFAULT);
         let migrations: Migrations =
             (&MIGRATIONS)
                 .try_into()

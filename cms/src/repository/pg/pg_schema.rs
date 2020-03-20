@@ -21,7 +21,7 @@ impl Deref for PgSchemaRepository {
 impl Default for PgSchemaRepository {
     fn default() -> Self {
         PgSchemaRepository {
-            repo: C3p0JsonBuilder::new("CMS_SCHEMA").build(),
+            repo: C3p0JsonBuilder::new("LS_CMS_SCHEMA").build(),
         }
     }
 }
@@ -44,7 +44,7 @@ impl SchemaRepository for PgSchemaRepository {
         project_id: i64,
     ) -> Result<bool, LightSpeedError> {
         let sql = r#"
-            select count(*) from CMS_SCHEMA
+            select count(*) from LS_CMS_SCHEMA
             where DATA ->> 'name' = $1 AND (DATA ->> 'project_id')::bigint = $2
         "#;
         Ok(conn.fetch_one(sql, &[&name, &project_id], |row| {
@@ -83,7 +83,7 @@ impl SchemaRepository for PgSchemaRepository {
         project_id: i64,
     ) -> Result<u64, LightSpeedError> {
         let sql = r#"
-            delete from CMS_SCHEMA
+            delete from LS_CMS_SCHEMA
             where (DATA ->> 'project_id')::bigint = $1
         "#;
         Ok(conn.execute(sql, &[&project_id])?)
