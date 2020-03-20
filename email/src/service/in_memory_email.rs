@@ -2,8 +2,8 @@ use crate::model::email::EmailMessage;
 use crate::service::email::EmailClient;
 use lightspeed_core::error::LightSpeedError;
 use log::warn;
-use std::sync::{Arc};
 use parking_lot::Mutex;
+use std::sync::Arc;
 
 #[derive(Clone, Default)]
 pub struct InMemoryEmailClient {
@@ -20,25 +20,19 @@ impl EmailClient for InMemoryEmailClient {
     fn send(&self, email_message: EmailMessage) -> Result<(), LightSpeedError> {
         warn!("InMemoryEmailService - Received an email. The email is NOT going to be sent but kept in memory");
 
-        let mut lock = self
-            .emails
-            .lock();
+        let mut lock = self.emails.lock();
 
         lock.push(email_message);
         Ok(())
     }
 
     fn get_emails(&self) -> Result<Vec<EmailMessage>, LightSpeedError> {
-        let lock = self
-            .emails
-            .lock();
+        let lock = self.emails.lock();
         Ok(lock.clone())
     }
 
     fn clear_emails(&self) -> Result<(), LightSpeedError> {
-        let mut lock = self
-            .emails
-            .lock();
+        let mut lock = self.emails.lock();
         lock.clear();
         Ok(())
     }
@@ -47,9 +41,7 @@ impl EmailClient for InMemoryEmailClient {
         &self,
         mut retain: Box<dyn FnMut(&EmailMessage) -> bool>,
     ) -> Result<(), LightSpeedError> {
-        let mut lock = self
-            .emails
-            .lock();
+        let mut lock = self.emails.lock();
         lock.retain(|email| retain(email));
         Ok(())
     }

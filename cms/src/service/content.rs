@@ -4,11 +4,11 @@ use crate::model::schema::{Schema, SchemaFieldArity, SchemaModel};
 use crate::repository::CmsRepositoryManager;
 use crate::repository::ContentRepository;
 use c3p0::*;
+use lightspeed_cache::Cache;
 use lightspeed_core::error::{ErrorDetails, LightSpeedError};
 use lightspeed_core::service::validator::{Validator, ERR_NOT_UNIQUE};
 use std::cell::RefCell;
 use std::ops::DerefMut;
-use lightspeed_cache::Cache;
 use std::sync::Arc;
 
 const CMS_CONTENT_TABLE_PREFIX: &str = "LS_CMS_CONTENT_";
@@ -138,10 +138,7 @@ impl<RepoManager: CmsRepositoryManager> ContentService<RepoManager> {
         })
     }
 
-    fn get_content_repo_by_schema_id(
-        &self,
-        schema_id: i64,
-    ) -> Arc<RepoManager::ContentRepo> {
+    fn get_content_repo_by_schema_id(&self, schema_id: i64) -> Arc<RepoManager::ContentRepo> {
         self.content_repos.get_or_insert_with(schema_id, || {
             self.repo_factory
                 .content_repo(&self.content_table_name(schema_id))
@@ -153,7 +150,10 @@ impl<RepoManager: CmsRepositoryManager> ContentService<RepoManager> {
     }
 
     fn unique_index_name(&self, schema_id: i64, field_name: &str) -> String {
-        format!("{}{}_UNIQUE_{}", CMS_CONTENT_TABLE_PREFIX, schema_id, field_name)
+        format!(
+            "{}{}_UNIQUE_{}",
+            CMS_CONTENT_TABLE_PREFIX, schema_id, field_name
+        )
     }
 }
 

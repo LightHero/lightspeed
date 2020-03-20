@@ -3,7 +3,7 @@ use crate::scheduler::Scheduler;
 use chrono::{DateTime, Utc};
 use chrono_tz::Tz;
 use log::*;
-use parking_lot::{RwLock, Mutex};
+use parking_lot::{Mutex, RwLock};
 
 pub struct JobScheduler {
     pub job: Job,
@@ -97,9 +97,7 @@ impl Job {
 
     /// Returns true if this job is currently running.
     pub fn is_running(&self) -> Result<bool, SchedulerError> {
-        let read = self
-            .is_running
-            .read();
+        let read = self.is_running.read();
         Ok(*read)
     }
 
@@ -138,16 +136,12 @@ impl Job {
     }
 
     fn exec(&self) -> Result<(), Box<dyn std::error::Error>> {
-        let function = self
-            .function
-            .lock();
+        let function = self.function.lock();
         (function)()
     }
 
     fn set_running(&self, is_running: bool) -> Result<(), SchedulerError> {
-        let mut write = self
-            .is_running
-            .write();
+        let mut write = self.is_running.write();
 
         if is_running.eq(&*write) {
             return Err(SchedulerError::JobLockError {

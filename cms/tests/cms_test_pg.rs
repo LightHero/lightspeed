@@ -47,7 +47,10 @@ fn init() -> (
     ((cms_module), node)
 }
 
-pub fn test(no_parallel: bool, callback: fn(&CmsModule<RepoManager>) -> Result<(), Box<dyn std::error::Error>>) {
+pub fn test(
+    no_parallel: bool,
+    callback: fn(&CmsModule<RepoManager>) -> Result<(), Box<dyn std::error::Error>>,
+) {
     SINGLETON.get(no_parallel, |(cms_module, _)| {
         callback(&cms_module).unwrap();
     });

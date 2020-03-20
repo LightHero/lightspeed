@@ -8,8 +8,8 @@ use lettre_email::{Email, Mailbox};
 use lightspeed_core::error::LightSpeedError;
 use log::*;
 use native_tls::TlsConnector;
-use std::sync::{Arc};
 use parking_lot::Mutex;
+use std::sync::Arc;
 
 #[derive(Clone)]
 pub struct FullEmailClient {
@@ -113,9 +113,7 @@ impl EmailClient for FullEmailClient {
                 ),
             })?;
 
-        let mut client =
-            self.client
-                .lock();
+        let mut client = self.client.lock();
 
         let response =
             client
