@@ -8,8 +8,7 @@ edition = "2018"
 [dependencies]
 lightspeed_cache = { version = "0.1", path = "../cache" }
 lightspeed_core = { version = "0.1", path = "../core" }
-c3p0 = { version = "0.28", features = ["pg_migrate"] }
-include_dir="0.4"
+c3p0 = { version = "0.42", features = ["pg_015_migrate"] }
 lazy_static = "1.4"
 log = "0.4"
 regex = "1.3"

@@ -4,7 +4,7 @@ use crate::repository::pg::pg_schema::PgSchemaRepository;
 use crate::repository::CmsRepositoryManager;
 use c3p0::pg::*;
 use c3p0::*;
-use include_dir::*;
+use c3p0::include_dir::*;
 use lightspeed_core::error::LightSpeedError;
 use std::convert::TryInto;
 
