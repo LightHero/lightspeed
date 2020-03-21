@@ -90,6 +90,8 @@ pub mod test_root {
             stderr_output: false,
             file_output_path: None,
         };
-        setup_logger(&conf).unwrap();
+        if let Err(err) = setup_logger(&conf) {
+            println!("Warning: {}", err)
+        };
     }
 }

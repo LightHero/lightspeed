@@ -1,9 +1,9 @@
 use crate::repository::pg::pg_auth_account::PgAuthAccountRepository;
 use crate::repository::pg::pg_token::PgTokenRepository;
 use crate::repository::AuthRepositoryManager;
+use c3p0::include_dir::*;
 use c3p0::pg::*;
 use c3p0::*;
-use c3p0::include_dir::*;
 use lightspeed_core::error::LightSpeedError;
 use std::convert::TryInto;
 

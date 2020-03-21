@@ -25,13 +25,15 @@ fn init() -> (
     AuthModule<RepoManager>,
     Container<'static, clients::Cli, images::generic::GenericImage>,
 ) {
-    let node = DOCKER.run(images::generic::GenericImage::new("postgres:11-alpine")
-        .with_wait_for(images::generic::WaitFor::message_on_stderr(
-            "database system is ready to accept connections",
-        ))
-        .with_env_var("POSTGRES_DB", "postgres")
-        .with_env_var("POSTGRES_USER", "postgres")
-        .with_env_var("POSTGRES_PASSWORD", "postgres"));
+    let node = DOCKER.run(
+        images::generic::GenericImage::new("postgres:11-alpine")
+            .with_wait_for(images::generic::WaitFor::message_on_stderr(
+                "database system is ready to accept connections",
+            ))
+            .with_env_var("POSTGRES_DB", "postgres")
+            .with_env_var("POSTGRES_USER", "postgres")
+            .with_env_var("POSTGRES_PASSWORD", "postgres"),
+    );
 
     let manager = PostgresConnectionManager::new(
         format!(
