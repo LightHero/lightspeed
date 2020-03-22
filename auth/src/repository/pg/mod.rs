@@ -4,7 +4,6 @@ use crate::repository::AuthRepositoryManager;
 use c3p0::pg::*;
 use c3p0::*;
 use lightspeed_core::error::LightSpeedError;
-use std::convert::TryInto;
 
 pub mod pg_auth_account;
 pub mod pg_token;
@@ -34,19 +33,15 @@ impl AuthRepositoryManager for PgAuthRepositoryManager {
 
     fn start(&self) -> Result<(), LightSpeedError> {
         let migrate_table_name = format!("LS_AUTH_{}", C3P0_MIGRATE_TABLE_DEFAULT);
-        let migrations: Migrations =
-            (&MIGRATIONS)
-                .try_into()
-                .map_err(|err| LightSpeedError::ModuleStartError {
-                    message: format!(
-                        "PgAuthRepositoryManager - failed to read db migrations: {}",
-                        err
-                    ),
-                })?;
 
         let migrate = C3p0MigrateBuilder::new(self.c3p0().clone())
             .with_table_name(migrate_table_name)
-            .with_migrations(migrations)
+            .with_migrations(from_embed(&MIGRATIONS).map_err(|err| LightSpeedError::ModuleStartError {
+                message: format!(
+                    "PgAuthRepositoryManager - failed to read db migrations: {}",
+                    err
+                ),
+            })?)
             .build();
 
         migrate
