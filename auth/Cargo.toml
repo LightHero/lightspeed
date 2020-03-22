@@ -8,7 +8,7 @@ edition = "2018"
 [dependencies]
 lightspeed_core = { version = "0.1", path = "../core" }
 bcrypt = "0.6.0"
-c3p0 = { version = "0.42", features = ["pg_015_migrate"] }
+c3p0 = { version = "0.43", features = ["pg_015_migrate"] }
 log = "0.4"
 serde = { version = "1.0" , features = ["rc"] }
 serde_derive = "1"

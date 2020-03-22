@@ -1,7 +1,6 @@
 use crate::repository::pg::pg_auth_account::PgAuthAccountRepository;
 use crate::repository::pg::pg_token::PgTokenRepository;
 use crate::repository::AuthRepositoryManager;
-use c3p0::include_dir::*;
 use c3p0::pg::*;
 use c3p0::*;
 use lightspeed_core::error::LightSpeedError;
@@ -10,7 +9,7 @@ use std::convert::TryInto;
 pub mod pg_auth_account;
 pub mod pg_token;
 
-const MIGRATIONS: Dir = include_dir!("./src_resources/db/pg/migrations");
+const MIGRATIONS: include_dir::Dir = include_dir::include_dir!("./src_resources/db/pg/migrations");
 
 #[derive(Clone)]
 pub struct PgAuthRepositoryManager {

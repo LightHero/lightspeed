@@ -2,11 +2,9 @@ use crate::repository::pg::pg_content::PgContentRepository;
 use crate::repository::pg::pg_project::PgProjectRepository;
 use crate::repository::pg::pg_schema::PgSchemaRepository;
 use crate::repository::CmsRepositoryManager;
-use c3p0::include_dir::*;
 use c3p0::pg::*;
-use c3p0::*;
+use c3p0::{include_dir::*, *};
 use lightspeed_core::error::LightSpeedError;
-use std::convert::TryInto;
 
 pub mod pg_content;
 pub mod pg_project;
@@ -38,19 +36,17 @@ impl CmsRepositoryManager for PgCmsRepositoryManager {
 
     fn start(&self) -> Result<(), LightSpeedError> {
         let migrate_table_name = format!("LS_CMS_{}", C3P0_MIGRATE_TABLE_DEFAULT);
-        let migrations: Migrations =
-            (&MIGRATIONS)
-                .try_into()
-                .map_err(|err| LightSpeedError::ModuleStartError {
+
+        let migrate = C3p0MigrateBuilder::new(self.c3p0().clone())
+            .with_table_name(migrate_table_name)
+            .with_migrations(from_embed(&MIGRATIONS).map_err(|err| {
+                LightSpeedError::ModuleStartError {
                     message: format!(
                         "PgCmsRepositoryManager - failed to read db migrations: {}",
                         err
                     ),
-                })?;
-
-        let migrate = C3p0MigrateBuilder::new(self.c3p0().clone())
-            .with_table_name(migrate_table_name)
-            .with_migrations(migrations)
+                }
+            })?)
             .build();
 
         migrate
