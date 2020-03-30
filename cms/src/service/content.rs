@@ -103,7 +103,9 @@ impl<RepoManager: CmsRepositoryManager> ContentService<RepoManager> {
                                 };
 
                                 if let Some(value) = field_value {
-                                    let mut conn_borrow = conn.borrow_mut();
+                                    let mut conn_borrow = conn.try_borrow_mut().map_err(|err|
+                                        LightSpeedError::InternalServerError {message: format!("ContentService - Something weird, the connection should be safely borrowed mut. Err: {}", err)}
+                                    )?;
                                     let count = repo.count_all_by_field_value(
                                         conn_borrow.deref_mut(),
                                         &field.name,
@@ -123,7 +125,9 @@ impl<RepoManager: CmsRepositoryManager> ContentService<RepoManager> {
 
                 Ok(())
             })?;
-            let mut conn_borrow = conn.borrow_mut();
+            let mut conn_borrow = conn.try_borrow_mut().map_err(|err|
+                LightSpeedError::InternalServerError {message: format!("ContentService - Something weird, the connection should be safely borrowed mut. Err: {}", err)}
+            )?;
             repo.save(conn_borrow.deref_mut(), NewModel::new(create_content_dto))
         })
     }
