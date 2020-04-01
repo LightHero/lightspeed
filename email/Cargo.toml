@@ -19,7 +19,6 @@ structopt = "0.3"
 
 [dev-dependencies]
 lazy_static = "1.4"
-maybe-single = "0.7"
 testcontainers = "0.9"
 
 lightspeed_logger = { version = "0.1", path = "../logger" }
