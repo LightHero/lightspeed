@@ -21,7 +21,7 @@ typescript-definitions = {git = "https://github.com/ufoscout/typescript-definiti
 
 [dev-dependencies]
 lazy_static = "1.3"
-maybe-single = "0.7"
+maybe-single = "0.8.1"
 testcontainers = "0.9"
 
 lightspeed_logger = { version = "0.1", path = "../logger" }
