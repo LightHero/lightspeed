@@ -1,7 +1,7 @@
 use c3p0::pg::r2d2::{Pool, PostgresConnectionManager, TlsMode};
 use c3p0::pg::*;
 use lazy_static::lazy_static;
-use maybe_single::MaybeSingle;
+use maybe_single::{Data, MaybeSingle};
 use testcontainers::*;
 
 use lightspeed_cms::config::CmsConfig;
@@ -13,18 +13,17 @@ mod tests;
 
 pub type RepoManager = PgCmsRepositoryManager;
 
-lazy_static! {
-    static ref DOCKER: clients::Cli = clients::Cli::default();
-    pub static ref SINGLETON: MaybeSingle<(
-        CmsModule<RepoManager>,
-        Container<'static, clients::Cli, images::postgres::Postgres>
-    )> = MaybeSingle::new(|| init());
-}
-
-fn init() -> (
+pub type MaybeType = (
     CmsModule<RepoManager>,
     Container<'static, clients::Cli, images::postgres::Postgres>,
-) {
+);
+
+lazy_static! {
+    static ref DOCKER: clients::Cli = clients::Cli::default();
+    pub static ref SINGLETON: MaybeSingle<MaybeType> = MaybeSingle::new(|| init());
+}
+
+fn init() -> MaybeType {
     let node = DOCKER.run(images::postgres::Postgres::default());
 
     let manager = PostgresConnectionManager::new(
@@ -47,11 +46,6 @@ fn init() -> (
     ((cms_module), node)
 }
 
-pub fn test(
-    no_parallel: bool,
-    callback: fn(&CmsModule<RepoManager>) -> Result<(), Box<dyn std::error::Error>>,
-) {
-    SINGLETON.get(no_parallel, |(cms_module, _)| {
-        callback(&cms_module).unwrap();
-    });
+pub fn data(serial: bool) -> Data<'static, MaybeType> {
+    SINGLETON.data(serial)
 }

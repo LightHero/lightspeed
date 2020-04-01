@@ -18,7 +18,7 @@ structopt = "0.3"
 
 
 [dev-dependencies]
-maybe-single = "0.7"
+maybe-single = "0.8.1"
 maplit = "1"
 testcontainers = "0.9"
 
