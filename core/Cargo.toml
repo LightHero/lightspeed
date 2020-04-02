@@ -6,7 +6,7 @@ authors = ["Francesco Cina <ufoscout@gmail.com>"]
 edition = "2018"
 
 [dependencies]
-c3p0_common = { version = "0.43" }
+c3p0_common = { version = "0.44" }
 chrono = "0.4"
 jsonwebtoken = "7.0"
 log = "0.4"

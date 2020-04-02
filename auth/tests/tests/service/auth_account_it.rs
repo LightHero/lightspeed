@@ -96,14 +96,15 @@ fn should_return_user_by_id() -> Result<(), Box<dyn std::error::Error>> {
 
     let (user, _) = create_user(&auth_module, false)?;
 
-    let conn = &mut auth_module.repo_manager.c3p0().connection()?;
-    let user_by_id = auth_module
-        .auth_account_service
-        .fetch_by_user_id_with_conn(conn, user.id)?;
+    auth_module.repo_manager.c3p0().transaction(|conn| {
+        let user_by_id = auth_module
+            .auth_account_service
+            .fetch_by_user_id_with_conn(conn, user.id)?;
 
-    assert_eq!(user.data.username, user_by_id.data.username);
+        assert_eq!(user.data.username, user_by_id.data.username);
 
-    Ok(())
+        Ok(())
+    })
 }
 
 #[test]
@@ -113,7 +114,7 @@ fn should_return_user_by_username() -> Result<(), Box<dyn std::error::Error>> {
 
     let (user, _) = create_user(&auth_module, false)?;
 
-    let conn = &mut auth_module.repo_manager.c3p0().connection()?;
+    auth_module.repo_manager.c3p0().transaction(|conn| {
     let user_by_id = auth_module
         .auth_account_service
         .fetch_by_username_with_conn(conn, &user.data.username)?;
@@ -121,6 +122,7 @@ fn should_return_user_by_username() -> Result<(), Box<dyn std::error::Error>> {
     assert_eq!(user.id, user_by_id.id);
 
     Ok(())
+})
 }
 
 #[test]
@@ -209,11 +211,13 @@ fn should_activate_user() -> Result<(), Box<dyn std::error::Error>> {
         .activate_user(&token.data.token)
         .is_err());
 
-    let conn = &mut auth_module.repo_manager.c3p0().connection()?;
-
-    assert!(auth_module
+    assert!(auth_module.repo_manager.c3p0().transaction(|conn| auth_module
         .token_service
-        .fetch_by_token(conn, &token.data.token, false)
+        .fetch_by_token(
+            conn,
+            &token.data.token,
+            false
+        ))
         .is_err());
 
     Ok(())
@@ -310,18 +314,19 @@ fn should_regenerate_activation_token_even_if_token_expired(
     let (_, mut token) = create_user(&auth_module, false)?;
     token.data.expire_at_epoch_seconds = 0;
 
-    let token_model = auth_module.repo_manager.token_repo().update(
-        &mut auth_module.repo_manager.c3p0().connection()?,
+    let token_model = auth_module.repo_manager.c3p0().transaction(|conn|
+                                                                      auth_module.repo_manager.token_repo().update(
+        conn,
         token.clone(),
-    )?;
+    ))?;
 
-    assert!(auth_module
+    assert!(auth_module.repo_manager.c3p0().transaction(|conn| auth_module
         .token_service
         .fetch_by_token(
-            &mut auth_module.repo_manager.c3p0().connection()?,
+            conn,
             &token_model.data.token,
             true
-        )
+        ))
         .is_err());
 
     assert!(auth_module
@@ -348,11 +353,13 @@ fn should_resend_activation_token_only_if_correct_token_type(
     let auth_module = &data.0;
     let (user, _) = create_user(&auth_module, false)?;
 
-    let token = auth_module.token_service.generate_and_save_token(
-        &mut auth_module.repo_manager.c3p0().connection()?,
-        &user.data.username,
-        TokenType::RESET_PASSWORD,
-    )?;
+    let token = auth_module.repo_manager.c3p0().transaction(|conn| {
+        auth_module.token_service.generate_and_save_token(
+            conn,
+            &user.data.username,
+            TokenType::RESET_PASSWORD,
+        )
+    })?;
 
     assert!(auth_module
         .auth_account_service
@@ -599,11 +606,13 @@ fn should_reset_password_by_token() -> Result<(), Box<dyn std::error::Error>> {
     let password = new_hyphenated_uuid();
     let (user, _) = create_user_with_password(&auth_module, &password, true)?;
 
-    let token = auth_module.token_service.generate_and_save_token(
-        &mut auth_module.repo_manager.c3p0().connection()?,
-        &user.data.username,
-        TokenType::RESET_PASSWORD,
-    )?;
+    let token = auth_module.repo_manager.c3p0().transaction(|conn| {
+        auth_module.token_service.generate_and_save_token(
+            conn,
+            &user.data.username,
+            TokenType::RESET_PASSWORD,
+        )
+    })?;
 
     let password_new = new_hyphenated_uuid();
 
@@ -639,11 +648,13 @@ fn should_reset_password_only_if_correct_token_type() -> Result<(), Box<dyn std:
     let password = new_hyphenated_uuid();
     let (user, _) = create_user_with_password(&auth_module, &password, true)?;
 
-    let token = auth_module.token_service.generate_and_save_token(
-        &mut auth_module.repo_manager.c3p0().connection()?,
-        &user.data.username,
-        TokenType::ACCOUNT_ACTIVATION,
-    )?;
+    let token = auth_module.repo_manager.c3p0().transaction(|conn| {
+        auth_module.token_service.generate_and_save_token(
+            conn,
+            &user.data.username,
+            TokenType::ACCOUNT_ACTIVATION,
+        )
+    })?;
 
     let password_new = new_hyphenated_uuid();
 
@@ -668,11 +679,13 @@ fn should_reset_password_only_if_user_is_active() -> Result<(), Box<dyn std::err
     let password = new_hyphenated_uuid();
     let (user, _) = create_user_with_password(&auth_module, &password, false)?;
 
-    let token = auth_module.token_service.generate_and_save_token(
-        &mut auth_module.repo_manager.c3p0().connection()?,
-        &user.data.username,
-        TokenType::RESET_PASSWORD,
-    )?;
+    let token = auth_module.repo_manager.c3p0().transaction(|conn| {
+        auth_module.token_service.generate_and_save_token(
+            conn,
+            &user.data.username,
+            TokenType::RESET_PASSWORD,
+        )
+    })?;
 
     let password_new = new_hyphenated_uuid();
 
@@ -696,11 +709,13 @@ fn should_reset_password_only_if_passwords_match() -> Result<(), Box<dyn std::er
     let password = new_hyphenated_uuid();
     let (user, _) = create_user_with_password(&auth_module, &password, false)?;
 
-    let token = auth_module.token_service.generate_and_save_token(
-        &mut auth_module.repo_manager.c3p0().connection()?,
-        &user.data.username,
-        TokenType::RESET_PASSWORD,
-    )?;
+    let token = auth_module.repo_manager.c3p0().transaction(|conn| {
+        auth_module.token_service.generate_and_save_token(
+            conn,
+            &user.data.username,
+            TokenType::RESET_PASSWORD,
+        )
+    })?;
 
     let password_new = new_hyphenated_uuid();
 

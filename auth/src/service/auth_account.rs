@@ -43,13 +43,15 @@ impl<RepoManager: AuthRepositoryManager> AuthAccountService<RepoManager> {
     }
 
     pub fn login(&self, username: &str, password: &str) -> Result<Auth, LightSpeedError> {
-        let model = self
-            .auth_repo
-            .fetch_by_username_optional(&mut self.c3p0.connection()?, username)?
-            .filter(|model| match model.data.status {
-                AuthAccountStatus::ACTIVE => true,
-                _ => false,
-            });
+        let model =         self.c3p0
+            .transaction(move |conn| {
+                self
+                    .auth_repo
+                    .fetch_by_username_optional(conn, username)
+            })?.filter(|model| match model.data.status {
+            AuthAccountStatus::ACTIVE => true,
+            _ => false,
+        });
 
         if let Some(user) = model {
             if self
@@ -356,7 +358,8 @@ impl<RepoManager: AuthRepositoryManager> AuthAccountService<RepoManager> {
     }
 
     pub fn fetch_by_username(&self, username: &str) -> Result<AuthAccountModel, LightSpeedError> {
-        self.fetch_by_username_with_conn(&mut self.c3p0.connection()?, username)
+        self.c3p0.transaction(move |conn|
+        self.fetch_by_username_with_conn(conn, username))
     }
 
     pub fn fetch_by_username_with_conn(

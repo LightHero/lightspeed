@@ -27,14 +27,17 @@ fn should_create_schema() -> Result<(), Box<dyn std::error::Error>> {
 
     let saved_schema = cms_module.schema_service.create_schema(schema)?;
 
-    assert!(schema_repo.exists_by_id(&mut c3p0.connection()?, &saved_schema.id)?);
+    c3p0.transaction(|conn| {
+    assert!(schema_repo.exists_by_id(conn, &saved_schema.id)?);
     assert!(cms_module
         .schema_service
         .delete(saved_schema.clone())
         .is_ok());
-    assert!(!schema_repo.exists_by_id(&mut c3p0.connection()?, &saved_schema.id)?);
+    assert!(!schema_repo.exists_by_id(conn, &saved_schema.id)?);
 
     Ok(())
+
+    })
 }
 
 #[test]
@@ -55,20 +58,25 @@ fn schema_name_should_be_unique_per_project() -> Result<(), Box<dyn std::error::
         },
     };
 
-    assert!(schema_repo
-        .save(&mut c3p0.connection()?, NewModel::new(schema.clone()))
-        .is_ok());
-    assert!(schema_repo
-        .save(&mut c3p0.connection()?, NewModel::new(schema.clone()))
-        .is_err());
+    c3p0.transaction::<_,C3p0Error,_>(|conn| {
+        assert!(schema_repo
+            .save(conn, NewModel::new(schema.clone()))
+            .is_ok());
+        assert!(schema_repo
+            .save(conn, NewModel::new(schema.clone()))
+            .is_err());
+        Ok(())
+    })?;
+        schema.project_id = -2;
 
-    schema.project_id = -2;
+        c3p0.transaction(|conn| {
+        assert!(schema_repo
+            .save(conn, NewModel::new(schema.clone()))
+            .is_ok());
 
-    assert!(schema_repo
-        .save(&mut c3p0.connection()?, NewModel::new(schema.clone()))
-        .is_ok());
+        Ok(())
 
-    Ok(())
+    })
 }
 
 #[test]
@@ -134,17 +142,19 @@ fn should_delete_schemas_by_project_id() -> Result<(), Box<dyn std::error::Error
     let saved_schema_other = cms_module.schema_service.create_schema(schema)?;
 
     // Act
-    assert_eq!(
-        2,
-        cms_module
-            .schema_service
-            .delete_by_project_id(&mut c3p0.connection()?, project_id)?
-    );
+    c3p0.transaction(|conn| {
+        assert_eq!(
+            2,
+            cms_module
+                .schema_service
+                .delete_by_project_id(conn, project_id)?
+        );
 
-    // Assert
-    assert!(!schema_repo.exists_by_id(&mut c3p0.connection()?, &saved_schema_1.id)?);
-    assert!(!schema_repo.exists_by_id(&mut c3p0.connection()?, &saved_schema_2.id)?);
-    assert!(schema_repo.exists_by_id(&mut c3p0.connection()?, &saved_schema_other.id)?);
+        // Assert
+        assert!(!schema_repo.exists_by_id(conn, &saved_schema_1.id)?);
+        assert!(!schema_repo.exists_by_id(conn, &saved_schema_2.id)?);
+        assert!(schema_repo.exists_by_id(conn, &saved_schema_other.id)?);
 
-    Ok(())
+        Ok(())
+    })
 }

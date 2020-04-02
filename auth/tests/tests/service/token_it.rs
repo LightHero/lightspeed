@@ -22,16 +22,19 @@ fn should_delete_token() -> Result<(), Box<dyn std::error::Error>> {
         },
     };
 
-    let saved_token = token_repo.save(&mut c3p0.connection()?, token)?;
+    c3p0.transaction(|conn| {
+        
+    let saved_token = token_repo.save(conn, token)?;
 
-    assert!(token_repo.exists_by_id(&mut c3p0.connection()?, &saved_token.id)?);
+    assert!(token_repo.exists_by_id(conn, &saved_token.id)?);
     assert!(auth_module
         .token_service
-        .delete(&mut c3p0.connection()?, saved_token.clone())
+        .delete(conn, saved_token.clone())
         .is_ok());
-    assert!(!token_repo.exists_by_id(&mut c3p0.connection()?, &saved_token.id)?);
+    assert!(!token_repo.exists_by_id(conn, &saved_token.id)?);
 
     Ok(())
+    })
 }
 
 #[test]
