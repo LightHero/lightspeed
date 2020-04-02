@@ -1,7 +1,7 @@
 [package]
 name = "lightspeed_auth"
 license = "MIT"
-version = "0.1.3"
+version = "0.2.0"
 authors = ["Francesco Cina <ufoscout@gmail.com>"]
 description = "LightSpeed"
 edition = "2018"
@@ -11,7 +11,7 @@ repository = "https://github.com/LightHero/lightspeed"
 keywords = []
 
 [dependencies]
-lightspeed_core = { version = "0.1", path = "../core" }
+lightspeed_core = { version = "0.2.0", path = "../core" }
 bcrypt = "0.6.0"
 c3p0 = { version = "0.44", features = ["pg_015_migrate"] }
 log = "0.4"
@@ -29,4 +29,4 @@ lazy_static = "1.3"
 maybe-single = "0.8.1"
 testcontainers = "0.9"
 
-lightspeed_logger = { version = "0.1", path = "../logger" }
+lightspeed_logger = { version = "0.2.0", path = "../logger" }

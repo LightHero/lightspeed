@@ -1,7 +1,7 @@
 [package]
 name = "lightspeed_cms"
 license = "MIT"
-version = "0.1.3"
+version = "0.2.0"
 authors = ["Francesco Cina <ufoscout@gmail.com>"]
 description = "LightSpeed"
 edition = "2018"
@@ -11,8 +11,8 @@ repository = "https://github.com/LightHero/lightspeed"
 keywords = []
 
 [dependencies]
-lightspeed_cache = { version = "0.1", path = "../cache" }
-lightspeed_core = { version = "0.1", path = "../core" }
+lightspeed_cache = { version = "0.2.0", path = "../cache" }
+lightspeed_core = { version = "0.2.0", path = "../core" }
 c3p0 = { version = "0.44", features = ["pg_015_migrate"] }
 lazy_static = "1.4"
 log = "0.4"
@@ -27,4 +27,4 @@ maybe-single = "0.8.1"
 maplit = "1"
 testcontainers = "0.9"
 
-ls_logger = { version = "0.1", package = "lightspeed_logger", path = "../logger" }
+ls_logger = { version = "0.2.0", package = "lightspeed_logger", path = "../logger" }
