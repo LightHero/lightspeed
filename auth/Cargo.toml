@@ -17,7 +17,7 @@ structopt = "0.3"
 
 # See
 #typescript-definitions = "0.1.10"
-typescript-definitions = {git = "https://github.com/ufoscout/typescript-definitions.git", branch = "no-debug-attrs"}
+typescript-definitions = {package = "typescript-definitions-ufo-patch", version = "0.1.10"}
 
 [dev-dependencies]
 lazy_static = "1.3"
