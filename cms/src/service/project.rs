@@ -31,7 +31,7 @@ impl<RepoManager: CmsRepositoryManager> ProjectService<RepoManager> {
         &self,
         create_project_dto: CreateProjectDto,
     ) -> Result<ProjectModel, LightSpeedError> {
-        self.c3p0.transaction(move |conn| {
+        self.c3p0.transaction(|mut conn| async move  {
             let name_already_exists = self
                 .project_repo
                 .exists_by_name(conn, &create_project_dto.name)?;
@@ -50,7 +50,7 @@ impl<RepoManager: CmsRepositoryManager> ProjectService<RepoManager> {
     }
 
     pub fn delete(&self, project_model: ProjectModel) -> Result<ProjectModel, LightSpeedError> {
-        self.c3p0.transaction(move |conn| {
+        self.c3p0.transaction(|mut conn| async move  {
             self.schema_service
                 .delete_by_project_id(conn, project_model.id)?;
             self.project_repo.delete(conn, project_model)

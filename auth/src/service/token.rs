@@ -20,7 +20,7 @@ impl<RepoManager: AuthRepositoryManager> TokenService<RepoManager> {
         }
     }
 
-    pub fn generate_and_save_token<S: Into<String>>(
+    pub async fn generate_and_save_token<S: Into<String>>(
         &self,
         conn: &mut RepoManager::Conn,
         username: S,
@@ -34,16 +34,16 @@ impl<RepoManager: AuthRepositoryManager> TokenService<RepoManager> {
             username: username.into(),
             expire_at_epoch_seconds: expire_at_epoch,
         });
-        self.token_repo.save(conn, token)
+        self.token_repo.save(conn, token).await
     }
 
-    pub fn fetch_by_token(
+    pub async fn fetch_by_token(
         &self,
         conn: &mut RepoManager::Conn,
         token: &str,
         validate: bool,
     ) -> Result<TokenModel, LightSpeedError> {
-        let token_model = self.token_repo.fetch_by_token(conn, token)?;
+        let token_model = self.token_repo.fetch_by_token(conn, token).await?;
 
         if validate {
             Validator::validate(&token_model.data)?;
@@ -52,11 +52,11 @@ impl<RepoManager: AuthRepositoryManager> TokenService<RepoManager> {
         Ok(token_model)
     }
 
-    pub fn delete(
+    pub async fn delete(
         &self,
         conn: &mut RepoManager::Conn,
         token_model: TokenModel,
     ) -> Result<TokenModel, LightSpeedError> {
-        self.token_repo.delete(conn, token_model)
+        self.token_repo.delete(conn, token_model).await
     }
 }

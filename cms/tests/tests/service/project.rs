@@ -9,9 +9,9 @@ use lightspeed_core::error::{ErrorDetail, LightSpeedError};
 use lightspeed_core::service::validator::ERR_NOT_UNIQUE;
 use lightspeed_core::utils::new_hyphenated_uuid;
 
-#[test]
-fn should_create_project() -> Result<(), Box<dyn std::error::Error>> {
-    let data = data(false);
+#[tokio::test]
+async fn should_create_project() -> Result<(), Box<dyn std::error::Error>> {
+    let data = data(false).await;
     let cms_module = &data.0;
 
     let c3p0 = cms_module.repo_manager.c3p0();
@@ -23,7 +23,8 @@ fn should_create_project() -> Result<(), Box<dyn std::error::Error>> {
 
     let saved_project = cms_module.project_service.create_project(project)?;
 
-    c3p0.transaction(|conn| {
+    c3p0.transaction(|mut conn| async {
+        let conn = &mut conn;
     assert!(project_repo.exists_by_id(conn, &saved_project.id)?);
     assert!(cms_module
         .project_service
@@ -36,9 +37,9 @@ fn should_create_project() -> Result<(), Box<dyn std::error::Error>> {
     })
 }
 
-#[test]
-fn project_name_should_be_unique() -> Result<(), Box<dyn std::error::Error>> {
-    let data = data(false);
+#[tokio::test]
+async fn project_name_should_be_unique() -> Result<(), Box<dyn std::error::Error>> {
+    let data = data(false).await;
     let cms_module = &data.0;
 
     let c3p0 = cms_module.repo_manager.c3p0();
@@ -51,7 +52,8 @@ fn project_name_should_be_unique() -> Result<(), Box<dyn std::error::Error>> {
         },
     };
 
-    c3p0.transaction(|conn| {
+    c3p0.transaction(|mut conn| async {
+        let conn = &mut conn;
     assert!(project_repo
         .save(conn, project.clone())
         .is_ok());
@@ -62,9 +64,9 @@ fn project_name_should_be_unique() -> Result<(), Box<dyn std::error::Error>> {
     })
 }
 
-#[test]
-fn should_return_not_unique_validation_error() -> Result<(), Box<dyn std::error::Error>> {
-    let data = data(false);
+#[tokio::test]
+async fn should_return_not_unique_validation_error() -> Result<(), Box<dyn std::error::Error>> {
+    let data = data(false).await;
     let cms_module = &data.0;
 
     let project_service = &cms_module.project_service;
@@ -89,9 +91,9 @@ fn should_return_not_unique_validation_error() -> Result<(), Box<dyn std::error:
     Ok(())
 }
 
-#[test]
-fn should_delete_all_schemas_when_project_is_deleted() -> Result<(), Box<dyn std::error::Error>> {
-    let data = data(false);
+#[tokio::test]
+async fn should_delete_all_schemas_when_project_is_deleted() -> Result<(), Box<dyn std::error::Error>> {
+    let data = data(false).await;
     let cms_module = &data.0;
 
     // Arrange
@@ -127,7 +129,8 @@ fn should_delete_all_schemas_when_project_is_deleted() -> Result<(), Box<dyn std
     assert!(project_service.delete(saved_project).is_ok());
 
     // Assert
-    c3p0.transaction(|conn| {
+    c3p0.transaction(|mut conn| async {
+        let conn = &mut conn;
         assert!(!schema_repo.exists_by_id(conn, &saved_schema_1.id)?);
         assert!(!schema_repo.exists_by_id(conn, &saved_schema_2.id)?);
         assert!(schema_repo.exists_by_id(conn, &saved_schema_other.id)?);

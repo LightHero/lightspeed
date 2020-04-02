@@ -1,5 +1,5 @@
-use c3p0::pg::r2d2::{Pool, PostgresConnectionManager, TlsMode};
-use c3p0::pg::*;
+use c3p0::pg_async::r2d2::{Pool, PostgresConnectionManager, TlsMode};
+use c3p0::pg_async::*;
 use lazy_static::lazy_static;
 use maybe_single::{Data, MaybeSingle};
 use testcontainers::*;
@@ -35,7 +35,7 @@ fn init() -> MaybeType {
     )
     .unwrap();
     let pool = Pool::builder().min_idle(Some(10)).build(manager).unwrap();
-    let c3p0 = PgC3p0Pool::new(pool);
+    let c3p0 = PgC3p0PoolAsync::new(pool);
     let repo_manager = RepoManager::new(c3p0.clone());
 
     let cms_config = CmsConfig::build();

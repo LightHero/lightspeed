@@ -3,10 +3,11 @@ use c3p0::*;
 use lightspeed_auth::model::token::{TokenData, TokenType};
 use lightspeed_auth::repository::AuthRepositoryManager;
 use lightspeed_core::utils::{current_epoch_seconds, new_hyphenated_uuid};
+use lightspeed_core::error::LightSpeedError;
 
-#[test]
-fn should_delete_token() -> Result<(), Box<dyn std::error::Error>> {
-    let data = data(false);
+#[tokio::test]
+async fn should_delete_token() -> Result<(), LightSpeedError> {
+    let data = data(false).await;
     let auth_module = &data.0;
 
     let c3p0 = auth_module.repo_manager.c3p0();
@@ -22,28 +23,31 @@ fn should_delete_token() -> Result<(), Box<dyn std::error::Error>> {
         },
     };
 
-    c3p0.transaction(|conn| {
+    c3p0.transaction(|mut conn| async move {
+        let conn = &mut conn;
         
-    let saved_token = token_repo.save(conn, token)?;
+    let saved_token = token_repo.save(conn, token).await?;
 
-    assert!(token_repo.exists_by_id(conn, &saved_token.id)?);
+    assert!(token_repo.exists_by_id(conn, &saved_token.id).await?);
     assert!(auth_module
         .token_service
         .delete(conn, saved_token.clone())
+        .await
         .is_ok());
-    assert!(!token_repo.exists_by_id(conn, &saved_token.id)?);
+    assert!(!token_repo.exists_by_id(conn, &saved_token.id).await?);
 
     Ok(())
-    })
+    }).await
 }
 
-#[test]
-fn should_generate_token() -> Result<(), Box<dyn std::error::Error>> {
-    let data = data(false);
+#[tokio::test]
+async fn should_generate_token() -> Result<(), LightSpeedError> {
+    let data = data(false).await;
     let auth_module = &data.0;
 
     let c3p0 = auth_module.repo_manager.c3p0();
-    c3p0.transaction(|conn| {
+    c3p0.transaction(|mut conn| async move {
+        let conn = &mut conn;
         let username = new_hyphenated_uuid();
         let token_type = TokenType::ACCOUNT_ACTIVATION;
 
@@ -52,7 +56,7 @@ fn should_generate_token() -> Result<(), Box<dyn std::error::Error>> {
             conn,
             username.clone(),
             token_type.clone(),
-        )?;
+        ).await?;
         let after = current_epoch_seconds();
 
         let expiration_seconds = &auth_module.auth_config.token_validity_minutes * 60;
@@ -69,28 +73,32 @@ fn should_generate_token() -> Result<(), Box<dyn std::error::Error>> {
         assert!(auth_module
             .token_service
             .fetch_by_token(conn, &token.data.token, true)
+            .await
             .is_ok());
         assert!(auth_module
             .token_service
             .delete(conn, token.clone())
+            .await
             .is_ok());
         assert!(auth_module
             .token_service
             .fetch_by_token(conn, &token.data.token, true)
+            .await
             .is_err());
         Ok(())
-    })
+    }).await
 }
 
-#[test]
-fn should_validate_token_on_fetch() -> Result<(), Box<dyn std::error::Error>> {
-    let data = data(false);
+#[tokio::test]
+async fn should_validate_token_on_fetch() -> Result<(), LightSpeedError> {
+    let data = data(false).await;
     let auth_module = &data.0;
 
     let c3p0 = auth_module.repo_manager.c3p0();
     let token_repo = auth_module.repo_manager.token_repo();
 
-    c3p0.transaction(|conn| {
+    c3p0.transaction(|mut conn| async move {
+        let conn = &mut conn;
         let token = NewModel {
             version: 0,
             data: TokenData {
@@ -101,13 +109,14 @@ fn should_validate_token_on_fetch() -> Result<(), Box<dyn std::error::Error>> {
             },
         };
 
-        let saved_token = token_repo.save(conn, token)?;
+        let saved_token = token_repo.save(conn, token).await?;
 
         assert!(auth_module
             .token_service
             .fetch_by_token(conn, &saved_token.data.token, true)
+            .await
             .is_err());
 
         Ok(())
-    })
+    }).await
 }

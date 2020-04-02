@@ -11,7 +11,8 @@ repository = "https://github.com/LightHero/lightspeed"
 keywords = []
 
 [dependencies]
-c3p0_common = { version = "0.44" }
+async-trait = "0.1"
+c3p0_common = { version = "0.44",  path = "../../../github_ufoscout/c3p0/c3p0_common" }
 chrono = "0.4"
 jsonwebtoken = "7.0"
 log = "0.4"

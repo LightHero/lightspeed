@@ -13,7 +13,8 @@ keywords = []
 [dependencies]
 lightspeed_cache = { version = "0.2.0", path = "../cache" }
 lightspeed_core = { version = "0.2.0", path = "../core" }
-c3p0 = { version = "0.44", features = ["pg_015_migrate"] }
+async-trait = "0.1.29"
+c3p0 = { version = "0.44", features = ["pg_async_migrate"],  path = "../../../github_ufoscout/c3p0/c3p0" }
 lazy_static = "1.4"
 log = "0.4"
 regex = "1.3"
@@ -23,8 +24,8 @@ structopt = "0.3"
 
 
 [dev-dependencies]
+lightspeed_logger = { version = "0.2.0", path = "../logger" }
 maybe-single = "0.8.1"
 maplit = "1"
 testcontainers = "0.9"
-
-ls_logger = { version = "0.2.0", package = "lightspeed_logger", path = "../logger" }
+tokio = { version = "0.2", features = ["full"] }

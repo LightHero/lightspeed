@@ -1,13 +1,13 @@
 use crate::model::auth_account::{AuthAccountData, AuthAccountDataCodec, AuthAccountModel};
 use crate::repository::AuthAccountRepository;
-use c3p0::pg::*;
+use c3p0::pg_async::*;
 use c3p0::*;
 use lightspeed_core::error::LightSpeedError;
 use std::ops::Deref;
 
 #[derive(Clone)]
 pub struct PgAuthAccountRepository {
-    repo: PgC3p0Json<AuthAccountData, AuthAccountDataCodec>,
+    repo: PgC3p0JsonAsync<AuthAccountData, AuthAccountDataCodec>,
 }
 
 impl Default for PgAuthAccountRepository {
@@ -18,29 +18,30 @@ impl Default for PgAuthAccountRepository {
     }
 }
 
+#[async_trait::async_trait]
 impl AuthAccountRepository for PgAuthAccountRepository {
-    type Conn = PgConnection;
+    type Conn = PgConnectionAsync;
 
-    fn fetch_by_id(
+    async fn fetch_by_id(
         &self,
         conn: &mut Self::Conn,
         user_id: i64,
     ) -> Result<Model<AuthAccountData>, LightSpeedError> {
-        Ok(self.repo.fetch_one_by_id(conn, &user_id)?)
+        Ok(self.repo.fetch_one_by_id(conn, &user_id).await?)
     }
 
-    fn fetch_by_username(
+    async fn fetch_by_username(
         &self,
-        conn: &mut PgConnection,
+        conn: &mut PgConnectionAsync,
         username: &str,
     ) -> Result<AuthAccountModel, LightSpeedError> {
-        self.fetch_by_username_optional(conn, username)?
+        self.fetch_by_username_optional(conn, username).await?
             .ok_or_else(|| LightSpeedError::BadRequest {
                 message: format!("No user found with username [{}]", username),
             })
     }
 
-    fn fetch_by_username_optional(
+    async fn fetch_by_username_optional(
         &self,
         conn: &mut Self::Conn,
         username: &str,
@@ -52,12 +53,12 @@ impl AuthAccountRepository for PgAuthAccountRepository {
         "#;
         Ok(self
             .repo
-            .fetch_one_optional_with_sql(conn, sql, &[&username])?)
+            .fetch_one_optional_with_sql(conn, sql, &[&username]).await?)
     }
 
-    fn fetch_by_email_optional(
+    async fn fetch_by_email_optional(
         &self,
-        conn: &mut PgConnection,
+        conn: &mut PgConnectionAsync,
         email: &str,
     ) -> Result<Option<AuthAccountModel>, LightSpeedError> {
         let sql = r#"
@@ -67,36 +68,36 @@ impl AuthAccountRepository for PgAuthAccountRepository {
         "#;
         Ok(self
             .repo
-            .fetch_one_optional_with_sql(conn, sql, &[&email])?)
+            .fetch_one_optional_with_sql(conn, sql, &[&email]).await?)
     }
 
-    fn save(
+    async fn save(
         &self,
         conn: &mut Self::Conn,
         model: NewModel<AuthAccountData>,
     ) -> Result<Model<AuthAccountData>, LightSpeedError> {
-        Ok(self.repo.save(conn, model)?)
+        Ok(self.repo.save(conn, model).await?)
     }
 
-    fn update(
+    async fn update(
         &self,
         conn: &mut Self::Conn,
         model: Model<AuthAccountData>,
     ) -> Result<Model<AuthAccountData>, LightSpeedError> {
-        Ok(self.repo.update(conn, model)?)
+        Ok(self.repo.update(conn, model).await?)
     }
 
-    fn delete(
+    async fn delete(
         &self,
         conn: &mut Self::Conn,
         model: Model<AuthAccountData>,
     ) -> Result<Model<AuthAccountData>, LightSpeedError> {
-        Ok(self.repo.delete(conn, model)?)
+        Ok(self.repo.delete(conn, model).await?)
     }
 }
 
 impl Deref for PgAuthAccountRepository {
-    type Target = PgC3p0Json<AuthAccountData, AuthAccountDataCodec>;
+    type Target = PgC3p0JsonAsync<AuthAccountData, AuthAccountDataCodec>;
 
     fn deref(&self) -> &Self::Target {
         &self.repo

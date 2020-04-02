@@ -7,9 +7,9 @@ use lightspeed_core::error::{ErrorDetail, LightSpeedError};
 use lightspeed_core::service::validator::ERR_NOT_UNIQUE;
 use lightspeed_core::utils::new_hyphenated_uuid;
 
-#[test]
-fn should_create_schema() -> Result<(), Box<dyn std::error::Error>> {
-    let data = data(false);
+#[tokio::test]
+async fn should_create_schema() -> Result<(), Box<dyn std::error::Error>> {
+    let data = data(false).await;
     let cms_module = &data.0;
 
     let c3p0 = cms_module.repo_manager.c3p0();
@@ -27,7 +27,8 @@ fn should_create_schema() -> Result<(), Box<dyn std::error::Error>> {
 
     let saved_schema = cms_module.schema_service.create_schema(schema)?;
 
-    c3p0.transaction(|conn| {
+    c3p0.transaction(|mut conn| async {
+        let conn = &mut conn;
     assert!(schema_repo.exists_by_id(conn, &saved_schema.id)?);
     assert!(cms_module
         .schema_service
@@ -40,9 +41,9 @@ fn should_create_schema() -> Result<(), Box<dyn std::error::Error>> {
     })
 }
 
-#[test]
-fn schema_name_should_be_unique_per_project() -> Result<(), Box<dyn std::error::Error>> {
-    let data = data(false);
+#[tokio::test]
+async fn schema_name_should_be_unique_per_project() -> Result<(), Box<dyn std::error::Error>> {
+    let data = data(false).await;
     let cms_module = &data.0;
 
     let c3p0 = cms_module.repo_manager.c3p0();
@@ -58,7 +59,7 @@ fn schema_name_should_be_unique_per_project() -> Result<(), Box<dyn std::error::
         },
     };
 
-    c3p0.transaction::<_,C3p0Error,_>(|conn| {
+    c3p0.transaction::<_,C3p0Error,_>(|mut conn| {
         assert!(schema_repo
             .save(conn, NewModel::new(schema.clone()))
             .is_ok());
@@ -69,7 +70,7 @@ fn schema_name_should_be_unique_per_project() -> Result<(), Box<dyn std::error::
     })?;
         schema.project_id = -2;
 
-        c3p0.transaction(|conn| {
+        c3p0.transaction(|mut conn| async {
         assert!(schema_repo
             .save(conn, NewModel::new(schema.clone()))
             .is_ok());
@@ -79,9 +80,9 @@ fn schema_name_should_be_unique_per_project() -> Result<(), Box<dyn std::error::
     })
 }
 
-#[test]
-fn should_return_not_unique_validation_error() -> Result<(), Box<dyn std::error::Error>> {
-    let data = data(false);
+#[tokio::test]
+async fn should_return_not_unique_validation_error() -> Result<(), Box<dyn std::error::Error>> {
+    let data = data(false).await;
     let cms_module = &data.0;
 
     let schema_service = &cms_module.schema_service;
@@ -112,9 +113,9 @@ fn should_return_not_unique_validation_error() -> Result<(), Box<dyn std::error:
     Ok(())
 }
 
-#[test]
-fn should_delete_schemas_by_project_id() -> Result<(), Box<dyn std::error::Error>> {
-    let data = data(false);
+#[tokio::test]
+async fn should_delete_schemas_by_project_id() -> Result<(), Box<dyn std::error::Error>> {
+    let data = data(false).await;
     let cms_module = &data.0;
 
     // Arrange
@@ -142,7 +143,8 @@ fn should_delete_schemas_by_project_id() -> Result<(), Box<dyn std::error::Error
     let saved_schema_other = cms_module.schema_service.create_schema(schema)?;
 
     // Act
-    c3p0.transaction(|conn| {
+    c3p0.transaction(|mut conn| async {
+        let conn = &mut conn;
         assert_eq!(
             2,
             cms_module

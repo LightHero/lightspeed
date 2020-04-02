@@ -13,9 +13,9 @@ use lightspeed_core::model::language::Language;
 use lightspeed_core::utils::new_hyphenated_uuid;
 use std::collections::HashMap;
 
-#[test]
-fn should_create_pending_user() -> Result<(), Box<dyn std::error::Error>> {
-    let data = data(false);
+#[tokio::test]
+async fn should_create_pending_user() -> Result<(), LightSpeedError> {
+    let data = data(false).await;
     let auth_module = &data.0;
 
     let username = new_hyphenated_uuid();
@@ -32,7 +32,7 @@ fn should_create_pending_user() -> Result<(), Box<dyn std::error::Error>> {
             language: Language::EN,
             password: password.clone(),
             password_confirm: password.clone(),
-        })?;
+        }).await?;
 
     assert_eq!(username, user.data.username);
 
@@ -50,9 +50,9 @@ fn should_create_pending_user() -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 
-#[test]
-fn should_assign_default_roles_at_account_creation() -> Result<(), Box<dyn std::error::Error>> {
-    let data = data(false);
+#[tokio::test]
+async fn should_assign_default_roles_at_account_creation() -> Result<(), LightSpeedError> {
+    let data = data(false).await;
     let auth_module = &data.0;
 
     let username = new_hyphenated_uuid();
@@ -78,7 +78,7 @@ fn should_assign_default_roles_at_account_creation() -> Result<(), Box<dyn std::
         language: Language::EN,
         password: password.clone(),
         password_confirm: password.clone(),
-    })?;
+    }).await?;
 
     assert_eq!(username, user.data.username);
     assert_eq!(
@@ -89,45 +89,45 @@ fn should_assign_default_roles_at_account_creation() -> Result<(), Box<dyn std::
     Ok(())
 }
 
-#[test]
-fn should_return_user_by_id() -> Result<(), Box<dyn std::error::Error>> {
-    let data = data(false);
+#[tokio::test]
+async fn should_return_user_by_id() -> Result<(), LightSpeedError> {
+    let data = data(false).await;
     let auth_module = &data.0;
 
-    let (user, _) = create_user(&auth_module, false)?;
+    let (user, _) = create_user(&auth_module, false).await?;
 
-    auth_module.repo_manager.c3p0().transaction(|conn| {
+    auth_module.repo_manager.c3p0().transaction(|mut conn| async move {
         let user_by_id = auth_module
             .auth_account_service
-            .fetch_by_user_id_with_conn(conn, user.id)?;
+            .fetch_by_user_id_with_conn(&mut conn, user.id).await?;
 
         assert_eq!(user.data.username, user_by_id.data.username);
 
         Ok(())
-    })
+    }).await
 }
 
-#[test]
-fn should_return_user_by_username() -> Result<(), Box<dyn std::error::Error>> {
-    let data = data(false);
+#[tokio::test]
+async fn should_return_user_by_username() -> Result<(), LightSpeedError> {
+    let data = data(false).await;
     let auth_module = &data.0;
 
-    let (user, _) = create_user(&auth_module, false)?;
+    let (user, _) = create_user(&auth_module, false).await?;
 
-    auth_module.repo_manager.c3p0().transaction(|conn| {
+    auth_module.repo_manager.c3p0().transaction(|mut conn| async move {
     let user_by_id = auth_module
         .auth_account_service
-        .fetch_by_username_with_conn(conn, &user.data.username)?;
+        .fetch_by_username_with_conn(&mut conn, &user.data.username).await?;
 
     assert_eq!(user.id, user_by_id.id);
 
     Ok(())
-})
+}).await
 }
 
-#[test]
-fn should_use_the_email_as_username_if_not_provided() -> Result<(), Box<dyn std::error::Error>> {
-    let data = data(false);
+#[tokio::test]
+async fn should_use_the_email_as_username_if_not_provided() -> Result<(), LightSpeedError> {
+    let data = data(false).await;
     let auth_module = &data.0;
 
     let email = format!("{}@email.fake", new_hyphenated_uuid());
@@ -143,7 +143,7 @@ fn should_use_the_email_as_username_if_not_provided() -> Result<(), Box<dyn std:
             language: Language::EN,
             password: password.clone(),
             password_confirm: password.clone(),
-        })?;
+        }).await?;
 
     assert_eq!(email, user.data.username);
     assert_eq!(email, user.data.email);
@@ -151,15 +151,16 @@ fn should_use_the_email_as_username_if_not_provided() -> Result<(), Box<dyn std:
     assert!(auth_module
         .auth_account_service
         .fetch_by_username(&user.data.username)
+        .await
         .is_ok());
 
     Ok(())
 }
 
-#[test]
-fn should_use_the_email_as_username_if_username_is_empty() -> Result<(), Box<dyn std::error::Error>>
+#[tokio::test]
+async fn should_use_the_email_as_username_if_username_is_empty() -> Result<(), LightSpeedError>
 {
-    let data = data(false);
+    let data = data(false).await;
     let auth_module = &data.0;
 
     let email = format!("{}@email.fake", new_hyphenated_uuid());
@@ -175,7 +176,7 @@ fn should_use_the_email_as_username_if_username_is_empty() -> Result<(), Box<dyn
             language: Language::EN,
             password: password.clone(),
             password_confirm: password.clone(),
-        })?;
+        }).await?;
 
     assert_eq!(email, user.data.username);
     assert_eq!(email, user.data.email);
@@ -183,24 +184,25 @@ fn should_use_the_email_as_username_if_username_is_empty() -> Result<(), Box<dyn
     assert!(auth_module
         .auth_account_service
         .fetch_by_username(&user.data.username)
+        .await
         .is_ok());
 
     Ok(())
 }
 
-#[test]
-fn should_activate_user() -> Result<(), Box<dyn std::error::Error>> {
-    let data = data(false);
+#[tokio::test]
+async fn should_activate_user() -> Result<(), LightSpeedError> {
+    let data = data(false).await;
     let auth_module = &data.0;
 
-    let (user, token) = create_user(&auth_module, false)?;
+    let (user, token) = create_user(&auth_module, false).await?;
 
     assert_eq!(AuthAccountStatus::PENDING_ACTIVATION, user.data.status);
     assert_eq!(TokenType::ACCOUNT_ACTIVATION, token.data.token_type);
 
     let activated_user = auth_module
         .auth_account_service
-        .activate_user(&token.data.token)?;
+        .activate_user(&token.data.token).await?;
 
     assert_eq!(AuthAccountStatus::ACTIVE, activated_user.data.status);
 
@@ -209,96 +211,100 @@ fn should_activate_user() -> Result<(), Box<dyn std::error::Error>> {
     assert!(auth_module
         .auth_account_service
         .activate_user(&token.data.token)
+        .await
         .is_err());
 
-    assert!(auth_module.repo_manager.c3p0().transaction(|conn| auth_module
-        .token_service
-        .fetch_by_token(
-            conn,
-            &token.data.token,
-            false
-        ))
+    assert!(auth_module.repo_manager.c3p0().transaction(|mut conn| async move {
+        auth_module
+            .token_service
+            .fetch_by_token(
+                &mut conn,
+                &token.data.token,
+                false
+            ).await
+    })
+        .await
         .is_err());
 
     Ok(())
 }
 
-#[test]
-fn should_activate_user_only_if_activation_token_type() -> Result<(), Box<dyn std::error::Error>> {
-    let data = data(false);
+#[tokio::test]
+async fn should_activate_user_only_if_activation_token_type() -> Result<(), LightSpeedError> {
+    let data = data(false).await;
     let auth_module = &data.0;
 
-    let (user, _) = create_user(&auth_module, false)?;
+    let (user, _) = create_user(&auth_module, false).await?;
     assert_eq!(AuthAccountStatus::PENDING_ACTIVATION, user.data.status);
 
-    auth_module.repo_manager.c3p0().transaction(|conn| {
+    auth_module.repo_manager.c3p0().transaction(|mut conn| async move {
         let token = auth_module.token_service.generate_and_save_token(
-            conn,
+            &mut conn,
             &user.data.username,
             TokenType::RESET_PASSWORD,
-        )?;
+        ).await?;
 
         let activation_result = auth_module
             .auth_account_service
-            .activate_user(&token.data.token);
+            .activate_user(&token.data.token).await;
 
         assert!(activation_result.is_err());
 
         Ok(())
-    })
+    }).await
 }
 
-#[test]
-fn should_activate_user_only_if_pending_activation() -> Result<(), Box<dyn std::error::Error>> {
-    let data = data(false);
+#[tokio::test]
+async fn should_activate_user_only_if_pending_activation() -> Result<(), LightSpeedError> {
+    let data = data(false).await;
     let auth_module = &data.0;
 
-    let (user, _) = create_user(&auth_module, true)?;
+    let (user, _) = create_user(&auth_module, true).await?;
     assert_eq!(AuthAccountStatus::ACTIVE, user.data.status);
 
     auth_module
         .repo_manager
         .c3p0()
-        .transaction::<_, LightSpeedError, _>(|conn| {
+        .transaction::<_, LightSpeedError, _,_>(|mut conn| async move {
             let token = auth_module.token_service.generate_and_save_token(
-                conn,
+                &mut conn,
                 &user.data.username,
                 TokenType::ACCOUNT_ACTIVATION,
-            )?;
+            ).await?;
 
             let activation_result = auth_module
                 .auth_account_service
-                .activate_user(&token.data.token);
+                .activate_user(&token.data.token).await;
 
             assert!(activation_result.is_err());
 
             Ok(())
-        })?;
+        }).await?;
 
     Ok(())
 }
 
-#[test]
-fn should_regenerate_activation_token() -> Result<(), Box<dyn std::error::Error>> {
-    let data = data(false);
+#[tokio::test]
+async fn should_regenerate_activation_token() -> Result<(), LightSpeedError> {
+    let data = data(false).await;
     let auth_module = &data.0;
-    let (user, token) = create_user(&auth_module, false)?;
+    let (user, token) = create_user(&auth_module, false).await?;
 
     let (new_user, new_token) = auth_module
         .auth_account_service
-        .generate_new_activation_token(&token.data.token)?;
+        .generate_new_activation_token(&token.data.token).await?;
     assert_eq!(user.id, new_user.id);
     assert!(!(token.id == new_token.id));
     assert!(!(token.data.token == new_token.data.token));
 
     assert!(auth_module
         .auth_account_service
-        .activate_user(&token.data.token)
+        .activate_user(&token.data.token).await
         .is_err());
 
     let activated_user = auth_module
         .auth_account_service
-        .activate_user(&new_token.data.token)?;
+        .activate_user(&new_token.data.token).await?;
 
     assert_eq!(AuthAccountStatus::ACTIVE, activated_user.data.status);
     assert_eq!(user.id, activated_user.id);
@@ -306,132 +312,136 @@ fn should_regenerate_activation_token() -> Result<(), Box<dyn std::error::Error>
     Ok(())
 }
 
-#[test]
-fn should_regenerate_activation_token_even_if_token_expired(
-) -> Result<(), Box<dyn std::error::Error>> {
-    let data = data(false);
+#[tokio::test]
+async fn should_regenerate_activation_token_even_if_token_expired(
+) -> Result<(), LightSpeedError> {
+    let data = data(false).await;
     let auth_module = &data.0;
-    let (_, mut token) = create_user(&auth_module, false)?;
+    let (_, mut token) = create_user(&auth_module, false).await?;
     token.data.expire_at_epoch_seconds = 0;
 
-    let token_model = auth_module.repo_manager.c3p0().transaction(|conn|
-                                                                      auth_module.repo_manager.token_repo().update(
-        conn,
-        token.clone(),
-    ))?;
+    let token_model = &auth_module.repo_manager.c3p0().transaction(|mut conn| async move {
+        auth_module.repo_manager.token_repo().update(
+            &mut conn,
+            token.clone(),
+        ).await
+    }).await?;
 
-    assert!(auth_module.repo_manager.c3p0().transaction(|conn| auth_module
-        .token_service
-        .fetch_by_token(
-            conn,
-            &token_model.data.token,
-            true
-        ))
+    assert!(auth_module.repo_manager.c3p0().transaction(|mut conn| async move {
+        auth_module
+            .token_service
+            .fetch_by_token(
+                &mut conn,
+                &token_model.data.token,
+                true
+            ).await
+    }).await
         .is_err());
 
     assert!(auth_module
         .auth_account_service
-        .activate_user(&token_model.data.token)
+        .activate_user(&token_model.data.token).await
         .is_err());
 
     let (_, new_token) = auth_module
         .auth_account_service
-        .generate_new_activation_token(&token_model.data.token)?;
+        .generate_new_activation_token(&token_model.data.token).await?;
 
     assert!(auth_module
         .auth_account_service
-        .activate_user(&new_token.data.token)
+        .activate_user(&new_token.data.token).await
         .is_ok());
 
     Ok(())
 }
 
-#[test]
-fn should_resend_activation_token_only_if_correct_token_type(
-) -> Result<(), Box<dyn std::error::Error>> {
-    let data = data(false);
+#[tokio::test]
+async fn should_resend_activation_token_only_if_correct_token_type(
+) -> Result<(), LightSpeedError> {
+    let data = data(false).await;
     let auth_module = &data.0;
-    let (user, _) = create_user(&auth_module, false)?;
+    let (user, _) = create_user(&auth_module, false).await?;
 
-    let token = auth_module.repo_manager.c3p0().transaction(|conn| {
+    let token = auth_module.repo_manager.c3p0().transaction(|mut conn| async move {
         auth_module.token_service.generate_and_save_token(
-            conn,
+            &mut conn,
             &user.data.username,
             TokenType::RESET_PASSWORD,
-        )
-    })?;
+        ).await
+    }).await?;
 
     assert!(auth_module
         .auth_account_service
         .generate_new_activation_token(&token.data.token)
+        .await
         .is_err());
 
     Ok(())
 }
 
-#[test]
-fn should_login_active_user() -> Result<(), Box<dyn std::error::Error>> {
-    let data = data(false);
+#[tokio::test]
+async fn should_login_active_user() -> Result<(), LightSpeedError> {
+    let data = data(false).await;
     let auth_module = &data.0;
     let password = "123456789";
-    let (user, _) = create_user_with_password(&auth_module, password, true)?;
+    let (user, _) = create_user_with_password(&auth_module, password, true).await?;
 
     let auth = auth_module
         .auth_account_service
-        .login(&user.data.username, password)?;
+        .login(&user.data.username, password).await?;
     assert_eq!(user.data.username, auth.username);
 
     Ok(())
 }
 
-#[test]
-fn should_not_login_inactive_user() -> Result<(), Box<dyn std::error::Error>> {
-    let data = data(false);
+#[tokio::test]
+async fn should_not_login_inactive_user() -> Result<(), LightSpeedError> {
+    let data = data(false).await;
     let auth_module = &data.0;
     let password = "123456789";
-    let (user, _) = create_user_with_password(&auth_module, password, false)?;
+    let (user, _) = create_user_with_password(&auth_module, password, false).await?;
 
     assert!(auth_module
         .auth_account_service
-        .login(&user.data.username, password)
+        .login(&user.data.username, password).await
         .is_err());
 
     Ok(())
 }
 
-#[test]
-fn should_not_login_with_wrong_username() -> Result<(), Box<dyn std::error::Error>> {
-    let data = data(false);
+#[tokio::test]
+async fn should_not_login_with_wrong_username() -> Result<(), LightSpeedError> {
+    let data = data(false).await;
     let auth_module = &data.0;
     let password = "123456789";
-    let (user, _) = create_user_with_password(&auth_module, password, true)?;
+    let (user, _) = create_user_with_password(&auth_module, password, true).await?;
 
     assert!(auth_module
         .auth_account_service
-        .login(&format!("{}_", user.data.username), password)
+        .login(&format!("{}_", user.data.username), password).await
         .is_err());
 
     Ok(())
 }
 
-#[test]
-fn should_not_login_with_wrong_password() -> Result<(), Box<dyn std::error::Error>> {
-    let data = data(false);
+#[tokio::test]
+async fn should_not_login_with_wrong_password() -> Result<(), LightSpeedError> {
+    let data = data(false).await;
     let auth_module = &data.0;
     let password = "123456789";
-    let (user, _) = create_user_with_password(&auth_module, password, true)?;
+    let (user, _) = create_user_with_password(&auth_module, password, true).await?;
 
     assert!(auth_module
         .auth_account_service
-        .login(&user.data.username, &format!("{}_", password))
+        .login(&user.data.username, &format!("{}_", password)).await
         .is_err());
 
     Ok(())
 }
 
-#[test]
-fn create_user_should_fail_if_passwords_do_not_match() -> Result<(), Box<dyn std::error::Error>> {
-    let data = data(false);
+#[tokio::test]
+async fn create_user_should_fail_if_passwords_do_not_match() -> Result<(), LightSpeedError> {
+    let data = data(false).await;
     let auth_module = &data.0;
     let username = new_hyphenated_uuid();
     let email = format!("{}@email.fake", username);
@@ -446,7 +456,7 @@ fn create_user_should_fail_if_passwords_do_not_match() -> Result<(), Box<dyn std
             language: Language::EN,
             password: new_hyphenated_uuid(),
             password_confirm: new_hyphenated_uuid(),
-        });
+        }).await;
 
     assert!(result.is_err());
 
@@ -460,9 +470,9 @@ fn create_user_should_fail_if_passwords_do_not_match() -> Result<(), Box<dyn std
     Ok(())
 }
 
-#[test]
-fn create_user_should_fail_if_not_valid_email() -> Result<(), Box<dyn std::error::Error>> {
-    let data = data(false);
+#[tokio::test]
+async fn create_user_should_fail_if_not_valid_email() -> Result<(), LightSpeedError> {
+    let data = data(false).await;
     let auth_module = &data.0;
     let username = new_hyphenated_uuid();
     let email = new_hyphenated_uuid();
@@ -478,7 +488,7 @@ fn create_user_should_fail_if_not_valid_email() -> Result<(), Box<dyn std::error
             language: Language::EN,
             password: password.clone(),
             password_confirm: password.clone(),
-        });
+        }).await;
 
     assert!(result.is_err());
 
@@ -492,10 +502,10 @@ fn create_user_should_fail_if_not_valid_email() -> Result<(), Box<dyn std::error
     Ok(())
 }
 
-#[test]
-fn create_user_should_fail_if_not_accepted_privacy_policy() -> Result<(), Box<dyn std::error::Error>>
+#[tokio::test]
+async fn create_user_should_fail_if_not_accepted_privacy_policy() -> Result<(), LightSpeedError>
 {
-    let data = data(false);
+    let data = data(false).await;
     let auth_module = &data.0;
     let username = new_hyphenated_uuid();
     let email = format!("{}@email.fake", username);
@@ -511,7 +521,7 @@ fn create_user_should_fail_if_not_accepted_privacy_policy() -> Result<(), Box<dy
             language: Language::EN,
             password: password.clone(),
             password_confirm: password.clone(),
-        });
+        }).await;
 
     assert!(result.is_err());
 
@@ -525,9 +535,9 @@ fn create_user_should_fail_if_not_accepted_privacy_policy() -> Result<(), Box<dy
     Ok(())
 }
 
-#[test]
-fn create_user_should_fail_if_username_not_unique() -> Result<(), Box<dyn std::error::Error>> {
-    let data = data(false);
+#[tokio::test]
+async fn create_user_should_fail_if_username_not_unique() -> Result<(), LightSpeedError> {
+    let data = data(false).await;
     let auth_module = &data.0;
 
     let password = new_hyphenated_uuid();
@@ -544,12 +554,12 @@ fn create_user_should_fail_if_username_not_unique() -> Result<(), Box<dyn std::e
 
     assert!(auth_module
         .auth_account_service
-        .create_user(dto.clone())
+        .create_user(dto.clone()).await
         .is_ok());
 
     dto.email = format!("{}@email.fake", new_hyphenated_uuid());
 
-    let result = auth_module.auth_account_service.create_user(dto);
+    let result = auth_module.auth_account_service.create_user(dto).await;
     assert!(result.is_err());
 
     match &result {
@@ -562,9 +572,9 @@ fn create_user_should_fail_if_username_not_unique() -> Result<(), Box<dyn std::e
     Ok(())
 }
 
-#[test]
-fn create_user_should_fail_if_email_not_unique() -> Result<(), Box<dyn std::error::Error>> {
-    let data = data(false);
+#[tokio::test]
+async fn create_user_should_fail_if_email_not_unique() -> Result<(), LightSpeedError> {
+    let data = data(false).await;
     let auth_module = &data.0;
 
     let password = new_hyphenated_uuid();
@@ -581,11 +591,11 @@ fn create_user_should_fail_if_email_not_unique() -> Result<(), Box<dyn std::erro
 
     assert!(auth_module
         .auth_account_service
-        .create_user(dto.clone())
+        .create_user(dto.clone()).await
         .is_ok());
 
     dto.username = Some(new_hyphenated_uuid());
-    let result = auth_module.auth_account_service.create_user(dto);
+    let result = auth_module.auth_account_service.create_user(dto).await;
     assert!(result.is_err());
 
     match &result {
@@ -598,21 +608,21 @@ fn create_user_should_fail_if_email_not_unique() -> Result<(), Box<dyn std::erro
     Ok(())
 }
 
-#[test]
-fn should_reset_password_by_token() -> Result<(), Box<dyn std::error::Error>> {
-    let data = data(false);
+#[tokio::test]
+async fn should_reset_password_by_token() -> Result<(), LightSpeedError> {
+    let data = data(false).await;
     let auth_module = &data.0;
 
     let password = new_hyphenated_uuid();
-    let (user, _) = create_user_with_password(&auth_module, &password, true)?;
+    let (user, _) = &create_user_with_password(&auth_module, &password, true).await?;
 
-    let token = auth_module.repo_manager.c3p0().transaction(|conn| {
+    let token = auth_module.repo_manager.c3p0().transaction(|mut conn| async move {
         auth_module.token_service.generate_and_save_token(
-            conn,
+            &mut conn,
             &user.data.username,
             TokenType::RESET_PASSWORD,
-        )
-    })?;
+        ).await
+    }).await?;
 
     let password_new = new_hyphenated_uuid();
 
@@ -623,38 +633,38 @@ fn should_reset_password_by_token() -> Result<(), Box<dyn std::error::Error>> {
                 password: password_new.clone(),
                 token: token.data.token,
                 password_confirm: password_new.clone(),
-            })?;
+            }).await?;
 
     assert_eq!(user.id, updated_user.id);
 
     assert!(auth_module
         .auth_account_service
-        .login(&user.data.username, &password)
+        .login(&user.data.username, &password).await
         .is_err());
 
     assert!(auth_module
         .auth_account_service
-        .login(&user.data.username, &password_new)
+        .login(&user.data.username, &password_new).await
         .is_ok());
 
     Ok(())
 }
 
-#[test]
-fn should_reset_password_only_if_correct_token_type() -> Result<(), Box<dyn std::error::Error>> {
-    let data = data(false);
+#[tokio::test]
+async fn should_reset_password_only_if_correct_token_type() -> Result<(), LightSpeedError> {
+    let data = data(false).await;
     let auth_module = &data.0;
 
     let password = new_hyphenated_uuid();
-    let (user, _) = create_user_with_password(&auth_module, &password, true)?;
+    let (user, _) = create_user_with_password(&auth_module, &password, true).await?;
 
-    let token = auth_module.repo_manager.c3p0().transaction(|conn| {
+    let token = auth_module.repo_manager.c3p0().transaction(|mut conn| async move {
         auth_module.token_service.generate_and_save_token(
-            conn,
+            &mut conn,
             &user.data.username,
             TokenType::ACCOUNT_ACTIVATION,
-        )
-    })?;
+        ).await
+    }).await?;
 
     let password_new = new_hyphenated_uuid();
 
@@ -664,28 +674,28 @@ fn should_reset_password_only_if_correct_token_type() -> Result<(), Box<dyn std:
             password: password_new.clone(),
             token: token.data.token,
             password_confirm: password_new.clone(),
-        });
+        }).await;
 
     assert!(result.is_err());
 
     Ok(())
 }
 
-#[test]
-fn should_reset_password_only_if_user_is_active() -> Result<(), Box<dyn std::error::Error>> {
-    let data = data(false);
+#[tokio::test]
+async fn should_reset_password_only_if_user_is_active() -> Result<(), LightSpeedError> {
+    let data = data(false).await;
     let auth_module = &data.0;
 
     let password = new_hyphenated_uuid();
-    let (user, _) = create_user_with_password(&auth_module, &password, false)?;
+    let (user, _) = create_user_with_password(&auth_module, &password, false).await?;
 
-    let token = auth_module.repo_manager.c3p0().transaction(|conn| {
+    let token = auth_module.repo_manager.c3p0().transaction(|mut conn| async move {
         auth_module.token_service.generate_and_save_token(
-            conn,
+            &mut conn,
             &user.data.username,
             TokenType::RESET_PASSWORD,
-        )
-    })?;
+        ).await
+    }).await?;
 
     let password_new = new_hyphenated_uuid();
 
@@ -695,27 +705,27 @@ fn should_reset_password_only_if_user_is_active() -> Result<(), Box<dyn std::err
             password: password_new.clone(),
             token: token.data.token,
             password_confirm: password_new.clone(),
-        });
+        }).await;
 
     assert!(result.is_err());
     Ok(())
 }
 
-#[test]
-fn should_reset_password_only_if_passwords_match() -> Result<(), Box<dyn std::error::Error>> {
-    let data = data(false);
+#[tokio::test]
+async fn should_reset_password_only_if_passwords_match() -> Result<(), LightSpeedError> {
+    let data = data(false).await;
     let auth_module = &data.0;
 
     let password = new_hyphenated_uuid();
-    let (user, _) = create_user_with_password(&auth_module, &password, false)?;
+    let (user, _) = create_user_with_password(&auth_module, &password, false).await?;
 
-    let token = auth_module.repo_manager.c3p0().transaction(|conn| {
+    let token = auth_module.repo_manager.c3p0().transaction(|mut conn| async move {
         auth_module.token_service.generate_and_save_token(
-            conn,
+            &mut conn,
             &user.data.username,
             TokenType::RESET_PASSWORD,
-        )
-    })?;
+        ).await
+    }).await?;
 
     let password_new = new_hyphenated_uuid();
 
@@ -725,7 +735,7 @@ fn should_reset_password_only_if_passwords_match() -> Result<(), Box<dyn std::er
             password: password_new.clone(),
             token: token.data.token,
             password_confirm: format!("{}_", password_new.clone()),
-        });
+        }).await;
 
     assert!(result.is_err());
 
@@ -739,44 +749,44 @@ fn should_reset_password_only_if_passwords_match() -> Result<(), Box<dyn std::er
     Ok(())
 }
 
-#[test]
-fn should_generate_reset_password_token() -> Result<(), Box<dyn std::error::Error>> {
-    let data = data(false);
+#[tokio::test]
+async fn should_generate_reset_password_token() -> Result<(), LightSpeedError> {
+    let data = data(false).await;
     let auth_module = &data.0;
 
-    let (user, _) = create_user(&auth_module, true)?;
+    let (user, _) = create_user(&auth_module, true).await?;
 
     let (new_user, token) = auth_module
         .auth_account_service
-        .generate_reset_password_token(&user.data.username)?;
+        .generate_reset_password_token(&user.data.username).await?;
     assert_eq!(user.id, new_user.id);
     assert_eq!(TokenType::RESET_PASSWORD, token.data.token_type);
     Ok(())
 }
 
-#[test]
-fn should_not_generate_reset_password_token_if_user_not_active(
-) -> Result<(), Box<dyn std::error::Error>> {
-    let data = data(false);
+#[tokio::test]
+async fn should_not_generate_reset_password_token_if_user_not_active(
+) -> Result<(), LightSpeedError> {
+    let data = data(false).await;
     let auth_module = &data.0;
 
-    let (user, _) = create_user(&auth_module, false)?;
+    let (user, _) = create_user(&auth_module, false).await?;
 
     assert!(auth_module
         .auth_account_service
-        .generate_reset_password_token(&user.data.username)
+        .generate_reset_password_token(&user.data.username).await
         .is_err());
 
     Ok(())
 }
 
-#[test]
-fn should_change_user_password() -> Result<(), Box<dyn std::error::Error>> {
-    let data = data(false);
+#[tokio::test]
+async fn should_change_user_password() -> Result<(), LightSpeedError> {
+    let data = data(false).await;
     let auth_module = &data.0;
 
     let password = new_hyphenated_uuid();
-    let (user, _) = create_user_with_password(&auth_module, &password, true)?;
+    let (user, _) = create_user_with_password(&auth_module, &password, true).await?;
 
     let password_new = new_hyphenated_uuid();
 
@@ -787,31 +797,31 @@ fn should_change_user_password() -> Result<(), Box<dyn std::error::Error>> {
             old_password: password.clone(),
             new_password: password_new.clone(),
             new_password_confirm: password_new.clone(),
-        })?;
+        }).await?;
 
     assert_eq!(updated_user.id, user.id);
 
     assert!(auth_module
         .auth_account_service
-        .login(&user.data.username, &password)
+        .login(&user.data.username, &password).await
         .is_err());
 
     assert!(auth_module
         .auth_account_service
-        .login(&user.data.username, &password_new)
+        .login(&user.data.username, &password_new).await
         .is_ok());
 
     Ok(())
 }
 
-#[test]
-fn should_not_change_user_password_if_wrong_old_password() -> Result<(), Box<dyn std::error::Error>>
+#[tokio::test]
+async fn should_not_change_user_password_if_wrong_old_password() -> Result<(), LightSpeedError>
 {
-    let data = data(false);
+    let data = data(false).await;
     let auth_module = &data.0;
 
     let password = new_hyphenated_uuid();
-    let (user, _) = create_user_with_password(&auth_module, &password, true)?;
+    let (user, _) = create_user_with_password(&auth_module, &password, true).await?;
 
     let password_new = new_hyphenated_uuid();
 
@@ -822,30 +832,30 @@ fn should_not_change_user_password_if_wrong_old_password() -> Result<(), Box<dyn
             old_password: format!("__{}__", password),
             new_password: password_new.clone(),
             new_password_confirm: password_new.clone(),
-        });
+        }).await;
 
     assert!(result.is_err());
 
     assert!(auth_module
         .auth_account_service
-        .login(&user.data.username, &password)
+        .login(&user.data.username, &password).await
         .is_ok());
 
     assert!(auth_module
         .auth_account_service
-        .login(&user.data.username, &password_new)
+        .login(&user.data.username, &password_new).await
         .is_err());
 
     Ok(())
 }
 
-#[test]
-fn should_not_change_user_password_if_inactive_user() -> Result<(), Box<dyn std::error::Error>> {
-    let data = data(false);
+#[tokio::test]
+async fn should_not_change_user_password_if_inactive_user() -> Result<(), LightSpeedError> {
+    let data = data(false).await;
     let auth_module = &data.0;
 
     let password = new_hyphenated_uuid();
-    let (user, _) = create_user_with_password(&auth_module, &password, false)?;
+    let (user, _) = create_user_with_password(&auth_module, &password, false).await?;
 
     let password_new = new_hyphenated_uuid();
 
@@ -856,21 +866,21 @@ fn should_not_change_user_password_if_inactive_user() -> Result<(), Box<dyn std:
             old_password: password,
             new_password: password_new.clone(),
             new_password_confirm: password_new.clone(),
-        });
+        }).await;
 
     assert!(result.is_err());
 
     Ok(())
 }
 
-#[test]
-fn should_not_change_user_password_if_new_passwords_do_not_match(
-) -> Result<(), Box<dyn std::error::Error>> {
-    let data = data(false);
+#[tokio::test]
+async fn should_not_change_user_password_if_new_passwords_do_not_match(
+) -> Result<(), LightSpeedError> {
+    let data = data(false).await;
     let auth_module = &data.0;
 
     let password = new_hyphenated_uuid();
-    let (user, _) = create_user_with_password(&auth_module, &password, true)?;
+    let (user, _) = create_user_with_password(&auth_module, &password, true).await?;
 
     let password_new = new_hyphenated_uuid();
 
@@ -881,7 +891,7 @@ fn should_not_change_user_password_if_new_passwords_do_not_match(
             old_password: password,
             new_password: password_new.clone(),
             new_password_confirm: format!("__{}", password_new.clone()),
-        });
+        }).await;
 
     assert!(result.is_err());
 
@@ -895,9 +905,9 @@ fn should_not_change_user_password_if_new_passwords_do_not_match(
     Ok(())
 }
 
-#[test]
-fn should_add_and_remove_roles() -> Result<(), Box<dyn std::error::Error>> {
-    let data = data(false);
+#[tokio::test]
+async fn should_add_and_remove_roles() -> Result<(), LightSpeedError> {
+    let data = data(false).await;
     let auth_module = &data.0;
 
     let auh_service = &auth_module.auth_account_service;
@@ -916,29 +926,29 @@ fn should_add_and_remove_roles() -> Result<(), Box<dyn std::error::Error>> {
             language: Language::EN,
             password: password.clone(),
             password_confirm: password.clone(),
-        })?;
+        }).await?;
 
     assert!(user.data.roles.is_empty());
 
-    let user = auh_service.add_roles(user.id, &vec![])?;
+    let user = auh_service.add_roles(user.id, &vec![]).await?;
     assert!(user.data.roles.is_empty());
 
-    let user = auh_service.delete_roles(user.id, &vec!["one".to_owned()])?;
+    let user = auh_service.delete_roles(user.id, &vec!["one".to_owned()]).await?;
     assert!(user.data.roles.is_empty());
 
-    let user = auh_service.add_roles(user.id, &vec!["one".to_owned()])?;
+    let user = auh_service.add_roles(user.id, &vec!["one".to_owned()]).await?;
     assert_eq!(vec!["one".to_owned()], user.data.roles);
 
-    let user = auh_service.add_roles(user.id, &vec!["two".to_owned(), "three".to_owned()])?;
+    let user = auh_service.add_roles(user.id, &vec!["two".to_owned(), "three".to_owned()]).await?;
     assert_eq!(
         vec!["one".to_owned(), "two".to_owned(), "three".to_owned()],
         user.data.roles
     );
 
-    let user = auh_service.delete_roles(user.id, &vec!["two".to_owned(), "four".to_owned()])?;
+    let user = auh_service.delete_roles(user.id, &vec!["two".to_owned(), "four".to_owned()]).await?;
     assert_eq!(vec!["one".to_owned(), "three".to_owned()], user.data.roles);
 
-    let user = auh_service.delete_roles(user.id, &vec!["one".to_owned(), "three".to_owned()])?;
+    let user = auh_service.delete_roles(user.id, &vec!["one".to_owned(), "three".to_owned()]).await?;
     assert!(user.data.roles.is_empty());
 
     Ok(())

@@ -50,12 +50,13 @@ impl<RepoManager: AuthRepositoryManager> AuthModule<RepoManager> {
     }
 }
 
+#[async_trait::async_trait]
 impl<RepoManager: AuthRepositoryManager> lightspeed_core::module::Module
     for AuthModule<RepoManager>
 {
-    fn start(&mut self) -> Result<(), LightSpeedError> {
+    async fn start(&mut self) -> Result<(), LightSpeedError> {
         info!("Starting AuthModule");
-        self.repo_manager.start()?;
+        self.repo_manager.start().await?;
         Ok(())
     }
 }

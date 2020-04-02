@@ -1,13 +1,13 @@
 use crate::model::content::ContentData;
 use crate::repository::ContentRepository;
-use c3p0::pg::*;
+use c3p0::pg_async::*;
 use c3p0::*;
 use lightspeed_core::error::LightSpeedError;
 use std::ops::Deref;
 
 #[derive(Clone)]
 pub struct PgContentRepository {
-    repo: PgC3p0Json<ContentData, DefaultJsonCodec>,
+    repo: PgC3p0JsonAsync<ContentData, DefaultJsonCodec>,
 }
 
 impl PgContentRepository {
@@ -19,7 +19,7 @@ impl PgContentRepository {
 }
 
 impl Deref for PgContentRepository {
-    type Target = PgC3p0Json<ContentData, DefaultJsonCodec>;
+    type Target = PgC3p0JsonAsync<ContentData, DefaultJsonCodec>;
 
     fn deref(&self) -> &Self::Target {
         &self.repo
@@ -27,7 +27,7 @@ impl Deref for PgContentRepository {
 }
 
 impl ContentRepository for PgContentRepository {
-    type Conn = PgConnection;
+    type Conn = PgConnectionAsync;
 
     fn create_table(&self, conn: &mut Self::Conn) -> Result<(), LightSpeedError> {
         Ok(self.repo.create_table_if_not_exists(conn)?)

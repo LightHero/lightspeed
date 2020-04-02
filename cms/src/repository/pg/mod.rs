@@ -2,7 +2,7 @@ use crate::repository::pg::pg_content::PgContentRepository;
 use crate::repository::pg::pg_project::PgProjectRepository;
 use crate::repository::pg::pg_schema::PgSchemaRepository;
 use crate::repository::CmsRepositoryManager;
-use c3p0::pg::*;
+use c3p0::pg_async::*;
 use c3p0::{include_dir::*, *};
 use lightspeed_core::error::LightSpeedError;
 
@@ -14,23 +14,23 @@ const MIGRATIONS: Dir = include_dir!("./src_resources/db/pg/migrations");
 
 #[derive(Clone)]
 pub struct PgCmsRepositoryManager {
-    c3p0: PgC3p0Pool,
+    c3p0: PgC3p0PoolAsync,
 }
 
 impl PgCmsRepositoryManager {
-    pub fn new(c3p0: PgC3p0Pool) -> Self {
+    pub fn new(c3p0: PgC3p0PoolAsync) -> Self {
         Self { c3p0 }
     }
 }
 
 impl CmsRepositoryManager for PgCmsRepositoryManager {
-    type Conn = PgConnection;
-    type C3P0 = PgC3p0Pool;
+    type Conn = PgConnectionAsync;
+    type C3P0 = PgC3p0PoolAsync;
     type ContentRepo = PgContentRepository;
     type ProjectRepo = PgProjectRepository;
     type SchemaRepo = PgSchemaRepository;
 
-    fn c3p0(&self) -> &PgC3p0Pool {
+    fn c3p0(&self) -> &PgC3p0PoolAsync {
         &self.c3p0
     }
 

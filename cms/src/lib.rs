@@ -64,8 +64,8 @@ impl<RepoManager: CmsRepositoryManager> lightspeed_core::module::Module for CmsM
 pub mod test_root {
 
     use lazy_static::lazy_static;
-    use ls_logger::config::LoggerConfig;
-    use ls_logger::setup_logger;
+    use lightspeed_logger::config::LoggerConfig;
+    use lightspeed_logger::setup_logger;
     use std::sync::Mutex;
 
     lazy_static! {

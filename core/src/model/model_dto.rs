@@ -6,7 +6,7 @@ use typescript_definitions::TypeScriptify;
 #[derive(Clone, Serialize, Deserialize, TypeScriptify)]
 pub struct ModelDto<DATA>
 where
-    DATA: Clone + serde::ser::Serialize,
+    DATA: Clone + serde::ser::Serialize + Send,
 {
     pub id: IdType,
     pub version: VersionType,
@@ -16,7 +16,7 @@ where
 
 impl<DATA> From<Model<DATA>> for ModelDto<DATA>
 where
-    DATA: Clone + serde::ser::Serialize + serde::de::DeserializeOwned,
+    DATA: Clone + serde::ser::Serialize + serde::de::DeserializeOwned + Send,
 {
     fn from(model: Model<DATA>) -> Self {
         Self {

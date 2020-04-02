@@ -1,18 +1,20 @@
 use crate::error::LightSpeedError;
 use log::info;
 
+#[async_trait::async_trait]
 pub trait ModuleBuilder<T: Module> {
-    fn build(&self) -> Result<T, LightSpeedError>;
+    async fn build(&self) -> Result<T, LightSpeedError>;
 }
 
+#[async_trait::async_trait]
 pub trait Module {
-    fn start(&mut self) -> Result<(), LightSpeedError>;
+    async fn start(&mut self) -> Result<(), LightSpeedError>;
 }
 
-pub fn start(modules: &mut [&mut dyn Module]) -> Result<(), LightSpeedError> {
+pub async fn start(modules: &mut [&mut dyn Module]) -> Result<(), LightSpeedError> {
     info!("Begin modules 'start' phase");
     for module in modules.iter_mut() {
-        module.start()?;
+        module.start().await?;
     }
     Ok(())
 }

@@ -42,13 +42,13 @@ impl<RepoManager: AuthRepositoryManager> AuthAccountService<RepoManager> {
         }
     }
 
-    pub fn login(&self, username: &str, password: &str) -> Result<Auth, LightSpeedError> {
-        let model =         self.c3p0
-            .transaction(move |conn| {
+    pub async fn login(&self, username: &str, password: &str) -> Result<Auth, LightSpeedError> {
+        let model = self.c3p0
+            .transaction(|mut conn| async move {
                 self
                     .auth_repo
-                    .fetch_by_username_optional(conn, username)
-            })?.filter(|model| match model.data.status {
+                    .fetch_by_username_optional(&mut conn, username).await
+            }).await?.filter(|model| match model.data.status {
             AuthAccountStatus::ACTIVE => true,
             _ => false,
         });
@@ -71,15 +71,17 @@ impl<RepoManager: AuthRepositoryManager> AuthAccountService<RepoManager> {
         })
     }
 
-    pub fn create_user(
+    pub async fn create_user(
         &self,
         create_login_dto: CreateLoginDto,
     ) -> Result<(AuthAccountModel, TokenModel), LightSpeedError> {
         self.c3p0
-            .transaction(move |conn| self.create_user_with_conn(conn, create_login_dto))
+            .transaction(|mut conn| async move {
+                self.create_user_with_conn(&mut conn, create_login_dto).await
+            }).await
     }
 
-    pub fn create_user_with_conn(
+    pub async fn create_user_with_conn(
         &self,
         conn: &mut RepoManager::Conn,
         create_login_dto: CreateLoginDto,
@@ -100,10 +102,10 @@ impl<RepoManager: AuthRepositoryManager> AuthAccountService<RepoManager> {
         }
         .clone();
 
-        let existing_user = self.auth_repo.fetch_by_username_optional(conn, &username)?;
+        let existing_user = self.auth_repo.fetch_by_username_optional(conn, &username).await?;
         let existing_email = self
             .auth_repo
-            .fetch_by_email_optional(conn, &create_login_dto.email)?;
+            .fetch_by_email_optional(conn, &create_login_dto.email).await?;
         Validator::validate((&create_login_dto, |error_details: &mut dyn ErrorDetails| {
             if existing_user.is_some() {
                 error_details.add_detail("username".into(), ERR_NOT_UNIQUE.into());
@@ -124,38 +126,38 @@ impl<RepoManager: AuthRepositoryManager> AuthAccountService<RepoManager> {
                 created_date_epoch_seconds: current_epoch_seconds(),
                 status: AuthAccountStatus::PENDING_ACTIVATION,
             }),
-        )?;
+        ).await?;
 
-        let token = self.generate_activation_token(conn, &auth_account_model.data.username)?;
+        let token = self.generate_activation_token(conn, &auth_account_model.data.username).await?;
         Ok((auth_account_model, token))
     }
 
-    fn generate_activation_token(
+    async fn generate_activation_token(
         &self,
         conn: &mut RepoManager::Conn,
         username: &str,
     ) -> Result<TokenModel, LightSpeedError> {
         self.token_service
-            .generate_and_save_token(conn, username, TokenType::ACCOUNT_ACTIVATION)
+            .generate_and_save_token(conn, username, TokenType::ACCOUNT_ACTIVATION).await
     }
 
-    pub fn generate_new_activation_token(
+    pub async fn generate_new_activation_token(
         &self,
         previous_activation_token: &str,
     ) -> Result<(AuthAccountModel, TokenModel), LightSpeedError> {
-        self.c3p0.transaction(move |conn| {
-            self.generate_new_activation_token_with_conn(conn, previous_activation_token)
-        })
+        self.c3p0.transaction(|mut conn| async move {
+            self.generate_new_activation_token_with_conn(&mut conn, previous_activation_token).await
+        }).await
     }
 
-    pub fn generate_new_activation_token_with_conn(
+    pub async fn generate_new_activation_token_with_conn(
         &self,
         conn: &mut RepoManager::Conn,
         previous_activation_token: &str,
     ) -> Result<(AuthAccountModel, TokenModel), LightSpeedError> {
         let token = self
             .token_service
-            .fetch_by_token(conn, previous_activation_token, false)?;
+            .fetch_by_token(conn, previous_activation_token, false).await?;
 
         Validator::validate(|error_details: &mut dyn ErrorDetails| {
             match &token.data.token_type {
@@ -172,7 +174,7 @@ impl<RepoManager: AuthRepositoryManager> AuthAccountService<RepoManager> {
 
         let user = self
             .auth_repo
-            .fetch_by_username(conn, &token.data.username)?;
+            .fetch_by_username(conn, &token.data.username).await?;
 
         match &user.data.status {
             AuthAccountStatus::PENDING_ACTIVATION => {}
@@ -186,20 +188,21 @@ impl<RepoManager: AuthRepositoryManager> AuthAccountService<RepoManager> {
             }
         };
 
-        self.token_service.delete(conn, token)?;
+        self.token_service.delete(conn, token).await?;
 
-        let token = self.generate_activation_token(conn, &user.data.username)?;
+        let token = self.generate_activation_token(conn, &user.data.username).await?;
         Ok((user, token))
     }
 
-    pub fn activate_user(
+    pub async fn activate_user(
         &self,
         activation_token: &str,
     ) -> Result<AuthAccountModel, LightSpeedError> {
-        self.c3p0.transaction(move |conn| {
+        self.c3p0.transaction(|mut conn| async move   {
+            let conn = &mut conn;
             let token = self
                 .token_service
-                .fetch_by_token(conn, activation_token, true)?;
+                .fetch_by_token(conn, activation_token, true).await?;
 
             Validator::validate(|error_details: &mut dyn ErrorDetails| {
                 match &token.data.token_type {
@@ -213,7 +216,7 @@ impl<RepoManager: AuthRepositoryManager> AuthAccountService<RepoManager> {
 
             let mut user = self
                 .auth_repo
-                .fetch_by_username(conn, &token.data.username)?;
+                .fetch_by_username(conn, &token.data.username).await?;
 
             match &user.data.status {
                 AuthAccountStatus::PENDING_ACTIVATION => {}
@@ -227,30 +230,32 @@ impl<RepoManager: AuthRepositoryManager> AuthAccountService<RepoManager> {
                 }
             };
 
-            self.token_service.delete(conn, token)?;
+            self.token_service.delete(conn, token).await?;
 
             user.data.status = AuthAccountStatus::ACTIVE;
-            user = self.auth_repo.update(conn, user)?;
+            user = self.auth_repo.update(conn, user).await?;
             Ok(user)
-        })
+        }).await
     }
 
-    pub fn generate_reset_password_token(
+    pub async fn generate_reset_password_token(
         &self,
         username: &str,
     ) -> Result<(AuthAccountModel, TokenModel), LightSpeedError> {
         self.c3p0
-            .transaction(move |conn| self.generate_reset_password_token_with_conn(conn, username))
+            .transaction(|mut conn| async move {
+                self.generate_reset_password_token_with_conn(&mut conn, username).await
+            }).await
     }
 
-    pub fn generate_reset_password_token_with_conn(
+    pub async fn generate_reset_password_token_with_conn(
         &self,
         conn: &mut RepoManager::Conn,
         username: &str,
     ) -> Result<(AuthAccountModel, TokenModel), LightSpeedError> {
         info!("Generate reset password token for to [{}]", username);
 
-        let user = self.auth_repo.fetch_by_username(conn, &username)?;
+        let user = self.auth_repo.fetch_by_username(conn, &username).await?;
 
         match &user.data.status {
             AuthAccountStatus::ACTIVE => {}
@@ -265,21 +270,22 @@ impl<RepoManager: AuthRepositoryManager> AuthAccountService<RepoManager> {
             conn,
             username,
             TokenType::RESET_PASSWORD,
-        )?;
+        ).await?;
 
         Ok((user, token))
     }
 
-    pub fn reset_password_by_token(
+    pub async fn reset_password_by_token(
         &self,
         reset_password_dto: ResetPasswordDto,
     ) -> Result<AuthAccountModel, LightSpeedError> {
         Validator::validate(&reset_password_dto)?;
 
-        let result = self.c3p0.transaction(move |conn| {
+        let result = self.c3p0.transaction(|mut conn| async move {
+            let conn = &mut conn;
             let token =
                 self.token_service
-                    .fetch_by_token(conn, &reset_password_dto.token, false)?;
+                    .fetch_by_token(conn, &reset_password_dto.token, false).await?;
 
             info!("Reset password of user [{}]", token.data.username);
 
@@ -293,7 +299,7 @@ impl<RepoManager: AuthRepositoryManager> AuthAccountService<RepoManager> {
 
             let mut user = self
                 .auth_repo
-                .fetch_by_username(conn, &token.data.username)?;
+                .fetch_by_username(conn, &token.data.username).await?;
 
             match &user.data.status {
                 AuthAccountStatus::ACTIVE => {}
@@ -304,24 +310,25 @@ impl<RepoManager: AuthRepositoryManager> AuthAccountService<RepoManager> {
                 }
             };
 
-            self.token_service.delete(conn, token)?;
+            self.token_service.delete(conn, token).await?;
 
             user.data.password = self
                 .password_service
                 .hash_password(&reset_password_dto.password)?;
-            user = self.auth_repo.update(conn, user)?;
+            user = self.auth_repo.update(conn, user).await?;
             Ok(user)
-        });
+        }).await;
         Ok(result?)
     }
 
-    pub fn change_password(
+    pub async fn change_password(
         &self,
         dto: ChangePasswordDto,
     ) -> Result<AuthAccountModel, LightSpeedError> {
         Validator::validate(&dto)?;
-        self.c3p0.transaction(move |conn| {
-            let mut user = self.auth_repo.fetch_by_id(conn, dto.user_id)?;
+        self.c3p0.transaction(|mut conn| async move {
+            let conn = &mut conn;
+            let mut user = self.auth_repo.fetch_by_id(conn, dto.user_id).await?;
             info!("Change password of user [{}]", user.data.username);
 
             match &user.data.status {
@@ -344,75 +351,80 @@ impl<RepoManager: AuthRepositoryManager> AuthAccountService<RepoManager> {
 
             user.data.password = self.password_service.hash_password(&dto.new_password)?;
 
-            user = self.auth_repo.update(conn, user)?;
+            user = self.auth_repo.update(conn, user).await?;
             Ok(user)
-        })
+        }).await
     }
 
-    pub fn fetch_by_user_id_with_conn(
+    pub async fn fetch_by_user_id_with_conn(
         &self,
         conn: &mut RepoManager::Conn,
         user_id: i64,
     ) -> Result<AuthAccountModel, LightSpeedError> {
-        self.auth_repo.fetch_by_id(conn, user_id)
+        self.auth_repo.fetch_by_id(conn, user_id).await
     }
 
-    pub fn fetch_by_username(&self, username: &str) -> Result<AuthAccountModel, LightSpeedError> {
-        self.c3p0.transaction(move |conn|
-        self.fetch_by_username_with_conn(conn, username))
+    pub async fn fetch_by_username(&self, username: &str) -> Result<AuthAccountModel, LightSpeedError> {
+        self.c3p0.transaction(|mut conn| async move {
+            self.fetch_by_username_with_conn(&mut conn, username).await
+        }).await
     }
 
-    pub fn fetch_by_username_with_conn(
+    pub async fn fetch_by_username_with_conn(
         &self,
         conn: &mut RepoManager::Conn,
         username: &str,
     ) -> Result<AuthAccountModel, LightSpeedError> {
-        self.auth_repo.fetch_by_username(conn, username)
+        self.auth_repo.fetch_by_username(conn, username).await
     }
 
-    pub fn add_roles(
+    pub async fn add_roles(
         &self,
         user_id: i64,
         roles: &[String],
     ) -> Result<AuthAccountModel, LightSpeedError> {
         self.c3p0
-            .transaction(move |conn| self.add_roles_with_conn(conn, user_id, roles))
+            .transaction(|mut conn| async move {
+                self.add_roles_with_conn(&mut conn, user_id, roles).await
+            }).await
     }
 
-    pub fn add_roles_with_conn(
+    pub async fn add_roles_with_conn(
         &self,
         conn: &mut RepoManager::Conn,
         user_id: i64,
         roles: &[String],
     ) -> Result<AuthAccountModel, LightSpeedError> {
-        let mut account = self.fetch_by_user_id_with_conn(conn, user_id)?;
+        let mut account = self.fetch_by_user_id_with_conn(conn, user_id).await?;
         for role in roles {
             if !account.data.roles.contains(role) {
                 account.data.roles.push(role.to_owned())
             }
         }
-        Ok(self.auth_repo.update(conn, account)?)
+        Ok(self.auth_repo.update(conn, account).await?)
     }
 
-    pub fn delete_roles(
+    pub async fn delete_roles(
         &self,
         user_id: i64,
         roles: &[String],
     ) -> Result<AuthAccountModel, LightSpeedError> {
         self.c3p0
-            .transaction(move |conn| self.delete_roles_with_conn(conn, user_id, roles))
+            .transaction(|mut conn| async move {
+                self.delete_roles_with_conn(&mut conn, user_id, roles).await
+            }).await
     }
 
-    pub fn delete_roles_with_conn(
+    pub async fn delete_roles_with_conn(
         &self,
         conn: &mut RepoManager::Conn,
         user_id: i64,
         roles: &[String],
     ) -> Result<AuthAccountModel, LightSpeedError> {
-        let mut account = self.fetch_by_user_id_with_conn(conn, user_id)?;
+        let mut account = self.fetch_by_user_id_with_conn(conn, user_id).await?;
         for role in roles {
             account.data.roles.retain(|r| r != role);
         }
-        Ok(self.auth_repo.update(conn, account)?)
+        Ok(self.auth_repo.update(conn, account).await?)
     }
 }

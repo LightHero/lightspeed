@@ -8,14 +8,14 @@ use lightspeed_core::model::language::Language;
 use lightspeed_core::utils::new_hyphenated_uuid;
 use std::collections::HashMap;
 
-pub fn create_user<RepoManager: AuthRepositoryManager>(
+pub async fn create_user<RepoManager: AuthRepositoryManager>(
     auth_module: &AuthModule<RepoManager>,
     activate: bool,
 ) -> Result<(AuthAccountModel, TokenModel), LightSpeedError> {
-    create_user_with_password(auth_module, &new_hyphenated_uuid(), activate)
+    create_user_with_password(auth_module, &new_hyphenated_uuid(), activate).await
 }
 
-pub fn create_user_with_password<RepoManager: AuthRepositoryManager>(
+pub async fn create_user_with_password<RepoManager: AuthRepositoryManager>(
     auth_module: &AuthModule<RepoManager>,
     password: &str,
     activate: bool,
@@ -33,12 +33,12 @@ pub fn create_user_with_password<RepoManager: AuthRepositoryManager>(
             language: Language::EN,
             password: password.to_string(),
             password_confirm: password.to_string(),
-        })?;
+        }).await?;
 
     if activate {
         let activated_user = auth_module
             .auth_account_service
-            .activate_user(&token.data.token)?;
+            .activate_user(&token.data.token).await?;
         Ok((activated_user, token))
     } else {
         Ok((user, token))

@@ -29,8 +29,9 @@ impl CoreModule {
     }
 }
 
+#[async_trait::async_trait]
 impl module::Module for CoreModule {
-    fn start(&mut self) -> Result<(), LightSpeedError> {
+    async fn start(&mut self) -> Result<(), LightSpeedError> {
         info!("Starting CoreModule");
         Ok(())
     }

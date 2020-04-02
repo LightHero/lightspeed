@@ -1,14 +1,14 @@
 use crate::model::content::{ContentData, ContentModel};
 use crate::model::project::{ProjectData, ProjectModel};
 use crate::model::schema::{SchemaData, SchemaModel};
-use c3p0::{C3p0Pool, NewModel};
+use c3p0::{C3p0PoolAsync, NewModel};
 use lightspeed_core::error::LightSpeedError;
 
 pub mod pg;
 
 pub trait CmsRepositoryManager: Clone {
     type Conn;
-    type C3P0: C3p0Pool<CONN = Self::Conn>;
+    type C3P0: C3p0PoolAsync<CONN = Self::Conn>;
     type ContentRepo: ContentRepository<Conn = Self::Conn>;
     type ProjectRepo: ProjectRepository<Conn = Self::Conn>;
     type SchemaRepo: SchemaRepository<Conn = Self::Conn>;
