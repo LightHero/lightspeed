@@ -3,7 +3,12 @@ name = "lightspeed_core"
 license = "MIT"
 version = "0.1.1"
 authors = ["Francesco Cina <ufoscout@gmail.com>"]
+description = "LightSpeed"
 edition = "2018"
+readme = "README.md"
+homepage = "https://github.com/LightHero/lightspeed"
+repository = "https://github.com/LightHero/lightspeed"
+keywords = []
 
 [dependencies]
 c3p0_common = { version = "0.43" }
