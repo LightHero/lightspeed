@@ -1,5 +1,8 @@
 #!/usr/bin/env bash
 
+## exit if something fails
+set -e
+
 declare -a publish_list=(
     "logger"
     "scheduler"
@@ -24,7 +27,7 @@ do
     cd ..
     rc=$?
     if [[ $rc -ne 0 ]] ; then
-        echo "Failure publishing $i"; exit $rc
+        echo "Failure publishing $i";
     fi
 
 done
