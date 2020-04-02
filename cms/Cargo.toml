@@ -1,9 +1,14 @@
 [package]
 name = "lightspeed_cms"
 license = "MIT"
-version = "0.1.0"
+version = "0.1.3"
 authors = ["Francesco Cina <ufoscout@gmail.com>"]
+description = "LightSpeed"
 edition = "2018"
+readme = "README.md"
+homepage = "https://github.com/LightHero/lightspeed"
+repository = "https://github.com/LightHero/lightspeed"
+keywords = []
 
 [dependencies]
 lightspeed_cache = { version = "0.1", path = "../cache" }
