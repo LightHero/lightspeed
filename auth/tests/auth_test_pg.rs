@@ -27,31 +27,14 @@ lazy_static! {
 
 async fn init() -> MaybeType {
     let node = DOCKER.run(images::postgres::Postgres::default());
-/*
-    let manager = PostgresConnectionManager::new(
-        format!(
-            "postgres://postgres:postgres@127.0.0.1:{}/postgres",
-            node.get_host_port(5432).unwrap()
-        )
-            .parse()
-            .unwrap(),
-        NoTls,
-    );
 
-    let pool = Pool::builder()
-        .min_idle(Some(10))
-        .build(manager)
-        .await
-        .unwrap();
-    let c3p0 = PgC3p0PoolAsync::new(pool);
-*/
     let mut config = deadpool::postgres::Config::default();
     config.user = Some("postgres".to_owned());
     config.password = Some("postgres".to_owned());
     config.dbname = Some("postgres".to_owned());
     config.host = Some(format!("127.0.0.1"));
-    //config.port = Some(node.get_host_port(5432).unwrap());
-    config.port = Some(5432);
+    config.port = Some(node.get_host_port(5432).unwrap());
+
     let mut pool_config = deadpool::managed::PoolConfig::default();
     pool_config.timeouts.create = Some(Duration::from_secs(5));
     pool_config.timeouts.recycle = Some(Duration::from_secs(5));
@@ -73,4 +56,15 @@ async fn init() -> MaybeType {
 
 pub async fn data(serial: bool) -> Data<'static, MaybeType> {
     SINGLETON.data(serial).await
+}
+
+fn rt() -> &'static tokio::runtime::Runtime {
+    lazy_static! {
+        static ref RT: tokio::runtime::Runtime = tokio::runtime::Builder::new()
+        .threaded_scheduler()
+        .enable_all()
+        .build()
+        .expect("Should create a tokio runtime");
+    }
+    &RT
 }
