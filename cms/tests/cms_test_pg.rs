@@ -1,4 +1,5 @@
-use c3p0::pg_async::r2d2::{Pool, PostgresConnectionManager, TlsMode};
+use c3p0::pg_async::deadpool;
+use c3p0::pg_async::driver::*;
 use c3p0::pg_async::*;
 use lazy_static::lazy_static;
 use maybe_single::{Data, MaybeSingle};
@@ -8,6 +9,7 @@ use lightspeed_cms::config::CmsConfig;
 use lightspeed_cms::repository::pg::PgCmsRepositoryManager;
 use lightspeed_cms::CmsModule;
 use lightspeed_core::module::Module;
+use tokio::time::Duration;
 
 mod tests;
 
@@ -26,6 +28,7 @@ lazy_static! {
 fn init() -> MaybeType {
     let node = DOCKER.run(images::postgres::Postgres::default());
 
+    /*
     let manager = PostgresConnectionManager::new(
         format!(
             "postgres://postgres:postgres@127.0.0.1:{}/postgres",
@@ -36,7 +39,23 @@ fn init() -> MaybeType {
     .unwrap();
     let pool = Pool::builder().min_idle(Some(10)).build(manager).unwrap();
     let c3p0 = PgC3p0PoolAsync::new(pool);
-    let repo_manager = RepoManager::new(c3p0.clone());
+    */
+
+    let mut config = deadpool::postgres::Config::default();
+    config.user = Some("postgres".to_owned());
+    config.password = Some("postgres".to_owned());
+    config.dbname = Some("postgres".to_owned());
+    config.host = Some(format!("127.0.0.1"));
+    config.port = Some(node.get_host_port(5432).unwrap());
+    let mut pool_config = deadpool::managed::PoolConfig::default();
+    pool_config.timeouts.create = Some(Duration::from_secs(5));
+    pool_config.timeouts.recycle = Some(Duration::from_secs(5));
+    pool_config.timeouts.wait = Some(Duration::from_secs(5));
+    config.pool = Some(pool_config);
+
+    let c3p0 = PgC3p0PoolAsync::new(config.create_pool(NoTls).unwrap());
+
+    let repo_manager = RepoManager::new(c3p0);
 
     let cms_config = CmsConfig::build();
 
