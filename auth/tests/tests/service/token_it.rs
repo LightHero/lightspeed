@@ -1,13 +1,14 @@
-use crate::data;
+use crate::{data, test};
 use c3p0::*;
 use lightspeed_auth::model::token::{TokenData, TokenType};
 use lightspeed_auth::repository::AuthRepositoryManager;
 use lightspeed_core::utils::{current_epoch_seconds, new_hyphenated_uuid};
 use lightspeed_core::error::LightSpeedError;
 
-#[tokio::test]
-async fn should_delete_token() -> Result<(), LightSpeedError> {
-    let data = data(false).await;
+#[test]
+fn should_delete_token() -> Result<(), LightSpeedError> {
+        test(async {
+        let data = data(false).await;
     let auth_module = &data.0;
 
     let c3p0 = auth_module.repo_manager.c3p0();
@@ -38,11 +39,13 @@ async fn should_delete_token() -> Result<(), LightSpeedError> {
 
     Ok(())
     }).await
+    })
 }
 
-#[tokio::test]
-async fn should_generate_token() -> Result<(), LightSpeedError> {
-    let data = data(false).await;
+#[test]
+fn should_generate_token() -> Result<(), LightSpeedError> {
+        test(async {
+        let data = data(false).await;
     let auth_module = &data.0;
 
     let c3p0 = auth_module.repo_manager.c3p0();
@@ -87,36 +90,39 @@ async fn should_generate_token() -> Result<(), LightSpeedError> {
             .is_err());
         Ok(())
     }).await
+    })
 }
 
-#[tokio::test]
-async fn should_validate_token_on_fetch() -> Result<(), LightSpeedError> {
-    let data = data(false).await;
-    let auth_module = &data.0;
+#[test]
+fn should_validate_token_on_fetch() -> Result<(), LightSpeedError> {
+        test(async {
+            let data = data(false).await;
+            let auth_module = &data.0;
 
-    let c3p0 = auth_module.repo_manager.c3p0();
-    let token_repo = auth_module.repo_manager.token_repo();
+            let c3p0 = auth_module.repo_manager.c3p0();
+            let token_repo = auth_module.repo_manager.token_repo();
 
-    c3p0.transaction(|mut conn| async move {
-        let conn = &mut conn;
-        let token = NewModel {
-            version: 0,
-            data: TokenData {
-                token: new_hyphenated_uuid(),
-                expire_at_epoch_seconds: current_epoch_seconds() - 1,
-                token_type: TokenType::RESET_PASSWORD,
-                username: "test@test.com".to_owned(),
-            },
-        };
+            c3p0.transaction(|mut conn| async move {
+                let conn = &mut conn;
+                let token = NewModel {
+                    version: 0,
+                    data: TokenData {
+                        token: new_hyphenated_uuid(),
+                        expire_at_epoch_seconds: current_epoch_seconds() - 1,
+                        token_type: TokenType::RESET_PASSWORD,
+                        username: "test@test.com".to_owned(),
+                    },
+                };
 
-        let saved_token = token_repo.save(conn, token).await?;
+                let saved_token = token_repo.save(conn, token).await?;
 
-        assert!(auth_module
-            .token_service
-            .fetch_by_token(conn, &saved_token.data.token, true)
-            .await
-            .is_err());
+                assert!(auth_module
+                    .token_service
+                    .fetch_by_token(conn, &saved_token.data.token, true)
+                    .await
+                    .is_err());
 
-        Ok(())
-    }).await
+                Ok(())
+            }).await
+        })
 }

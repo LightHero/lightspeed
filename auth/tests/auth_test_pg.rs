@@ -1,8 +1,7 @@
 use c3p0::pg_async::deadpool;
 use c3p0::pg_async::driver::NoTls;
 use c3p0::pg_async::*;
-use lazy_static::lazy_static;
-use maybe_single::nio::*;
+use maybe_single::*;
 use testcontainers::*;
 
 use lightspeed_auth::config::AuthConfig;
@@ -21,13 +20,10 @@ pub type MaybeType = (
     Container<'static, clients::Cli, images::postgres::Postgres>,
 );
 
-lazy_static! {
-    static ref DOCKER: clients::Cli = clients::Cli::default();
-    pub static ref SINGLETON: MaybeSingleAsync<MaybeType> = MaybeSingleAsync::new(|| init().boxed());
-}
-
 async fn init() -> MaybeType {
-    let node = DOCKER.run(images::postgres::Postgres::default());
+    static DOCKER: OnceCell<clients::Cli> = OnceCell::new();
+
+    let node = DOCKER.get_or_init(|| clients::Cli::default()).run(images::postgres::Postgres::default());
 
     let mut config = deadpool::postgres::Config::default();
     config.user = Some("postgres".to_owned());
@@ -56,25 +52,16 @@ async fn init() -> MaybeType {
 }
 
 pub async fn data(serial: bool) -> Data<'static, MaybeType> {
-    SINGLETON.data(serial).await
+    static DATA: OnceCell<MaybeSingle<MaybeType>> = OnceCell::new();
+    DATA.get_or_init(|| MaybeSingle::new(|| init().boxed())).data(serial).await
 }
 
-fn rt() -> &'static tokio::runtime::Runtime {
+pub fn test<F: std::future::Future>(f: F) -> F::Output {
     static RT: OnceCell<tokio::runtime::Runtime> = OnceCell::new();
     RT.get_or_init(|| tokio::runtime::Builder::new()
         .threaded_scheduler()
         .enable_all()
         .build()
         .expect("Should create a tokio runtime"))
-}
-
-pub fn test<F: std::future::Future>(f: F) -> F::Output {
-    rt().handle().enter(|| futures::executor::block_on(f))
-}
-
-#[test]
-fn a_test() {
-    test(async {
-        println!(" this is async");
-    });
+        .handle().enter(|| futures::executor::block_on(f))
 }

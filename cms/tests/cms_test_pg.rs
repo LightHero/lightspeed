@@ -2,7 +2,7 @@ use c3p0::pg_async::deadpool;
 use c3p0::pg_async::driver::*;
 use c3p0::pg_async::*;
 use lazy_static::lazy_static;
-use maybe_single::{Data, MaybeSingle};
+use maybe_single::*;
 use testcontainers::*;
 
 use lightspeed_cms::config::CmsConfig;

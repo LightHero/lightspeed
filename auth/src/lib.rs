@@ -60,39 +60,3 @@ impl<RepoManager: AuthRepositoryManager> lightspeed_core::module::Module
         Ok(())
     }
 }
-
-#[cfg(test)]
-pub mod test_root {
-
-    use lazy_static::lazy_static;
-    use lightspeed_logger::config::LoggerConfig;
-    use lightspeed_logger::setup_logger;
-    use std::sync::Mutex;
-
-    lazy_static! {
-        static ref INITIALIZED: Mutex<bool> = Mutex::new(false);
-    }
-
-    pub fn init_context() {
-        let mut init = INITIALIZED.lock().unwrap();
-        if !*init {
-            println!("Initialize context");
-            start_logger();
-            *init = true;
-        }
-    }
-
-    fn start_logger() {
-        println!("Init logger");
-
-        let conf = LoggerConfig {
-            level: String::from("trace"),
-            stdout_output: true,
-            stderr_output: false,
-            file_output_path: None,
-        };
-        if let Err(err) = setup_logger(&conf) {
-            println!("Warning: {}", err)
-        };
-    }
-}

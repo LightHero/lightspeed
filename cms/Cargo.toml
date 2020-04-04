@@ -25,7 +25,7 @@ structopt = "0.3"
 
 [dev-dependencies]
 lightspeed_logger = { version = "0.2.0", path = "../logger" }
-maybe-single = "0.9.2"
+maybe-single = { version = "0.10.1", features = ["async"]}
 maplit = "1"
 testcontainers = "0.9"
 tokio = { version = "0.2", features = ["full"] }

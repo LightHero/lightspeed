@@ -12,9 +12,10 @@ use lightspeed_core::utils::{new_hyphenated_uuid, random_string};
 use maplit::*;
 use std::collections::HashMap;
 
-#[tokio::test]
-async fn should_create_and_drop_content_table() -> Result<(), Box<dyn std::error::Error>> {
-    let data = data(false).await;
+#[test]
+fn should_create_and_drop_content_table() -> Result<(), Box<dyn std::error::Error>> {
+        test(async {
+        let data = data(false).await;
     let cms_module = &data.0;
 
     let content_service = &cms_module.content_service;
@@ -85,9 +86,10 @@ async fn should_create_and_drop_content_table() -> Result<(), Box<dyn std::error
     Ok(())
 }
 
-#[tokio::test]
-async fn should_save_and_delete_content() -> Result<(), Box<dyn std::error::Error>> {
-    let data = data(false).await;
+#[test]
+fn should_save_and_delete_content() -> Result<(), Box<dyn std::error::Error>> {
+        test(async {
+        let data = data(false).await;
     let cms_module = &data.0;
 
     let content_service = &cms_module.content_service;
@@ -178,9 +180,10 @@ async fn should_save_and_delete_content() -> Result<(), Box<dyn std::error::Erro
     Ok(())
 }
 
-#[tokio::test]
-async fn should_validate_content_on_save() -> Result<(), Box<dyn std::error::Error>> {
-    let data = data(false).await;
+#[test]
+fn should_validate_content_on_save() -> Result<(), Box<dyn std::error::Error>> {
+        test(async {
+        let data = data(false).await;
     let cms_module = &data.0;
 
     let content_service = &cms_module.content_service;
@@ -233,10 +236,11 @@ async fn should_validate_content_on_save() -> Result<(), Box<dyn std::error::Err
     Ok(())
 }
 
-#[tokio::test]
-async fn should_create_unique_constraints_for_slug_schema_fields(
+#[test]
+fn should_create_unique_constraints_for_slug_schema_fields(
 ) -> Result<(), Box<dyn std::error::Error>> {
-    let data = data(false).await;
+        test(async {
+        let data = data(false).await;
     let cms_module = &data.0;
 
     let content_service = &cms_module.content_service;
@@ -292,10 +296,11 @@ async fn should_create_unique_constraints_for_slug_schema_fields(
     Ok(())
 }
 
-#[tokio::test]
-async fn should_create_unique_constraints_for_string_unique_schema_fields(
+#[test]
+fn should_create_unique_constraints_for_string_unique_schema_fields(
 ) -> Result<(), Box<dyn std::error::Error>> {
-    let data = data(false).await;
+        test(async {
+        let data = data(false).await;
     let cms_module = &data.0;
 
     let content_service = &cms_module.content_service;
@@ -356,10 +361,11 @@ async fn should_create_unique_constraints_for_string_unique_schema_fields(
     Ok(())
 }
 
-#[tokio::test]
-async fn should_create_unique_constraints_for_number_unique_schema_fields(
+#[test]
+fn should_create_unique_constraints_for_number_unique_schema_fields(
 ) -> Result<(), Box<dyn std::error::Error>> {
-    let data = data(false).await;
+        test(async {
+        let data = data(false).await;
     let cms_module = &data.0;
 
     let content_service = &cms_module.content_service;
@@ -420,10 +426,11 @@ async fn should_create_unique_constraints_for_number_unique_schema_fields(
     Ok(())
 }
 
-#[tokio::test]
-async fn should_create_unique_constraints_for_boolean_unique_schema_fields(
+#[test]
+fn should_create_unique_constraints_for_boolean_unique_schema_fields(
 ) -> Result<(), Box<dyn std::error::Error>> {
-    let data = data(false).await;
+        test(async {
+        let data = data(false).await;
     let cms_module = &data.0;
 
     let content_service = &cms_module.content_service;
@@ -482,10 +489,11 @@ async fn should_create_unique_constraints_for_boolean_unique_schema_fields(
     Ok(())
 }
 
-#[tokio::test]
-async fn should_create_unique_constraints_for_field_name_with_max_length(
+#[test]
+fn should_create_unique_constraints_for_field_name_with_max_length(
 ) -> Result<(), Box<dyn std::error::Error>> {
-    let data = data(false).await;
+        test(async {
+        let data = data(false).await;
     let cms_module = &data.0;
 
     let content_service = &cms_module.content_service;

@@ -1,4 +1,4 @@
-use crate::data;
+use crate::{data, test};
 use crate::tests::util::{create_user, create_user_with_password};
 use c3p0::*;
 use lightspeed_auth::dto::change_password_dto::ChangePasswordDto;
@@ -13,9 +13,10 @@ use lightspeed_core::model::language::Language;
 use lightspeed_core::utils::new_hyphenated_uuid;
 use std::collections::HashMap;
 
-#[tokio::test]
-async fn should_create_pending_user() -> Result<(), LightSpeedError> {
-    let data = data(false).await;
+#[test]
+fn should_create_pending_user() -> Result<(), LightSpeedError> {
+        test(async {
+        let data = data(false).await;
     let auth_module = &data.0;
 
     let username = new_hyphenated_uuid();
@@ -48,11 +49,13 @@ async fn should_create_pending_user() -> Result<(), LightSpeedError> {
     assert_eq!(TokenType::ACCOUNT_ACTIVATION, token.data.token_type);
 
     Ok(())
+    })
 }
 
-#[tokio::test]
-async fn should_assign_default_roles_at_account_creation() -> Result<(), LightSpeedError> {
-    let data = data(false).await;
+#[test]
+fn should_assign_default_roles_at_account_creation() -> Result<(), LightSpeedError> {
+        test(async {
+        let data = data(false).await;
     let auth_module = &data.0;
 
     let username = new_hyphenated_uuid();
@@ -87,11 +90,13 @@ async fn should_assign_default_roles_at_account_creation() -> Result<(), LightSp
     );
 
     Ok(())
+    })
 }
 
-#[tokio::test]
-async fn should_return_user_by_id() -> Result<(), LightSpeedError> {
-    let data = data(false).await;
+#[test]
+fn should_return_user_by_id() -> Result<(), LightSpeedError> {
+        test(async {
+        let data = data(false).await;
     let auth_module = &data.0;
 
     let (user, _) = create_user(&auth_module, false).await?;
@@ -105,11 +110,13 @@ async fn should_return_user_by_id() -> Result<(), LightSpeedError> {
 
         Ok(())
     }).await
+    })
 }
 
-#[tokio::test]
-async fn should_return_user_by_username() -> Result<(), LightSpeedError> {
-    let data = data(false).await;
+#[test]
+fn should_return_user_by_username() -> Result<(), LightSpeedError> {
+        test(async {
+        let data = data(false).await;
     let auth_module = &data.0;
 
     let (user, _) = create_user(&auth_module, false).await?;
@@ -123,11 +130,13 @@ async fn should_return_user_by_username() -> Result<(), LightSpeedError> {
 
     Ok(())
 }).await
+    })
 }
 
-#[tokio::test]
-async fn should_use_the_email_as_username_if_not_provided() -> Result<(), LightSpeedError> {
-    let data = data(false).await;
+#[test]
+fn should_use_the_email_as_username_if_not_provided() -> Result<(), LightSpeedError> {
+        test(async {
+        let data = data(false).await;
     let auth_module = &data.0;
 
     let email = format!("{}@email.fake", new_hyphenated_uuid());
@@ -155,12 +164,14 @@ async fn should_use_the_email_as_username_if_not_provided() -> Result<(), LightS
         .is_ok());
 
     Ok(())
+    })
 }
 
-#[tokio::test]
-async fn should_use_the_email_as_username_if_username_is_empty() -> Result<(), LightSpeedError>
+#[test]
+fn should_use_the_email_as_username_if_username_is_empty() -> Result<(), LightSpeedError>
 {
-    let data = data(false).await;
+        test(async {
+        let data = data(false).await;
     let auth_module = &data.0;
 
     let email = format!("{}@email.fake", new_hyphenated_uuid());
@@ -188,11 +199,13 @@ async fn should_use_the_email_as_username_if_username_is_empty() -> Result<(), L
         .is_ok());
 
     Ok(())
+    })
 }
 
-#[tokio::test]
-async fn should_activate_user() -> Result<(), LightSpeedError> {
-    let data = data(false).await;
+#[test]
+fn should_activate_user() -> Result<(), LightSpeedError> {
+        test(async {
+        let data = data(false).await;
     let auth_module = &data.0;
 
     let (user, token) = create_user(&auth_module, false).await?;
@@ -227,11 +240,13 @@ async fn should_activate_user() -> Result<(), LightSpeedError> {
         .is_err());
 
     Ok(())
+    })
 }
 
-#[tokio::test]
-async fn should_activate_user_only_if_activation_token_type() -> Result<(), LightSpeedError> {
-    let data = data(false).await;
+#[test]
+fn should_activate_user_only_if_activation_token_type() -> Result<(), LightSpeedError> {
+        test(async {
+        let data = data(false).await;
     let auth_module = &data.0;
 
     let (user, _) = create_user(&auth_module, false).await?;
@@ -252,11 +267,13 @@ async fn should_activate_user_only_if_activation_token_type() -> Result<(), Ligh
 
         Ok(())
     }).await
+    })
 }
 
-#[tokio::test]
-async fn should_activate_user_only_if_pending_activation() -> Result<(), LightSpeedError> {
-    let data = data(false).await;
+#[test]
+fn should_activate_user_only_if_pending_activation() -> Result<(), LightSpeedError> {
+        test(async {
+        let data = data(false).await;
     let auth_module = &data.0;
 
     let (user, _) = create_user(&auth_module, true).await?;
@@ -282,11 +299,13 @@ async fn should_activate_user_only_if_pending_activation() -> Result<(), LightSp
         }).await?;
 
     Ok(())
+    })
 }
 
-#[tokio::test]
-async fn should_regenerate_activation_token() -> Result<(), LightSpeedError> {
-    let data = data(false).await;
+#[test]
+fn should_regenerate_activation_token() -> Result<(), LightSpeedError> {
+        test(async {
+        let data = data(false).await;
     let auth_module = &data.0;
     let (user, token) = create_user(&auth_module, false).await?;
 
@@ -310,12 +329,14 @@ async fn should_regenerate_activation_token() -> Result<(), LightSpeedError> {
     assert_eq!(user.id, activated_user.id);
 
     Ok(())
+    })
 }
 
-#[tokio::test]
-async fn should_regenerate_activation_token_even_if_token_expired(
+#[test]
+fn should_regenerate_activation_token_even_if_token_expired(
 ) -> Result<(), LightSpeedError> {
-    let data = data(false).await;
+        test(async {
+        let data = data(false).await;
     let auth_module = &data.0;
     let (_, mut token) = create_user(&auth_module, false).await?;
     token.data.expire_at_epoch_seconds = 0;
@@ -353,12 +374,14 @@ async fn should_regenerate_activation_token_even_if_token_expired(
         .is_ok());
 
     Ok(())
+    })
 }
 
-#[tokio::test]
-async fn should_resend_activation_token_only_if_correct_token_type(
+#[test]
+fn should_resend_activation_token_only_if_correct_token_type(
 ) -> Result<(), LightSpeedError> {
-    let data = data(false).await;
+        test(async {
+        let data = data(false).await;
     let auth_module = &data.0;
     let (user, _) = create_user(&auth_module, false).await?;
 
@@ -377,11 +400,13 @@ async fn should_resend_activation_token_only_if_correct_token_type(
         .is_err());
 
     Ok(())
+    })
 }
 
-#[tokio::test]
-async fn should_login_active_user() -> Result<(), LightSpeedError> {
-    let data = data(false).await;
+#[test]
+fn should_login_active_user() -> Result<(), LightSpeedError> {
+        test(async {
+        let data = data(false).await;
     let auth_module = &data.0;
     let password = "123456789";
     let (user, _) = create_user_with_password(&auth_module, password, true).await?;
@@ -392,11 +417,13 @@ async fn should_login_active_user() -> Result<(), LightSpeedError> {
     assert_eq!(user.data.username, auth.username);
 
     Ok(())
+    })
 }
 
-#[tokio::test]
-async fn should_not_login_inactive_user() -> Result<(), LightSpeedError> {
-    let data = data(false).await;
+#[test]
+fn should_not_login_inactive_user() -> Result<(), LightSpeedError> {
+        test(async {
+        let data = data(false).await;
     let auth_module = &data.0;
     let password = "123456789";
     let (user, _) = create_user_with_password(&auth_module, password, false).await?;
@@ -407,11 +434,13 @@ async fn should_not_login_inactive_user() -> Result<(), LightSpeedError> {
         .is_err());
 
     Ok(())
+    })
 }
 
-#[tokio::test]
-async fn should_not_login_with_wrong_username() -> Result<(), LightSpeedError> {
-    let data = data(false).await;
+#[test]
+fn should_not_login_with_wrong_username() -> Result<(), LightSpeedError> {
+        test(async {
+        let data = data(false).await;
     let auth_module = &data.0;
     let password = "123456789";
     let (user, _) = create_user_with_password(&auth_module, password, true).await?;
@@ -422,11 +451,13 @@ async fn should_not_login_with_wrong_username() -> Result<(), LightSpeedError> {
         .is_err());
 
     Ok(())
+    })
 }
 
-#[tokio::test]
-async fn should_not_login_with_wrong_password() -> Result<(), LightSpeedError> {
-    let data = data(false).await;
+#[test]
+fn should_not_login_with_wrong_password() -> Result<(), LightSpeedError> {
+        test(async {
+        let data = data(false).await;
     let auth_module = &data.0;
     let password = "123456789";
     let (user, _) = create_user_with_password(&auth_module, password, true).await?;
@@ -437,11 +468,13 @@ async fn should_not_login_with_wrong_password() -> Result<(), LightSpeedError> {
         .is_err());
 
     Ok(())
+    })
 }
 
-#[tokio::test]
-async fn create_user_should_fail_if_passwords_do_not_match() -> Result<(), LightSpeedError> {
-    let data = data(false).await;
+#[test]
+fn create_user_should_fail_if_passwords_do_not_match() -> Result<(), LightSpeedError> {
+        test(async {
+        let data = data(false).await;
     let auth_module = &data.0;
     let username = new_hyphenated_uuid();
     let email = format!("{}@email.fake", username);
@@ -468,11 +501,13 @@ async fn create_user_should_fail_if_passwords_do_not_match() -> Result<(), Light
     }
 
     Ok(())
+    })
 }
 
-#[tokio::test]
-async fn create_user_should_fail_if_not_valid_email() -> Result<(), LightSpeedError> {
-    let data = data(false).await;
+#[test]
+fn create_user_should_fail_if_not_valid_email() -> Result<(), LightSpeedError> {
+        test(async {
+        let data = data(false).await;
     let auth_module = &data.0;
     let username = new_hyphenated_uuid();
     let email = new_hyphenated_uuid();
@@ -500,12 +535,14 @@ async fn create_user_should_fail_if_not_valid_email() -> Result<(), LightSpeedEr
     }
 
     Ok(())
+    })
 }
 
-#[tokio::test]
-async fn create_user_should_fail_if_not_accepted_privacy_policy() -> Result<(), LightSpeedError>
+#[test]
+fn create_user_should_fail_if_not_accepted_privacy_policy() -> Result<(), LightSpeedError>
 {
-    let data = data(false).await;
+        test(async {
+        let data = data(false).await;
     let auth_module = &data.0;
     let username = new_hyphenated_uuid();
     let email = format!("{}@email.fake", username);
@@ -533,48 +570,52 @@ async fn create_user_should_fail_if_not_accepted_privacy_policy() -> Result<(), 
     };
 
     Ok(())
+    })
 }
 
-#[tokio::test]
-async fn create_user_should_fail_if_username_not_unique() -> Result<(), LightSpeedError> {
-    let data = data(false).await;
-    let auth_module = &data.0;
+#[test]
+fn create_user_should_fail_if_username_not_unique() -> Result<(), LightSpeedError> {
+    test(async {
+        let data = data(false).await;
+        let auth_module = &data.0;
 
-    let password = new_hyphenated_uuid();
+        let password = new_hyphenated_uuid();
 
-    let mut dto = CreateLoginDto {
-        username: Some(new_hyphenated_uuid()),
-        email: format!("{}@email.fake", new_hyphenated_uuid()),
-        data: HashMap::new(),
-        accept_privacy_policy: true,
-        language: Language::EN,
-        password: password.clone(),
-        password_confirm: password.clone(),
-    };
+        let mut dto = CreateLoginDto {
+            username: Some(new_hyphenated_uuid()),
+            email: format!("{}@email.fake", new_hyphenated_uuid()),
+            data: HashMap::new(),
+            accept_privacy_policy: true,
+            language: Language::EN,
+            password: password.clone(),
+            password_confirm: password.clone(),
+        };
 
-    assert!(auth_module
-        .auth_account_service
-        .create_user(dto.clone()).await
-        .is_ok());
+        assert!(auth_module
+            .auth_account_service
+            .create_user(dto.clone()).await
+            .is_ok());
 
-    dto.email = format!("{}@email.fake", new_hyphenated_uuid());
+        dto.email = format!("{}@email.fake", new_hyphenated_uuid());
 
-    let result = auth_module.auth_account_service.create_user(dto).await;
-    assert!(result.is_err());
+        let result = auth_module.auth_account_service.create_user(dto).await;
+        assert!(result.is_err());
 
-    match &result {
-        Err(LightSpeedError::ValidationError { details }) => {
-            assert!(details.details.contains_key("username"))
-        }
-        _ => assert!(false),
-    };
+        match &result {
+            Err(LightSpeedError::ValidationError { details }) => {
+                assert!(details.details.contains_key("username"))
+            }
+            _ => assert!(false),
+        };
 
-    Ok(())
+        Ok(())
+    })
 }
 
-#[tokio::test]
-async fn create_user_should_fail_if_email_not_unique() -> Result<(), LightSpeedError> {
-    let data = data(false).await;
+#[test]
+fn create_user_should_fail_if_email_not_unique() -> Result<(), LightSpeedError> {
+        test(async {
+        let data = data(false).await;
     let auth_module = &data.0;
 
     let password = new_hyphenated_uuid();
@@ -606,11 +647,13 @@ async fn create_user_should_fail_if_email_not_unique() -> Result<(), LightSpeedE
     }
 
     Ok(())
+    })
 }
 
-#[tokio::test]
-async fn should_reset_password_by_token() -> Result<(), LightSpeedError> {
-    let data = data(false).await;
+#[test]
+fn should_reset_password_by_token() -> Result<(), LightSpeedError> {
+        test(async {
+        let data = data(false).await;
     let auth_module = &data.0;
 
     let password = new_hyphenated_uuid();
@@ -648,11 +691,13 @@ async fn should_reset_password_by_token() -> Result<(), LightSpeedError> {
         .is_ok());
 
     Ok(())
+    })
 }
 
-#[tokio::test]
-async fn should_reset_password_only_if_correct_token_type() -> Result<(), LightSpeedError> {
-    let data = data(false).await;
+#[test]
+fn should_reset_password_only_if_correct_token_type() -> Result<(), LightSpeedError> {
+        test(async {
+        let data = data(false).await;
     let auth_module = &data.0;
 
     let password = new_hyphenated_uuid();
@@ -679,11 +724,13 @@ async fn should_reset_password_only_if_correct_token_type() -> Result<(), LightS
     assert!(result.is_err());
 
     Ok(())
+    })
 }
 
-#[tokio::test]
-async fn should_reset_password_only_if_user_is_active() -> Result<(), LightSpeedError> {
-    let data = data(false).await;
+#[test]
+fn should_reset_password_only_if_user_is_active() -> Result<(), LightSpeedError> {
+        test(async {
+        let data = data(false).await;
     let auth_module = &data.0;
 
     let password = new_hyphenated_uuid();
@@ -709,11 +756,13 @@ async fn should_reset_password_only_if_user_is_active() -> Result<(), LightSpeed
 
     assert!(result.is_err());
     Ok(())
+    })
 }
 
-#[tokio::test]
-async fn should_reset_password_only_if_passwords_match() -> Result<(), LightSpeedError> {
-    let data = data(false).await;
+#[test]
+fn should_reset_password_only_if_passwords_match() -> Result<(), LightSpeedError> {
+        test(async {
+        let data = data(false).await;
     let auth_module = &data.0;
 
     let password = new_hyphenated_uuid();
@@ -747,11 +796,13 @@ async fn should_reset_password_only_if_passwords_match() -> Result<(), LightSpee
     };
 
     Ok(())
+    })
 }
 
-#[tokio::test]
-async fn should_generate_reset_password_token() -> Result<(), LightSpeedError> {
-    let data = data(false).await;
+#[test]
+fn should_generate_reset_password_token() -> Result<(), LightSpeedError> {
+        test(async {
+        let data = data(false).await;
     let auth_module = &data.0;
 
     let (user, _) = create_user(&auth_module, true).await?;
@@ -762,12 +813,14 @@ async fn should_generate_reset_password_token() -> Result<(), LightSpeedError> {
     assert_eq!(user.id, new_user.id);
     assert_eq!(TokenType::RESET_PASSWORD, token.data.token_type);
     Ok(())
+    })
 }
 
-#[tokio::test]
-async fn should_not_generate_reset_password_token_if_user_not_active(
+#[test]
+fn should_not_generate_reset_password_token_if_user_not_active(
 ) -> Result<(), LightSpeedError> {
-    let data = data(false).await;
+        test(async {
+        let data = data(false).await;
     let auth_module = &data.0;
 
     let (user, _) = create_user(&auth_module, false).await?;
@@ -778,11 +831,13 @@ async fn should_not_generate_reset_password_token_if_user_not_active(
         .is_err());
 
     Ok(())
+    })
 }
 
-#[tokio::test]
-async fn should_change_user_password() -> Result<(), LightSpeedError> {
-    let data = data(false).await;
+#[test]
+fn should_change_user_password() -> Result<(), LightSpeedError> {
+        test(async {
+        let data = data(false).await;
     let auth_module = &data.0;
 
     let password = new_hyphenated_uuid();
@@ -812,12 +867,14 @@ async fn should_change_user_password() -> Result<(), LightSpeedError> {
         .is_ok());
 
     Ok(())
+    })
 }
 
-#[tokio::test]
-async fn should_not_change_user_password_if_wrong_old_password() -> Result<(), LightSpeedError>
+#[test]
+fn should_not_change_user_password_if_wrong_old_password() -> Result<(), LightSpeedError>
 {
-    let data = data(false).await;
+        test(async {
+        let data = data(false).await;
     let auth_module = &data.0;
 
     let password = new_hyphenated_uuid();
@@ -847,11 +904,13 @@ async fn should_not_change_user_password_if_wrong_old_password() -> Result<(), L
         .is_err());
 
     Ok(())
+    })
 }
 
-#[tokio::test]
-async fn should_not_change_user_password_if_inactive_user() -> Result<(), LightSpeedError> {
-    let data = data(false).await;
+#[test]
+fn should_not_change_user_password_if_inactive_user() -> Result<(), LightSpeedError> {
+        test(async {
+        let data = data(false).await;
     let auth_module = &data.0;
 
     let password = new_hyphenated_uuid();
@@ -871,12 +930,14 @@ async fn should_not_change_user_password_if_inactive_user() -> Result<(), LightS
     assert!(result.is_err());
 
     Ok(())
+    })
 }
 
-#[tokio::test]
-async fn should_not_change_user_password_if_new_passwords_do_not_match(
+#[test]
+fn should_not_change_user_password_if_new_passwords_do_not_match(
 ) -> Result<(), LightSpeedError> {
-    let data = data(false).await;
+        test(async {
+        let data = data(false).await;
     let auth_module = &data.0;
 
     let password = new_hyphenated_uuid();
@@ -903,53 +964,56 @@ async fn should_not_change_user_password_if_new_passwords_do_not_match(
     }
 
     Ok(())
+    })
 }
 
-#[tokio::test]
-async fn should_add_and_remove_roles() -> Result<(), LightSpeedError> {
-    let data = data(false).await;
-    let auth_module = &data.0;
+#[test]
+fn should_add_and_remove_roles() -> Result<(), LightSpeedError> {
+        test(async {
+            let data = data(false).await;
+            let auth_module = &data.0;
 
-    let auh_service = &auth_module.auth_account_service;
+            let auh_service = &auth_module.auth_account_service;
 
-    let username = new_hyphenated_uuid();
-    let email = format!("{}@email.fake", username);
-    let password = new_hyphenated_uuid();
+            let username = new_hyphenated_uuid();
+            let email = format!("{}@email.fake", username);
+            let password = new_hyphenated_uuid();
 
-    let (user, _) = auth_module
-        .auth_account_service
-        .create_user(CreateLoginDto {
-            username: Some(username.clone()),
-            email: email.clone(),
-            data: HashMap::new(),
-            accept_privacy_policy: true,
-            language: Language::EN,
-            password: password.clone(),
-            password_confirm: password.clone(),
-        }).await?;
+            let (user, _) = auth_module
+                .auth_account_service
+                .create_user(CreateLoginDto {
+                    username: Some(username.clone()),
+                    email: email.clone(),
+                    data: HashMap::new(),
+                    accept_privacy_policy: true,
+                    language: Language::EN,
+                    password: password.clone(),
+                    password_confirm: password.clone(),
+                }).await?;
 
-    assert!(user.data.roles.is_empty());
+            assert!(user.data.roles.is_empty());
 
-    let user = auh_service.add_roles(user.id, &vec![]).await?;
-    assert!(user.data.roles.is_empty());
+            let user = auh_service.add_roles(user.id, &vec![]).await?;
+            assert!(user.data.roles.is_empty());
 
-    let user = auh_service.delete_roles(user.id, &vec!["one".to_owned()]).await?;
-    assert!(user.data.roles.is_empty());
+            let user = auh_service.delete_roles(user.id, &vec!["one".to_owned()]).await?;
+            assert!(user.data.roles.is_empty());
 
-    let user = auh_service.add_roles(user.id, &vec!["one".to_owned()]).await?;
-    assert_eq!(vec!["one".to_owned()], user.data.roles);
+            let user = auh_service.add_roles(user.id, &vec!["one".to_owned()]).await?;
+            assert_eq!(vec!["one".to_owned()], user.data.roles);
 
-    let user = auh_service.add_roles(user.id, &vec!["two".to_owned(), "three".to_owned()]).await?;
-    assert_eq!(
-        vec!["one".to_owned(), "two".to_owned(), "three".to_owned()],
-        user.data.roles
-    );
+            let user = auh_service.add_roles(user.id, &vec!["two".to_owned(), "three".to_owned()]).await?;
+            assert_eq!(
+                vec!["one".to_owned(), "two".to_owned(), "three".to_owned()],
+                user.data.roles
+            );
 
-    let user = auh_service.delete_roles(user.id, &vec!["two".to_owned(), "four".to_owned()]).await?;
-    assert_eq!(vec!["one".to_owned(), "three".to_owned()], user.data.roles);
+            let user = auh_service.delete_roles(user.id, &vec!["two".to_owned(), "four".to_owned()]).await?;
+            assert_eq!(vec!["one".to_owned(), "three".to_owned()], user.data.roles);
 
-    let user = auh_service.delete_roles(user.id, &vec!["one".to_owned(), "three".to_owned()]).await?;
-    assert!(user.data.roles.is_empty());
+            let user = auh_service.delete_roles(user.id, &vec!["one".to_owned(), "three".to_owned()]).await?;
+            assert!(user.data.roles.is_empty());
 
-    Ok(())
+            Ok(())
+        })
 }

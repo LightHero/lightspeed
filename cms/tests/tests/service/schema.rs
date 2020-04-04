@@ -7,9 +7,10 @@ use lightspeed_core::error::{ErrorDetail, LightSpeedError};
 use lightspeed_core::service::validator::ERR_NOT_UNIQUE;
 use lightspeed_core::utils::new_hyphenated_uuid;
 
-#[tokio::test]
-async fn should_create_schema() -> Result<(), Box<dyn std::error::Error>> {
-    let data = data(false).await;
+#[test]
+fn should_create_schema() -> Result<(), Box<dyn std::error::Error>> {
+        test(async {
+        let data = data(false).await;
     let cms_module = &data.0;
 
     let c3p0 = cms_module.repo_manager.c3p0();
@@ -41,9 +42,10 @@ async fn should_create_schema() -> Result<(), Box<dyn std::error::Error>> {
     })
 }
 
-#[tokio::test]
-async fn schema_name_should_be_unique_per_project() -> Result<(), Box<dyn std::error::Error>> {
-    let data = data(false).await;
+#[test]
+fn schema_name_should_be_unique_per_project() -> Result<(), Box<dyn std::error::Error>> {
+        test(async {
+        let data = data(false).await;
     let cms_module = &data.0;
 
     let c3p0 = cms_module.repo_manager.c3p0();
@@ -80,9 +82,10 @@ async fn schema_name_should_be_unique_per_project() -> Result<(), Box<dyn std::e
     })
 }
 
-#[tokio::test]
-async fn should_return_not_unique_validation_error() -> Result<(), Box<dyn std::error::Error>> {
-    let data = data(false).await;
+#[test]
+fn should_return_not_unique_validation_error() -> Result<(), Box<dyn std::error::Error>> {
+        test(async {
+        let data = data(false).await;
     let cms_module = &data.0;
 
     let schema_service = &cms_module.schema_service;
@@ -113,9 +116,10 @@ async fn should_return_not_unique_validation_error() -> Result<(), Box<dyn std::
     Ok(())
 }
 
-#[tokio::test]
-async fn should_delete_schemas_by_project_id() -> Result<(), Box<dyn std::error::Error>> {
-    let data = data(false).await;
+#[test]
+fn should_delete_schemas_by_project_id() -> Result<(), Box<dyn std::error::Error>> {
+        test(async {
+        let data = data(false).await;
     let cms_module = &data.0;
 
     // Arrange
