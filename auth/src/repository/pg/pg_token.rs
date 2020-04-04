@@ -40,7 +40,10 @@ impl TokenRepository for PgTokenRepository {
             where data ->> 'token' = $1
             limit 1
         "#;
-        Ok(self.repo.fetch_one_with_sql(conn, sql, &[&token_string]).await?)
+        Ok(self
+            .repo
+            .fetch_one_with_sql(conn, sql, &[&token_string])
+            .await?)
     }
 
     async fn save(

@@ -33,12 +33,14 @@ pub async fn create_user_with_password<RepoManager: AuthRepositoryManager>(
             language: Language::EN,
             password: password.to_string(),
             password_confirm: password.to_string(),
-        }).await?;
+        })
+        .await?;
 
     if activate {
         let activated_user = auth_module
             .auth_account_service
-            .activate_user(&token.data.token).await?;
+            .activate_user(&token.data.token)
+            .await?;
         Ok((activated_user, token))
     } else {
         Ok((user, token))

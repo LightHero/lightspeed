@@ -35,7 +35,8 @@ impl AuthAccountRepository for PgAuthAccountRepository {
         conn: &mut PgConnectionAsync,
         username: &str,
     ) -> Result<AuthAccountModel, LightSpeedError> {
-        self.fetch_by_username_optional(conn, username).await?
+        self.fetch_by_username_optional(conn, username)
+            .await?
             .ok_or_else(|| LightSpeedError::BadRequest {
                 message: format!("No user found with username [{}]", username),
             })
@@ -53,7 +54,8 @@ impl AuthAccountRepository for PgAuthAccountRepository {
         "#;
         Ok(self
             .repo
-            .fetch_one_optional_with_sql(conn, sql, &[&username]).await?)
+            .fetch_one_optional_with_sql(conn, sql, &[&username])
+            .await?)
     }
 
     async fn fetch_by_email_optional(
@@ -68,7 +70,8 @@ impl AuthAccountRepository for PgAuthAccountRepository {
         "#;
         Ok(self
             .repo
-            .fetch_one_optional_with_sql(conn, sql, &[&email]).await?)
+            .fetch_one_optional_with_sql(conn, sql, &[&email])
+            .await?)
     }
 
     async fn save(

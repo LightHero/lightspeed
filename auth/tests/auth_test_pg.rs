@@ -8,8 +8,8 @@ use lightspeed_auth::config::AuthConfig;
 use lightspeed_auth::repository::pg::PgAuthRepositoryManager;
 use lightspeed_auth::AuthModule;
 use lightspeed_core::module::Module;
-use tokio::time::Duration;
 use once_cell::sync::OnceCell;
+use tokio::time::Duration;
 
 mod tests;
 
@@ -23,7 +23,9 @@ pub type MaybeType = (
 async fn init() -> MaybeType {
     static DOCKER: OnceCell<clients::Cli> = OnceCell::new();
 
-    let node = DOCKER.get_or_init(|| clients::Cli::default()).run(images::postgres::Postgres::default());
+    let node = DOCKER
+        .get_or_init(|| clients::Cli::default())
+        .run(images::postgres::Postgres::default());
 
     let mut config = deadpool::postgres::Config::default();
     config.user = Some("postgres".to_owned());
@@ -53,15 +55,20 @@ async fn init() -> MaybeType {
 
 pub async fn data(serial: bool) -> Data<'static, MaybeType> {
     static DATA: OnceCell<MaybeSingle<MaybeType>> = OnceCell::new();
-    DATA.get_or_init(|| MaybeSingle::new(|| init().boxed())).data(serial).await
+    DATA.get_or_init(|| MaybeSingle::new(|| init().boxed()))
+        .data(serial)
+        .await
 }
 
 pub fn test<F: std::future::Future>(f: F) -> F::Output {
     static RT: OnceCell<tokio::runtime::Runtime> = OnceCell::new();
-    RT.get_or_init(|| tokio::runtime::Builder::new()
-        .threaded_scheduler()
-        .enable_all()
-        .build()
-        .expect("Should create a tokio runtime"))
-        .handle().enter(|| futures::executor::block_on(f))
+    RT.get_or_init(|| {
+        tokio::runtime::Builder::new()
+            .threaded_scheduler()
+            .enable_all()
+            .build()
+            .expect("Should create a tokio runtime")
+    })
+    .handle()
+    .enter(|| futures::executor::block_on(f))
 }
