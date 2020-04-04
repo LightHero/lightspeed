@@ -10,6 +10,7 @@ use lightspeed_auth::repository::pg::PgAuthRepositoryManager;
 use lightspeed_auth::AuthModule;
 use lightspeed_core::module::Module;
 use tokio::time::Duration;
+use once_cell::sync::OnceCell;
 
 mod tests;
 
@@ -59,12 +60,21 @@ pub async fn data(serial: bool) -> Data<'static, MaybeType> {
 }
 
 fn rt() -> &'static tokio::runtime::Runtime {
-    lazy_static! {
-        static ref RT: tokio::runtime::Runtime = tokio::runtime::Builder::new()
+    static RT: OnceCell<tokio::runtime::Runtime> = OnceCell::new();
+    RT.get_or_init(|| tokio::runtime::Builder::new()
         .threaded_scheduler()
         .enable_all()
         .build()
-        .expect("Should create a tokio runtime");
-    }
-    &RT
+        .expect("Should create a tokio runtime"))
+}
+
+pub fn test<F: std::future::Future>(f: F) -> F::Output {
+    rt().handle().enter(|| futures::executor::block_on(f))
+}
+
+#[test]
+fn a_test() {
+    test(async {
+        println!(" this is async");
+    });
 }
