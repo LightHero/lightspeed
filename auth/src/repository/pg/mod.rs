@@ -1,7 +1,7 @@
 use crate::repository::pg::pg_auth_account::PgAuthAccountRepository;
 use crate::repository::pg::pg_token::PgTokenRepository;
 use crate::repository::AuthRepositoryManager;
-use c3p0::pg_async::*;
+use c3p0::pg::*;
 use c3p0::*;
 use lightspeed_core::error::LightSpeedError;
 

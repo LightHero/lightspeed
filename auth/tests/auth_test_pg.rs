@@ -1,6 +1,6 @@
-use c3p0::pg_async::deadpool;
-use c3p0::pg_async::driver::NoTls;
-use c3p0::pg_async::*;
+use c3p0::pg::deadpool;
+use c3p0::pg::tokio_postgres::NoTls;
+use c3p0::pg::*;
 use maybe_single::*;
 use testcontainers::*;
 
@@ -54,8 +54,8 @@ async fn init() -> MaybeType {
 }
 
 pub async fn data(serial: bool) -> Data<'static, MaybeType> {
-    static DATA: OnceCell<MaybeSingle<MaybeType>> = OnceCell::new();
-    DATA.get_or_init(|| MaybeSingle::new(|| init().boxed()))
+    static DATA: OnceCell<MaybeSingleAsync<MaybeType>> = OnceCell::new();
+    DATA.get_or_init(|| MaybeSingleAsync::new(|| init().boxed()))
         .data(serial)
         .await
 }

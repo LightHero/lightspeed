@@ -14,7 +14,7 @@ keywords = []
 lightspeed_cache = { version = "0.2.0", path = "../cache" }
 lightspeed_core = { version = "0.2.0", path = "../core" }
 async-trait = "0.1.29"
-c3p0 = { version = "0.44", features = ["pg_async_migrate"],  path = "../../../github_ufoscout/c3p0/c3p0" }
+c3p0 = { version = "0.50.0", features = ["pg_migrate"] }
 lazy_static = "1.4"
 log = "0.4"
 regex = "1.3"

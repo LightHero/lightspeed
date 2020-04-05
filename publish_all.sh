@@ -19,7 +19,7 @@ do
 
     cd $i
     echo $LINE_SEPARATOR
-    echo 'C3p0 - Run Cargo publish for [' $i ']'
+    echo 'Run Cargo publish for [' $i ']'
     echo $LINE_SEPARATOR
 
     cargo publish
