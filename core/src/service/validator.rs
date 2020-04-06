@@ -193,12 +193,23 @@ impl <'a> Validator<'a> {
     }
 
     pub fn validate<V: Validable>(validable: V) -> Result<(), LightSpeedError> {
-        let mut error_details = ErrorDetails::default();
-        validable.validate(&mut error_details)?;
+        Validator::new()
+            .on(&validable)
+            .do_validate()
+    }
 
-        if !error_details.details().is_empty() {
+    pub fn on<V: Validable>(mut self, validable: &'a V) -> Self {
+        self.validables.push(validable);
+        self
+    }
 
-            match error_details {
+    pub fn do_validate(mut self) -> Result<(), LightSpeedError> {
+        for validable in self.validables {
+            validable.validate(&mut self.error_details)?;
+        }
+
+        if !self.error_details.details().is_empty() {
+            match self.error_details {
                 ErrorDetails::Root(node) => {
                     Err(LightSpeedError::ValidationError {
                         details: node,
@@ -206,15 +217,9 @@ impl <'a> Validator<'a> {
                 },
                 ErrorDetails::Scoped(_) => panic!("ErrorDetails must be of type Root inside validator")
             }
-
         } else {
             Ok(())
         }
-    }
-
-    pub fn on<V: Validable>(mut self, validable: &'a V) -> Self {
-        self.validables.push(validable);
-        self
     }
 }
 
