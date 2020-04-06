@@ -1,4 +1,4 @@
-use crate::data;
+use crate::{data, test};
 use c3p0::*;
 use lightspeed_cms::dto::create_project_dto::CreateProjectDto;
 use lightspeed_cms::dto::create_schema_dto::CreateSchemaDto;
@@ -22,20 +22,21 @@ fn should_create_project() -> Result<(), LightSpeedError> {
         name: new_hyphenated_uuid(),
     };
 
-    let saved_project = cms_module.project_service.create_project(project)?;
+    let saved_project = cms_module.project_service.create_project(project).await?;
 
-    c3p0.transaction(|mut conn| async {
+    c3p0.transaction(|mut conn| async move {
         let conn = &mut conn;
-    assert!(project_repo.exists_by_id(conn, &saved_project.id)?);
+    assert!(project_repo.exists_by_id(conn, &saved_project.id).await?);
     assert!(cms_module
         .project_service
         .delete(saved_project.clone())
+        .await
         .is_ok());
-    assert!(!project_repo.exists_by_id(conn, &saved_project.id)?);
+    assert!(!project_repo.exists_by_id(conn, &saved_project.id).await?);
 
     Ok(())
 
-    })
+    }).await
         })
 }
 
@@ -55,16 +56,16 @@ fn project_name_should_be_unique() -> Result<(), LightSpeedError> {
         },
     };
 
-    c3p0.transaction(|mut conn| async {
+    c3p0.transaction(|mut conn| async move {
         let conn = &mut conn;
     assert!(project_repo
-        .save(conn, project.clone())
+        .save(conn, project.clone()).await
         .is_ok());
-    assert!(project_repo.save(conn, project).is_err());
+    assert!(project_repo.save(conn, project).await.is_err());
 
     Ok(())
 
-    })
+    }).await
         })
 }
 
@@ -80,9 +81,9 @@ fn should_return_not_unique_validation_error() -> Result<(), LightSpeedError> {
         name: new_hyphenated_uuid(),
     };
 
-    assert!(project_service.create_project(project.clone()).is_ok());
+    assert!(project_service.create_project(project.clone()).await.is_ok());
 
-    match project_service.create_project(project) {
+    match project_service.create_project(project).await {
         Err(LightSpeedError::ValidationError { details }) => {
             assert_eq!(details.details.len(), 1);
             assert_eq!(
@@ -112,7 +113,7 @@ fn should_delete_all_schemas_when_project_is_deleted() -> Result<(), LightSpeedE
         name: new_hyphenated_uuid(),
     };
 
-    let saved_project = project_service.create_project(project)?;
+    let saved_project = project_service.create_project(project).await?;
 
     let mut schema = CreateSchemaDto {
         name: new_hyphenated_uuid(),
@@ -124,26 +125,26 @@ fn should_delete_all_schemas_when_project_is_deleted() -> Result<(), LightSpeedE
         },
     };
 
-    let saved_schema_1 = cms_module.schema_service.create_schema(schema.clone())?;
+    let saved_schema_1 = cms_module.schema_service.create_schema(schema.clone()).await?;
 
     schema.name = new_hyphenated_uuid();
-    let saved_schema_2 = cms_module.schema_service.create_schema(schema.clone())?;
+    let saved_schema_2 = cms_module.schema_service.create_schema(schema.clone()).await?;
 
     schema.project_id -= -1;
-    let saved_schema_other = cms_module.schema_service.create_schema(schema)?;
+    let saved_schema_other = cms_module.schema_service.create_schema(schema).await?;
 
     // Act
-    assert!(project_service.delete(saved_project).is_ok());
+    assert!(project_service.delete(saved_project).await.is_ok());
 
     // Assert
-    c3p0.transaction(|mut conn| async {
+    c3p0.transaction(|mut conn| async move {
         let conn = &mut conn;
-        assert!(!schema_repo.exists_by_id(conn, &saved_schema_1.id)?);
-        assert!(!schema_repo.exists_by_id(conn, &saved_schema_2.id)?);
-        assert!(schema_repo.exists_by_id(conn, &saved_schema_other.id)?);
+        assert!(!schema_repo.exists_by_id(conn, &saved_schema_1.id).await?);
+        assert!(!schema_repo.exists_by_id(conn, &saved_schema_2.id).await?);
+        assert!(schema_repo.exists_by_id(conn, &saved_schema_other.id).await?);
     
         Ok(())
 
-    })
+    }).await
         })
 }

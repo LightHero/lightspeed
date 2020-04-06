@@ -1,4 +1,4 @@
-use crate::data;
+use crate::{data, test};
 use lightspeed_cms::dto::create_schema_dto::CreateSchemaDto;
 use lightspeed_cms::model::content::{
     Content, ContentData, ContentFieldValue, ContentFieldValueArity,
@@ -31,56 +31,56 @@ fn should_create_and_drop_content_table() -> Result<(), LightSpeedError> {
         },
     };
 
-    let saved_schema_1 = schema_service.create_schema(schema.clone())?;
+    let saved_schema_1 = schema_service.create_schema(schema.clone()).await?;
 
     schema.name = new_hyphenated_uuid();
-    let saved_schema_2 = schema_service.create_schema(schema)?;
+    let saved_schema_2 = schema_service.create_schema(schema).await?;
 
     assert!(content_service
-        .count_all_by_schema_id(saved_schema_1.id)
+        .count_all_by_schema_id(saved_schema_1.id).await
         .is_err());
     assert!(content_service
-        .count_all_by_schema_id(saved_schema_2.id)
-        .is_err());
-
-    assert!(content_service
-        .create_content_table(&saved_schema_1)
-        .is_ok());
-    assert!(content_service
-        .count_all_by_schema_id(saved_schema_1.id)
-        .is_ok());
-    assert!(content_service
-        .count_all_by_schema_id(saved_schema_2.id)
+        .count_all_by_schema_id(saved_schema_2.id).await
         .is_err());
 
     assert!(content_service
-        .create_content_table(&saved_schema_2)
+        .create_content_table(&saved_schema_1).await
         .is_ok());
     assert!(content_service
-        .count_all_by_schema_id(saved_schema_1.id)
+        .count_all_by_schema_id(saved_schema_1.id).await
         .is_ok());
     assert!(content_service
-        .count_all_by_schema_id(saved_schema_2.id)
-        .is_ok());
-
-    assert!(content_service
-        .drop_content_table(saved_schema_2.id)
-        .is_ok());
-    assert!(content_service
-        .count_all_by_schema_id(saved_schema_1.id)
-        .is_ok());
-    assert!(content_service
-        .count_all_by_schema_id(saved_schema_2.id)
+        .count_all_by_schema_id(saved_schema_2.id).await
         .is_err());
 
     assert!(content_service
-        .drop_content_table(saved_schema_1.id)
+        .create_content_table(&saved_schema_2).await
         .is_ok());
     assert!(content_service
-        .count_all_by_schema_id(saved_schema_1.id)
+        .count_all_by_schema_id(saved_schema_1.id).await
+        .is_ok());
+    assert!(content_service
+        .count_all_by_schema_id(saved_schema_2.id).await
+        .is_ok());
+
+    assert!(content_service
+        .drop_content_table(saved_schema_2.id).await
+        .is_ok());
+    assert!(content_service
+        .count_all_by_schema_id(saved_schema_1.id).await
+        .is_ok());
+    assert!(content_service
+        .count_all_by_schema_id(saved_schema_2.id).await
+        .is_err());
+
+    assert!(content_service
+        .drop_content_table(saved_schema_1.id).await
+        .is_ok());
+    assert!(content_service
+        .count_all_by_schema_id(saved_schema_1.id).await
         .is_err());
     assert!(content_service
-        .count_all_by_schema_id(saved_schema_2.id)
+        .count_all_by_schema_id(saved_schema_2.id).await
         .is_err());
 
     Ok(())
@@ -106,24 +106,25 @@ fn should_save_and_delete_content() -> Result<(), LightSpeedError> {
         },
     };
 
-    let saved_schema_1 = schema_service.create_schema(schema.clone())?;
+    let saved_schema_1 = schema_service.create_schema(schema.clone()).await?;
     assert!(content_service
         .create_content_table(&saved_schema_1)
+        .await
         .is_ok());
 
     schema.name = new_hyphenated_uuid();
-    let saved_schema_2 = schema_service.create_schema(schema)?;
+    let saved_schema_2 = schema_service.create_schema(schema).await?;
     assert!(content_service
-        .create_content_table(&saved_schema_2)
+        .create_content_table(&saved_schema_2).await
         .is_ok());
 
     assert_eq!(
         0,
-        content_service.count_all_by_schema_id(saved_schema_1.id)?
+        content_service.count_all_by_schema_id(saved_schema_1.id).await?
     );
     assert_eq!(
         0,
-        content_service.count_all_by_schema_id(saved_schema_2.id)?
+        content_service.count_all_by_schema_id(saved_schema_2.id).await?
     );
 
     let mut content = ContentData {
@@ -136,46 +137,46 @@ fn should_save_and_delete_content() -> Result<(), LightSpeedError> {
     };
 
     let content_model_1 =
-        content_service.create_content(&saved_schema_1.data.schema, content.clone())?;
+        content_service.create_content(&saved_schema_1.data.schema, content.clone()).await?;
     assert_eq!(
         1,
-        content_service.count_all_by_schema_id(saved_schema_1.id)?
+        content_service.count_all_by_schema_id(saved_schema_1.id).await?
     );
     assert_eq!(
         0,
-        content_service.count_all_by_schema_id(saved_schema_2.id)?
+        content_service.count_all_by_schema_id(saved_schema_2.id).await?
     );
 
     content.schema_id = saved_schema_2.id;
     let content_model_2 =
-        content_service.create_content(&saved_schema_2.data.schema, content.clone())?;
+        content_service.create_content(&saved_schema_2.data.schema, content.clone()).await?;
     assert_eq!(
         1,
-        content_service.count_all_by_schema_id(saved_schema_1.id)?
+        content_service.count_all_by_schema_id(saved_schema_1.id).await?
     );
     assert_eq!(
         1,
-        content_service.count_all_by_schema_id(saved_schema_2.id)?
+        content_service.count_all_by_schema_id(saved_schema_2.id).await?
     );
 
-    assert!(content_service.delete_content(content_model_1).is_ok());
+    assert!(content_service.delete_content(content_model_1).await.is_ok());
     assert_eq!(
         0,
-        content_service.count_all_by_schema_id(saved_schema_1.id)?
+        content_service.count_all_by_schema_id(saved_schema_1.id).await?
     );
     assert_eq!(
         1,
-        content_service.count_all_by_schema_id(saved_schema_2.id)?
+        content_service.count_all_by_schema_id(saved_schema_2.id).await?
     );
 
-    assert!(content_service.delete_content(content_model_2).is_ok());
+    assert!(content_service.delete_content(content_model_2).await.is_ok());
     assert_eq!(
         0,
-        content_service.count_all_by_schema_id(saved_schema_1.id)?
+        content_service.count_all_by_schema_id(saved_schema_1.id).await?
     );
     assert_eq!(
         0,
-        content_service.count_all_by_schema_id(saved_schema_2.id)?
+        content_service.count_all_by_schema_id(saved_schema_2.id).await?
     );
 
     Ok(())
@@ -209,9 +210,9 @@ fn should_validate_content_on_save() -> Result<(), LightSpeedError> {
         },
     };
 
-    let saved_schema_1 = schema_service.create_schema(schema.clone())?;
+    let saved_schema_1 = schema_service.create_schema(schema.clone()).await?;
     assert!(content_service
-        .create_content_table(&saved_schema_1)
+        .create_content_table(&saved_schema_1).await
         .is_ok());
 
     let content = ContentData {
@@ -223,7 +224,7 @@ fn should_validate_content_on_save() -> Result<(), LightSpeedError> {
         },
     };
 
-    let result = content_service.create_content(&saved_schema_1.data.schema, content);
+    let result = content_service.create_content(&saved_schema_1.data.schema, content).await;
 
     match result {
         Err(LightSpeedError::ValidationError { .. }) => {}
@@ -232,7 +233,7 @@ fn should_validate_content_on_save() -> Result<(), LightSpeedError> {
 
     assert_eq!(
         0,
-        content_service.count_all_by_schema_id(saved_schema_1.id)?
+        content_service.count_all_by_schema_id(saved_schema_1.id).await?
     );
 
     Ok(())
@@ -265,8 +266,8 @@ fn should_create_unique_constraints_for_slug_schema_fields(
         },
     };
 
-    let saved_schema_1 = schema_service.create_schema(schema.clone())?;
-    content_service.create_content_table(&saved_schema_1)?;
+    let saved_schema_1 = schema_service.create_schema(schema.clone()).await?;
+    content_service.create_content_table(&saved_schema_1).await?;
 
     let content = ContentData {
         schema_id: saved_schema_1.id,
@@ -280,9 +281,9 @@ fn should_create_unique_constraints_for_slug_schema_fields(
         },
     };
 
-    content_service.create_content(&saved_schema_1.data.schema, content.clone())?;
+    content_service.create_content(&saved_schema_1.data.schema, content.clone()).await?;
 
-    let result = content_service.create_content(&saved_schema_1.data.schema, content.clone());
+    let result = content_service.create_content(&saved_schema_1.data.schema, content.clone()).await;
     assert!(result.is_err());
 
     match result {
@@ -331,8 +332,8 @@ fn should_create_unique_constraints_for_string_unique_schema_fields(
         },
     };
 
-    let saved_schema_1 = schema_service.create_schema(schema.clone())?;
-    content_service.create_content_table(&saved_schema_1)?;
+    let saved_schema_1 = schema_service.create_schema(schema.clone()).await?;
+    content_service.create_content_table(&saved_schema_1).await?;
 
     let content = ContentData {
         schema_id: saved_schema_1.id,
@@ -346,9 +347,9 @@ fn should_create_unique_constraints_for_string_unique_schema_fields(
         },
     };
 
-    content_service.create_content(&saved_schema_1.data.schema, content.clone())?;
+    content_service.create_content(&saved_schema_1.data.schema, content.clone()).await?;
 
-    let result = content_service.create_content(&saved_schema_1.data.schema, content.clone());
+    let result = content_service.create_content(&saved_schema_1.data.schema, content.clone()).await;
     assert!(result.is_err());
 
     match result {
@@ -397,8 +398,8 @@ fn should_create_unique_constraints_for_number_unique_schema_fields(
         },
     };
 
-    let saved_schema_1 = schema_service.create_schema(schema.clone())?;
-    content_service.create_content_table(&saved_schema_1)?;
+    let saved_schema_1 = schema_service.create_schema(schema.clone()).await?;
+    content_service.create_content_table(&saved_schema_1).await?;
 
     let content = ContentData {
         schema_id: saved_schema_1.id,
@@ -412,9 +413,9 @@ fn should_create_unique_constraints_for_number_unique_schema_fields(
         },
     };
 
-    content_service.create_content(&saved_schema_1.data.schema, content.clone())?;
+    content_service.create_content(&saved_schema_1.data.schema, content.clone()).await?;
 
-    let result = content_service.create_content(&saved_schema_1.data.schema, content.clone());
+    let result = content_service.create_content(&saved_schema_1.data.schema, content.clone()).await;
     assert!(result.is_err());
 
     match result {
@@ -461,8 +462,8 @@ fn should_create_unique_constraints_for_boolean_unique_schema_fields(
         },
     };
 
-    let saved_schema_1 = schema_service.create_schema(schema.clone())?;
-    content_service.create_content_table(&saved_schema_1)?;
+    let saved_schema_1 = schema_service.create_schema(schema.clone()).await?;
+    content_service.create_content_table(&saved_schema_1).await?;
 
     let content = ContentData {
         schema_id: saved_schema_1.id,
@@ -476,9 +477,9 @@ fn should_create_unique_constraints_for_boolean_unique_schema_fields(
         },
     };
 
-    content_service.create_content(&saved_schema_1.data.schema, content.clone())?;
+    content_service.create_content(&saved_schema_1.data.schema, content.clone()).await?;
 
-    let result = content_service.create_content(&saved_schema_1.data.schema, content.clone());
+    let result = content_service.create_content(&saved_schema_1.data.schema, content.clone()).await;
     assert!(result.is_err());
 
     match result {
@@ -527,9 +528,9 @@ fn should_create_unique_constraints_for_field_name_with_max_length(
         },
     };
 
-    let saved_schema_1 = schema_service.create_schema(schema.clone())?;
+    let saved_schema_1 = schema_service.create_schema(schema.clone()).await?;
     assert!(content_service
-        .create_content_table(&saved_schema_1)
+        .create_content_table(&saved_schema_1).await
         .is_ok());
 
     Ok(())

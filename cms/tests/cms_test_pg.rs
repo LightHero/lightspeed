@@ -1,6 +1,6 @@
-use c3p0::pg_async::deadpool;
-use c3p0::pg_async::driver::*;
-use c3p0::pg_async::*;
+use c3p0::pg::deadpool;
+use c3p0::pg::tokio_postgres::*;
+use c3p0::pg::*;
 use maybe_single::*;
 use testcontainers::*;
 
@@ -9,6 +9,7 @@ use lightspeed_cms::repository::pg::PgCmsRepositoryManager;
 use lightspeed_cms::CmsModule;
 use lightspeed_core::module::Module;
 use tokio::time::Duration;
+use once_cell::sync::OnceCell;
 
 mod tests;
 
@@ -19,7 +20,7 @@ pub type MaybeType = (
     Container<'static, clients::Cli, images::postgres::Postgres>,
 );
 
-fn init() -> MaybeType {
+async fn init() -> MaybeType {
     static DOCKER: OnceCell<clients::Cli> = OnceCell::new();
 
     let node = DOCKER
@@ -45,14 +46,14 @@ fn init() -> MaybeType {
     let cms_config = CmsConfig::build();
 
     let mut cms_module = CmsModule::new(repo_manager, cms_config);
-    cms_module.start().unwrap();
+    cms_module.start().await.unwrap();
 
-    ((cms_module), node)
+    (cms_module, node)
 }
 
 pub async fn data(serial: bool) -> Data<'static, MaybeType> {
     static DATA: OnceCell<MaybeSingleAsync<MaybeType>> = OnceCell::new();
-    DATA.get_or_init(|| MaybeSingleAsync::new(|| init().boxed()))
+    DATA.get_or_init(|| MaybeSingleAsync::new(|| Box::pin(init())))
         .data(serial)
         .await
 }
