@@ -5,10 +5,8 @@ use crate::repository::CmsRepositoryManager;
 use crate::repository::ContentRepository;
 use c3p0::*;
 use lightspeed_cache::Cache;
-use lightspeed_core::error::{ErrorDetails, LightSpeedError};
+use lightspeed_core::error::{LightSpeedError};
 use lightspeed_core::service::validator::{Validator, ERR_NOT_UNIQUE};
-use std::cell::RefCell;
-use std::ops::DerefMut;
 use std::sync::Arc;
 
 const CMS_CONTENT_TABLE_PREFIX: &str = "LS_CMS_CONTENT_";
@@ -69,11 +67,11 @@ impl<RepoManager: CmsRepositoryManager> ContentService<RepoManager> {
     ) -> Result<ContentModel, LightSpeedError> {
         self.c3p0.transaction(|mut conn| async move  {
             let conn = &mut conn;
-            let conn = RefCell::new(conn);
             let repo = self.get_content_repo_by_schema_id(create_content_dto.schema_id);
 
-            Validator::validate(&|error_details: &mut ErrorDetails| {
-                create_content_dto.content.validate(&schema, error_details);
+            let mut validator = Validator::new();
+
+                   create_content_dto.content.validate(&schema, validator.error_details());
 
                 for field in &schema.fields {
                     match field.field_type.get_arity() {
@@ -104,17 +102,14 @@ impl<RepoManager: CmsRepositoryManager> ContentService<RepoManager> {
                                 };
 
                                 if let Some(value) = field_value {
-                                    let mut conn_borrow = conn.try_borrow_mut().map_err(|err|
-                                        LightSpeedError::InternalServerError {message: format!("ContentService - Something weird, the connection should be safely borrowed mut. Err: {}", err)}
-                                    )?;
                                     let count = repo.count_all_by_field_value(
-                                        conn_borrow.deref_mut(),
+                                        conn,
                                         &field.name,
                                         &value,
                                     ).await?;
                                     if count > 0 {
                                         let scoped_name = format!("fields[{}]", &field.name);
-                                        error_details
+                                        validator.error_details()
                                             .add_detail(scoped_name, ERR_NOT_UNIQUE);
                                     }
                                 }
@@ -122,14 +117,11 @@ impl<RepoManager: CmsRepositoryManager> ContentService<RepoManager> {
                         }
                         _ => {}
                     }
-                }
+                };
 
-                Ok(())
-            })?;
-            let mut conn_borrow = conn.try_borrow_mut().map_err(|err|
-                LightSpeedError::InternalServerError {message: format!("ContentService - Something weird, the connection should be safely borrowed mut. Err: {}", err)}
-            )?;
-            repo.save(conn_borrow.deref_mut(), NewModel::new(create_content_dto)).await
+            validator.do_validate()?;
+
+            repo.save(conn, NewModel::new(create_content_dto)).await
         }).await
     }
 

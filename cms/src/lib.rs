@@ -52,10 +52,11 @@ impl<RepoManager: CmsRepositoryManager> CmsModule<RepoManager> {
     }
 }
 
+#[async_trait::async_trait]
 impl<RepoManager: CmsRepositoryManager> lightspeed_core::module::Module for CmsModule<RepoManager> {
-    fn start(&mut self) -> Result<(), LightSpeedError> {
+    async fn start(&mut self) -> Result<(), LightSpeedError> {
         info!("Starting CmsModule");
-        self.repo_manager.start()?;
+        self.repo_manager.start().await?;
         Ok(())
     }
 }

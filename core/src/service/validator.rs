@@ -203,6 +203,10 @@ impl <'a> Validator<'a> {
         self
     }
 
+    pub fn error_details(&mut self) -> &mut ErrorDetails<'a> {
+        &mut self.error_details
+    }
+
     pub fn do_validate(mut self) -> Result<(), LightSpeedError> {
         for validable in self.validables {
             validable.validate(&mut self.error_details)?;
