@@ -26,7 +26,7 @@ where
     }
 }
 
-impl<V0: Validable, V1: Validable> Validable for (V0, V1) {
+impl<V0: Validable, V1: Validable> Validable for (&V0, &V1) {
     #[inline]
     fn validate(&self, error_details: &mut ErrorDetails) -> Result<(), LightSpeedError> {
         self.0.validate(error_details)?;
@@ -34,7 +34,7 @@ impl<V0: Validable, V1: Validable> Validable for (V0, V1) {
     }
 }
 
-impl<V0: Validable, V1: Validable, V2: Validable> Validable for (V0, V1, V2) {
+impl<V0: Validable, V1: Validable, V2: Validable> Validable for (&V0, &V1, &V2) {
     #[inline]
     fn validate(&self, error_details: &mut ErrorDetails) -> Result<(), LightSpeedError> {
         self.0.validate(error_details)?;
@@ -43,7 +43,7 @@ impl<V0: Validable, V1: Validable, V2: Validable> Validable for (V0, V1, V2) {
     }
 }
 
-impl<V0: Validable, V1: Validable, V2: Validable, V3: Validable> Validable for (V0, V1, V2, V3) {
+impl<V0: Validable, V1: Validable, V2: Validable, V3: Validable> Validable for (&V0, &V1, &V2, &V3) {
     #[inline]
     fn validate(&self, error_details: &mut ErrorDetails) -> Result<(), LightSpeedError> {
         self.0.validate(error_details)?;
@@ -54,7 +54,7 @@ impl<V0: Validable, V1: Validable, V2: Validable, V3: Validable> Validable for (
 }
 
 impl<V0: Validable, V1: Validable, V2: Validable, V3: Validable, V4: Validable> Validable
-    for (V0, V1, V2, V3, V4)
+    for (&V0, &V1, &V2, &V3, &V4)
 {
     #[inline]
     fn validate(&self, error_details: &mut ErrorDetails) -> Result<(), LightSpeedError> {
@@ -67,7 +67,7 @@ impl<V0: Validable, V1: Validable, V2: Validable, V3: Validable, V4: Validable> 
 }
 
 impl<V0: Validable, V1: Validable, V2: Validable, V3: Validable, V4: Validable, V5: Validable>
-    Validable for (V0, V1, V2, V3, V4, V5)
+    Validable for (&V0, &V1, &V2, &V3, &V4, &V5)
 {
     #[inline]
     fn validate(&self, error_details: &mut ErrorDetails) -> Result<(), LightSpeedError> {
@@ -88,7 +88,7 @@ impl<
         V4: Validable,
         V5: Validable,
         V6: Validable,
-    > Validable for (V0, V1, V2, V3, V4, V5, V6)
+    > Validable for (&V0, &V1, &V2, &V3, &V4, &V5, &V6)
 {
     #[inline]
     fn validate(&self, error_details: &mut ErrorDetails) -> Result<(), LightSpeedError> {
@@ -111,7 +111,7 @@ impl<
         V5: Validable,
         V6: Validable,
         V7: Validable,
-    > Validable for (V0, V1, V2, V3, V4, V5, V6, V7)
+    > Validable for (&V0, &V1, &V2, &V3, &V4, &V5, &V6, &V7)
 {
     #[inline]
     fn validate(&self, error_details: &mut ErrorDetails) -> Result<(), LightSpeedError> {
@@ -136,7 +136,7 @@ impl<
         V6: Validable,
         V7: Validable,
         V8: Validable,
-    > Validable for (V0, V1, V2, V3, V4, V5, V6, V7, V8)
+    > Validable for (&V0, &V1, &V2, &V3, &V4, &V5, &V6, &V7, &V8)
 {
     #[inline]
     fn validate(&self, error_details: &mut ErrorDetails) -> Result<(), LightSpeedError> {
@@ -163,7 +163,7 @@ impl<
         V7: Validable,
         V8: Validable,
         V9: Validable,
-    > Validable for (V0, V1, V2, V3, V4, V5, V6, V7, V8, V9)
+    > Validable for (&V0, &V1, &V2, &V3, &V4, &V5, &V6, &V7, &V8, &V9)
 {
     #[inline]
     fn validate(&self, error_details: &mut ErrorDetails) -> Result<(), LightSpeedError> {
@@ -192,9 +192,9 @@ impl <'a> Validator<'a> {
         Default::default()
     }
 
-    pub fn validate<V: Validable>(validable: V) -> Result<(), LightSpeedError> {
+    pub fn validate<V: Validable>(validable: &'a V) -> Result<(), LightSpeedError> {
         Validator::new()
-            .on(&validable)
+            .on(validable)
             .do_validate()
     }
 
@@ -230,13 +230,13 @@ pub mod test {
 
     #[test]
     pub fn validator_should_accept_closures() {
-        let result = Validator::validate(|_error_details: &mut  ErrorDetails| Ok(()));
+        let result = Validator::validate(&|_error_details: &mut  ErrorDetails| Ok(()));
         assert!(result.is_ok());
     }
 
     #[test]
     pub fn validator_should_return_error_from_closure_if_error_details() {
-        let result = Validator::validate(|error_details: &mut  ErrorDetails| {
+        let result = Validator::validate(&|error_details: &mut  ErrorDetails| {
             error_details.add_detail("username", "duplicated");
             Ok(())
         });
@@ -252,7 +252,7 @@ pub mod test {
 
     #[test]
     pub fn validator_should_return_validable_internal_error() {
-        let result = Validator::validate(|_error_details: &mut ErrorDetails| {
+        let result = Validator::validate(&|_error_details: &mut ErrorDetails| {
             Err(LightSpeedError::UnauthenticatedError)
         });
 
@@ -290,11 +290,44 @@ pub mod test {
     }
 
     #[test]
+    pub fn validator_should_accept_validables() {
+
+        let mut validable_1 = Tester { error_details: ErrorDetails::default() };
+        validable_1.error_details.add_detail("1", "11");
+
+        let mut validable_2 = Tester { error_details: ErrorDetails::default() };
+        validable_2.error_details.add_detail("1", "111");
+        validable_2.error_details.add_detail("2", "22");
+
+        let validable_3 = |error_details: &mut ErrorDetails| {
+            error_details.add_detail("3", "33");
+            Ok(())
+        };
+
+        let result = Validator::new()
+            .on(&validable_1)
+            .on(&validable_2)
+            .on(&validable_3)
+            .do_validate();
+
+        assert!(result.is_err());
+        match result {
+            Err(LightSpeedError::ValidationError { details }) => {
+                assert_eq!("11", details.details["1"][0]);
+                assert_eq!("111", details.details["1"][1]);
+                assert_eq!("22", details.details["2"][0]);
+                assert_eq!("33", details.details["3"][0]);
+            }
+            _ => assert!(false),
+        }
+    }
+
+    #[test]
     pub fn validator_should_accept_pair() {
         let validable1 = Tester::new();
         let validable2 = Tester::new();
 
-        let result = Validator::validate((&validable1, &validable2));
+        let result = Validator::validate(&(&validable1, &validable2));
 
         assert!(result.is_ok());
     }
@@ -304,7 +337,7 @@ pub mod test {
         let validable1 = Tester::new();
 
         let result =
-            Validator::validate((&validable1, |_error_details: &mut ErrorDetails| Ok(())));
+            Validator::validate(&(&validable1, &|_error_details: &mut ErrorDetails| Ok(())));
 
         assert!(result.is_ok());
     }
@@ -333,7 +366,7 @@ pub mod test {
         error_details.add_detail("2", "2");
         let validable5 = Tester { error_details };
 
-        let result = Validator::validate((
+        let result = Validator::validate(&(
             &validable1,
             &validable2,
             &validable3,
@@ -363,7 +396,7 @@ pub mod test {
         }
     }
 
-    impl <'a> Validable for &Tester<'a> {
+    impl <'a> Validable for Tester<'a> {
         fn validate(&self, error_details: &mut ErrorDetails) -> Result<(), LightSpeedError> {
             for (key, details) in self.error_details.details().iter() {
                 for detail in details {

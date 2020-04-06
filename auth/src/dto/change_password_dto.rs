@@ -20,8 +20,8 @@ impl Owned for ChangePasswordDto {
     }
 }
 
-impl Validable for &ChangePasswordDto {
-    fn validate<E: ErrorDetails>(&self, error_details: &mut E) -> Result<(), LightSpeedError> {
+impl Validable for ChangePasswordDto {
+    fn validate(&self, error_details: &mut ErrorDetails) -> Result<(), LightSpeedError> {
         validate_must_be_equals(
             error_details,
             "new_password",

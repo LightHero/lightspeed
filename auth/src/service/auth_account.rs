@@ -115,12 +115,12 @@ impl<RepoManager: AuthRepositoryManager> AuthAccountService<RepoManager> {
             .auth_repo
             .fetch_by_email_optional(conn, &create_login_dto.email)
             .await?;
-        Validator::validate((&create_login_dto, |error_details: &mut dyn ErrorDetails| {
+        Validator::validate(&(&create_login_dto, &|error_details: &mut ErrorDetails| {
             if existing_user.is_some() {
-                error_details.add_detail("username".into(), ERR_NOT_UNIQUE.into());
+                error_details.add_detail("username", ERR_NOT_UNIQUE);
             }
             if existing_email.is_some() {
-                error_details.add_detail("email".into(), ERR_NOT_UNIQUE.into());
+                error_details.add_detail("email", ERR_NOT_UNIQUE);
             }
             Ok(())
         }))?;
@@ -178,10 +178,10 @@ impl<RepoManager: AuthRepositoryManager> AuthAccountService<RepoManager> {
             .fetch_by_token(conn, previous_activation_token, false)
             .await?;
 
-        Validator::validate(|error_details: &mut dyn ErrorDetails| {
+        Validator::validate(&|error_details: &mut ErrorDetails| {
             match &token.data.token_type {
                 TokenType::ACCOUNT_ACTIVATION => {}
-                _ => error_details.add_detail("token_type".into(), WRONG_TYPE.into()),
+                _ => error_details.add_detail("token_type", WRONG_TYPE),
             };
             Ok(())
         })?;
@@ -228,10 +228,10 @@ impl<RepoManager: AuthRepositoryManager> AuthAccountService<RepoManager> {
                     .fetch_by_token(conn, activation_token, true)
                     .await?;
 
-                Validator::validate(|error_details: &mut dyn ErrorDetails| {
+                Validator::validate(&|error_details: &mut ErrorDetails| {
                     match &token.data.token_type {
                         TokenType::ACCOUNT_ACTIVATION => {}
-                        _ => error_details.add_detail("token_type".into(), WRONG_TYPE.into()),
+                        _ => error_details.add_detail("token_type", WRONG_TYPE),
                     };
                     Ok(())
                 })?;
@@ -319,10 +319,10 @@ impl<RepoManager: AuthRepositoryManager> AuthAccountService<RepoManager> {
 
                 info!("Reset password of user [{}]", token.data.username);
 
-                Validator::validate(|error_details: &mut dyn ErrorDetails| {
+                Validator::validate(&|error_details: &mut ErrorDetails| {
                     match &token.data.token_type {
                         TokenType::RESET_PASSWORD => {}
-                        _ => error_details.add_detail("token_type".into(), WRONG_TYPE.into()),
+                        _ => error_details.add_detail("token_type", WRONG_TYPE),
                     };
                     Ok(())
                 })?;

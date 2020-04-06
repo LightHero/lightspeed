@@ -11,7 +11,7 @@ pub struct ProjectData {
     pub name: String,
 }
 
-impl Validable for &ProjectData {
+impl Validable for ProjectData {
     fn validate<E: ErrorDetails>(&self, error_details: &mut E) -> Result<(), LightSpeedError> {
         validate_number_ge(error_details, "name", 3, self.name.len());
         Ok(())

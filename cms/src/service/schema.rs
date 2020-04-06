@@ -33,7 +33,7 @@ impl<RepoManager: CmsRepositoryManager> SchemaService<RepoManager> {
                 project_id: create_schema_dto.project_id,
                 schema: create_schema_dto.schema,
             };
-            Validator::validate((&data, |error_details: &mut dyn ErrorDetails| {
+            Validator::validate((&data, |error_details: &mut ErrorDetails| {
                 if name_already_exists {
                     error_details.add_detail("name".into(), ERR_NOT_UNIQUE.into());
                 }

@@ -65,7 +65,7 @@ pub enum ContentFieldValueArity<T> {
 }
 
 impl Content {
-    pub fn validate(&self, schema: &Schema, error_details: &mut dyn ErrorDetails) {
+    pub fn validate(&self, schema: &Schema, error_details: &mut ErrorDetails) {
         let mut schema_fields = BTreeMap::new();
         schema.fields.iter().for_each(|field| {
             schema_fields.insert(&field.name, field);
@@ -381,7 +381,7 @@ mod test {
             };
 
             // Act
-            let result = Validator::validate(|error_details: &mut dyn ErrorDetails| {
+            let result = Validator::validate(|error_details: &mut ErrorDetails| {
                 content.validate(&schema, error_details);
                 Ok(())
             });
@@ -1117,7 +1117,7 @@ mod test {
     }
 
     pub fn validate_content(schema: &Schema, content: &Content) -> Result<(), LightSpeedError> {
-        Validator::validate(|error_details: &mut dyn ErrorDetails| {
+        Validator::validate(|error_details: &mut ErrorDetails| {
             content.validate(schema, error_details);
             Ok(())
         })

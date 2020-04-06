@@ -20,8 +20,8 @@ pub struct CreateLoginDto {
     pub accept_privacy_policy: bool,
 }
 
-impl Validable for &CreateLoginDto {
-    fn validate<E: ErrorDetails>(&self, error_details: &mut E) -> Result<(), LightSpeedError> {
+impl Validable for CreateLoginDto {
+    fn validate(&self, error_details: &mut ErrorDetails) -> Result<(), LightSpeedError> {
         validate_must_be_equals(
             error_details,
             "password",

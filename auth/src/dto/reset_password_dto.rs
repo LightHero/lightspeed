@@ -12,8 +12,8 @@ pub struct ResetPasswordDto {
     pub password_confirm: String,
 }
 
-impl Validable for &ResetPasswordDto {
-    fn validate<E: ErrorDetails>(&self, error_details: &mut E) -> Result<(), LightSpeedError> {
+impl Validable for ResetPasswordDto {
+    fn validate(&self, error_details: &mut ErrorDetails) -> Result<(), LightSpeedError> {
         validate_must_be_equals(
             error_details,
             "password",

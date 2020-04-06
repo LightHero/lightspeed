@@ -47,10 +47,10 @@ impl JsonCodec<TokenData> for TokenDataCodec {
     }
 }
 
-impl Validable for &TokenData {
-    fn validate<E: ErrorDetails>(&self, error_details: &mut E) -> Result<(), LightSpeedError> {
+impl Validable for TokenData {
+    fn validate(&self, error_details: &mut ErrorDetails) -> Result<(), LightSpeedError> {
         if current_epoch_seconds() > self.expire_at_epoch_seconds {
-            error_details.add_detail("expire_at_epoch".into(), "expired".into());
+            error_details.add_detail("expire_at_epoch", "expired");
         }
         Ok(())
     }

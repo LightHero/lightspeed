@@ -39,7 +39,7 @@ impl<RepoManager: CmsRepositoryManager> ProjectService<RepoManager> {
             let data = ProjectData {
                 name: create_project_dto.name,
             };
-            Validator::validate((&data, |error_details: &mut dyn ErrorDetails| {
+            Validator::validate((&data, |error_details: &mut ErrorDetails| {
                 if name_already_exists {
                     error_details.add_detail("name".into(), ERR_NOT_UNIQUE.into());
                 }

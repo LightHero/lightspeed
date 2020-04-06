@@ -71,7 +71,7 @@ impl<RepoManager: CmsRepositoryManager> ContentService<RepoManager> {
             let conn = RefCell::new(conn);
             let repo = self.get_content_repo_by_schema_id(create_content_dto.schema_id);
 
-            Validator::validate(|error_details: &mut dyn ErrorDetails| {
+            Validator::validate(|error_details: &mut ErrorDetails| {
                 create_content_dto.content.validate(&schema, error_details);
 
                 for field in &schema.fields {
