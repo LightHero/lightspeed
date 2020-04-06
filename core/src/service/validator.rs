@@ -201,7 +201,7 @@ impl <'a> Validator<'a> {
             match error_details {
                 ErrorDetails::Root(node) => {
                     Err(LightSpeedError::ValidationError {
-                        details: node.details,
+                        details: node,
                     })
                 },
                 ErrorDetails::Scoped(_) => panic!("ErrorDetails must be of type Root inside validator")
@@ -239,7 +239,7 @@ pub mod test {
         assert!(result.is_err());
         match result {
             Err(LightSpeedError::ValidationError { details }) => {
-                assert_eq!("duplicated", details["username"][0])
+                assert_eq!("duplicated", details.details["username"][0])
             }
             _ => assert!(false),
         }
@@ -278,7 +278,7 @@ pub mod test {
         assert!(result.is_err());
         match result {
             Err(LightSpeedError::ValidationError { details }) => {
-                assert_eq!("2", details["1"][0])
+                assert_eq!("2", details.details["1"][0])
             }
             _ => assert!(false),
         }
@@ -339,8 +339,8 @@ pub mod test {
         assert!(result.is_err());
         match result {
             Err(LightSpeedError::ValidationError { details }) => {
-                assert_eq!(5, details["1"].len());
-                assert_eq!(2, details["2"].len());
+                assert_eq!(5, details.details["1"].len());
+                assert_eq!(2, details.details["2"].len());
             }
             _ => assert!(false),
         }

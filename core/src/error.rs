@@ -42,7 +42,7 @@ pub enum LightSpeedError {
     RepositoryError { message: String },
 
     #[error("ValidationError [{details:?}]")]
-    ValidationError { details: ErrorDetailsData },
+    ValidationError { details: RootErrorDetails },
 
     #[error("BadRequest [{message}]")]
     BadRequest { message: String },
