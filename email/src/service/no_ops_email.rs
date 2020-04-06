@@ -12,8 +12,9 @@ impl NoOpsEmailClient {
     }
 }
 
+#[async_trait::async_trait]
 impl EmailClient for NoOpsEmailClient {
-    fn send(&self, _email_message: EmailMessage) -> Result<(), LightSpeedError> {
+    async fn send(&self, _email_message: EmailMessage) -> Result<(), LightSpeedError> {
         warn!("NoOpsEmailService.send - Received an email but the email is NOT going to be sent");
         Ok(())
     }

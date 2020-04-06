@@ -71,65 +71,76 @@ impl FullEmailClient {
     }
 }
 
+#[async_trait::async_trait]
 impl EmailClient for FullEmailClient {
-    fn send(&self, email_message: EmailMessage) -> Result<(), LightSpeedError> {
-        debug!("Sending email {:#?}", email_message);
+    async fn send(&self, email_message: EmailMessage) -> Result<(), LightSpeedError> {
+        let client = self.client.clone();
+        tokio::task::spawn_blocking(move || {
+            debug!("Sending email {:#?}", email_message);
 
-        let mut builder = Email::builder();
+            let mut builder = Email::builder();
 
-        if let Some(val) = email_message.subject {
-            builder = builder.subject(val)
-        }
-        if let Some(val) = email_message.from {
-            builder = builder.from(parse_mailbox(&val)?)
-        }
-
-        if let Some(html) = email_message.html {
-            if let Some(text) = email_message.text {
-                builder = builder.alternative(html, text)
-            } else {
-                builder = builder.html(html);
+            if let Some(val) = email_message.subject {
+                builder = builder.subject(val)
             }
-        } else if let Some(text) = email_message.text {
-            builder = builder.text(text)
-        }
+            if let Some(val) = email_message.from {
+                builder = builder.from(parse_mailbox(&val)?)
+            }
 
-        for to in email_message.to {
-            builder = builder.to(parse_mailbox(&to)?)
-        }
-        for cc in email_message.cc {
-            builder = builder.cc(parse_mailbox(&cc)?)
-        }
-        for bcc in email_message.bcc {
-            builder = builder.bcc(parse_mailbox(&bcc)?)
-        }
+            if let Some(html) = email_message.html {
+                if let Some(text) = email_message.text {
+                    builder = builder.alternative(html, text)
+                } else {
+                    builder = builder.html(html);
+                }
+            } else if let Some(text) = email_message.text {
+                builder = builder.text(text)
+            }
 
-        let email = builder
-            .build()
-            .map_err(|err| LightSpeedError::InternalServerError {
-                message: format!(
-                    "FullEmailService.send - Cannot build the email. Err: {}",
-                    err
-                ),
-            })?;
+            for to in email_message.to {
+                builder = builder.to(parse_mailbox(&to)?)
+            }
+            for cc in email_message.cc {
+                builder = builder.cc(parse_mailbox(&cc)?)
+            }
+            for bcc in email_message.bcc {
+                builder = builder.bcc(parse_mailbox(&bcc)?)
+            }
 
-        let mut client = self.client.lock();
-
-        let response =
-            client
-                .send(email.into())
+            let email = builder
+                .build()
                 .map_err(|err| LightSpeedError::InternalServerError {
                     message: format!(
-                        "FullEmailService.send - Cannot send email to the SMTP server. Err: {}",
+                        "FullEmailService.send - Cannot build the email. Err: {}",
                         err
                     ),
                 })?;
 
-        debug!(
-            "FullEmailService.send - Email sent. Response code: {}",
-            response.code
-        );
-        Ok(())
+            let mut client = client.lock();
+
+            let response =
+                client
+                    .send(email.into())
+                    .map_err(|err| LightSpeedError::InternalServerError {
+                        message: format!(
+                            "FullEmailService.send - Cannot send email to the SMTP server. Err: {}",
+                            err
+                        ),
+                    })?;
+
+            debug!(
+                "FullEmailService.send - Email sent. Response code: {}",
+                response.code
+            );
+            Ok(())
+        })
+        .await
+        .map_err(|err| LightSpeedError::InternalServerError {
+            message: format!(
+                "FullEmailService.send - Cannot send email to the SMTP server. Err: {}",
+                err
+            ),
+        })?
     }
 
     fn get_emails(&self) -> Result<Vec<EmailMessage>, LightSpeedError> {

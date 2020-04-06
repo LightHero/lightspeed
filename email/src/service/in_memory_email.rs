@@ -16,8 +16,9 @@ impl InMemoryEmailClient {
     }
 }
 
+#[async_trait::async_trait]
 impl EmailClient for InMemoryEmailClient {
-    fn send(&self, email_message: EmailMessage) -> Result<(), LightSpeedError> {
+    async fn send(&self, email_message: EmailMessage) -> Result<(), LightSpeedError> {
         warn!("InMemoryEmailService - Received an email. The email is NOT going to be sent but kept in memory");
 
         let mut lock = self.emails.lock();
@@ -53,8 +54,8 @@ pub mod test {
     use super::*;
     use lightspeed_core::utils::new_hyphenated_uuid;
 
-    #[test]
-    pub fn should_keep_emails_in_memory() {
+    #[tokio::test]
+    async fn should_keep_emails_in_memory() {
         // Arrange
         let mut email_1 = EmailMessage::new();
         email_1.subject = Some(new_hyphenated_uuid());
@@ -65,9 +66,9 @@ pub mod test {
         let email_service = InMemoryEmailClient::new();
 
         // Act
-        email_service.send(email_1.clone()).unwrap();
-        email_service.send(email_2.clone()).unwrap();
-        email_service.send(email_1.clone()).unwrap();
+        email_service.send(email_1.clone()).await.unwrap();
+        email_service.send(email_2.clone()).await.unwrap();
+        email_service.send(email_1.clone()).await.unwrap();
 
         // Assert
         let emails = email_service.get_emails().unwrap();
@@ -77,8 +78,8 @@ pub mod test {
         assert_eq!(email_1.subject, emails[2].subject);
     }
 
-    #[test]
-    pub fn should_clear_emails() {
+    #[tokio::test]
+    async fn should_clear_emails() {
         // Arrange
         let mut email_1 = EmailMessage::new();
         email_1.subject = Some(new_hyphenated_uuid());
@@ -86,8 +87,8 @@ pub mod test {
         let email_service = InMemoryEmailClient::new();
 
         // Act
-        email_service.send(email_1.clone()).unwrap();
-        email_service.send(email_1.clone()).unwrap();
+        email_service.send(email_1.clone()).await.unwrap();
+        email_service.send(email_1.clone()).await.unwrap();
         {
             let emails = email_service.get_emails().unwrap();
             assert!(!emails.is_empty());

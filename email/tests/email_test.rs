@@ -16,8 +16,8 @@ pub fn new_mail_server(
     (node.get_host_port(1025).unwrap() as u16, node)
 }
 
-#[test]
-fn should_start_the_mailserver() {
+#[tokio::test]
+async fn should_start_the_mailserver() {
     // Arrange
     let docker = clients::Cli::default();
     let server = new_mail_server(&docker);
@@ -42,14 +42,14 @@ fn should_start_the_mailserver() {
     message.subject = Some("subject".to_owned());
 
     // Act
-    assert!(email_service.send(message.clone()).is_ok());
+    assert!(email_service.send(message.clone()).await.is_ok());
     // should reuse the client
-    assert!(email_service.send(message.clone()).is_ok());
-    assert!(email_service.send(message.clone()).is_ok());
+    assert!(email_service.send(message.clone()).await.is_ok());
+    assert!(email_service.send(message.clone()).await.is_ok());
 }
 
-// #[test]
-// pub fn full_client_should_use_gmail() {
+// #[tokio::test]
+// async fn full_client_should_use_gmail() {
 //     // Arrange
 //
 //     let config = EmailClientConfig {
@@ -65,10 +65,10 @@ fn should_start_the_mailserver() {
 //
 //     let mut message = EmailMessage::new();
 //     message.from = Some("UFOSCOUT <ufoscout@gmail.com>".to_owned());
-//     message.to.push("FRANCESCO <francesco.cina@yahoo.it>".to_owned());
+//     message.to.push("FRANCESCO <ufoscout@gmail.com>".to_owned());
 //     message.subject = Some("EMAIL FROM RUST!!".to_owned());
 //
 //     // Act
-//     assert!(email_service.send(message.clone()).is_ok());
+//     assert!(email_service.send(message.clone()).await.is_ok());
 //
 // }

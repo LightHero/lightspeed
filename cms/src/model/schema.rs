@@ -2,9 +2,9 @@ use c3p0::Model;
 use lightspeed_core::error::{ErrorDetails, LightSpeedError};
 use lightspeed_core::service::validator::number::{validate_number_ge, validate_number_le};
 use lightspeed_core::service::validator::{Validable, ERR_NOT_UNIQUE};
+use once_cell::sync::OnceCell;
 use regex::Regex;
 use serde::{Deserialize, Serialize};
-use once_cell::sync::OnceCell;
 
 pub type SchemaModel = Model<SchemaData>;
 pub const SCHEMA_FIELD_NAME_MAX_LENGHT: usize = 32;
@@ -14,10 +14,11 @@ const NOT_VALID_FIELD_NAME: &str = "NOT_VALID_FIELD_NAME";
 
 pub fn field_name_regex() -> &'static Regex {
     static REGEX: OnceCell<Regex> = OnceCell::new();
-    REGEX.get_or_init(|| Regex::new(SCHAME_FIELD_NAME_VALIDATION_REGEX)
-        .expect("field name validation regex should be valid"))
+    REGEX.get_or_init(|| {
+        Regex::new(SCHAME_FIELD_NAME_VALIDATION_REGEX)
+            .expect("field name validation regex should be valid")
+    })
 }
-
 
 #[derive(Clone, Serialize, Deserialize)]
 pub struct SchemaData {
