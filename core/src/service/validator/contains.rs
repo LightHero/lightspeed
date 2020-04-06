@@ -7,8 +7,8 @@ pub const MUST_CONTAIN: &str = "MUST_CONTAIN";
 /// The value needs to implement the Contains trait, which is implement on String, str and Hashmap<String>
 /// by default.
 #[inline]
-pub fn validate_contains<E: ErrorDetails, S: Into<String>, T: Contains>(
-    error_details: &mut E,
+pub fn validate_contains<S: Into<String>, T: Contains>(
+    error_details: &mut ErrorDetails,
     field_name: S,
     val: T,
     needle: &str,
@@ -25,23 +25,23 @@ pub fn validate_contains<E: ErrorDetails, S: Into<String>, T: Contains>(
 mod tests {
 
     use super::*;
-    use crate::error::RootErrorDetails;
+    use crate::error::ErrorDetails;
 
     #[test]
     fn should_validate_and_return_no_errors() {
-        let mut error_details = RootErrorDetails::new();
+        let mut error_details = ErrorDetails::default();
         validate_contains(&mut error_details, "name", "ufoscout", "ufo");
-        assert!(error_details.details.is_empty())
+        assert!(error_details.details().is_empty())
     }
 
     #[test]
     fn should_validate_and_return_errors() {
-        let mut error_details = RootErrorDetails::new();
+        let mut error_details = ErrorDetails::default();
         validate_contains(&mut error_details, "name", "ufoscout", "alien");
-        assert_eq!(1, error_details.details.len());
+        assert_eq!(1, error_details.details().len());
         assert_eq!(
             ErrorDetail::new(MUST_CONTAIN, vec!["alien".to_string()]),
-            error_details.details["name"][0]
+            error_details.details()["name"][0]
         )
     }
 }
