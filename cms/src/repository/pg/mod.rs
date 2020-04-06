@@ -2,15 +2,15 @@ use crate::repository::pg::pg_content::PgContentRepository;
 use crate::repository::pg::pg_project::PgProjectRepository;
 use crate::repository::pg::pg_schema::PgSchemaRepository;
 use crate::repository::CmsRepositoryManager;
-use c3p0::pg_async::*;
-use c3p0::{include_dir::*, *};
+use c3p0::pg::*;
+use c3p0::*;
 use lightspeed_core::error::LightSpeedError;
 
 pub mod pg_content;
 pub mod pg_project;
 pub mod pg_schema;
 
-const MIGRATIONS: Dir = include_dir!("./src_resources/db/pg/migrations");
+const MIGRATIONS: include_dir::Dir = include_dir::include_dir!("./src_resources/db/pg/migrations");
 
 #[derive(Clone)]
 pub struct PgCmsRepositoryManager {

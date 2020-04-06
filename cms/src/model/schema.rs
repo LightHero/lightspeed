@@ -25,7 +25,7 @@ pub struct SchemaData {
 }
 
 impl Validable for SchemaData {
-    fn validate<E: ErrorDetails>(&self, error_details: &mut E) -> Result<(), LightSpeedError> {
+    fn validate(&self, error_details: &mut ErrorDetails) -> Result<(), LightSpeedError> {
         validate_number_ge(error_details, "name", 3, self.name.len());
         (&self.schema).validate(&mut error_details.with_scope("schema".into()))?;
         Ok(())
@@ -40,7 +40,7 @@ pub struct Schema {
 }
 
 impl Validable for Schema {
-    fn validate<E: ErrorDetails>(&self, error_details: &mut E) -> Result<(), LightSpeedError> {
+    fn validate(&self, error_details: &mut ErrorDetails) -> Result<(), LightSpeedError> {
         let mut field_names = vec![];
 
         for (count, schema_field) in (&self.fields).iter().enumerate() {
@@ -65,7 +65,7 @@ pub struct SchemaField {
 }
 
 impl Validable for SchemaField {
-    fn validate<E: ErrorDetails>(&self, error_details: &mut E) -> Result<(), LightSpeedError> {
+    fn validate(&self, error_details: &mut ErrorDetails) -> Result<(), LightSpeedError> {
         validate_number_ge(error_details, "name", 1, self.name.len());
         validate_number_le(
             error_details,

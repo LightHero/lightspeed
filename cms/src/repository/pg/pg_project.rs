@@ -1,6 +1,6 @@
 use crate::model::project::ProjectData;
 use crate::repository::ProjectRepository;
-use c3p0::pg_async::*;
+use c3p0::pg::*;
 use c3p0::*;
 use lightspeed_core::error::LightSpeedError;
 use std::ops::Deref;
@@ -35,7 +35,7 @@ impl ProjectRepository for PgProjectRepository {
         conn: &mut Self::Conn,
         id: i64,
     ) -> Result<Model<ProjectData>, LightSpeedError> {
-        Ok(self.repo.fetch_one_by_id(conn, &id)?)
+        Ok(self.repo.fetch_one_by_id(conn, &id).await?)
     }
 
     async fn exists_by_name(&self, conn: &mut Self::Conn, name: &str) -> Result<bool, LightSpeedError> {

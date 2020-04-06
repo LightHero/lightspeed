@@ -45,21 +45,21 @@ impl<RepoManager: CmsRepositoryManager> ContentService<RepoManager> {
                 }
             }
             Ok(())
-        })
+        }).await
     }
 
     pub async fn drop_content_table(&self, schema_id: i64) -> Result<(), LightSpeedError> {
         self.c3p0.transaction(|mut conn| async move  {
             let repo = self.get_content_repo_by_schema_id(schema_id);
             repo.drop_table(&mut conn).await
-        })
+        }).await
     }
 
     pub async fn count_all_by_schema_id(&self, schema_id: i64) -> Result<u64, LightSpeedError> {
         self.c3p0.transaction(|mut conn| async move  {
             let repo = self.get_content_repo_by_schema_id(schema_id);
             repo.count_all(&mut conn).await
-        })
+        }).await
     }
 
     pub async fn create_content(
@@ -68,10 +68,11 @@ impl<RepoManager: CmsRepositoryManager> ContentService<RepoManager> {
         create_content_dto: CreateContentDto,
     ) -> Result<ContentModel, LightSpeedError> {
         self.c3p0.transaction(|mut conn| async move  {
+            let conn = &mut conn;
             let conn = RefCell::new(conn);
-            let repo = self.get_content_repo_by_schema_id(create_content_dto.schema_id);
+            let repo = self.get_content_repo_by_schema_id(create_content_dto.schema_id).await;
 
-            Validator::validate(|error_details: &mut ErrorDetails| {
+            Validator::validate(&|error_details: &mut ErrorDetails| {
                 create_content_dto.content.validate(&schema, error_details);
 
                 for field in &schema.fields {
@@ -110,7 +111,7 @@ impl<RepoManager: CmsRepositoryManager> ContentService<RepoManager> {
                                         conn_borrow.deref_mut(),
                                         &field.name,
                                         &value,
-                                    )?;
+                                    ).await?;
                                     if count > 0 {
                                         let scoped_name = format!("fields[{}]", &field.name);
                                         error_details
@@ -127,9 +128,9 @@ impl<RepoManager: CmsRepositoryManager> ContentService<RepoManager> {
             })?;
             let mut conn_borrow = conn.try_borrow_mut().map_err(|err|
                 LightSpeedError::InternalServerError {message: format!("ContentService - Something weird, the connection should be safely borrowed mut. Err: {}", err)}
-            )?;
-            repo.save(conn_borrow.deref_mut(), NewModel::new(create_content_dto))
-        })
+            ).await?;
+            repo.save(conn_borrow.deref_mut(), NewModel::new(create_content_dto)).await
+        }).await
     }
 
     pub async fn delete_content(
@@ -138,14 +139,14 @@ impl<RepoManager: CmsRepositoryManager> ContentService<RepoManager> {
     ) -> Result<ContentModel, LightSpeedError> {
         self.c3p0.transaction(|mut conn| async move  {
             let repo = self.get_content_repo_by_schema_id(content_model.data.schema_id);
-            repo.delete(conn, content_model)
-        })
+            repo.delete(&mut conn, content_model).await
+        }).await
     }
 
     fn get_content_repo_by_schema_id(&self, schema_id: i64) -> Arc<RepoManager::ContentRepo> {
         self.content_repos.get_or_insert_with(schema_id, || {
             self.repo_factory
-                .content_repo(&self.content_table_name(schema_id))
+                .content_repo(&self.content_table_name(schema_id)).await
         })
     }
 

@@ -23,29 +23,31 @@ impl<RepoManager: CmsRepositoryManager> SchemaService<RepoManager> {
     ) -> Result<SchemaModel, LightSpeedError> {
         self.c3p0.transaction(|mut conn| async move  {
             let name_already_exists = self.schema_repo.exists_by_name_and_project_id(
-                conn,
+                &mut conn,
                 &create_schema_dto.name,
                 create_schema_dto.project_id,
-            )?;
+            ).await?;
 
             let data = SchemaData {
                 name: create_schema_dto.name,
                 project_id: create_schema_dto.project_id,
                 schema: create_schema_dto.schema,
             };
-            Validator::validate((&data, |error_details: &mut ErrorDetails| {
+            Validator::validate(&(&data, &|error_details: &mut ErrorDetails| {
                 if name_already_exists {
                     error_details.add_detail("name".into(), ERR_NOT_UNIQUE.into());
                 }
                 Ok(())
             }))?;
-            self.schema_repo.save(conn, NewModel::new(data))
-        })
+            self.schema_repo.save(&mut conn, NewModel::new(data)).await
+        }).await
     }
 
     pub async fn delete(&self, schema_model: SchemaModel) -> Result<SchemaModel, LightSpeedError> {
         self.c3p0
-            .transaction(|mut conn| async move  self.schema_repo.delete(conn, schema_model))
+            .transaction(|mut conn| async move  {
+                self.schema_repo.delete(&mut conn, schema_model).await
+            }).await
     }
 
     pub async fn delete_by_project_id(
@@ -53,7 +55,7 @@ impl<RepoManager: CmsRepositoryManager> SchemaService<RepoManager> {
         conn: &mut RepoManager::Conn,
         project_id: i64,
     ) -> Result<u64, LightSpeedError> {
-        self.schema_repo.delete_by_project_id(conn, project_id)
+        self.schema_repo.delete_by_project_id(conn, project_id).await
     }
 }
 

@@ -1,6 +1,6 @@
 use crate::model::content::ContentData;
 use crate::repository::ContentRepository;
-use c3p0::pg_async::*;
+use c3p0::pg::*;
 use c3p0::*;
 use lightspeed_core::error::LightSpeedError;
 use std::ops::Deref;
