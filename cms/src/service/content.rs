@@ -70,7 +70,7 @@ impl<RepoManager: CmsRepositoryManager> ContentService<RepoManager> {
         self.c3p0.transaction(|mut conn| async move  {
             let conn = &mut conn;
             let conn = RefCell::new(conn);
-            let repo = self.get_content_repo_by_schema_id(create_content_dto.schema_id).await;
+            let repo = self.get_content_repo_by_schema_id(create_content_dto.schema_id);
 
             Validator::validate(&|error_details: &mut ErrorDetails| {
                 create_content_dto.content.validate(&schema, error_details);
@@ -115,7 +115,7 @@ impl<RepoManager: CmsRepositoryManager> ContentService<RepoManager> {
                                     if count > 0 {
                                         let scoped_name = format!("fields[{}]", &field.name);
                                         error_details
-                                            .add_detail(scoped_name, ERR_NOT_UNIQUE.into());
+                                            .add_detail(scoped_name, ERR_NOT_UNIQUE);
                                     }
                                 }
                             }
@@ -128,7 +128,7 @@ impl<RepoManager: CmsRepositoryManager> ContentService<RepoManager> {
             })?;
             let mut conn_borrow = conn.try_borrow_mut().map_err(|err|
                 LightSpeedError::InternalServerError {message: format!("ContentService - Something weird, the connection should be safely borrowed mut. Err: {}", err)}
-            ).await?;
+            )?;
             repo.save(conn_borrow.deref_mut(), NewModel::new(create_content_dto)).await
         }).await
     }
@@ -146,7 +146,7 @@ impl<RepoManager: CmsRepositoryManager> ContentService<RepoManager> {
     fn get_content_repo_by_schema_id(&self, schema_id: i64) -> Arc<RepoManager::ContentRepo> {
         self.content_repos.get_or_insert_with(schema_id, || {
             self.repo_factory
-                .content_repo(&self.content_table_name(schema_id)).await
+                .content_repo(&self.content_table_name(schema_id))
         })
     }
 
