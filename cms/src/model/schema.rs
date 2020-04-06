@@ -1,10 +1,10 @@
 use c3p0::Model;
-use lazy_static::*;
 use lightspeed_core::error::{ErrorDetails, LightSpeedError};
 use lightspeed_core::service::validator::number::{validate_number_ge, validate_number_le};
 use lightspeed_core::service::validator::{Validable, ERR_NOT_UNIQUE};
 use regex::Regex;
 use serde::{Deserialize, Serialize};
+use once_cell::sync::OnceCell;
 
 pub type SchemaModel = Model<SchemaData>;
 pub const SCHEMA_FIELD_NAME_MAX_LENGHT: usize = 32;
@@ -12,10 +12,12 @@ pub const SCHAME_FIELD_NAME_VALIDATION_REGEX: &str = r#"^[a-z0-9_]+$"#;
 
 const NOT_VALID_FIELD_NAME: &str = "NOT_VALID_FIELD_NAME";
 
-lazy_static! {
-    static ref FIELD_NAME_REGEX: Regex = Regex::new(SCHAME_FIELD_NAME_VALIDATION_REGEX)
-        .expect("field name validation regex should be valid");
+pub fn field_name_regex() -> &'static Regex {
+    static REGEX: OnceCell<Regex> = OnceCell::new();
+    REGEX.get_or_init(|| Regex::new(SCHAME_FIELD_NAME_VALIDATION_REGEX)
+        .expect("field name validation regex should be valid"))
 }
+
 
 #[derive(Clone, Serialize, Deserialize)]
 pub struct SchemaData {
@@ -74,7 +76,7 @@ impl Validable for SchemaField {
             self.name.len(),
         );
 
-        if !FIELD_NAME_REGEX.is_match(&self.name) {
+        if !field_name_regex().is_match(&self.name) {
             error_details.add_detail("name", NOT_VALID_FIELD_NAME);
         }
 

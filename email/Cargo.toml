@@ -24,7 +24,6 @@ structopt = "0.3"
 
 
 [dev-dependencies]
-lazy_static = "1.4"
 testcontainers = "0.9"
 
 lightspeed_logger = { version = "0.2.0", path = "../logger" }
