@@ -17,7 +17,7 @@ pub fn new_mail_server(
 }
 
 #[test]
-pub fn should_start_the_mailserver() {
+fn should_start_the_mailserver() {
     // Arrange
     let docker = clients::Cli::default();
     let server = new_mail_server(&docker);

@@ -12,6 +12,7 @@ keywords = []
 
 [dependencies]
 lightspeed_core = { version = "0.2.0", path = "../core" }
+async-trait = "0.1.29"
 lettre = "0.9"
 lettre_email = "0.9"
 native-tls = "0.2.3"
