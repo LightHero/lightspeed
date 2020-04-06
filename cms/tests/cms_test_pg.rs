@@ -1,7 +1,6 @@
 use c3p0::pg_async::deadpool;
 use c3p0::pg_async::driver::*;
 use c3p0::pg_async::*;
-use lazy_static::lazy_static;
 use maybe_single::*;
 use testcontainers::*;
 
@@ -20,26 +19,12 @@ pub type MaybeType = (
     Container<'static, clients::Cli, images::postgres::Postgres>,
 );
 
-lazy_static! {
-    static ref DOCKER: clients::Cli = clients::Cli::default();
-    pub static ref SINGLETON: MaybeSingle<MaybeType> = MaybeSingle::new(|| init());
-}
-
 fn init() -> MaybeType {
-    let node = DOCKER.run(images::postgres::Postgres::default());
+    static DOCKER: OnceCell<clients::Cli> = OnceCell::new();
 
-    /*
-    let manager = PostgresConnectionManager::new(
-        format!(
-            "postgres://postgres:postgres@127.0.0.1:{}/postgres",
-            node.get_host_port(5432).unwrap()
-        ),
-        TlsMode::None,
-    )
-    .unwrap();
-    let pool = Pool::builder().min_idle(Some(10)).build(manager).unwrap();
-    let c3p0 = PgC3p0PoolAsync::new(pool);
-    */
+    let node = DOCKER
+        .get_or_init(|| clients::Cli::default())
+        .run(images::postgres::Postgres::default());
 
     let mut config = deadpool::postgres::Config::default();
     config.user = Some("postgres".to_owned());
@@ -65,6 +50,22 @@ fn init() -> MaybeType {
     ((cms_module), node)
 }
 
-pub fn data(serial: bool) -> Data<'static, MaybeType> {
-    SINGLETON.data(serial)
+pub async fn data(serial: bool) -> Data<'static, MaybeType> {
+    static DATA: OnceCell<MaybeSingleAsync<MaybeType>> = OnceCell::new();
+    DATA.get_or_init(|| MaybeSingleAsync::new(|| init().boxed()))
+        .data(serial)
+        .await
+}
+
+pub fn test<F: std::future::Future>(f: F) -> F::Output {
+    static RT: OnceCell<tokio::runtime::Runtime> = OnceCell::new();
+    RT.get_or_init(|| {
+        tokio::runtime::Builder::new()
+            .threaded_scheduler()
+            .enable_all()
+            .build()
+            .expect("Should create a tokio runtime")
+    })
+        .handle()
+        .enter(|| futures::executor::block_on(f))
 }

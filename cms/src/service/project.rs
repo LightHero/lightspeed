@@ -27,7 +27,7 @@ impl<RepoManager: CmsRepositoryManager> ProjectService<RepoManager> {
         }
     }
 
-    pub fn create_project(
+    pub async fn create_project(
         &self,
         create_project_dto: CreateProjectDto,
     ) -> Result<ProjectModel, LightSpeedError> {
@@ -49,7 +49,7 @@ impl<RepoManager: CmsRepositoryManager> ProjectService<RepoManager> {
         })
     }
 
-    pub fn delete(&self, project_model: ProjectModel) -> Result<ProjectModel, LightSpeedError> {
+    pub async fn delete(&self, project_model: ProjectModel) -> Result<ProjectModel, LightSpeedError> {
         self.c3p0.transaction(|mut conn| async move  {
             self.schema_service
                 .delete_by_project_id(conn, project_model.id)?;

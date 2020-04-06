@@ -8,7 +8,7 @@ use lightspeed_core::service::validator::ERR_NOT_UNIQUE;
 use lightspeed_core::utils::new_hyphenated_uuid;
 
 #[test]
-fn should_create_schema() -> Result<(), Box<dyn std::error::Error>> {
+fn should_create_schema() -> Result<(), LightSpeedError> {
         test(async {
         let data = data(false).await;
     let cms_module = &data.0;
@@ -40,10 +40,11 @@ fn should_create_schema() -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 
     })
+        })
 }
 
 #[test]
-fn schema_name_should_be_unique_per_project() -> Result<(), Box<dyn std::error::Error>> {
+fn schema_name_should_be_unique_per_project() -> Result<(), LightSpeedError> {
         test(async {
         let data = data(false).await;
     let cms_module = &data.0;
@@ -80,10 +81,11 @@ fn schema_name_should_be_unique_per_project() -> Result<(), Box<dyn std::error::
         Ok(())
 
     })
+        })
 }
 
 #[test]
-fn should_return_not_unique_validation_error() -> Result<(), Box<dyn std::error::Error>> {
+fn should_return_not_unique_validation_error() -> Result<(), LightSpeedError> {
         test(async {
         let data = data(false).await;
     let cms_module = &data.0;
@@ -114,10 +116,11 @@ fn should_return_not_unique_validation_error() -> Result<(), Box<dyn std::error:
     };
 
     Ok(())
+        })
 }
 
 #[test]
-fn should_delete_schemas_by_project_id() -> Result<(), Box<dyn std::error::Error>> {
+fn should_delete_schemas_by_project_id() -> Result<(), LightSpeedError> {
         test(async {
         let data = data(false).await;
     let cms_module = &data.0;
@@ -163,4 +166,5 @@ fn should_delete_schemas_by_project_id() -> Result<(), Box<dyn std::error::Error
 
         Ok(())
     })
+        })
 }

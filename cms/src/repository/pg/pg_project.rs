@@ -26,10 +26,11 @@ impl Default for PgProjectRepository {
     }
 }
 
+#[async_trait::async_trait]
 impl ProjectRepository for PgProjectRepository {
     type Conn = PgConnectionAsync;
 
-    fn fetch_by_id(
+    async fn fetch_by_id(
         &self,
         conn: &mut Self::Conn,
         id: i64,
@@ -37,7 +38,7 @@ impl ProjectRepository for PgProjectRepository {
         Ok(self.repo.fetch_one_by_id(conn, &id)?)
     }
 
-    fn exists_by_name(&self, conn: &mut Self::Conn, name: &str) -> Result<bool, LightSpeedError> {
+    async fn exists_by_name(&self, conn: &mut Self::Conn, name: &str) -> Result<bool, LightSpeedError> {
         let sql = r#"
             select count(*) from LS_CMS_PROJECT
             where LS_CMS_PROJECT.DATA ->> 'name' = $1
@@ -45,30 +46,30 @@ impl ProjectRepository for PgProjectRepository {
         Ok(conn.fetch_one(sql, &[&name], |row| {
             let count: i64 = row.get(0);
             Ok(count > 0)
-        })?)
+        }).await?)
     }
 
-    fn save(
+    async fn save(
         &self,
         conn: &mut Self::Conn,
         model: NewModel<ProjectData>,
     ) -> Result<Model<ProjectData>, LightSpeedError> {
-        Ok(self.repo.save(conn, model)?)
+        Ok(self.repo.save(conn, model).await?)
     }
 
-    fn update(
+    async fn update(
         &self,
         conn: &mut Self::Conn,
         model: Model<ProjectData>,
     ) -> Result<Model<ProjectData>, LightSpeedError> {
-        Ok(self.repo.update(conn, model)?)
+        Ok(self.repo.update(conn, model).await?)
     }
 
-    fn delete(
+    async fn delete(
         &self,
         conn: &mut Self::Conn,
         model: Model<ProjectData>,
     ) -> Result<Model<ProjectData>, LightSpeedError> {
-        Ok(self.repo.delete(conn, model)?)
+        Ok(self.repo.delete(conn, model).await?)
     }
 }

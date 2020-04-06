@@ -17,7 +17,7 @@ impl<RepoManager: CmsRepositoryManager> SchemaService<RepoManager> {
         SchemaService { c3p0, schema_repo }
     }
 
-    pub fn create_schema(
+    pub async fn create_schema(
         &self,
         create_schema_dto: CreateSchemaDto,
     ) -> Result<SchemaModel, LightSpeedError> {
@@ -43,12 +43,12 @@ impl<RepoManager: CmsRepositoryManager> SchemaService<RepoManager> {
         })
     }
 
-    pub fn delete(&self, schema_model: SchemaModel) -> Result<SchemaModel, LightSpeedError> {
+    pub async fn delete(&self, schema_model: SchemaModel) -> Result<SchemaModel, LightSpeedError> {
         self.c3p0
             .transaction(|mut conn| async move  self.schema_repo.delete(conn, schema_model))
     }
 
-    pub fn delete_by_project_id(
+    pub async fn delete_by_project_id(
         &self,
         conn: &mut RepoManager::Conn,
         project_id: i64,

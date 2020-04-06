@@ -13,7 +13,7 @@ use maplit::*;
 use std::collections::HashMap;
 
 #[test]
-fn should_create_and_drop_content_table() -> Result<(), Box<dyn std::error::Error>> {
+fn should_create_and_drop_content_table() -> Result<(), LightSpeedError> {
         test(async {
         let data = data(false).await;
     let cms_module = &data.0;
@@ -84,10 +84,11 @@ fn should_create_and_drop_content_table() -> Result<(), Box<dyn std::error::Erro
         .is_err());
 
     Ok(())
+        })
 }
 
 #[test]
-fn should_save_and_delete_content() -> Result<(), Box<dyn std::error::Error>> {
+fn should_save_and_delete_content() -> Result<(), LightSpeedError> {
         test(async {
         let data = data(false).await;
     let cms_module = &data.0;
@@ -178,10 +179,11 @@ fn should_save_and_delete_content() -> Result<(), Box<dyn std::error::Error>> {
     );
 
     Ok(())
+        })
 }
 
 #[test]
-fn should_validate_content_on_save() -> Result<(), Box<dyn std::error::Error>> {
+fn should_validate_content_on_save() -> Result<(), LightSpeedError> {
         test(async {
         let data = data(false).await;
     let cms_module = &data.0;
@@ -234,11 +236,12 @@ fn should_validate_content_on_save() -> Result<(), Box<dyn std::error::Error>> {
     );
 
     Ok(())
+        })
 }
 
 #[test]
 fn should_create_unique_constraints_for_slug_schema_fields(
-) -> Result<(), Box<dyn std::error::Error>> {
+) -> Result<(), LightSpeedError> {
         test(async {
         let data = data(false).await;
     let cms_module = &data.0;
@@ -294,11 +297,12 @@ fn should_create_unique_constraints_for_slug_schema_fields(
     };
 
     Ok(())
+        })
 }
 
 #[test]
 fn should_create_unique_constraints_for_string_unique_schema_fields(
-) -> Result<(), Box<dyn std::error::Error>> {
+) -> Result<(), LightSpeedError> {
         test(async {
         let data = data(false).await;
     let cms_module = &data.0;
@@ -359,11 +363,12 @@ fn should_create_unique_constraints_for_string_unique_schema_fields(
     };
 
     Ok(())
+        })
 }
 
 #[test]
 fn should_create_unique_constraints_for_number_unique_schema_fields(
-) -> Result<(), Box<dyn std::error::Error>> {
+) -> Result<(), LightSpeedError> {
         test(async {
         let data = data(false).await;
     let cms_module = &data.0;
@@ -424,11 +429,12 @@ fn should_create_unique_constraints_for_number_unique_schema_fields(
     };
 
     Ok(())
+        })
 }
 
 #[test]
 fn should_create_unique_constraints_for_boolean_unique_schema_fields(
-) -> Result<(), Box<dyn std::error::Error>> {
+) -> Result<(), LightSpeedError> {
         test(async {
         let data = data(false).await;
     let cms_module = &data.0;
@@ -487,11 +493,12 @@ fn should_create_unique_constraints_for_boolean_unique_schema_fields(
     };
 
     Ok(())
+        })
 }
 
 #[test]
 fn should_create_unique_constraints_for_field_name_with_max_length(
-) -> Result<(), Box<dyn std::error::Error>> {
+) -> Result<(), LightSpeedError> {
         test(async {
         let data = data(false).await;
     let cms_module = &data.0;
@@ -526,4 +533,5 @@ fn should_create_unique_constraints_for_field_name_with_max_length(
         .is_ok());
 
     Ok(())
+        })
 }

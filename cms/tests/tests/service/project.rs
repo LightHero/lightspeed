@@ -10,7 +10,7 @@ use lightspeed_core::service::validator::ERR_NOT_UNIQUE;
 use lightspeed_core::utils::new_hyphenated_uuid;
 
 #[test]
-fn should_create_project() -> Result<(), Box<dyn std::error::Error>> {
+fn should_create_project() -> Result<(), LightSpeedError> {
         test(async {
         let data = data(false).await;
     let cms_module = &data.0;
@@ -36,10 +36,11 @@ fn should_create_project() -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 
     })
+        })
 }
 
 #[test]
-fn project_name_should_be_unique() -> Result<(), Box<dyn std::error::Error>> {
+fn project_name_should_be_unique() -> Result<(), LightSpeedError> {
         test(async {
         let data = data(false).await;
     let cms_module = &data.0;
@@ -64,10 +65,11 @@ fn project_name_should_be_unique() -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 
     })
+        })
 }
 
 #[test]
-fn should_return_not_unique_validation_error() -> Result<(), Box<dyn std::error::Error>> {
+fn should_return_not_unique_validation_error() -> Result<(), LightSpeedError> {
         test(async {
         let data = data(false).await;
     let cms_module = &data.0;
@@ -92,10 +94,11 @@ fn should_return_not_unique_validation_error() -> Result<(), Box<dyn std::error:
     };
 
     Ok(())
+        })
 }
 
 #[test]
-fn should_delete_all_schemas_when_project_is_deleted() -> Result<(), Box<dyn std::error::Error>> {
+fn should_delete_all_schemas_when_project_is_deleted() -> Result<(), LightSpeedError> {
         test(async {
         let data = data(false).await;
     let cms_module = &data.0;
@@ -142,4 +145,5 @@ fn should_delete_all_schemas_when_project_is_deleted() -> Result<(), Box<dyn std
         Ok(())
 
     })
+        })
 }

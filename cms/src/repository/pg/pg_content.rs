@@ -26,22 +26,23 @@ impl Deref for PgContentRepository {
     }
 }
 
+#[async_trait::async_trait]
 impl ContentRepository for PgContentRepository {
     type Conn = PgConnectionAsync;
 
-    fn create_table(&self, conn: &mut Self::Conn) -> Result<(), LightSpeedError> {
-        Ok(self.repo.create_table_if_not_exists(conn)?)
+    async fn create_table(&self, conn: &mut Self::Conn) -> Result<(), LightSpeedError> {
+        Ok(self.repo.create_table_if_not_exists(conn).await?)
     }
 
-    fn drop_table(&self, conn: &mut Self::Conn) -> Result<(), LightSpeedError> {
-        Ok(self.repo.drop_table_if_exists(conn, true)?)
+    async fn drop_table(&self, conn: &mut Self::Conn) -> Result<(), LightSpeedError> {
+        Ok(self.repo.drop_table_if_exists(conn, true).await?)
     }
 
-    fn count_all(&self, conn: &mut Self::Conn) -> Result<u64, LightSpeedError> {
-        Ok(self.repo.count_all(conn)?)
+    async fn count_all(&self, conn: &mut Self::Conn) -> Result<u64, LightSpeedError> {
+        Ok(self.repo.count_all(conn).await?)
     }
 
-    fn count_all_by_field_value(
+    async fn count_all_by_field_value(
         &self,
         conn: &mut Self::Conn,
         field_name: &str,
@@ -51,10 +52,10 @@ impl ContentRepository for PgContentRepository {
             "SELECT COUNT(*) FROM {} WHERE  (DATA -> 'content' -> 'fields' -> '{}' -> 'value' ->> 'value') = $1 ",
             self.repo.queries().qualified_table_name,
             field_name
-        ), &[&field_value]).map(|val: i64| val as u64)?)
+        ), &[&field_value]).await.map(|val: i64| val as u64)?)
     }
 
-    fn create_unique_constraint(
+    async fn create_unique_constraint(
         &self,
         conn: &mut Self::Conn,
         index_name: &str,
@@ -65,46 +66,46 @@ impl ContentRepository for PgContentRepository {
             index_name,
             self.repo.queries().qualified_table_name,
             field_name
-        ))?)
+        )).await?)
     }
 
-    fn drop_unique_constraint(
+    async fn drop_unique_constraint(
         &self,
         conn: &mut Self::Conn,
         index_name: &str,
     ) -> Result<(), LightSpeedError> {
-        Ok(conn.batch_execute(&format!("DROP INDEX {} IF EXISTS", index_name))?)
+        Ok(conn.batch_execute(&format!("DROP INDEX {} IF EXISTS", index_name)).await?)
     }
 
-    fn fetch_by_id(
+    async fn fetch_by_id(
         &self,
         conn: &mut Self::Conn,
         id: i64,
     ) -> Result<Model<ContentData>, LightSpeedError> {
-        Ok(self.repo.fetch_one_by_id(conn, &id)?)
+        Ok(self.repo.fetch_one_by_id(conn, &id).await?)
     }
 
-    fn save(
+    async fn save(
         &self,
         conn: &mut Self::Conn,
         model: NewModel<ContentData>,
     ) -> Result<Model<ContentData>, LightSpeedError> {
-        Ok(self.repo.save(conn, model)?)
+        Ok(self.repo.save(conn, model).await?)
     }
 
-    fn update(
+    async fn update(
         &self,
         conn: &mut Self::Conn,
         model: Model<ContentData>,
     ) -> Result<Model<ContentData>, LightSpeedError> {
-        Ok(self.repo.update(conn, model)?)
+        Ok(self.repo.update(conn, model).await?)
     }
 
-    fn delete(
+    async fn delete(
         &self,
         conn: &mut Self::Conn,
         model: Model<ContentData>,
     ) -> Result<Model<ContentData>, LightSpeedError> {
-        Ok(self.repo.delete(conn, model)?)
+        Ok(self.repo.delete(conn, model).await?)
     }
 }

@@ -1,12 +1,13 @@
 use crate::model::content::{ContentData, ContentModel};
 use crate::model::project::{ProjectData, ProjectModel};
 use crate::model::schema::{SchemaData, SchemaModel};
-use c3p0::{C3p0PoolAsync, NewModel};
+use c3p0::*;
 use lightspeed_core::error::LightSpeedError;
 
 pub mod pg;
 
-pub trait CmsRepositoryManager: Clone {
+#[async_trait::async_trait]
+pub trait CmsRepositoryManager: Clone + Send + Sync {
     type Conn;
     type C3P0: C3p0PoolAsync<CONN = Self::Conn>;
     type ContentRepo: ContentRepository<Conn = Self::Conn>;
@@ -21,7 +22,8 @@ pub trait CmsRepositoryManager: Clone {
     fn schema_repo(&self) -> Self::SchemaRepo;
 }
 
-pub trait ProjectRepository: Clone {
+#[async_trait::async_trait]
+pub trait ProjectRepository: Clone + Send + Sync {
     type Conn;
 
     fn fetch_by_id(&self, conn: &mut Self::Conn, id: i64) -> Result<ProjectModel, LightSpeedError>;
@@ -47,7 +49,8 @@ pub trait ProjectRepository: Clone {
     ) -> Result<ProjectModel, LightSpeedError>;
 }
 
-pub trait SchemaRepository: Clone {
+#[async_trait::async_trait]
+pub trait SchemaRepository: Clone + Send + Sync {
     type Conn;
 
     fn fetch_by_id(&self, conn: &mut Self::Conn, id: i64) -> Result<SchemaModel, LightSpeedError>;
@@ -84,7 +87,8 @@ pub trait SchemaRepository: Clone {
     ) -> Result<u64, LightSpeedError>;
 }
 
-pub trait ContentRepository: Clone {
+#[async_trait::async_trait]
+pub trait ContentRepository: Clone + Send + Sync {
     type Conn;
 
     fn create_table(&self, conn: &mut Self::Conn) -> Result<(), LightSpeedError>;

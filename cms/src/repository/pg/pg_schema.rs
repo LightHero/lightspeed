@@ -26,18 +26,19 @@ impl Default for PgSchemaRepository {
     }
 }
 
+#[async_trait::async_trait]
 impl SchemaRepository for PgSchemaRepository {
     type Conn = PgConnectionAsync;
 
-    fn fetch_by_id(
+    async fn fetch_by_id(
         &self,
         conn: &mut Self::Conn,
         id: i64,
     ) -> Result<Model<SchemaData>, LightSpeedError> {
-        Ok(self.repo.fetch_one_by_id(conn, &id)?)
+        Ok(self.repo.fetch_one_by_id(conn, &id).await?)
     }
 
-    fn exists_by_name_and_project_id(
+    async fn exists_by_name_and_project_id(
         &self,
         conn: &mut Self::Conn,
         name: &str,
@@ -50,34 +51,34 @@ impl SchemaRepository for PgSchemaRepository {
         Ok(conn.fetch_one(sql, &[&name, &project_id], |row| {
             let count: i64 = row.get(0);
             Ok(count > 0)
-        })?)
+        }).await?)
     }
 
-    fn save(
+    async fn save(
         &self,
         conn: &mut Self::Conn,
         model: NewModel<SchemaData>,
     ) -> Result<Model<SchemaData>, LightSpeedError> {
-        Ok(self.repo.save(conn, model)?)
+        Ok(self.repo.save(conn, model).await?)
     }
 
-    fn update(
+    async fn update(
         &self,
         conn: &mut Self::Conn,
         model: Model<SchemaData>,
     ) -> Result<Model<SchemaData>, LightSpeedError> {
-        Ok(self.repo.update(conn, model)?)
+        Ok(self.repo.update(conn, model).await?)
     }
 
-    fn delete(
+    async fn delete(
         &self,
         conn: &mut Self::Conn,
         model: Model<SchemaData>,
     ) -> Result<Model<SchemaData>, LightSpeedError> {
-        Ok(self.repo.delete(conn, model)?)
+        Ok(self.repo.delete(conn, model).await?)
     }
 
-    fn delete_by_project_id(
+    async fn delete_by_project_id(
         &self,
         conn: &mut Self::Conn,
         project_id: i64,
@@ -86,6 +87,6 @@ impl SchemaRepository for PgSchemaRepository {
             delete from LS_CMS_SCHEMA
             where (DATA ->> 'project_id')::bigint = $1
         "#;
-        Ok(conn.execute(sql, &[&project_id])?)
+        Ok(conn.execute(sql, &[&project_id]).await?)
     }
 }

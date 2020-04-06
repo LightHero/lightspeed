@@ -29,17 +29,17 @@ impl<RepoManager: CmsRepositoryManager> ContentService<RepoManager> {
         }
     }
 
-    pub fn create_content_table(&self, schema: &SchemaModel) -> Result<(), LightSpeedError> {
+    pub async fn create_content_table(&self, schema: &SchemaModel) -> Result<(), LightSpeedError> {
         self.c3p0.transaction(|mut conn| async move  {
             let schema_id = schema.id;
             let repo = self.get_content_repo_by_schema_id(schema_id);
-            repo.create_table(conn)?;
+            repo.create_table(&mut conn).await?;
 
             for field in &schema.data.schema.fields {
                 match field.field_type.get_arity() {
                     SchemaFieldArity::Unique => {
                         let index_name = self.unique_index_name(schema_id, &field.name);
-                        repo.create_unique_constraint(conn, &index_name, &field.name)?;
+                        repo.create_unique_constraint(&mut conn, &index_name, &field.name).await?;
                     }
                     _ => {}
                 }
@@ -48,21 +48,21 @@ impl<RepoManager: CmsRepositoryManager> ContentService<RepoManager> {
         })
     }
 
-    pub fn drop_content_table(&self, schema_id: i64) -> Result<(), LightSpeedError> {
+    pub async fn drop_content_table(&self, schema_id: i64) -> Result<(), LightSpeedError> {
         self.c3p0.transaction(|mut conn| async move  {
             let repo = self.get_content_repo_by_schema_id(schema_id);
-            repo.drop_table(conn)
+            repo.drop_table(&mut conn).await
         })
     }
 
-    pub fn count_all_by_schema_id(&self, schema_id: i64) -> Result<u64, LightSpeedError> {
+    pub async fn count_all_by_schema_id(&self, schema_id: i64) -> Result<u64, LightSpeedError> {
         self.c3p0.transaction(|mut conn| async move  {
             let repo = self.get_content_repo_by_schema_id(schema_id);
-            repo.count_all(conn)
+            repo.count_all(&mut conn).await
         })
     }
 
-    pub fn create_content(
+    pub async fn create_content(
         &self,
         schema: &Schema,
         create_content_dto: CreateContentDto,
@@ -132,7 +132,7 @@ impl<RepoManager: CmsRepositoryManager> ContentService<RepoManager> {
         })
     }
 
-    pub fn delete_content(
+    pub async fn delete_content(
         &self,
         content_model: ContentModel,
     ) -> Result<ContentModel, LightSpeedError> {
