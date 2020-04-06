@@ -74,7 +74,9 @@ impl ContentRepository for PgContentRepository {
         conn: &mut Self::Conn,
         index_name: &str,
     ) -> Result<(), LightSpeedError> {
-        Ok(conn.batch_execute(&format!("DROP INDEX {} IF EXISTS", index_name)).await?)
+        Ok(conn
+            .batch_execute(&format!("DROP INDEX {} IF EXISTS", index_name))
+            .await?)
     }
 
     async fn fetch_by_id(

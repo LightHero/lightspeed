@@ -48,10 +48,12 @@ impl SchemaRepository for PgSchemaRepository {
             select count(*) from LS_CMS_SCHEMA
             where DATA ->> 'name' = $1 AND (DATA ->> 'project_id')::bigint = $2
         "#;
-        Ok(conn.fetch_one(sql, &[&name, &project_id], |row| {
-            let count: i64 = row.get(0);
-            Ok(count > 0)
-        }).await?)
+        Ok(conn
+            .fetch_one(sql, &[&name, &project_id], |row| {
+                let count: i64 = row.get(0);
+                Ok(count > 0)
+            })
+            .await?)
     }
 
     async fn save(

@@ -38,15 +38,21 @@ impl ProjectRepository for PgProjectRepository {
         Ok(self.repo.fetch_one_by_id(conn, &id).await?)
     }
 
-    async fn exists_by_name(&self, conn: &mut Self::Conn, name: &str) -> Result<bool, LightSpeedError> {
+    async fn exists_by_name(
+        &self,
+        conn: &mut Self::Conn,
+        name: &str,
+    ) -> Result<bool, LightSpeedError> {
         let sql = r#"
             select count(*) from LS_CMS_PROJECT
             where LS_CMS_PROJECT.DATA ->> 'name' = $1
         "#;
-        Ok(conn.fetch_one(sql, &[&name], |row| {
-            let count: i64 = row.get(0);
-            Ok(count > 0)
-        }).await?)
+        Ok(conn
+            .fetch_one(sql, &[&name], |row| {
+                let count: i64 = row.get(0);
+                Ok(count > 0)
+            })
+            .await?)
     }
 
     async fn save(

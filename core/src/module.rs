@@ -19,7 +19,6 @@ pub async fn start(modules: &mut [&mut dyn Module]) -> Result<(), LightSpeedErro
     Ok(())
 }
 
-
 #[cfg(test)]
 mod test {
 

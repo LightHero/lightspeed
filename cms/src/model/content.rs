@@ -98,10 +98,9 @@ impl Content {
                         schema_fields
                             .iter()
                             .filter(|(_, value)| value.required)
-                            .map(|(key, _)| key.to_string())
+                            .map(|(key, _)| (*key).to_string())
                             .collect(),
-                    )
-                        ,
+                    ),
                 );
             }
         }
@@ -221,10 +220,7 @@ fn validate_arity<T, F: Fn(&str, &Option<T>, &mut ErrorDetails)>(
             ContentFieldValueArity::Single { value } => {
                 value_validation(full_field_name, value, error_details)
             }
-            _ => error_details.add_detail(
-                full_field_name,
-                SHOULD_HAVE_SINGLE_VALUE_ARITY,
-            ),
+            _ => error_details.add_detail(full_field_name, SHOULD_HAVE_SINGLE_VALUE_ARITY),
         },
         SchemaFieldArity::Localizable { options } => match arity {
             ContentFieldValueArity::Localizable { values } => {
@@ -250,8 +246,7 @@ fn validate_arity<T, F: Fn(&str, &Option<T>, &mut ErrorDetails)>(
                     )
                 })
             }
-            _ => error_details
-                .add_detail(full_field_name, SHOULD_HAVE_LOCALIZABLE_ARITY),
+            _ => error_details.add_detail(full_field_name, SHOULD_HAVE_LOCALIZABLE_ARITY),
         },
     }
 }

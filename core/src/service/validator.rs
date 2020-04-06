@@ -43,7 +43,9 @@ impl<V0: Validable, V1: Validable, V2: Validable> Validable for (&V0, &V1, &V2) 
     }
 }
 
-impl<V0: Validable, V1: Validable, V2: Validable, V3: Validable> Validable for (&V0, &V1, &V2, &V3) {
+impl<V0: Validable, V1: Validable, V2: Validable, V3: Validable> Validable
+    for (&V0, &V1, &V2, &V3)
+{
     #[inline]
     fn validate(&self, error_details: &mut ErrorDetails) -> Result<(), LightSpeedError> {
         self.0.validate(error_details)?;
@@ -183,19 +185,16 @@ impl<
 #[derive(Default)]
 pub struct Validator<'a> {
     error_details: ErrorDetails<'a>,
-    validables: Vec<&'a dyn Validable>
+    validables: Vec<&'a dyn Validable>,
 }
 
-impl <'a> Validator<'a> {
-
+impl<'a> Validator<'a> {
     pub fn new() -> Self {
         Default::default()
     }
 
     pub fn validate<V: Validable>(validable: &'a V) -> Result<(), LightSpeedError> {
-        Validator::new()
-            .on(validable)
-            .do_validate()
+        Validator::new().on(validable).do_validate()
     }
 
     pub fn on<V: Validable>(mut self, validable: &'a V) -> Self {
@@ -214,12 +213,10 @@ impl <'a> Validator<'a> {
 
         if !self.error_details.details().is_empty() {
             match self.error_details {
-                ErrorDetails::Root(node) => {
-                    Err(LightSpeedError::ValidationError {
-                        details: node,
-                    })
-                },
-                ErrorDetails::Scoped(_) => panic!("ErrorDetails must be of type Root inside validator")
+                ErrorDetails::Root(node) => Err(LightSpeedError::ValidationError { details: node }),
+                ErrorDetails::Scoped(_) => {
+                    panic!("ErrorDetails must be of type Root inside validator")
+                }
             }
         } else {
             Ok(())
@@ -234,13 +231,13 @@ pub mod test {
 
     #[test]
     pub fn validator_should_accept_closures() {
-        let result = Validator::validate(&|_error_details: &mut  ErrorDetails| Ok(()));
+        let result = Validator::validate(&|_error_details: &mut ErrorDetails| Ok(()));
         assert!(result.is_ok());
     }
 
     #[test]
     pub fn validator_should_return_error_from_closure_if_error_details() {
-        let result = Validator::validate(&|error_details: &mut  ErrorDetails| {
+        let result = Validator::validate(&|error_details: &mut ErrorDetails| {
             error_details.add_detail("username", "duplicated");
             Ok(())
         });
@@ -295,11 +292,14 @@ pub mod test {
 
     #[test]
     pub fn validator_should_accept_validables() {
-
-        let mut validable_1 = Tester { error_details: ErrorDetails::default() };
+        let mut validable_1 = Tester {
+            error_details: ErrorDetails::default(),
+        };
         validable_1.error_details.add_detail("1", "11");
 
-        let mut validable_2 = Tester { error_details: ErrorDetails::default() };
+        let mut validable_2 = Tester {
+            error_details: ErrorDetails::default(),
+        };
         validable_2.error_details.add_detail("1", "111");
         validable_2.error_details.add_detail("2", "22");
 
@@ -392,7 +392,7 @@ pub mod test {
         error_details: ErrorDetails<'a>,
     }
 
-    impl <'a> Tester<'a> {
+    impl<'a> Tester<'a> {
         fn new() -> Self {
             Self {
                 error_details: ErrorDetails::default(),
@@ -400,7 +400,7 @@ pub mod test {
         }
     }
 
-    impl <'a> Validable for Tester<'a> {
+    impl<'a> Validable for Tester<'a> {
         fn validate(&self, error_details: &mut ErrorDetails) -> Result<(), LightSpeedError> {
             for (key, details) in self.error_details.details().iter() {
                 for detail in details {

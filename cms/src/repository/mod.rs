@@ -26,9 +26,17 @@ pub trait CmsRepositoryManager: Clone + Send + Sync {
 pub trait ProjectRepository: Clone + Send + Sync {
     type Conn;
 
-    async fn fetch_by_id(&self, conn: &mut Self::Conn, id: i64) -> Result<ProjectModel, LightSpeedError>;
+    async fn fetch_by_id(
+        &self,
+        conn: &mut Self::Conn,
+        id: i64,
+    ) -> Result<ProjectModel, LightSpeedError>;
 
-    async fn exists_by_name(&self, conn: &mut Self::Conn, name: &str) -> Result<bool, LightSpeedError>;
+    async fn exists_by_name(
+        &self,
+        conn: &mut Self::Conn,
+        name: &str,
+    ) -> Result<bool, LightSpeedError>;
 
     async fn save(
         &self,
@@ -53,7 +61,11 @@ pub trait ProjectRepository: Clone + Send + Sync {
 pub trait SchemaRepository: Clone + Send + Sync {
     type Conn;
 
-    async fn fetch_by_id(&self, conn: &mut Self::Conn, id: i64) -> Result<SchemaModel, LightSpeedError>;
+    async fn fetch_by_id(
+        &self,
+        conn: &mut Self::Conn,
+        id: i64,
+    ) -> Result<SchemaModel, LightSpeedError>;
 
     async fn exists_by_name_and_project_id(
         &self,
@@ -117,7 +129,11 @@ pub trait ContentRepository: Clone + Send + Sync {
         index_name: &str,
     ) -> Result<(), LightSpeedError>;
 
-    async fn fetch_by_id(&self, conn: &mut Self::Conn, id: i64) -> Result<ContentModel, LightSpeedError>;
+    async fn fetch_by_id(
+        &self,
+        conn: &mut Self::Conn,
+        id: i64,
+    ) -> Result<ContentModel, LightSpeedError>;
 
     async fn save(
         &self,

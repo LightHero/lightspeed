@@ -31,31 +31,40 @@ impl<RepoManager: CmsRepositoryManager> ProjectService<RepoManager> {
         &self,
         create_project_dto: CreateProjectDto,
     ) -> Result<ProjectModel, LightSpeedError> {
-        self.c3p0.transaction(|mut conn| async move  {
-            let name_already_exists = self
-                .project_repo
-                .exists_by_name(&mut conn, &create_project_dto.name).await?;
+        self.c3p0
+            .transaction(|mut conn| async move {
+                let name_already_exists = self
+                    .project_repo
+                    .exists_by_name(&mut conn, &create_project_dto.name)
+                    .await?;
 
-            let data = ProjectData {
-                name: create_project_dto.name,
-            };
-            Validator::validate(&(&data, &|error_details: &mut ErrorDetails| {
-                if name_already_exists {
-                    error_details.add_detail("name", ERR_NOT_UNIQUE);
-                }
-                Ok(())
-            }))?;
-            self.project_repo.save(&mut conn, NewModel::new(data)).await
-        }).await
+                let data = ProjectData {
+                    name: create_project_dto.name,
+                };
+                Validator::validate(&(&data, &|error_details: &mut ErrorDetails| {
+                    if name_already_exists {
+                        error_details.add_detail("name", ERR_NOT_UNIQUE);
+                    }
+                    Ok(())
+                }))?;
+                self.project_repo.save(&mut conn, NewModel::new(data)).await
+            })
+            .await
     }
 
-    pub async fn delete(&self, project_model: ProjectModel) -> Result<ProjectModel, LightSpeedError> {
-        self.c3p0.transaction(|mut conn| async move  {
-            let conn = &mut conn;
-            self.schema_service
-                .delete_by_project_id(conn, project_model.id).await?;
-            self.project_repo.delete(conn, project_model).await
-        }).await
+    pub async fn delete(
+        &self,
+        project_model: ProjectModel,
+    ) -> Result<ProjectModel, LightSpeedError> {
+        self.c3p0
+            .transaction(|mut conn| async move {
+                let conn = &mut conn;
+                self.schema_service
+                    .delete_by_project_id(conn, project_model.id)
+                    .await?;
+                self.project_repo.delete(conn, project_model).await
+            })
+            .await
     }
 }
 

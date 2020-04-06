@@ -1,32 +1,7 @@
 use crate::error::{LightSpeedError, WebErrorDetails};
 use actix_web_external::dev::HttpResponseBuilder;
-use actix_web_external::error::BlockingError;
-use actix_web_external::web::Json;
 use actix_web_external::{http, HttpResponse, ResponseError};
 use log::*;
-
-pub async fn web_block<I, F>(f: F) -> Result<I, LightSpeedError>
-where
-    F: FnOnce() -> Result<I, LightSpeedError> + Send + 'static,
-    I: Send + 'static,
-{
-    actix_web_external::web::block(f)
-        .await
-        .map_err(|err| match err {
-            BlockingError::Error(e) => e,
-            _ => LightSpeedError::InternalServerError {
-                message: format!("{}", err),
-            },
-        })
-}
-
-pub async fn web_block_json<I, F>(f: F) -> Result<Json<I>, LightSpeedError>
-where
-    F: FnOnce() -> Result<I, LightSpeedError> + Send + 'static,
-    I: Send + 'static,
-{
-    web_block(f).await.map(Json)
-}
 
 impl ResponseError for LightSpeedError {
     fn error_response(&self) -> HttpResponse {

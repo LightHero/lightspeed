@@ -3,11 +3,7 @@ use crate::error::{ErrorDetail, ErrorDetails};
 pub const NOT_VALID_URL: &str = "NOT_VALID_URL";
 
 /// Validates whether the string given is a url
-pub fn validate_url<S: Into<String>>(
-    error_details: &mut ErrorDetails,
-    field_name: S,
-    val: &str,
-) {
+pub fn validate_url<S: Into<String>>(error_details: &mut ErrorDetails, field_name: S, val: &str) {
     if !validator::validate_url(val) {
         error_details.add_detail(field_name.into(), ErrorDetail::new(NOT_VALID_URL, vec![]))
     }

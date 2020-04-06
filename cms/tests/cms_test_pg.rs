@@ -8,8 +8,8 @@ use lightspeed_cms::config::CmsConfig;
 use lightspeed_cms::repository::pg::PgCmsRepositoryManager;
 use lightspeed_cms::CmsModule;
 use lightspeed_core::module::Module;
-use tokio::time::Duration;
 use once_cell::sync::OnceCell;
+use tokio::time::Duration;
 
 mod tests;
 
@@ -67,6 +67,6 @@ pub fn test<F: std::future::Future>(f: F) -> F::Output {
             .build()
             .expect("Should create a tokio runtime")
     })
-        .handle()
-        .enter(|| futures::executor::block_on(f))
+    .handle()
+    .enter(|| futures::executor::block_on(f))
 }

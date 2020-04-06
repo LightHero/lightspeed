@@ -145,49 +145,36 @@ pub type ErrorDetailsData = HashMap<String, Vec<ErrorDetail>>;
 
 pub enum ErrorDetails<'a> {
     Root(RootErrorDetails),
-    Scoped(ScopedErrorDetails<'a>)
+    Scoped(ScopedErrorDetails<'a>),
 }
 
-impl <'a> Default for ErrorDetails<'a> {
+impl<'a> Default for ErrorDetails<'a> {
     fn default() -> Self {
         ErrorDetails::Root(Default::default())
     }
 }
 
-impl <'a> ErrorDetails<'a> {
+impl<'a> ErrorDetails<'a> {
     pub fn add_detail<K: Into<String>, V: Into<ErrorDetail>>(&mut self, key: K, value: V) {
         match self {
-            ErrorDetails::Root(node) => {
-                node.add_detail(key.into(), value.into())
-            },
-            ErrorDetails::Scoped(node) => {
-                node.add_detail(key.into(), value.into())
-            }
+            ErrorDetails::Root(node) => node.add_detail(key.into(), value.into()),
+            ErrorDetails::Scoped(node) => node.add_detail(key.into(), value.into()),
         }
     }
 
     pub fn with_scope<S: Into<String>>(&mut self, scope: S) -> ErrorDetails<'_> {
         match self {
-            ErrorDetails::Root(node) => {
-                ErrorDetails::Scoped(node.with_scope(scope.into()))
-            },
-            ErrorDetails::Scoped(node) => {
-                ErrorDetails::Scoped(node.with_scope(scope.into()))
-            }
+            ErrorDetails::Root(node) => ErrorDetails::Scoped(node.with_scope(scope.into())),
+            ErrorDetails::Scoped(node) => ErrorDetails::Scoped(node.with_scope(scope.into())),
         }
     }
 
     pub fn details(&self) -> &ErrorDetailsData {
         match self {
-            ErrorDetails::Root(node) => {
-                &node.details
-            },
-            ErrorDetails::Scoped(node) => {
-                &node.details.details
-            }
+            ErrorDetails::Root(node) => &node.details,
+            ErrorDetails::Scoped(node) => &node.details.details,
         }
     }
-
 }
 
 #[derive(Debug)]
@@ -212,7 +199,6 @@ pub struct ScopedErrorDetails<'a> {
 }
 
 impl RootErrorDetails {
-
     fn add_detail(&mut self, key: String, value: ErrorDetail) {
         match self.details.entry(key) {
             Entry::Occupied(mut entry) => {
@@ -226,14 +212,13 @@ impl RootErrorDetails {
 
     fn with_scope(&mut self, scope: String) -> ScopedErrorDetails<'_> {
         ScopedErrorDetails {
-            scope: scope.into(),
+            scope,
             details: self,
         }
     }
 }
 
 impl<'a> ScopedErrorDetails<'a> {
-
     fn add_detail(&mut self, key: String, value: ErrorDetail) {
         let scoped_key = format!("{}.{}", self.scope, key);
         self.details.add_detail(scoped_key, value)
@@ -306,7 +291,10 @@ pub mod test {
 
         println!("{:?}", root.details());
 
-        assert_eq!(ErrorDetail::new("world_1", vec![]), root.details()["root"][0]);
+        assert_eq!(
+            ErrorDetail::new("world_1", vec![]),
+            root.details()["root"][0]
+        );
         assert_eq!(
             ErrorDetail::new("child one.A", vec![]),
             root.details()["one.A"][0]
