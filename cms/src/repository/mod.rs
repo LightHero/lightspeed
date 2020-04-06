@@ -6,7 +6,7 @@ use lightspeed_core::error::LightSpeedError;
 
 pub mod pg;
 
-#[async_trait::async_trait]
+#[async_trait::async_trait(?Send)]
 pub trait CmsRepositoryManager: Clone + Send + Sync {
     type Conn: SqlConnectionAsync;
     type C3P0: C3p0PoolAsync<CONN = Self::Conn>;

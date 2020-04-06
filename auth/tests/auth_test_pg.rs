@@ -48,14 +48,16 @@ async fn init() -> MaybeType {
     auth_config.bcrypt_password_hash_cost = 4;
 
     let mut auth_module = AuthModule::new(repo_manager, auth_config);
-    auth_module.start().await.unwrap();
+    {
+        auth_module.start().await.unwrap();
+    }
 
     (auth_module, node)
 }
 
 pub async fn data(serial: bool) -> Data<'static, MaybeType> {
     static DATA: OnceCell<MaybeSingleAsync<MaybeType>> = OnceCell::new();
-    DATA.get_or_init(|| MaybeSingleAsync::new(|| init().boxed()))
+    DATA.get_or_init(|| MaybeSingleAsync::new(|| Box::pin(init())))
         .data(serial)
         .await
 }

@@ -1,12 +1,12 @@
 use crate::error::LightSpeedError;
 use log::info;
 
-#[async_trait::async_trait]
+#[async_trait::async_trait(?Send)]
 pub trait ModuleBuilder<T: Module> {
     async fn build(&self) -> Result<T, LightSpeedError>;
 }
 
-#[async_trait::async_trait]
+#[async_trait::async_trait(?Send)]
 pub trait Module {
     async fn start(&mut self) -> Result<(), LightSpeedError>;
 }
@@ -19,7 +19,7 @@ pub async fn start(modules: &mut [&mut dyn Module]) -> Result<(), LightSpeedErro
     Ok(())
 }
 
-/*
+
 #[cfg(test)]
 mod test {
 
@@ -100,7 +100,7 @@ mod test {
         name: String,
     }
 
-    #[async_trait::async_trait]
+    #[async_trait::async_trait(?Send)]
     impl super::Module for SimpleModOne {
         async fn start(&mut self) -> Result<(), LightSpeedError> {
             let mut owned = self.name.to_owned();
@@ -117,7 +117,7 @@ mod test {
         fail: bool,
     }
 
-    #[async_trait::async_trait]
+    #[async_trait::async_trait(?Send)]
     impl super::Module for SimpleModTwo {
         async fn start(&mut self) -> Result<(), LightSpeedError> {
             if self.fail {
@@ -134,4 +134,3 @@ mod test {
         }
     }
 }
-*/

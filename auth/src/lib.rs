@@ -50,7 +50,7 @@ impl<RepoManager: AuthRepositoryManager> AuthModule<RepoManager> {
     }
 }
 
-#[async_trait::async_trait]
+#[async_trait::async_trait(?Send)]
 impl<RepoManager: AuthRepositoryManager> lightspeed_core::module::Module
     for AuthModule<RepoManager>
 {
