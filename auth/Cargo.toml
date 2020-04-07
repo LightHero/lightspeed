@@ -1,7 +1,7 @@
 [package]
 name = "lightspeed_auth"
 license = "MIT"
-version = "0.3.1"
+version = "0.4.0"
 authors = ["Francesco Cina <ufoscout@gmail.com>"]
 description = "LightSpeed"
 edition = "2018"
@@ -11,7 +11,7 @@ repository = "https://github.com/LightHero/lightspeed"
 keywords = []
 
 [dependencies]
-lightspeed_core = { version = "0.3.1", path = "../core" }
+lightspeed_core = { version = "0.4.0", path = "../core" }
 async-trait = "0.1.29"
 bcrypt = "0.7.0"
 c3p0 = { version = "0.50.1", features = ["pg_migrate"] }
@@ -27,7 +27,7 @@ typescript-definitions = {package = "typescript-definitions-ufo-patch", version 
 
 [dev-dependencies]
 futures = "0.3"
-lightspeed_logger = { version = "0.3.1", path = "../logger" }
+lightspeed_logger = { version = "0.4.0", path = "../logger" }
 maybe-single = "0.12"
 once_cell = "1.3"
 testcontainers = "0.9"
