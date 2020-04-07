@@ -1,6 +1,6 @@
 use crate::config::EmailClientConfig;
 use crate::model::email::EmailMessage;
-use crate::service::email::EmailClient;
+use crate::repository::email::EmailClient;
 use lettre::smtp::authentication::IntoCredentials;
 use lettre::smtp::ConnectionReuseParameters;
 use lettre::{ClientSecurity, ClientTlsParameters, SmtpClient, SmtpTransport, Transport};

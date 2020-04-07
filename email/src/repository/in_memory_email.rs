@@ -1,5 +1,5 @@
 use crate::model::email::EmailMessage;
-use crate::service::email::EmailClient;
+use crate::repository::email::EmailClient;
 use lightspeed_core::error::LightSpeedError;
 use log::warn;
 use parking_lot::Mutex;

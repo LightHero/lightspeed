@@ -1,7 +1,8 @@
 use lightspeed_core::model::boolean::Boolean;
 use lightspeed_email::config::EmailClientConfig;
 use lightspeed_email::model::email::EmailMessage;
-use lightspeed_email::service::email::{new, EmailClientType};
+use lightspeed_email::repository::email::{new, EmailClientType};
+use lightspeed_email::service::EmailService;
 use testcontainers::*;
 
 pub fn new_mail_server(
@@ -33,7 +34,7 @@ async fn should_start_the_mailserver() {
         server_use_tls: Boolean::False,
     };
 
-    let email_service = new(config).unwrap();
+    let email_service = EmailService::new(new(config).unwrap());
 
     let mut message = EmailMessage::new();
     message.from = Some("UFO <ufoscout@gmail.com>".to_owned());

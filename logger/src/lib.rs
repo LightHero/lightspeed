@@ -2,6 +2,8 @@ pub mod config;
 
 use std::str::FromStr;
 use thiserror::Error;
+use tracing_subscriber::filter::LevelFilter;
+use tracing_subscriber::{EnvFilter, FmtSubscriber};
 
 #[derive(Error, Debug)]
 pub enum LoggerError {
@@ -26,62 +28,40 @@ impl From<std::io::Error> for LoggerError {
 }
 
 pub fn setup_logger(logger_config: &config::LoggerConfig) -> Result<(), LoggerError> {
-    let mut log_dispatcher = fern::Dispatch::new()
-        .format(|out, message, record| {
-            out.finish(format_args!(
-                "{}[{}][{}] {}",
-                chrono::Local::now().format("[%Y-%m-%d][%H:%M:%S]"),
-                record.target(),
-                record.level(),
-                message
-            ))
-        })
-        .level(
-            log::LevelFilter::from_str(&logger_config.level).map_err(|err| {
-                LoggerError::LoggerConfigurationError {
-                    message: format!(
-                        "The specified logger level is not valid: [{}]. err: {}",
-                        &logger_config.level, err
-                    ),
-                }
-            })?,
-        );
-    /*
-    .level_for(
-        "rust_actix",
-        log::LevelFilter::from_str(&logger_config.level).map_err(|err| {
+    let level = LevelFilter::from_str(&logger_config.level).map_err(|err| {
+        LoggerError::LoggerConfigurationError {
+            message: format!(
+                "The specified logger level is not valid: [{}]. err: {}",
+                &logger_config.level, err
+            ),
+        }
+    })?;
+
+    let mut filter = EnvFilter::from_default_env()
+        // Set the base level when not matched by other directives to WARN.
+        .add_directive(level.into());
+
+    if let Some(env_filter) = &logger_config.env_filter {
+        // Set the max level for `my_crate::my_mod` to DEBUG, overriding
+        // any directives parsed from the env variable.
+        filter = filter.add_directive(env_filter.parse().map_err(|err| {
             LoggerError::LoggerConfigurationError {
                 message: format!(
-                    "The specified logger level is not valid: [{}]. err: {}",
-                    &logger_config.level, err
+                    "Cannot parse the env_filter: [{}]. err: {}",
+                    env_filter, err
                 ),
             }
         })?);
-        */
-
-    log_dispatcher = log_dispatcher
-        .level_for("lettre".to_owned(), log::LevelFilter::Warn)
-        .level_for("postgres".to_owned(), log::LevelFilter::Warn)
-        .level_for("hyper".to_owned(), log::LevelFilter::Warn)
-        .level_for("mio".to_owned(), log::LevelFilter::Warn)
-        .level_for("tokio_io".to_owned(), log::LevelFilter::Warn)
-        .level_for("tokio_reactor".to_owned(), log::LevelFilter::Warn)
-        .level_for("tokio_tcp".to_owned(), log::LevelFilter::Warn)
-        .level_for("tokio_uds".to_owned(), log::LevelFilter::Warn);
+    }
 
     if logger_config.stdout_output {
-        log_dispatcher = log_dispatcher.chain(std::io::stdout());
+        FmtSubscriber::builder()
+            .with_env_filter(filter)
+            .try_init()
+            .map_err(|err| LoggerError::LoggerConfigurationError {
+                message: format!("Cannot start the stdout_output logger. err: {}", err),
+            })?;
     }
-
-    if logger_config.stderr_output {
-        log_dispatcher = log_dispatcher.chain(std::io::stderr());
-    }
-
-    if let Some(path) = &logger_config.file_output_path {
-        log_dispatcher = log_dispatcher.chain(fern::log_file(&path)?)
-    }
-
-    log_dispatcher.apply()?;
 
     Ok(())
 }

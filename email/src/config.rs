@@ -1,4 +1,4 @@
-use crate::service::email::EmailClientType;
+use crate::repository::email::EmailClientType;
 use lightspeed_core::model::boolean::Boolean;
 use structopt::StructOpt;
 
