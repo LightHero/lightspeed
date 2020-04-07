@@ -14,11 +14,11 @@ impl ResponseError for LightSpeedError {
             | LightSpeedError::UnauthenticatedError => {
                 warn!("User is unauthorized: {}", self);
                 HttpResponse::Unauthorized().finish()
-            },
+            }
             LightSpeedError::ForbiddenError { .. } => {
                 warn!("Access is forbidden: {}", self);
                 HttpResponse::Forbidden().finish()
-            },
+            }
             LightSpeedError::InternalServerError { message } => {
                 error!("Internal server error: {}", message);
                 HttpResponse::InternalServerError().finish()
@@ -34,7 +34,7 @@ impl ResponseError for LightSpeedError {
             LightSpeedError::BadRequest { .. } => {
                 warn!("BadRequest: {}", self);
                 HttpResponse::BadRequest().finish()
-            },
+            }
             LightSpeedError::RequestConflict { code, .. } => {
                 error!("RequestConflict: {}", self);
                 let http_code = http::StatusCode::CONFLICT;

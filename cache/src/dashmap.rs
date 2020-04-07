@@ -1,5 +1,5 @@
 use chrono::prelude::Local;
-use dashmap_rs::DashMap;
+use dashmap_rs::{mapref::entry::Entry, DashMap};
 use std::hash::Hash;
 use std::sync::Arc;
 
@@ -40,37 +40,42 @@ impl<K: Hash + Eq, V> Cache<K, V> {
         }
     }
 
-    pub fn get_or_insert_with<F: FnOnce() -> V>(&self, key: K, default: F) -> Arc<V> {
+    pub async fn get_or_insert_with<F: FnOnce() -> Fut, Fut: std::future::Future<Output = V>>(
+        &self,
+        key: K,
+        default: F,
+    ) -> Arc<V> {
         match self.get(&key) {
             Some(value) => value,
-            None => self
-                .map
-                .entry(key)
-                .or_insert_with(|| {
-                    let arc_value = Arc::new(default());
-                    self.to_value(arc_value)
-                })
-                .value()
-                .0
-                .clone(),
+            None => match self.map.entry(key) {
+                Entry::Occupied(entry) => entry.into_ref().value().0.clone(),
+                Entry::Vacant(entry) => {
+                    let arc_value = Arc::new(default().await);
+                    entry.insert(self.to_value(arc_value)).value().0.clone()
+                }
+            },
         }
     }
 
-    pub fn get_or_try_insert_with<F: FnOnce() -> Result<V, E>, E>(
+    pub async fn get_or_try_insert_with<
+        F: FnOnce() -> Fut,
+        Fut: std::future::Future<Output = Result<V, E>>,
+        E,
+    >(
         &self,
         key: K,
         default: F,
     ) -> Result<Arc<V>, E> {
         match self.get(&key) {
             Some(value) => Ok(value),
-            None => self
-                .map
-                .entry(key)
-                .or_try_insert_with(|| {
-                    let arc_value = Arc::new(default()?);
-                    Ok(self.to_value(arc_value))
-                })
-                .map(|val| val.value().0.clone()),
+            None => match self.map.entry(key) {
+                Entry::Occupied(entry) => Ok(entry.into_ref().value().0.clone()),
+                Entry::Vacant(entry) => {
+                    let arc_value = Arc::new(default().await?);
+                    let result = entry.insert(self.to_value(arc_value)).value().0.clone();
+                    Ok(result)
+                }
+            },
         }
     }
 
@@ -98,8 +103,8 @@ mod test {
     use std::time::Duration;
     use thiserror::Error;
 
-    #[test]
-    fn should_return_entry_not_expired() {
+    #[tokio::test]
+    async fn should_return_entry_not_expired() {
         let cache = Cache::new(1000);
         cache.insert("hello", "world");
 
@@ -109,8 +114,8 @@ mod test {
         assert_eq!(&"world", result.unwrap().as_ref());
     }
 
-    #[test]
-    fn should_not_return_expired_entry() {
+    #[tokio::test]
+    async fn should_not_return_expired_entry() {
         let mut cache = Cache::new(1);
         cache.ttl_ms = 1;
 
@@ -123,18 +128,20 @@ mod test {
         assert!(result.is_none());
     }
 
-    #[test]
-    fn should_not_insert_if_exists_on_get() {
+    #[tokio::test]
+    async fn should_not_insert_if_exists_on_get() {
         let cache = Cache::new(1000);
         cache.insert("hello", "world");
 
-        let result = cache.get_or_insert_with(&"hello", || "new world!");
+        let result = cache
+            .get_or_insert_with(&"hello", || async { "new world!" })
+            .await;
 
         assert_eq!(&"world", result.as_ref());
     }
 
-    #[test]
-    fn should_insert_on_get_if_expired() {
+    #[tokio::test]
+    async fn should_insert_on_get_if_expired() {
         let mut cache = Cache::new(1);
         cache.ttl_ms = 1;
 
@@ -142,52 +149,57 @@ mod test {
 
         sleep(Duration::from_millis(2));
 
-        let result = cache.get_or_insert_with(&"hello", || "new world");
+        let result = cache
+            .get_or_insert_with(&"hello", || async { "new world" })
+            .await;
 
         assert_eq!(&"new world", result.as_ref());
     }
 
-    #[test]
-    fn should_insert_on_get_if_not_present() {
+    #[tokio::test]
+    async fn should_insert_on_get_if_not_present() {
         let cache = Cache::new(100);
 
-        let result = cache.get_or_insert_with(&"hello", || "new world");
+        let result = cache
+            .get_or_insert_with(&"hello", || async { "new world" })
+            .await;
 
         assert_eq!(&"new world", result.as_ref());
     }
 
-    #[test]
-    fn should_remove_entry() {
+    #[tokio::test]
+    async fn should_remove_entry() {
         let cache = Cache::new(1000);
         cache.insert("hello", "world");
         cache.remove(&"hello");
         assert!(cache.get(&"hello").is_none());
     }
 
-    #[test]
-    fn should_not_try_insert_if_exists_on_get() {
+    #[tokio::test]
+    async fn should_not_try_insert_if_exists_on_get() {
         let cache = Cache::new(1000);
         cache.insert("hello", "world");
 
         let result = cache
             .get_or_try_insert_with(&"hello", insert_new_world_ok)
+            .await
             .unwrap();
 
         assert_eq!(&"world", result.as_ref());
     }
 
-    fn insert_new_world_ok() -> Result<&'static str, TestError> {
+    async fn insert_new_world_ok() -> Result<&'static str, TestError> {
         Ok("new world")
     }
 
-    fn insert_new_world_err() -> Result<&'static str, TestError> {
+    async fn insert_new_world_err() -> Result<&'static str, TestError> {
         Err(TestError::Error {
             message: "cannot insert",
         })
     }
 
-    #[test]
-    fn should_try_insert_on_get_if_expired() {
+    #[tokio::test]
+    async fn should_try_insert_on_get_if_expired() {
         let mut cache = Cache::new(1);
         cache.ttl_ms = 1;
 
@@ -197,27 +209,31 @@ mod test {
 
         let result = cache
             .get_or_try_insert_with(&"hello", insert_new_world_ok)
+            .await
             .unwrap();
 
         assert_eq!(&"new world", result.as_ref());
     }
 
-    #[test]
-    fn should_try_insert_on_get_if_not_present() {
+    #[tokio::test]
+    async fn should_try_insert_on_get_if_not_present() {
         let cache = Cache::new(100);
 
         let result = cache
             .get_or_try_insert_with(&"hello", insert_new_world_ok)
+            .await
             .unwrap();
 
         assert_eq!(&"new world", result.as_ref());
     }
 
-    #[test]
-    fn should_try_insert_and_return_error() {
+    #[tokio::test]
+    async fn should_try_insert_and_return_error() {
         let cache = Cache::new(100);
 
-        let result = cache.get_or_try_insert_with(&"hello", insert_new_world_err);
+        let result = cache
+            .get_or_try_insert_with(&"hello", insert_new_world_err)
+            .await;
 
         match result {
             Ok(_) => assert!(false),
@@ -228,6 +244,11 @@ mod test {
                 e
             ),
         }
+    }
+
+    #[test]
+    fn should_not_overflow_when_ttl_is_max() {
+        Cache::<String, String>::new(u32::max_value());
     }
 
     #[derive(Error, Debug, PartialEq, Eq)]
@@ -247,10 +268,5 @@ mod test {
 
         cache.remove(&"hello");
         assert!(cloned_cache.get(&"hello").is_none());
-    }
-
-    #[test]
-    fn should_not_overflow_when_ttl_is_max() {
-        Cache::<String, String>::new(u32::max_value());
     }
 }

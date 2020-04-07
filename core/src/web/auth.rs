@@ -92,7 +92,6 @@ mod test {
 
     #[actix_rt::test]
     async fn access_protected_url_should_return_unauthorized_if_expired_token() {
-
         // Arrange
         let token = JWT {
             payload: Auth {
@@ -128,7 +127,6 @@ mod test {
 
     #[actix_rt::test]
     async fn access_protected_url_should_return_ok_if_valid_token() {
-
         // Arrange
         let auth = Auth {
             username: "Amelia".to_owned(),
@@ -156,7 +154,6 @@ mod test {
 
     #[actix_rt::test]
     async fn access_admin_url_should_return_forbidden_if_not_admin_role() {
-
         // Arrange
         let auth = Auth {
             username: "Amelia".to_owned(),
