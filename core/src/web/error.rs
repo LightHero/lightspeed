@@ -11,21 +11,32 @@ impl ResponseError for LightSpeedError {
             | LightSpeedError::GenerateTokenError { .. }
             | LightSpeedError::MissingAuthTokenError { .. }
             | LightSpeedError::ParseAuthHeaderError { .. }
-            | LightSpeedError::UnauthenticatedError => HttpResponse::Unauthorized().finish(),
-            LightSpeedError::ForbiddenError { .. } => HttpResponse::Forbidden().finish(),
+            | LightSpeedError::UnauthenticatedError => {
+                warn!("User is unauthorized: {}", self);
+                HttpResponse::Unauthorized().finish()
+            },
+            LightSpeedError::ForbiddenError { .. } => {
+                warn!("Access is forbidden: {}", self);
+                HttpResponse::Forbidden().finish()
+            },
             LightSpeedError::InternalServerError { message } => {
                 error!("Internal server error: {}", message);
                 HttpResponse::InternalServerError().finish()
             }
             LightSpeedError::ValidationError { details } => {
+                warn!("ValidationError: {}", self);
                 let http_code = http::StatusCode::UNPROCESSABLE_ENTITY;
                 HttpResponseBuilder::new(http_code).json(WebErrorDetails::from_error_details(
                     http_code.as_u16(),
                     details,
                 ))
             }
-            LightSpeedError::BadRequest { .. } => HttpResponse::BadRequest().finish(),
+            LightSpeedError::BadRequest { .. } => {
+                warn!("BadRequest: {}", self);
+                HttpResponse::BadRequest().finish()
+            },
             LightSpeedError::RequestConflict { code, .. } => {
+                error!("RequestConflict: {}", self);
                 let http_code = http::StatusCode::CONFLICT;
                 HttpResponseBuilder::new(http_code).json(WebErrorDetails::from_message(
                     http_code.as_u16(),
@@ -33,6 +44,7 @@ impl ResponseError for LightSpeedError {
                 ))
             }
             LightSpeedError::ServiceUnavailable { code, .. } => {
+                error!("ServiceUnavailable: {}", self);
                 let http_code = http::StatusCode::CONFLICT;
                 HttpResponseBuilder::new(http_code).json(WebErrorDetails::from_message(
                     http_code.as_u16(),
@@ -44,6 +56,7 @@ impl ResponseError for LightSpeedError {
             | LightSpeedError::ConfigurationError { .. }
             | LightSpeedError::PasswordEncryptionError { .. }
             | LightSpeedError::RepositoryError { .. } => {
+                error!("InternalServerError: {}", self);
                 HttpResponse::InternalServerError().finish()
             }
         }

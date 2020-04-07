@@ -6,33 +6,9 @@ use log::*;
 
 pub const JWT_TOKEN_HEADER: &str = "Authorization";
 pub const JWT_TOKEN_HEADER_SUFFIX: &str = "Bearer ";
+
 // This must be equal to JWT_TOKEN_HEADER_SUFFIX.len()
 pub const JWT_TOKEN_HEADER_SUFFIX_LEN: usize = 7;
-
-/*
-impl FromRequest for AuthContext<'static> {
-
-    type Error = LightSpeedError;
-    type Future = Result<Self, Self::Error>;
-    type Config = ();
-
-    fn from_request(req: &HttpRequest, payload: &mut Payload) -> Self::Future {
-        if let Some(core) = req.get_app_data::<CoreModule>() {
-            auth_from_request(req, &core.jwt, &core.auth)
-        } else {
-            log::debug!(
-                "Failed to construct App-level Data extractor. \
-                 Request path: {:?}",
-                req.path()
-            );
-            Err(LightSpeedError::InternalServerError {
-                message: "App data is not configured, to configure use App::data()",
-            })
-        }
-    }
-
-}
-*/
 
 #[derive(Clone)]
 pub struct WebAuthService<T: RolesProvider> {
@@ -116,7 +92,6 @@ mod test {
 
     #[actix_rt::test]
     async fn access_protected_url_should_return_unauthorized_if_expired_token() {
-        crate::test_root::init_context();
 
         // Arrange
         let token = JWT {
@@ -153,7 +128,6 @@ mod test {
 
     #[actix_rt::test]
     async fn access_protected_url_should_return_ok_if_valid_token() {
-        crate::test_root::init_context();
 
         // Arrange
         let auth = Auth {
@@ -182,7 +156,6 @@ mod test {
 
     #[actix_rt::test]
     async fn access_admin_url_should_return_forbidden_if_not_admin_role() {
-        crate::test_root::init_context();
 
         // Arrange
         let auth = Auth {
