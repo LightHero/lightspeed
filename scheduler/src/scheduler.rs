@@ -9,8 +9,12 @@ pub enum Scheduler {
     /// Set to execute on set time periods
     Cron(cron::Schedule),
 
-    /// Set to execute exactly `duration` away from the previous execution
-    Interval(Duration),
+    /// Set to execute exactly `duration` away from the previous execution.
+    /// If
+    Interval {
+        interval_duration: Duration,
+        execute_at_startup: bool,
+    },
 
     /// Set to execute to never
     Never,
@@ -18,7 +22,7 @@ pub enum Scheduler {
 
 impl Scheduler {
     // Determine the next time we should execute (from a reference point)
-    pub fn next(&self, after: &DateTime<Utc>, timezone: Option<Tz>) -> Option<DateTime<Utc>> {
+    pub fn next(&mut self, after: &DateTime<Utc>, timezone: Option<Tz>) -> Option<DateTime<Utc>> {
         match *self {
             Scheduler::Cron(ref cs) => {
                 if let Some(tz) = timezone {
@@ -30,14 +34,22 @@ impl Scheduler {
                 }
             }
 
-            Scheduler::Interval(ref duration) => {
-                let ch_duration = match time::Duration::from_std(*duration) {
-                    Ok(value) => value,
-                    Err(_) => {
-                        return None;
-                    }
-                };
-                Some(*after + ch_duration)
+            Scheduler::Interval {
+                ref interval_duration,
+                ref mut execute_at_startup,
+            } => {
+                if *execute_at_startup {
+                    *execute_at_startup = false;
+                    Some(*after)
+                } else {
+                    let ch_duration = match time::Duration::from_std(*interval_duration) {
+                        Ok(value) => value,
+                        Err(_) => {
+                            return None;
+                        }
+                    };
+                    Some(*after + ch_duration)
+                }
             }
 
             Scheduler::Never => None,
@@ -67,7 +79,20 @@ impl TryFrom<String> for Scheduler {
 impl TryFrom<Duration> for Scheduler {
     type Error = SchedulerError;
     fn try_from(value: Duration) -> Result<Self, Self::Error> {
-        Ok(Scheduler::Interval(value))
+        Ok(Scheduler::Interval {
+            interval_duration: value,
+            execute_at_startup: false,
+        })
+    }
+}
+
+impl TryFrom<(Duration, bool)> for Scheduler {
+    type Error = SchedulerError;
+    fn try_from(value: (Duration, bool)) -> Result<Self, Self::Error> {
+        Ok(Scheduler::Interval {
+            interval_duration: value.0,
+            execute_at_startup: value.1,
+        })
     }
 }
 
@@ -80,7 +105,7 @@ pub mod test {
 
     #[test]
     fn never_should_not_schedule() {
-        let schedule = Scheduler::Never;
+        let mut schedule = Scheduler::Never;
         assert_eq!(None, schedule.next(&Utc::now(), Some(UTC)))
     }
 
@@ -88,7 +113,7 @@ pub mod test {
     fn interval_should_schedule_plus_duration() {
         let now = Utc::now();
         let secs = 10;
-        let schedule: Scheduler = Duration::new(secs, 0).try_into().unwrap();
+        let mut schedule: Scheduler = Duration::new(secs, 0).try_into().unwrap();
 
         let next = schedule.next(&now, None).unwrap();
 
@@ -96,10 +121,23 @@ pub mod test {
     }
 
     #[test]
+    fn interval_should_schedule_at_startup() {
+        let now = Utc::now();
+        let secs = 10;
+        let mut schedule: Scheduler = (Duration::new(secs, 0), true).try_into().unwrap();
+
+        let first = schedule.next(&now, None).unwrap();
+        assert_eq!(now.timestamp(), first.timestamp());
+
+        let next = schedule.next(&now, None).unwrap();
+        assert!(next.timestamp() >= now.timestamp() + (secs as i64));
+    }
+
+    #[test]
     fn should_build_an_interval_schedule_from_duration() {
         let schedule: Scheduler = Duration::new(1, 1).try_into().unwrap();
         match schedule {
-            Scheduler::Interval(_) => assert!(true),
+            Scheduler::Interval { .. } => assert!(true),
             _ => assert!(false),
         }
     }
@@ -115,7 +153,7 @@ pub mod test {
 
     #[test]
     fn cron_should_be_time_zone_aware_with_utc() {
-        let schedule: Scheduler = "* 11 10 * * *".try_into().unwrap();
+        let mut schedule: Scheduler = "* 11 10 * * *".try_into().unwrap();
         let date = Utc.ymd(2010, 1, 1).and_hms(10, 10, 0);
 
         let expected_utc = Utc.ymd(2010, 1, 1).and_hms(10, 11, 0);
@@ -127,7 +165,7 @@ pub mod test {
 
     #[test]
     fn cron_should_be_time_zone_aware_with_custom_time_zone() {
-        let schedule: Scheduler = "* 11 10 * * *".try_into().unwrap();
+        let mut schedule: Scheduler = "* 11 10 * * *".try_into().unwrap();
 
         let date = Utc.ymd(2010, 1, 1).and_hms(10, 10, 0);
         let expected_utc = Utc.ymd(2010, 1, 2).and_hms(09, 11, 0);

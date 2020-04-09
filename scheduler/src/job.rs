@@ -7,19 +7,19 @@ use parking_lot::{Mutex, RwLock};
 
 pub struct JobScheduler {
     pub job: Job,
-    schedule: Scheduler,
+    schedule: Mutex<Scheduler>,
     timezone: Option<Tz>,
     next_run_at: Mutex<Option<DateTime<Utc>>>,
     last_run_at: Mutex<Option<DateTime<Utc>>>,
 }
 
 impl JobScheduler {
-    pub fn new(schedule: Scheduler, timezone: Option<Tz>, job: Job) -> Self {
+    pub fn new(mut schedule: Scheduler, timezone: Option<Tz>, job: Job) -> Self {
         // Determine the next time it should run
         let next_run_at = schedule.next(&Utc::now(), timezone);
         JobScheduler {
             job,
-            schedule,
+            schedule: Mutex::new(schedule),
             timezone,
             next_run_at: Mutex::new(next_run_at),
             last_run_at: Mutex::new(None),
@@ -48,9 +48,11 @@ impl JobScheduler {
 
         let now = Utc::now();
 
+        let mut schedule = self.schedule.lock();
+
         // Determine the next time it should run
         let mut next_run_at = self.next_run_at.lock();
-        *next_run_at = self.schedule.next(&now, self.timezone);
+        *next_run_at = schedule.next(&now, self.timezone);
 
         // Save the last time this ran
         let mut last_run_at = self.last_run_at.lock();
@@ -174,7 +176,10 @@ pub mod test {
         let tx_clone = tx.clone();
 
         let job_scheduler = Arc::new(JobScheduler::new(
-            Scheduler::Interval(Duration::new(1, 0)),
+            Scheduler::Interval {
+                interval_duration: Duration::new(1, 0),
+                execute_at_startup: false,
+            },
             Some(UTC),
             Job::new("g", "n", None, move || {
                 println!("job - started");
