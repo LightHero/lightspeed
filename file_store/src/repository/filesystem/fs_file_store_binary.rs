@@ -34,10 +34,7 @@ impl FileStoreBinaryRepository for FsFileStoreBinaryRepository {
         use tokio::io::AsyncReadExt;
 
         let file_path = self.get_file_path(file_name);
-        let mut file = tokio::fs::OpenOptions::new()
-            .write(false)
-            .create(false)
-            .open(file_path)
+        let mut file = tokio::fs::File::open(file_path)
             .await
             .map_err(|err| LightSpeedError::BadRequest {
                 message: format!(
@@ -49,7 +46,7 @@ impl FileStoreBinaryRepository for FsFileStoreBinaryRepository {
 
         tokio::io::copy(&mut file, output).await.map_err(|err| LightSpeedError::BadRequest {
             message: format!(
-                "FsFileStoreDataRepository - Cannot read file [{}]. Err: {}",
+                "FsFileStoreDataRepository - Cannot copy file content to output writer [{}]. Err: {}",
                 file_name,
                 err
             ),
@@ -186,6 +183,26 @@ mod test {
         file_store.delete_by_filename(&file_name).await?;
 
         assert!(!std::path::Path::new(&file_name).exists());
+
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn should_read_a_saved_file() -> Result<(), LightSpeedError> {
+
+        let random: u32 = rand::random();
+        let file_name = format!("file_{}", random);
+
+        let tempdir = tempfile::tempdir().unwrap();
+        let temp_dir_path = tempdir.path().to_str().unwrap().to_owned();
+        let file_store = FsFileStoreBinaryRepository::new(temp_dir_path.clone());
+
+        file_store.save_file(SOURCE_FILE, &file_name).await?;
+
+        let mut buffer: Vec<u8> = vec![];
+        file_store.read_file(&file_name, &mut buffer).await?;
+        let file_content = std::str::from_utf8(&buffer).unwrap();
+        assert_eq!(&std::fs::read_to_string(SOURCE_FILE).unwrap(), file_content);
 
         Ok(())
     }
