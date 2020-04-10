@@ -7,11 +7,11 @@ use std::path::Path;
 use log::*;
 
 #[derive(Clone)]
-pub struct FsFileStoreDataRepository {
+pub struct FsFileStoreBinaryRepository {
     base_folder: String,
 }
 
-impl FsFileStoreDataRepository {
+impl FsFileStoreBinaryRepository {
 
     pub fn new<S: Into<String>>(base_folder: S) -> Self {
         Self {
@@ -23,10 +23,31 @@ impl FsFileStoreDataRepository {
         format!("{}/{}", &self.base_folder, file_name)
     }
 
+    async fn read_file<F: FnMut(&tokio::io::AsyncReadExt)->Fut, Fut: std::future::Future<Output=Result<(), LightSpeedError>> >(&self, file_name: &str, reader: F) -> Result<(), LightSpeedError> {
+        use tokio::io::AsyncReadExt;
+        let file_path = self.get_file_path(file_name);
+        let file = tokio::fs::OpenOptions::new()
+            .write(false)
+            .create(false)
+            .open(file_path)
+            .await
+            .map_err(|err| LightSpeedError::BadRequest {
+                message: format!(
+                    "FsFileStoreDataRepository - Cannot read file [{}]. Err: {}",
+                    file_name,
+                    err
+                ),
+            })?;
+
+        reader(&file).await?;
+
+        Ok(())
+    }
+
 }
 
 #[async_trait::async_trait]
-impl FileStoreBinaryRepository for FsFileStoreDataRepository {
+impl FileStoreBinaryRepository for FsFileStoreBinaryRepository {
     type Conn = PgConnectionAsync;
 
     async fn save_file(&self, source_path: &str, file_name: &str) -> Result<(), LightSpeedError> {
@@ -75,6 +96,91 @@ impl FileStoreBinaryRepository for FsFileStoreDataRepository {
                 message: format!("FsFileStoreDataRepository - Cannot delete file [{}]. Err: {}", to, err),
             })?;
         }
+        Ok(())
+    }
+
+}
+
+#[cfg(test)]
+mod test {
+    use lightspeed_core::error::LightSpeedError;
+    use crate::repository::filesystem::fs_file_store_binary::FsFileStoreBinaryRepository;
+    use crate::repository::FileStoreBinaryRepository;
+
+    const SOURCE_FILE: &str = "./Cargo.toml";
+
+    #[tokio::test]
+    async fn should_save_file() -> Result<(), LightSpeedError> {
+
+        let random: u32 = rand::random();
+        let file_name = format!("file_{}", random);
+
+        let tempdir = tempfile::tempdir().unwrap();
+        let temp_dir_path = tempdir.path().to_str().unwrap().to_owned();
+        let file_store = FsFileStoreBinaryRepository::new(temp_dir_path.clone());
+
+        file_store.save_file(SOURCE_FILE, &file_name).await?;
+
+        let expected_file_path = format!("{}/{}", temp_dir_path, file_name);
+        assert!(std::path::Path::new(&expected_file_path).exists());
+
+        assert_eq!(std::fs::read_to_string(SOURCE_FILE).unwrap(), std::fs::read_to_string(&expected_file_path).unwrap());
+
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn save_file_should_fail_if_file_exists() -> Result<(), LightSpeedError> {
+
+        let random: u32 = rand::random();
+        let file_name = format!("file_{}", random);
+
+        let tempdir = tempfile::tempdir().unwrap();
+        let temp_dir_path = tempdir.path().to_str().unwrap().to_owned();
+        let file_store = FsFileStoreBinaryRepository::new(temp_dir_path.clone());
+
+        file_store.save_file(SOURCE_FILE, &file_name).await?;
+        assert!(file_store.save_file(SOURCE_FILE, &file_name).await.is_err());
+
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn should_save_file_with_relative_folder() -> Result<(), LightSpeedError> {
+
+        let random: u32 = rand::random();
+        let file_name = format!("test/temp/file_{}", random);
+
+        let tempdir = tempfile::tempdir().unwrap();
+        let temp_dir_path = tempdir.path().to_str().unwrap().to_owned();
+        let file_store = FsFileStoreBinaryRepository::new(temp_dir_path.clone());
+
+        file_store.save_file(SOURCE_FILE, &file_name).await?;
+
+        let expected_file_path = format!("{}/{}", temp_dir_path, file_name);
+        assert!(std::path::Path::new(&expected_file_path).exists());
+
+        assert_eq!(std::fs::read_to_string(SOURCE_FILE).unwrap(), std::fs::read_to_string(&expected_file_path).unwrap());
+
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn should_delete_file_with_relative_folder() -> Result<(), LightSpeedError> {
+
+        let random: u32 = rand::random();
+        let file_name = format!("/test/temp/file_{}", random);
+
+        let tempdir = tempfile::tempdir().unwrap();
+        let temp_dir_path = tempdir.path().to_str().unwrap().to_owned();
+        let file_store = FsFileStoreBinaryRepository::new(temp_dir_path.clone());
+
+        file_store.save_file(SOURCE_FILE, &file_name).await?;
+
+        file_store.delete_by_filename(&file_name).await?;
+
+        assert!(!std::path::Path::new(&file_name).exists());
+
         Ok(())
     }
 
