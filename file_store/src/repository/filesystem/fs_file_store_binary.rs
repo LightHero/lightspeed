@@ -23,10 +23,18 @@ impl FsFileStoreBinaryRepository {
         format!("{}/{}", &self.base_folder, file_name)
     }
 
-    async fn read_file<F: FnMut(&tokio::io::AsyncReadExt)->Fut, Fut: std::future::Future<Output=Result<(), LightSpeedError>> >(&self, file_name: &str, reader: F) -> Result<(), LightSpeedError> {
+}
+
+#[async_trait::async_trait]
+impl FileStoreBinaryRepository for FsFileStoreBinaryRepository {
+    type Conn = PgConnectionAsync;
+
+    async fn read_file<W: tokio::io::AsyncWrite + Unpin + Send>(&self, file_name: &str, output: &mut W) -> Result<u64, LightSpeedError> {
+
         use tokio::io::AsyncReadExt;
+
         let file_path = self.get_file_path(file_name);
-        let file = tokio::fs::OpenOptions::new()
+        let mut file = tokio::fs::OpenOptions::new()
             .write(false)
             .create(false)
             .open(file_path)
@@ -39,16 +47,14 @@ impl FsFileStoreBinaryRepository {
                 ),
             })?;
 
-        reader(&file).await?;
-
-        Ok(())
+        tokio::io::copy(&mut file, output).await.map_err(|err| LightSpeedError::BadRequest {
+            message: format!(
+                "FsFileStoreDataRepository - Cannot read file [{}]. Err: {}",
+                file_name,
+                err
+            ),
+        })
     }
-
-}
-
-#[async_trait::async_trait]
-impl FileStoreBinaryRepository for FsFileStoreBinaryRepository {
-    type Conn = PgConnectionAsync;
 
     async fn save_file(&self, source_path: &str, file_name: &str) -> Result<(), LightSpeedError> {
         let destination_file_path = self.get_file_path(file_name);

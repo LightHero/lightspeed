@@ -22,6 +22,10 @@ impl Default for PgFileStoreBinaryRepository {
 impl FileStoreBinaryRepository for PgFileStoreBinaryRepository {
     type Conn = PgConnectionAsync;
 
+    async fn read_file<W: tokio::io::AsyncWrite + Unpin + Send>(&self, file_name: &str, output: &mut W) -> Result<u64, LightSpeedError> {
+        unimplemented!()
+    }
+
     async fn save_file(&self, source_path: &str, file_name: &str) -> Result<(), LightSpeedError> {
         unimplemented!()
     }
