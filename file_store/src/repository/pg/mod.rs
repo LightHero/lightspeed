@@ -1,10 +1,12 @@
-use crate::repository::pg::pg_file_store::PgFileStoreRepository;
+use crate::repository::pg::pg_file_store_data::PgFileStoreDataRepository;
 use crate::repository::FileStoreRepositoryManager;
 use c3p0::pg::*;
 use c3p0::*;
 use lightspeed_core::error::LightSpeedError;
+use crate::repository::pg::pg_file_store_binary::PgFileStoreBinaryRepository;
 
-pub mod pg_file_store;
+pub mod pg_file_store_binary;
+pub mod pg_file_store_data;
 
 const MIGRATIONS: include_dir::Dir = include_dir::include_dir!("./src_resources/db/pg/migrations");
 
@@ -23,7 +25,8 @@ impl PgFileStoreRepositoryManager {
 impl FileStoreRepositoryManager for PgFileStoreRepositoryManager {
     type Conn = PgConnectionAsync;
     type C3P0 = PgC3p0PoolAsync;
-    type FileStoreRepo = PgFileStoreRepository;
+    type FileStoreBinaryRepo = PgFileStoreBinaryRepository;
+    type FileStoreDataRepo = PgFileStoreDataRepository;
 
     fn c3p0(&self) -> &PgC3p0PoolAsync {
         &self.c3p0
@@ -52,8 +55,11 @@ impl FileStoreRepositoryManager for PgFileStoreRepositoryManager {
             })
     }
 
-    fn file_store_repo(&self) -> Self::FileStoreRepo {
-        PgFileStoreRepository::default()
+    fn file_store_data_repo(&self) -> Self::FileStoreDataRepo {
+        PgFileStoreDataRepository::default()
+    }
+    fn file_store_binary_repo(&self) -> Self::FileStoreBinaryRepo {
+        PgFileStoreBinaryRepository::default()
     }
 
 }

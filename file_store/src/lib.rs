@@ -26,7 +26,7 @@ impl<RepoManager: FileStoreRepositoryManager> FileStoreModule<RepoManager> {
 
         let file_store_service = FileStoreService::new(
             repo_manager.c3p0().clone(),
-            repo_manager.file_store_repo(),
+            repo_manager.file_store_data_repo(),
         );
 
         FileStoreModule {
