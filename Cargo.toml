@@ -6,6 +6,7 @@ members = [
     "cms",
     "core",
     "email",
+    "file_store",
     "logger",
     "scheduler",
 ]
