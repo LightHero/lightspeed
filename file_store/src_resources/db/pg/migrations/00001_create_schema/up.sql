@@ -19,9 +19,10 @@ CREATE UNIQUE INDEX LS_FILE_STORE_DATA_UNIQUE_FILENAME ON LS_FILE_STORE_DATA( (D
 -----------------------------------
 
 create table LS_FILE_STORE_BINARY (
-    ID bigserial primary key,
-    VERSION int not null,
-    DATA JSONB
+    filename    TEXT NOT NULL,
+    data  BYTEA
 );
+
+CREATE UNIQUE INDEX LS_FILE_STORE_BINARY_UNIQUE_FILENAME ON LS_FILE_STORE_BINARY( filename );
 
 -- End - LS_FILE_STORE_BINARY -

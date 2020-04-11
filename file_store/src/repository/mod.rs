@@ -23,11 +23,11 @@ pub trait FileStoreRepositoryManager: Clone + Send + Sync {
 pub trait FileStoreBinaryRepository: Clone + Send + Sync {
     type Conn: SqlConnectionAsync;
 
-    async fn read_file<W: tokio::io::AsyncWrite + Unpin + Send>(&self, file_name: &str, output: &mut W) -> Result<u64, LightSpeedError>;
+    async fn read_file<W: tokio::io::AsyncWrite + Unpin + Send>(&self, conn: &mut Self::Conn, file_name: &str, output: &mut W) -> Result<u64, LightSpeedError>;
 
-    async fn save_file(&self, source_path: &str, file_name: &str) -> Result<(), LightSpeedError>;
+    async fn save_file(&self, conn: &mut Self::Conn, source_path: &str, file_name: &str) -> Result<(), LightSpeedError>;
 
-    async fn delete_by_filename(&self, file_name: &str) -> Result<(), LightSpeedError>;
+    async fn delete_by_filename(&self, conn: &mut Self::Conn, file_name: &str) -> Result<(), LightSpeedError>;
 
 
 }

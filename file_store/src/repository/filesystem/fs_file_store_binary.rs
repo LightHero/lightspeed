@@ -1,4 +1,3 @@
-use crate::repository::{ FileStoreBinaryRepository};
 use c3p0::pg::*;
 use c3p0::*;
 use lightspeed_core::error::LightSpeedError;
@@ -23,13 +22,7 @@ impl FsFileStoreBinaryRepository {
         format!("{}/{}", &self.base_folder, file_name)
     }
 
-}
-
-#[async_trait::async_trait]
-impl FileStoreBinaryRepository for FsFileStoreBinaryRepository {
-    type Conn = PgConnectionAsync;
-
-    async fn read_file<W: tokio::io::AsyncWrite + Unpin + Send>(&self, file_name: &str, output: &mut W) -> Result<u64, LightSpeedError> {
+    pub async fn read_file<W: tokio::io::AsyncWrite + Unpin + Send>(&self, file_name: &str, output: &mut W) -> Result<u64, LightSpeedError> {
 
         use tokio::io::AsyncReadExt;
 
@@ -53,7 +46,7 @@ impl FileStoreBinaryRepository for FsFileStoreBinaryRepository {
         })
     }
 
-    async fn save_file(&self, source_path: &str, file_name: &str) -> Result<(), LightSpeedError> {
+    pub async fn save_file(&self, source_path: &str, file_name: &str) -> Result<(), LightSpeedError> {
         let destination_file_path = self.get_file_path(file_name);
         let destination_path = Path::new(&destination_file_path);
 
@@ -92,7 +85,7 @@ impl FileStoreBinaryRepository for FsFileStoreBinaryRepository {
         Ok(())
     }
 
-    async fn delete_by_filename(&self, file_name: &str) -> Result<(), LightSpeedError> {
+    pub async fn delete_by_filename(&self, file_name: &str) -> Result<(), LightSpeedError> {
         let to = self.get_file_path(file_name);
         if std::path::Path::new(&to).exists() {
             tokio::fs::remove_file(&to).await.map_err(|err| LightSpeedError::BadRequest {
