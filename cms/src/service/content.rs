@@ -72,7 +72,9 @@ impl<RepoManager: CmsRepositoryManager> ContentService<RepoManager> {
         self.c3p0
             .transaction(|mut conn| async move {
                 let conn = &mut conn;
-                let repo = self.get_content_repo_by_schema_id(create_content_dto.schema_id).await;
+                let repo = self
+                    .get_content_repo_by_schema_id(create_content_dto.schema_id)
+                    .await;
 
                 let mut validator = Validator::new();
 
@@ -135,17 +137,21 @@ impl<RepoManager: CmsRepositoryManager> ContentService<RepoManager> {
     ) -> Result<ContentModel, LightSpeedError> {
         self.c3p0
             .transaction(|mut conn| async move {
-                let repo = self.get_content_repo_by_schema_id(content_model.data.schema_id).await;
+                let repo = self
+                    .get_content_repo_by_schema_id(content_model.data.schema_id)
+                    .await;
                 repo.delete(&mut conn, content_model).await
             })
             .await
     }
 
     async fn get_content_repo_by_schema_id(&self, schema_id: i64) -> Arc<RepoManager::ContentRepo> {
-        self.content_repos.get_or_insert_with(schema_id, || async {
-            self.repo_factory
-                .content_repo(&self.content_table_name(schema_id))
-        }).await
+        self.content_repos
+            .get_or_insert_with(schema_id, || async {
+                self.repo_factory
+                    .content_repo(&self.content_table_name(schema_id))
+            })
+            .await
     }
 
     fn content_table_name(&self, schema_id: i64) -> String {
