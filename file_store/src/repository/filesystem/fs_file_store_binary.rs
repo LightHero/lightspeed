@@ -4,6 +4,7 @@ use lightspeed_core::error::LightSpeedError;
 use crate::model::{FileStoreData, FileStoreDataCodec};
 use std::path::Path;
 use log::*;
+use crate::dto::FileData;
 
 #[derive(Clone)]
 pub struct FsFileStoreBinaryRepository {
@@ -22,27 +23,9 @@ impl FsFileStoreBinaryRepository {
         format!("{}/{}", &self.base_folder, file_name)
     }
 
-    pub async fn read_file<W: tokio::io::AsyncWrite + Unpin + Send>(&self, file_name: &str, output: &mut W) -> Result<u64, LightSpeedError> {
-
-        use tokio::io::AsyncReadExt;
-
-        let file_path = self.get_file_path(file_name);
-        let mut file = tokio::fs::File::open(file_path)
-            .await
-            .map_err(|err| LightSpeedError::BadRequest {
-                message: format!(
-                    "FsFileStoreDataRepository - Cannot read file [{}]. Err: {}",
-                    file_name,
-                    err
-                ),
-            })?;
-
-        tokio::io::copy(&mut file, output).await.map_err(|err| LightSpeedError::BadRequest {
-            message: format!(
-                "FsFileStoreDataRepository - Cannot copy file content to output writer [{}]. Err: {}",
-                file_name,
-                err
-            ),
+    pub async fn read_file(&self, file_name: &str) -> Result<FileData, LightSpeedError> {
+        Ok(FileData::FromFs{
+            file_path: self.get_file_path(file_name)
         })
     }
 
@@ -99,9 +82,10 @@ impl FsFileStoreBinaryRepository {
 
 #[cfg(test)]
 mod test {
+    use super::*;
     use lightspeed_core::error::LightSpeedError;
-    use crate::repository::filesystem::fs_file_store_binary::FsFileStoreBinaryRepository;
     use crate::repository::FileStoreBinaryRepository;
+    use crate::utils::read_file;
 
     const SOURCE_FILE: &str = "./Cargo.toml";
 
@@ -192,10 +176,17 @@ mod test {
 
         file_store.save_file(SOURCE_FILE, &file_name).await?;
 
-        let mut buffer: Vec<u8> = vec![];
-        file_store.read_file(&file_name, &mut buffer).await?;
-        let file_content = std::str::from_utf8(&buffer).unwrap();
-        assert_eq!(&std::fs::read_to_string(SOURCE_FILE).unwrap(), file_content);
+        match file_store.read_file(&file_name).await {
+            Ok(FileData::FromFs{ file_path }) => {
+                let mut buffer: Vec<u8> = vec![];
+                read_file(&file_path, &mut buffer).await?;
+                let file_content = std::str::from_utf8(&buffer).unwrap();
+                assert_eq!(&std::fs::read_to_string(SOURCE_FILE).unwrap(), file_content);
+            },
+            _ => assert!(false)
+        }
+
+
 
         Ok(())
     }

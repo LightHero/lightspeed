@@ -5,6 +5,9 @@ use lightspeed_core::error::LightSpeedError;
 use crate::model::{FileStoreData, FileStoreDataCodec};
 use std::path::Path;
 use c3p0::pg::tokio_postgres::binary_copy::BinaryCopyInWriter;
+use tokio::fs::File;
+use tokio::io::AsyncReadExt;
+use crate::dto::FileData;
 
 #[derive(Clone)]
 pub struct PgFileStoreBinaryRepository {
@@ -23,45 +26,51 @@ impl Default for PgFileStoreBinaryRepository {
 impl FileStoreBinaryRepository for PgFileStoreBinaryRepository {
     type Conn = PgConnectionAsync;
 
-    async fn read_file<W: tokio::io::AsyncWrite + Unpin + Send>(&self, conn: &mut Self::Conn, file_name: &str, output: &mut W) -> Result<u64, LightSpeedError> {
+    async fn read_file(&self, conn: &mut Self::Conn, file_name: &str) -> Result<FileData, LightSpeedError> {
 
         match conn {
             PgConnectionAsync::Tx(tx) => {
-                /*
-                let sql = &format!("SELECT DATA FROM {} WHERE filename = ?", self.table_name);
-                let params = &[&file_name];
+
+                let sql = &format!("SELECT DATA FROM {} WHERE filename = $1", self.table_name);
 
                 let stmt = tx.prepare(sql).await.map_err(into_c3p0_error)?;
-
-                tx.copy_in()
-
-                let row = tx.query_one(&stmt, params)
+                let row = tx.query_one(&stmt, &[&file_name])
                     .await
                     .map_err(into_c3p0_error)?;
 
-                row.
-                */
+                let content: Vec<u8> = row.try_get(0).map_err(into_c3p0_error)?;
+                Ok(FileData::InMemory {content})
             }
         }
 
-        unimplemented!()
     }
 
     async fn save_file(&self, conn: &mut Self::Conn, source_path: &str, file_name: &str) -> Result<(), LightSpeedError> {
 
         match conn {
             PgConnectionAsync::Tx(tx) => {
-                /*
-                let writer = tx.copy_in("COPY foo FROM stdin BINARY").await.unwrap();
-                let mut writer = BinaryCopyInWriter::new(writer, &[Type::INT4, Type::TEXT]);
-                writer.write(&[&1i32, &"steven"]).await.unwrap();
-                writer.write(&[&2i32, &"timothy"]).await.unwrap();
-                writer.finish().unwrap();
-                */
+                let mut file = File::open(source_path).await.map_err(|err| LightSpeedError::BadRequest {
+                    message: format!(
+                        "PgFileStoreBinaryRepository - Cannot open file [{}]. Err: {}",
+                        file_name,
+                        err
+                    ),
+                })?;
+                let mut contents = vec![];
+                file.read_to_end(&mut contents).await.map_err(|err| LightSpeedError::BadRequest {
+                    message: format!(
+                        "PgFileStoreBinaryRepository - Cannot read file [{}]. Err: {}",
+                        file_name,
+                        err
+                    ),
+                })?;
+
+                let sql = &format!("INSERT INTO {} (filename, data) VALUES ($1, $2)", self.table_name);
+
+                let stmt = tx.prepare(sql).await.map_err(into_c3p0_error)?;
+                Ok(tx.execute(&stmt, &[&file_name, &contents]).await.map_err(into_c3p0_error).map(|_| ())?)
             }
         }
-
-        unimplemented!()
     }
 
     async fn delete_by_filename(&self, conn: &mut Self::Conn, file_name: &str) -> Result<(), LightSpeedError> {

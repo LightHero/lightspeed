@@ -9,6 +9,7 @@ pub mod dto;
 pub mod model;
 pub mod repository;
 pub mod service;
+pub mod utils;
 
 #[derive(Clone)]
 pub struct FileStoreModule<RepoManager: FileStoreRepositoryManager> {
