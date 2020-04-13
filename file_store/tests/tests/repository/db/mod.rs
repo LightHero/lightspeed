@@ -1,1 +1,1 @@
-pub mod db;
+pub mod pg;

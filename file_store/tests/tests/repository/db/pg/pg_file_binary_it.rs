@@ -1,9 +1,9 @@
 use crate::{data, test};
 use c3p0::*;
 use lightspeed_core::error::LightSpeedError;
-use lightspeed_core::utils::{current_epoch_seconds, new_hyphenated_uuid};
 use lightspeed_file_store::dto::FileData;
-use lightspeed_file_store::repository::{FileStoreBinaryRepository, FileStoreRepositoryManager};
+use lightspeed_file_store::repository::FileStoreRepoManager;
+use lightspeed_file_store::repository::db::{DBFileStoreRepositoryManager, DBFileStoreBinaryRepository};
 
 const SOURCE_FILE: &str = "./Cargo.toml";
 
@@ -11,10 +11,13 @@ const SOURCE_FILE: &str = "./Cargo.toml";
 fn should_save_file() -> Result<(), LightSpeedError> {
     test(async {
         let data = data(false).await;
-        let file_store = &data.0.repo_manager.file_store_binary_repo();
+        let repo_manager = match &data.0.repo_manager {
+            FileStoreRepoManager::DB(file_store) => file_store,
+            _ => panic!("Expected FileStoreRepoManager::DB")
+        };
+        let file_store = repo_manager.file_store_binary_repo();
 
-        data.0
-            .repo_manager
+        repo_manager
             .c3p0()
             .transaction(|mut conn| async move {
                 let random: u32 = rand::random();
@@ -42,10 +45,13 @@ fn should_save_file() -> Result<(), LightSpeedError> {
 fn save_file_should_fail_if_file_exists() -> Result<(), LightSpeedError> {
     test(async {
         let data = data(false).await;
-        let file_store = &data.0.repo_manager.file_store_binary_repo();
+        let repo_manager = match &data.0.repo_manager {
+            FileStoreRepoManager::DB(file_store) => file_store,
+            _ => panic!("Expected FileStoreRepoManager::DB")
+        };
+        let file_store = repo_manager.file_store_binary_repo();
 
-        data.0
-            .repo_manager
+        repo_manager
             .c3p0()
             .transaction(|mut conn| async move {
                 let random: u32 = rand::random();
@@ -68,10 +74,13 @@ fn save_file_should_fail_if_file_exists() -> Result<(), LightSpeedError> {
 fn should_save_file_with_relative_folder() -> Result<(), LightSpeedError> {
     test(async {
         let data = data(false).await;
-        let file_store = &data.0.repo_manager.file_store_binary_repo();
+        let repo_manager = match &data.0.repo_manager {
+            FileStoreRepoManager::DB(file_store) => file_store,
+            _ => panic!("Expected FileStoreRepoManager::DB")
+        };
+        let file_store = repo_manager.file_store_binary_repo();
 
-        data.0
-            .repo_manager
+        repo_manager
             .c3p0()
             .transaction(|mut conn| async move {
                 let random: u32 = rand::random();
@@ -99,10 +108,13 @@ fn should_save_file_with_relative_folder() -> Result<(), LightSpeedError> {
 fn should_delete_file_with_relative_folder() -> Result<(), LightSpeedError> {
     test(async {
         let data = data(false).await;
-        let file_store = &data.0.repo_manager.file_store_binary_repo();
+        let repo_manager = match &data.0.repo_manager {
+            FileStoreRepoManager::DB(file_store) => file_store,
+            _ => panic!("Expected FileStoreRepoManager::DB")
+        };
+        let file_store = repo_manager.file_store_binary_repo();
 
-        data.0
-            .repo_manager
+        repo_manager
             .c3p0()
             .transaction(|mut conn| async move {
                 let random: u32 = rand::random();

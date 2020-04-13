@@ -6,10 +6,10 @@ use testcontainers::*;
 
 use lightspeed_core::module::Module;
 use lightspeed_file_store::config::FileStoreConfig;
-use lightspeed_file_store::repository::pg::PgFileStoreRepositoryManager;
 use lightspeed_file_store::FileStoreModule;
 use once_cell::sync::OnceCell;
 use tokio::time::Duration;
+use lightspeed_file_store::repository::db::pg::PgFileStoreRepositoryManager;
 
 mod tests;
 
@@ -44,9 +44,9 @@ async fn init() -> MaybeType {
 
     let repo_manager = RepoManager::new(c3p0.clone());
 
-    let mut file_store_config = FileStoreConfig::build();
+    let file_store_config = FileStoreConfig::build();
 
-    let mut file_store_module = FileStoreModule::new(repo_manager, file_store_config);
+    let mut file_store_module = FileStoreModule::new(repo_manager, file_store_config).unwrap();
     {
         file_store_module.start().await.unwrap();
     }

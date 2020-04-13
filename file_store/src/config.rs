@@ -1,19 +1,20 @@
 use structopt::StructOpt;
+use crate::repository::FileStoreType;
 
 #[derive(Debug, Clone, StructOpt)]
 #[structopt(rename_all = "kebab-case")]
 pub struct FileStoreConfig {
-    /*
-/// Determines the activation token validity minutes
-#[structopt(long, env = "LS_AUTH_TOKEN_VALIDITY_MINUTES", default_value = "120")]
-pub token_validity_minutes: i64,
 
-#[structopt(long, env = "LS_AUTH_PASSWORD_HASH_COST", default_value = "10")]
-pub bcrypt_password_hash_cost: u32,
+    /// The FileStoreType. It can be 'FS' for filesystem or 'DB' for database
+    #[structopt(long, env = "LS_FILE_STORE_TYPE", default_value = "DB")]
+    pub file_store_type: FileStoreType,
 
-#[structopt(long, env = "LS_AUTH_DEFAULT_ROLES_ON_ACCOUNT_CREATION")]
-pub default_roles_on_account_creation: Vec<String>,
-*/}
+    /// The base folder used in case of 'FS' FileStoreType.
+    #[structopt(long, env = "LS_FILE_STORE_FS_BASE_FOLDER")]
+    pub file_store_fs_base_folder: Option<String>,
+
+}
+
 
 impl FileStoreConfig {
     pub fn build() -> Self {

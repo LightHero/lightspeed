@@ -1,7 +1,4 @@
 use crate::dto::FileData;
-use crate::model::{FileStoreData, FileStoreDataCodec};
-use c3p0::pg::*;
-use c3p0::*;
 use lightspeed_core::error::LightSpeedError;
 use log::*;
 use std::path::Path;
@@ -93,7 +90,6 @@ impl FsFileStoreBinaryRepository {
 #[cfg(test)]
 mod test {
     use super::*;
-    use crate::repository::FileStoreBinaryRepository;
     use crate::utils::read_file;
     use lightspeed_core::error::LightSpeedError;
 

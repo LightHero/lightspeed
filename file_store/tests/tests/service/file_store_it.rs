@@ -1,7 +1,5 @@
 use crate::{data, test};
-use c3p0::*;
 use lightspeed_core::error::LightSpeedError;
-use lightspeed_core::utils::{current_epoch_seconds, new_hyphenated_uuid};
 
 #[test]
 fn should_save_file_in_db() -> Result<(), LightSpeedError> {

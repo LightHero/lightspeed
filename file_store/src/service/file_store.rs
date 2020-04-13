@@ -25,6 +25,7 @@ impl<RepoManager: DBFileStoreRepositoryManager> FileStoreService<RepoManager> {
         &self,
         file_name: &str,
     ) -> Result<FileData, LightSpeedError> {
+        debug!("FileStoreService - Read file [{}]", file_name);
         match &self.repo_manager {
             FileStoreRepoManager::FS(repo) => {
                 repo.read_file(file_name).await
@@ -42,6 +43,7 @@ impl<RepoManager: DBFileStoreRepositoryManager> FileStoreService<RepoManager> {
         conn: &mut RepoManager::Conn,
         file_name: &str,
     ) -> Result<FileData, LightSpeedError> {
+        debug!("FileStoreService - Read file [{}]", file_name);
         match &self.repo_manager {
             FileStoreRepoManager::FS(repo) => {
                 repo.read_file(file_name).await
@@ -57,6 +59,7 @@ impl<RepoManager: DBFileStoreRepositoryManager> FileStoreService<RepoManager> {
         source_path: &str,
         file_name: &str,
     ) -> Result<(), LightSpeedError> {
+        info!("FileStoreService - Save file from [{}] to [{}]", source_path, file_name);
         match &self.repo_manager {
             FileStoreRepoManager::FS(repo) => {
                 repo.save_file(source_path, file_name).await
@@ -75,6 +78,7 @@ impl<RepoManager: DBFileStoreRepositoryManager> FileStoreService<RepoManager> {
         source_path: &str,
         file_name: &str,
     ) -> Result<(), LightSpeedError> {
+        info!("FileStoreService - Save file from [{}] to [{}]", source_path, file_name);
         match &self.repo_manager {
             FileStoreRepoManager::FS(repo) => {
                 repo.save_file(source_path, file_name).await
@@ -89,6 +93,7 @@ impl<RepoManager: DBFileStoreRepositoryManager> FileStoreService<RepoManager> {
         &self,
         file_name: &str,
     ) -> Result<u64, LightSpeedError> {
+        info!("FileStoreService - Delete file [{}]", file_name);
         match &self.repo_manager {
             FileStoreRepoManager::FS(repo) => {
                 repo.delete_by_filename(file_name).await
@@ -106,6 +111,7 @@ impl<RepoManager: DBFileStoreRepositoryManager> FileStoreService<RepoManager> {
         conn: &mut RepoManager::Conn,
         file_name: &str,
     ) -> Result<u64, LightSpeedError> {
+        info!("FileStoreService - Delete file [{}]", file_name);
         match &self.repo_manager {
             FileStoreRepoManager::FS(repo) => {
                 repo.delete_by_filename(file_name).await

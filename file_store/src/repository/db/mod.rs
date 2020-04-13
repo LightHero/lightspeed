@@ -1,7 +1,6 @@
 use crate::dto::FileData;
 use c3p0::*;
 use lightspeed_core::error::LightSpeedError;
-use std::path::Path;
 
 pub mod pg;
 
