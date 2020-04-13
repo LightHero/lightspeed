@@ -72,7 +72,7 @@ impl FsFileStoreBinaryRepository {
         Ok(())
     }
 
-    pub async fn delete_by_filename(&self, file_name: &str) -> Result<(), LightSpeedError> {
+    pub async fn delete_by_filename(&self, file_name: &str) -> Result<u64, LightSpeedError> {
         let to = self.get_file_path(file_name);
         if std::path::Path::new(&to).exists() {
             tokio::fs::remove_file(&to)
@@ -83,8 +83,10 @@ impl FsFileStoreBinaryRepository {
                         to, err
                     ),
                 })?;
+            Ok(1)
+        } else {
+            Ok(0)
         }
-        Ok(())
     }
 }
 

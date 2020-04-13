@@ -1,6 +1,6 @@
 use crate::dto::FileData;
 use crate::model::{FileStoreData, FileStoreDataCodec};
-use crate::repository::FileStoreBinaryRepository;
+use crate::repository::db::DBFileStoreBinaryRepository;
 use c3p0::pg::tokio_postgres::binary_copy::BinaryCopyInWriter;
 use c3p0::pg::*;
 use c3p0::*;
@@ -23,7 +23,7 @@ impl Default for PgFileStoreBinaryRepository {
 }
 
 #[async_trait::async_trait]
-impl FileStoreBinaryRepository for PgFileStoreBinaryRepository {
+impl DBFileStoreBinaryRepository for PgFileStoreBinaryRepository {
     type Conn = PgConnectionAsync;
 
     async fn read_file(
@@ -40,23 +40,6 @@ impl FileStoreBinaryRepository for PgFileStoreBinaryRepository {
             })
             .await?;
         Ok(FileData::InMemory { content })
-
-        /*
-                match conn {
-                    PgConnectionAsync::Tx(tx) => {
-
-                        let sql = &format!("SELECT DATA FROM {} WHERE filename = $1", self.table_name);
-
-                        let stmt = tx.prepare(sql).await.map_err(into_c3p0_error)?;
-                        let row = tx.query_one(&stmt, &[&file_name])
-                            .await
-                            .map_err(into_c3p0_error)?;
-
-                        let content: Vec<u8> = row.try_get(0).map_err(into_c3p0_error)?;
-                        Ok(FileData::InMemory {content})
-                    }
-                }
-        */
     }
 
     async fn save_file(
