@@ -3,10 +3,8 @@ pub mod error;
 pub mod model;
 pub mod module;
 pub mod service;
-pub mod utils;
-
-#[cfg(feature = "actix-web")]
 pub mod web;
+pub mod utils;
 
 use crate::error::LightSpeedError;
 use crate::service::auth::InMemoryRolesProvider;
