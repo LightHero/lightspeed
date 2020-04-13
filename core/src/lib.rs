@@ -3,8 +3,8 @@ pub mod error;
 pub mod model;
 pub mod module;
 pub mod service;
-pub mod web;
 pub mod utils;
+pub mod web;
 
 use crate::error::LightSpeedError;
 use crate::service::auth::InMemoryRolesProvider;

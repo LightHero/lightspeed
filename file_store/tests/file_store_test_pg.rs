@@ -6,10 +6,10 @@ use testcontainers::*;
 
 use lightspeed_core::module::Module;
 use lightspeed_file_store::config::FileStoreConfig;
+use lightspeed_file_store::repository::db::pg::PgFileStoreRepositoryManager;
 use lightspeed_file_store::FileStoreModule;
 use once_cell::sync::OnceCell;
 use tokio::time::Duration;
-use lightspeed_file_store::repository::db::pg::PgFileStoreRepositoryManager;
 
 mod tests;
 

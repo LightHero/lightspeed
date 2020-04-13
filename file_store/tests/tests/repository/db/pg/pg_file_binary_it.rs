@@ -2,8 +2,10 @@ use crate::{data, test};
 use c3p0::*;
 use lightspeed_core::error::LightSpeedError;
 use lightspeed_file_store::dto::FileData;
+use lightspeed_file_store::repository::db::{
+    DBFileStoreBinaryRepository, DBFileStoreRepositoryManager,
+};
 use lightspeed_file_store::repository::FileStoreRepoManager;
-use lightspeed_file_store::repository::db::{DBFileStoreRepositoryManager, DBFileStoreBinaryRepository};
 
 const SOURCE_FILE: &str = "./Cargo.toml";
 
@@ -13,7 +15,7 @@ fn should_save_file() -> Result<(), LightSpeedError> {
         let data = data(false).await;
         let repo_manager = match &data.0.repo_manager {
             FileStoreRepoManager::DB(file_store) => file_store,
-            _ => panic!("Expected FileStoreRepoManager::DB")
+            _ => panic!("Expected FileStoreRepoManager::DB"),
         };
         let file_store = repo_manager.file_store_binary_repo();
 
@@ -47,7 +49,7 @@ fn save_file_should_fail_if_file_exists() -> Result<(), LightSpeedError> {
         let data = data(false).await;
         let repo_manager = match &data.0.repo_manager {
             FileStoreRepoManager::DB(file_store) => file_store,
-            _ => panic!("Expected FileStoreRepoManager::DB")
+            _ => panic!("Expected FileStoreRepoManager::DB"),
         };
         let file_store = repo_manager.file_store_binary_repo();
 
@@ -76,7 +78,7 @@ fn should_save_file_with_relative_folder() -> Result<(), LightSpeedError> {
         let data = data(false).await;
         let repo_manager = match &data.0.repo_manager {
             FileStoreRepoManager::DB(file_store) => file_store,
-            _ => panic!("Expected FileStoreRepoManager::DB")
+            _ => panic!("Expected FileStoreRepoManager::DB"),
         };
         let file_store = repo_manager.file_store_binary_repo();
 
@@ -110,7 +112,7 @@ fn should_delete_file_with_relative_folder() -> Result<(), LightSpeedError> {
         let data = data(false).await;
         let repo_manager = match &data.0.repo_manager {
             FileStoreRepoManager::DB(file_store) => file_store,
-            _ => panic!("Expected FileStoreRepoManager::DB")
+            _ => panic!("Expected FileStoreRepoManager::DB"),
         };
         let file_store = repo_manager.file_store_binary_repo();
 

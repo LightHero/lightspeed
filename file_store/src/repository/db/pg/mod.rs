@@ -18,7 +18,7 @@ impl PgFileStoreRepositoryManager {
     pub fn new(c3p0: PgC3p0PoolAsync) -> Self {
         Self {
             c3p0,
-            binary_repo: PgFileStoreBinaryRepository::default()
+            binary_repo: PgFileStoreBinaryRepository::default(),
         }
     }
 }

@@ -1,9 +1,9 @@
+use crate::error::{LightSpeedError, WebErrorDetails};
 use crate::service::auth::{Auth, AuthContext, AuthService, RolesProvider};
 use crate::service::jwt::JwtService;
-use log::*;
-use crate::error::{LightSpeedError, WebErrorDetails};
 use actix_web_external::dev::HttpResponseBuilder;
-use actix_web_external::{http, HttpResponse, HttpRequest, ResponseError};
+use actix_web_external::{http, HttpRequest, HttpResponse, ResponseError};
+use log::*;
 
 pub const JWT_TOKEN_HEADER: &str = "Authorization";
 pub const JWT_TOKEN_HEADER_SUFFIX: &str = "Bearer ";
@@ -204,11 +204,10 @@ mod test {
                 signature_algorithm: Algorithm::HS256,
                 token_validity_minutes: 10,
             })
-                .unwrap(),
+            .unwrap(),
         }
     }
 }
-
 
 impl ResponseError for LightSpeedError {
     fn error_response(&self) -> HttpResponse {

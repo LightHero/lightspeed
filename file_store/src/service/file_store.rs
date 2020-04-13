@@ -1,10 +1,9 @@
-use crate::repository::db::{DBFileStoreRepositoryManager, DBFileStoreBinaryRepository};
-use c3p0::*;
-use log::*;
-use crate::repository::FileStoreRepoManager;
 use crate::dto::FileData;
+use crate::repository::db::{DBFileStoreBinaryRepository, DBFileStoreRepositoryManager};
+use crate::repository::FileStoreRepoManager;
+use c3p0::*;
 use lightspeed_core::error::LightSpeedError;
-
+use log::*;
 
 #[derive(Clone)]
 pub struct FileStoreService<RepoManager: DBFileStoreRepositoryManager> {
@@ -12,28 +11,24 @@ pub struct FileStoreService<RepoManager: DBFileStoreRepositoryManager> {
 }
 
 impl<RepoManager: DBFileStoreRepositoryManager> FileStoreService<RepoManager> {
-
-    pub fn new(
-        repo_manager: FileStoreRepoManager<RepoManager>,
-    ) -> Self {
-        FileStoreService {
-            repo_manager,
-        }
+    pub fn new(repo_manager: FileStoreRepoManager<RepoManager>) -> Self {
+        FileStoreService { repo_manager }
     }
 
-    pub async fn read_file(
-        &self,
-        file_name: &str,
-    ) -> Result<FileData, LightSpeedError> {
+    pub async fn read_file(&self, file_name: &str) -> Result<FileData, LightSpeedError> {
         debug!("FileStoreService - Read file [{}]", file_name);
         match &self.repo_manager {
-            FileStoreRepoManager::FS(repo) => {
-                repo.read_file(file_name).await
-            },
+            FileStoreRepoManager::FS(repo) => repo.read_file(file_name).await,
             FileStoreRepoManager::DB(repo_manager) => {
-                repo_manager.c3p0().transaction(|mut conn| async move {
-                    repo_manager.file_store_binary_repo().read_file(&mut conn, file_name).await
-                }).await
+                repo_manager
+                    .c3p0()
+                    .transaction(|mut conn| async move {
+                        repo_manager
+                            .file_store_binary_repo()
+                            .read_file(&mut conn, file_name)
+                            .await
+                    })
+                    .await
             }
         }
     }
@@ -45,11 +40,12 @@ impl<RepoManager: DBFileStoreRepositoryManager> FileStoreService<RepoManager> {
     ) -> Result<FileData, LightSpeedError> {
         debug!("FileStoreService - Read file [{}]", file_name);
         match &self.repo_manager {
-            FileStoreRepoManager::FS(repo) => {
-                repo.read_file(file_name).await
-            },
+            FileStoreRepoManager::FS(repo) => repo.read_file(file_name).await,
             FileStoreRepoManager::DB(repo_manager) => {
-                repo_manager.file_store_binary_repo().read_file(conn, file_name).await
+                repo_manager
+                    .file_store_binary_repo()
+                    .read_file(conn, file_name)
+                    .await
             }
         }
     }
@@ -59,15 +55,22 @@ impl<RepoManager: DBFileStoreRepositoryManager> FileStoreService<RepoManager> {
         source_path: &str,
         file_name: &str,
     ) -> Result<(), LightSpeedError> {
-        info!("FileStoreService - Save file from [{}] to [{}]", source_path, file_name);
+        info!(
+            "FileStoreService - Save file from [{}] to [{}]",
+            source_path, file_name
+        );
         match &self.repo_manager {
-            FileStoreRepoManager::FS(repo) => {
-                repo.save_file(source_path, file_name).await
-            },
+            FileStoreRepoManager::FS(repo) => repo.save_file(source_path, file_name).await,
             FileStoreRepoManager::DB(repo_manager) => {
-                repo_manager.c3p0().transaction(|mut conn| async move {
-                    repo_manager.file_store_binary_repo().save_file(&mut conn, source_path, file_name).await
-                }).await
+                repo_manager
+                    .c3p0()
+                    .transaction(|mut conn| async move {
+                        repo_manager
+                            .file_store_binary_repo()
+                            .save_file(&mut conn, source_path, file_name)
+                            .await
+                    })
+                    .await
             }
         }
     }
@@ -78,30 +81,35 @@ impl<RepoManager: DBFileStoreRepositoryManager> FileStoreService<RepoManager> {
         source_path: &str,
         file_name: &str,
     ) -> Result<(), LightSpeedError> {
-        info!("FileStoreService - Save file from [{}] to [{}]", source_path, file_name);
+        info!(
+            "FileStoreService - Save file from [{}] to [{}]",
+            source_path, file_name
+        );
         match &self.repo_manager {
-            FileStoreRepoManager::FS(repo) => {
-                repo.save_file(source_path, file_name).await
-            },
+            FileStoreRepoManager::FS(repo) => repo.save_file(source_path, file_name).await,
             FileStoreRepoManager::DB(repo_manager) => {
-                repo_manager.file_store_binary_repo().save_file(conn, source_path, file_name).await
+                repo_manager
+                    .file_store_binary_repo()
+                    .save_file(conn, source_path, file_name)
+                    .await
             }
         }
     }
 
-    pub async fn delete_by_filename(
-        &self,
-        file_name: &str,
-    ) -> Result<u64, LightSpeedError> {
+    pub async fn delete_by_filename(&self, file_name: &str) -> Result<u64, LightSpeedError> {
         info!("FileStoreService - Delete file [{}]", file_name);
         match &self.repo_manager {
-            FileStoreRepoManager::FS(repo) => {
-                repo.delete_by_filename(file_name).await
-            },
+            FileStoreRepoManager::FS(repo) => repo.delete_by_filename(file_name).await,
             FileStoreRepoManager::DB(repo_manager) => {
-                repo_manager.c3p0().transaction(|mut conn| async move {
-                    repo_manager.file_store_binary_repo().delete_by_filename(&mut conn, file_name).await
-                }).await
+                repo_manager
+                    .c3p0()
+                    .transaction(|mut conn| async move {
+                        repo_manager
+                            .file_store_binary_repo()
+                            .delete_by_filename(&mut conn, file_name)
+                            .await
+                    })
+                    .await
             }
         }
     }
@@ -113,14 +121,13 @@ impl<RepoManager: DBFileStoreRepositoryManager> FileStoreService<RepoManager> {
     ) -> Result<u64, LightSpeedError> {
         info!("FileStoreService - Delete file [{}]", file_name);
         match &self.repo_manager {
-            FileStoreRepoManager::FS(repo) => {
-                repo.delete_by_filename(file_name).await
-            },
+            FileStoreRepoManager::FS(repo) => repo.delete_by_filename(file_name).await,
             FileStoreRepoManager::DB(repo_manager) => {
-                repo_manager.file_store_binary_repo().delete_by_filename(conn, file_name).await
-
+                repo_manager
+                    .file_store_binary_repo()
+                    .delete_by_filename(conn, file_name)
+                    .await
             }
         }
     }
-
 }

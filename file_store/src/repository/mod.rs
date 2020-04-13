@@ -1,23 +1,27 @@
+use crate::config::FileStoreConfig;
 use crate::repository::filesystem::fs_file_store_binary::FsFileStoreBinaryRepository;
 use lightspeed_core::error::LightSpeedError;
-use std::str::FromStr;
-use crate::config::FileStoreConfig;
 use log::*;
+use std::str::FromStr;
 
-pub mod filesystem;
 pub mod db;
+pub mod filesystem;
 
 #[derive(Clone)]
 pub enum FileStoreRepoManager<
-DBFileStoreRepositoryManager: crate::repository::db::DBFileStoreRepositoryManager
+    DBFileStoreRepositoryManager: crate::repository::db::DBFileStoreRepositoryManager,
 > {
     DB(DBFileStoreRepositoryManager),
-    FS(FsFileStoreBinaryRepository)
+    FS(FsFileStoreBinaryRepository),
 }
 
-impl <DBFileStoreRepositoryManager: crate::repository::db::DBFileStoreRepositoryManager> FileStoreRepoManager<DBFileStoreRepositoryManager> {
-
-    pub fn new(config: FileStoreConfig, db_repo_manager: Option<DBFileStoreRepositoryManager>) -> Result<Self, LightSpeedError> {
+impl<DBFileStoreRepositoryManager: crate::repository::db::DBFileStoreRepositoryManager>
+    FileStoreRepoManager<DBFileStoreRepositoryManager>
+{
+    pub fn new(
+        config: FileStoreConfig,
+        db_repo_manager: Option<DBFileStoreRepositoryManager>,
+    ) -> Result<Self, LightSpeedError> {
         match config.file_store_type {
             FileStoreType::DB => {
                 info!("FileStoreRepoManager - Build DB FileStoreRepoManager");
@@ -25,13 +29,15 @@ impl <DBFileStoreRepositoryManager: crate::repository::db::DBFileStoreRepository
                     message: "FileStoreRepoManager - A DBFileStoreRepositoryManager should be provided if FileStoreType is DB".to_owned()
                 })?;
                 Ok(FileStoreRepoManager::DB(repo_manager))
-            },
+            }
             FileStoreType::FS => {
                 let base_folder = config.file_store_fs_base_folder.ok_or_else(|| LightSpeedError::ConfigurationError {
                     message: "FileStoreRepoManager - A base_folder should be provided if FileStoreType is FS".to_owned()
                 })?;
                 info!("FileStoreRepoManager - Build FileSystem FileStoreRepoManager with base_folder [{}]", base_folder);
-                Ok(FileStoreRepoManager::FS(FsFileStoreBinaryRepository::new(base_folder)))
+                Ok(FileStoreRepoManager::FS(FsFileStoreBinaryRepository::new(
+                    base_folder,
+                )))
             }
         }
     }
@@ -39,12 +45,10 @@ impl <DBFileStoreRepositoryManager: crate::repository::db::DBFileStoreRepository
     pub async fn start(&self) -> Result<(), LightSpeedError> {
         match self {
             FileStoreRepoManager::DB(repo_manager) => repo_manager.start().await,
-            FileStoreRepoManager::FS(..) => Ok(())
+            FileStoreRepoManager::FS(..) => Ok(()),
         }
     }
-
 }
-
 
 #[derive(Debug, PartialEq, Copy, Clone)]
 pub enum FileStoreType {
