@@ -1,8 +1,8 @@
-use lightspeed_core::error::LightSpeedError;
-use log::*;
 use crate::config::FileStoreConfig;
 use crate::repository::FileStoreRepositoryManager;
 use crate::service::file_store::FileStoreService;
+use lightspeed_core::error::LightSpeedError;
+use log::*;
 
 pub mod config;
 pub mod dto;
@@ -17,7 +17,6 @@ pub struct FileStoreModule<RepoManager: FileStoreRepositoryManager> {
 
     pub repo_manager: RepoManager,
     pub file_store_service: service::file_store::FileStoreService<RepoManager>,
-
 }
 
 impl<RepoManager: FileStoreRepositoryManager> FileStoreModule<RepoManager> {
@@ -33,7 +32,7 @@ impl<RepoManager: FileStoreRepositoryManager> FileStoreModule<RepoManager> {
         FileStoreModule {
             config,
             repo_manager,
-            file_store_service
+            file_store_service,
         }
     }
 }

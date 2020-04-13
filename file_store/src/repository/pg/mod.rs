@@ -1,9 +1,9 @@
+use crate::repository::pg::pg_file_store_binary::PgFileStoreBinaryRepository;
 use crate::repository::pg::pg_file_store_data::PgFileStoreDataRepository;
 use crate::repository::FileStoreRepositoryManager;
 use c3p0::pg::*;
 use c3p0::*;
 use lightspeed_core::error::LightSpeedError;
-use crate::repository::pg::pg_file_store_binary::PgFileStoreBinaryRepository;
 
 pub mod pg_file_store_binary;
 pub mod pg_file_store_data;
@@ -51,7 +51,10 @@ impl FileStoreRepositoryManager for PgFileStoreRepositoryManager {
             .migrate()
             .await
             .map_err(|err| LightSpeedError::ModuleStartError {
-                message: format!("PgFileStoreRepositoryManager - db migration failed: {}", err),
+                message: format!(
+                    "PgFileStoreRepositoryManager - db migration failed: {}",
+                    err
+                ),
             })
     }
 
@@ -61,5 +64,4 @@ impl FileStoreRepositoryManager for PgFileStoreRepositoryManager {
     fn file_store_binary_repo(&self) -> Self::FileStoreBinaryRepo {
         PgFileStoreBinaryRepository::default()
     }
-
 }

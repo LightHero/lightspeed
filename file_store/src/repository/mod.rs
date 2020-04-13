@@ -1,7 +1,7 @@
+use crate::dto::FileData;
 use c3p0::*;
 use lightspeed_core::error::LightSpeedError;
 use std::path::Path;
-use crate::dto::FileData;
 
 pub mod filesystem;
 pub mod pg;
@@ -24,12 +24,24 @@ pub trait FileStoreRepositoryManager: Clone + Send + Sync {
 pub trait FileStoreBinaryRepository: Clone + Send + Sync {
     type Conn: SqlConnectionAsync;
 
-    async fn read_file(&self, conn: &mut Self::Conn, file_name: &str) -> Result<FileData, LightSpeedError>;
+    async fn read_file(
+        &self,
+        conn: &mut Self::Conn,
+        file_name: &str,
+    ) -> Result<FileData, LightSpeedError>;
 
-    async fn save_file(&self, conn: &mut Self::Conn, source_path: &str, file_name: &str) -> Result<(), LightSpeedError>;
+    async fn save_file(
+        &self,
+        conn: &mut Self::Conn,
+        source_path: &str,
+        file_name: &str,
+    ) -> Result<(), LightSpeedError>;
 
-    async fn delete_by_filename(&self, conn: &mut Self::Conn, file_name: &str) -> Result<(), LightSpeedError>;
-
+    async fn delete_by_filename(
+        &self,
+        conn: &mut Self::Conn,
+        file_name: &str,
+    ) -> Result<u64, LightSpeedError>;
 }
 
 #[async_trait::async_trait]

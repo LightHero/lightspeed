@@ -1,6 +1,6 @@
+use crate::repository::FileStoreRepositoryManager;
 use c3p0::*;
 use log::*;
-use crate::repository::FileStoreRepositoryManager;
 
 #[derive(Clone)]
 pub struct FileStoreService<RepoManager: FileStoreRepositoryManager> {

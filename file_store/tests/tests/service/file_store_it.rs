@@ -9,8 +9,6 @@ fn should_save_file_in_db() -> Result<(), LightSpeedError> {
         let data = data(false).await;
         let file_store_module = &data.0.file_store_service;
 
-
         Ok(())
     })
 }
-

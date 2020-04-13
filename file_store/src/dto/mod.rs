@@ -1,5 +1,4 @@
-
 pub enum FileData {
-    FromFs{ file_path: String},
-    InMemory{content: Vec<u8>}
+    FromFs { file_path: String },
+    InMemory { content: Vec<u8> },
 }
