@@ -7,7 +7,7 @@ pub struct LoggerConfig {
     /// Sets the logger [`EnvFilter`].
     /// Valid values: trace, debug, info, warn, error
     /// Example of a valid filter: "warn,my_crate=info,my_crate::my_mod=debug,[my_span]=trace"
-    #[structopt(long, env = "LS_LOGGER_ENV_FILTER")]
+    #[structopt(long, env = "LS_LOGGER_LEVEL", default_value = "info")]
     pub env_filter: String,
 
     /// Determines whether the Logger should print to standard output.

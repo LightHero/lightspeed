@@ -35,9 +35,7 @@ mod inner2 {
 async fn should_setup_logger_with_env_filter() -> Result<(), std::io::Error> {
     let config = LoggerConfig {
         stdout_output: true,
-        env_filter:
-            "warn,logger_env_filter_setup_it::inner1=info,logger_env_filter_setup_it::inner2=debug"
-                .to_owned(),
+        env_filter: "warn".to_owned(),
     };
     setup_logger(&config).unwrap();
 

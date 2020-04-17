@@ -38,7 +38,7 @@ impl<RepoManager: AuthRepositoryManager> TokenService<RepoManager> {
         let token = NewModel::new(TokenData {
             token: new_hyphenated_uuid(),
             token_type,
-            username: username,
+            username,
             expire_at_epoch_seconds: expire_at_epoch,
         });
         self.token_repo.save(conn, token).await
