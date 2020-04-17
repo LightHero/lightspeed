@@ -5,6 +5,7 @@ use c3p0::*;
 use lightspeed_core::error::LightSpeedError;
 use lightspeed_core::service::validator::Validator;
 use lightspeed_core::utils::*;
+use log::*;
 
 #[derive(Clone)]
 pub struct TokenService<RepoManager: AuthRepositoryManager> {
@@ -26,12 +27,18 @@ impl<RepoManager: AuthRepositoryManager> TokenService<RepoManager> {
         username: S,
         token_type: TokenType,
     ) -> Result<TokenModel, LightSpeedError> {
+        let username = username.into();
+        debug!(
+            "Generate and save token of type [{:?}] for username [{}]",
+            token_type, username
+        );
+
         let issued_at = current_epoch_seconds();
         let expire_at_epoch = issued_at + (self.auth_config.token_validity_minutes * 60);
         let token = NewModel::new(TokenData {
             token: new_hyphenated_uuid(),
             token_type,
-            username: username.into(),
+            username: username,
             expire_at_epoch_seconds: expire_at_epoch,
         });
         self.token_repo.save(conn, token).await
@@ -43,6 +50,7 @@ impl<RepoManager: AuthRepositoryManager> TokenService<RepoManager> {
         token: &str,
         validate: bool,
     ) -> Result<TokenModel, LightSpeedError> {
+        debug!("Fetch by token [{}]", token);
         let token_model = self.token_repo.fetch_by_token(conn, token).await?;
 
         if validate {
@@ -57,6 +65,10 @@ impl<RepoManager: AuthRepositoryManager> TokenService<RepoManager> {
         conn: &mut RepoManager::Conn,
         token_model: TokenModel,
     ) -> Result<TokenModel, LightSpeedError> {
+        debug!(
+            "Delete token_model with id [{}] and token [{}]",
+            token_model.id, token_model.data.token
+        );
         self.token_repo.delete(conn, token_model).await
     }
 }

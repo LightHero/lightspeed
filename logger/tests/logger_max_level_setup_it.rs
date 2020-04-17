@@ -21,7 +21,7 @@ mod inner2 {
 }
 
 #[test]
-fn should_setup_logger_with_env_filter() {
+fn should_setup_logger_with_max_level() {
     let config = LoggerConfig {
         stdout_output: true,
         level: "info".to_owned(),

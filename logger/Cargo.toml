@@ -16,3 +16,7 @@ thiserror = "1.0"
 tracing = "0.1.13"
 tracing-subscriber = "0.2"
 structopt = "0.3"
+
+[dev-dependencies]
+tracing-futures = "0.2.3"
+tokio = { version = "0.2", features = ["macros", "rt-threaded"] }

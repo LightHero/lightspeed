@@ -43,6 +43,7 @@ impl<RepoManager: AuthRepositoryManager> AuthAccountService<RepoManager> {
     }
 
     pub async fn login(&self, username: &str, password: &str) -> Result<Auth, LightSpeedError> {
+        debug!("login attempt with username [{}]", username);
         let model = self
             .c3p0
             .transaction(|mut conn| async move {
@@ -91,6 +92,10 @@ impl<RepoManager: AuthRepositoryManager> AuthAccountService<RepoManager> {
         conn: &mut RepoManager::Conn,
         create_login_dto: CreateLoginDto,
     ) -> Result<(AuthAccountModel, TokenModel), LightSpeedError> {
+        info!(
+            "Create login attempt with username [{:?}] and email [{}]",
+            create_login_dto.username, create_login_dto.email
+        );
         let hashed_password = self
             .password_service
             .hash_password(&create_login_dto.password)?;
@@ -151,6 +156,7 @@ impl<RepoManager: AuthRepositoryManager> AuthAccountService<RepoManager> {
         conn: &mut RepoManager::Conn,
         username: &str,
     ) -> Result<TokenModel, LightSpeedError> {
+        debug!("Generate activation token for username [{}]", username);
         self.token_service
             .generate_and_save_token(conn, username, TokenType::ACCOUNT_ACTIVATION)
             .await
@@ -173,6 +179,10 @@ impl<RepoManager: AuthRepositoryManager> AuthAccountService<RepoManager> {
         conn: &mut RepoManager::Conn,
         previous_activation_token: &str,
     ) -> Result<(AuthAccountModel, TokenModel), LightSpeedError> {
+        debug!(
+            "Generate new activation token from previous token [{}]",
+            previous_activation_token
+        );
         let token = self
             .token_service
             .fetch_by_token(conn, previous_activation_token, false)
@@ -220,6 +230,7 @@ impl<RepoManager: AuthRepositoryManager> AuthAccountService<RepoManager> {
         &self,
         activation_token: &str,
     ) -> Result<AuthAccountModel, LightSpeedError> {
+        debug!("Activate user called with token [{}]", activation_token);
         self.c3p0
             .transaction(|mut conn| async move {
                 let conn = &mut conn;
@@ -281,7 +292,7 @@ impl<RepoManager: AuthRepositoryManager> AuthAccountService<RepoManager> {
         conn: &mut RepoManager::Conn,
         username: &str,
     ) -> Result<(AuthAccountModel, TokenModel), LightSpeedError> {
-        info!("Generate reset password token for to [{}]", username);
+        info!("Generate reset password token for username [{}]", username);
 
         let user = self.auth_repo.fetch_by_username(conn, &username).await?;
 
@@ -306,6 +317,10 @@ impl<RepoManager: AuthRepositoryManager> AuthAccountService<RepoManager> {
         &self,
         reset_password_dto: ResetPasswordDto,
     ) -> Result<AuthAccountModel, LightSpeedError> {
+        debug!(
+            "Reset password called with token [{}]",
+            reset_password_dto.token
+        );
         Validator::validate(&reset_password_dto)?;
 
         let result = self
@@ -357,6 +372,8 @@ impl<RepoManager: AuthRepositoryManager> AuthAccountService<RepoManager> {
         &self,
         dto: ChangePasswordDto,
     ) -> Result<AuthAccountModel, LightSpeedError> {
+        info!("Reset password of user_id [{}]", dto.user_id);
+
         Validator::validate(&dto)?;
         self.c3p0
             .transaction(|mut conn| async move {
@@ -395,6 +412,7 @@ impl<RepoManager: AuthRepositoryManager> AuthAccountService<RepoManager> {
         conn: &mut RepoManager::Conn,
         user_id: i64,
     ) -> Result<AuthAccountModel, LightSpeedError> {
+        debug!("Fetch user with user_id [{}]", user_id);
         self.auth_repo.fetch_by_id(conn, user_id).await
     }
 
@@ -414,6 +432,7 @@ impl<RepoManager: AuthRepositoryManager> AuthAccountService<RepoManager> {
         conn: &mut RepoManager::Conn,
         username: &str,
     ) -> Result<AuthAccountModel, LightSpeedError> {
+        debug!("Fetch user with username [{}]", username);
         self.auth_repo.fetch_by_username(conn, username).await
     }
 
@@ -435,6 +454,8 @@ impl<RepoManager: AuthRepositoryManager> AuthAccountService<RepoManager> {
         user_id: i64,
         roles: &[String],
     ) -> Result<AuthAccountModel, LightSpeedError> {
+        info!("Add roles [{:?}] to user_id [{}]", roles, user_id);
+
         let mut account = self.fetch_by_user_id_with_conn(conn, user_id).await?;
         for role in roles {
             if !account.data.roles.contains(role) {
@@ -462,6 +483,8 @@ impl<RepoManager: AuthRepositoryManager> AuthAccountService<RepoManager> {
         user_id: i64,
         roles: &[String],
     ) -> Result<AuthAccountModel, LightSpeedError> {
+        info!("delete roles [{:?}] to user_id [{}]", roles, user_id);
+
         let mut account = self.fetch_by_user_id_with_conn(conn, user_id).await?;
         for role in roles {
             account.data.roles.retain(|r| r != role);
