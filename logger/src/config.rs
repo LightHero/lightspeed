@@ -4,16 +4,11 @@ use structopt::StructOpt;
 #[derive(Debug, Clone, StructOpt)]
 #[structopt(rename_all = "kebab-case")]
 pub struct LoggerConfig {
-    /// The global Logger level.
+    /// Sets the logger [`EnvFilter`].
     /// Valid values: trace, debug, info, warn, error
-    #[structopt(long, env = "LS_LOGGER_LEVEL", default_value = "info")]
-    pub level: String,
-
-    /// Sets the [`EnvFilter`] that the subscriber will use to determine if
-    /// a span or event is enabled.
-    /// Example of a valid filter: "my_crate=info,my_crate::my_mod=debug,[my_span]=trace"
+    /// Example of a valid filter: "warn,my_crate=info,my_crate::my_mod=debug,[my_span]=trace"
     #[structopt(long, env = "LS_LOGGER_ENV_FILTER")]
-    pub env_filter: Option<String>,
+    pub env_filter: String,
 
     /// Determines whether the Logger should print to standard output.
     /// Valid values: true, false
