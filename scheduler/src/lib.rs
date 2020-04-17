@@ -1,6 +1,7 @@
 use crate::error::SchedulerError;
 use crate::job::{Job, JobScheduler};
 use crate::scheduler::Scheduler;
+use chrono::Utc;
 use chrono_tz::{Tz, UTC};
 use log::*;
 use std::convert::TryInto;
@@ -73,24 +74,26 @@ impl JobExecutor {
                         if !is_running {
                             let job_clone = job_scheduler.clone();
                             std::thread::spawn(move || {
-                                info!(
-                                    "Start execution of Job [{}/{}]",
-                                    job_clone.job.group(),
-                                    job_clone.job.name()
-                                );
+                                let timestamp = Utc::now().timestamp();
+                                let group = job_clone.job.group();
+                                let name = job_clone.job.name();
+                                let span =
+                                    tracing::error_span!("run_pending", group, name, timestamp);
+                                let _enter = span.enter();
+
+                                info!("Start execution of Job [{}/{}]", group, name);
                                 match job_clone.run() {
                                     Ok(()) => {
                                         info!(
                                             "Execution of Job [{}/{}] completed successfully",
-                                            job_clone.job.group(),
-                                            job_clone.job.name()
+                                            group, name
                                         );
                                     }
                                     Err(err) => {
                                         error!(
                                             "Execution of Job [{}/{}] completed with errors. Err: {}",
-                                            job_clone.job.group(),
-                                            job_clone.job.name(),
+                                            group,
+                                            name,
                                             err
                                         );
                                     }

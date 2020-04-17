@@ -1,7 +1,6 @@
 use crate::error::SchedulerError;
 use chrono::prelude::*;
 use chrono_tz::Tz;
-use cron;
 use std::convert::TryFrom;
 use std::time::Duration;
 
