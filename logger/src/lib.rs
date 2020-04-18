@@ -1,4 +1,5 @@
 pub mod config;
+pub mod utils;
 
 use std::str::FromStr;
 use thiserror::Error;
