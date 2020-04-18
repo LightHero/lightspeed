@@ -7,7 +7,6 @@ pub async fn request_with_span<
     T,
     E: std::fmt::Display,
 >(
-    request: &str,
     fut: Fut,
 ) -> Result<T, E> {
     let req_id: String = thread_rng().sample_iter(&Alphanumeric).take(10).collect();
@@ -15,7 +14,7 @@ pub async fn request_with_span<
     let span = tracing::error_span!("req", req_id);
     let _enter = span.enter();
 
-    debug!("Start request [{}]", request);
+    debug!("Start request [{}]", req_id);
 
     fut.await
         .map_err(|err| {
