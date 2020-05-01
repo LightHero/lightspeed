@@ -9,6 +9,7 @@ pub struct ErrorCodes {}
 
 impl ErrorCodes {
     pub const INACTIVE_USER: &'static str = "INACTIVE_USER";
+    pub const INCOMPLETE_REQUEST: &'static str = "INCOMPLETE_REQUEST";
     pub const IO_ERROR: &'static str = "IO_ERROR";
     pub const JSON_PARSE_ERROR: &'static str = "JSON_PARSE_ERROR";
     pub const NOT_FOUND: &'static str = "NOT_FOUND";
