@@ -8,7 +8,7 @@ pub mod pg;
 #[async_trait::async_trait(?Send)]
 pub trait AuthRepositoryManager: Clone + Send + Sync {
     type Conn: SqlConnectionAsync;
-    type C3P0: C3p0PoolAsync<CONN = Self::Conn>;
+    type C3P0: C3p0PoolAsync<Conn = Self::Conn>;
     type AuthAccountRepo: AuthAccountRepository<Conn = Self::Conn>;
     type TokenRepo: TokenRepository<Conn = Self::Conn>;
 

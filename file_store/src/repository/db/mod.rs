@@ -7,7 +7,7 @@ pub mod pg;
 #[async_trait::async_trait(?Send)]
 pub trait DBFileStoreRepositoryManager: Clone + Send + Sync {
     type Conn: SqlConnectionAsync;
-    type C3P0: C3p0PoolAsync<CONN = Self::Conn>;
+    type C3P0: C3p0PoolAsync<Conn = Self::Conn>;
     type FileStoreBinaryRepo: DBFileStoreBinaryRepository<Conn = Self::Conn>;
 
     fn c3p0(&self) -> &Self::C3P0;
