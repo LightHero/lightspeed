@@ -5,7 +5,7 @@ use lettre::smtp::authentication::IntoCredentials;
 use lettre::smtp::ConnectionReuseParameters;
 use lettre::{ClientSecurity, ClientTlsParameters, SmtpClient, SmtpTransport, Transport};
 use lettre_email::{Email, Mailbox};
-use lightspeed_core::error::LightSpeedError;
+use lightspeed_core::error::{ErrorCodes, LightSpeedError};
 use log::*;
 use native_tls::TlsConnector;
 use parking_lot::Mutex;
@@ -170,6 +170,7 @@ fn parse_mailbox(address: &str) -> Result<Mailbox, LightSpeedError> {
         .parse::<Mailbox>()
         .map_err(|err| LightSpeedError::BadRequest {
             message: format!("Cannot parse email address [{}]. Err: {}", address, err),
+            code: ErrorCodes::PARSE_ERROR,
         })
 }
 

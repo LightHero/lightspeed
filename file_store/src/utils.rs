@@ -1,4 +1,4 @@
-use lightspeed_core::error::LightSpeedError;
+use lightspeed_core::error::{ErrorCodes, LightSpeedError};
 
 pub async fn read_file<W: tokio::io::AsyncWrite + Unpin + Send>(
     file_path: &str,
@@ -9,6 +9,7 @@ pub async fn read_file<W: tokio::io::AsyncWrite + Unpin + Send>(
             .await
             .map_err(|err| LightSpeedError::BadRequest {
                 message: format!("Cannot open file [{}]. Err: {}", file_path, err),
+                code: ErrorCodes::IO_ERROR,
             })?;
     tokio::io::copy(&mut file, output)
         .await
@@ -17,5 +18,6 @@ pub async fn read_file<W: tokio::io::AsyncWrite + Unpin + Send>(
                 "Cannot copy file content to output writer [{}]. Err: {}",
                 file_path, err
             ),
+            code: ErrorCodes::IO_ERROR,
         })
 }

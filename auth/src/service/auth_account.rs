@@ -8,7 +8,7 @@ use crate::repository::{AuthAccountRepository, AuthRepositoryManager};
 use crate::service::password_codec::PasswordCodecService;
 use crate::service::token::TokenService;
 use c3p0::*;
-use lightspeed_core::error::{ErrorDetails, LightSpeedError};
+use lightspeed_core::error::*;
 use lightspeed_core::service::auth::Auth;
 use lightspeed_core::service::validator::{Validator, ERR_NOT_UNIQUE};
 use lightspeed_core::utils::current_epoch_seconds;
@@ -72,6 +72,7 @@ impl<RepoManager: AuthRepositoryManager> AuthAccountService<RepoManager> {
 
         Err(LightSpeedError::BadRequest {
             message: "".to_string(),
+            code: ErrorCodes::WRONG_CREDENTIALS,
         })
     }
 
@@ -214,6 +215,7 @@ impl<RepoManager: AuthRepositoryManager> AuthAccountService<RepoManager> {
                         "User [{}] not in status PendingActivation",
                         token.data.username
                     ),
+                    code: ErrorCodes::NOT_PENDING_USER,
                 })
             }
         };
@@ -262,6 +264,7 @@ impl<RepoManager: AuthRepositoryManager> AuthAccountService<RepoManager> {
                                 "User [{}] not in status PendingActivation",
                                 token.data.username
                             ),
+                            code: ErrorCodes::NOT_PENDING_USER,
                         })
                     }
                 };
@@ -301,6 +304,7 @@ impl<RepoManager: AuthRepositoryManager> AuthAccountService<RepoManager> {
             _ => {
                 return Err(LightSpeedError::BadRequest {
                     message: format!("User [{}] not in status Active", username),
+                    code: ErrorCodes::INACTIVE_USER,
                 })
             }
         };
@@ -352,6 +356,7 @@ impl<RepoManager: AuthRepositoryManager> AuthAccountService<RepoManager> {
                     _ => {
                         return Err(LightSpeedError::BadRequest {
                             message: format!("User [{}] not in status Active", token.data.username),
+                            code: ErrorCodes::INACTIVE_USER,
                         })
                     }
                 };
@@ -386,6 +391,7 @@ impl<RepoManager: AuthRepositoryManager> AuthAccountService<RepoManager> {
                     _ => {
                         return Err(LightSpeedError::BadRequest {
                             message: format!("User [{}] not in status Active", user.data.username),
+                            code: ErrorCodes::INACTIVE_USER,
                         })
                     }
                 };
@@ -396,6 +402,7 @@ impl<RepoManager: AuthRepositoryManager> AuthAccountService<RepoManager> {
                 {
                     return Err(LightSpeedError::BadRequest {
                         message: "Wrong credentials".to_owned(),
+                        code: ErrorCodes::WRONG_CREDENTIALS,
                     });
                 }
 

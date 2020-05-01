@@ -1,5 +1,5 @@
 use crate::dto::FileData;
-use lightspeed_core::error::LightSpeedError;
+use lightspeed_core::error::{ErrorCodes, LightSpeedError};
 use log::*;
 use std::path::Path;
 
@@ -39,6 +39,7 @@ impl FsFileStoreBinaryRepository {
                     "FsFileStoreDataRepository - Cannot save file [{}] because it already exists.",
                     destination_file_path,
                 ),
+                code: ErrorCodes::IO_ERROR,
             });
         }
 
@@ -50,6 +51,7 @@ impl FsFileStoreBinaryRepository {
                         destination_file_path,
                         err
                     ),
+                    code: ErrorCodes::IO_ERROR,
                 })?;
             }
             None => warn!(
@@ -65,6 +67,7 @@ impl FsFileStoreBinaryRepository {
                     "FsFileStoreDataRepository - Cannot copy file from [{:?}] to [{}]. Err: {}",
                     source_path, destination_file_path, err
                 ),
+                code: ErrorCodes::IO_ERROR,
             })?;
         Ok(())
     }
@@ -79,6 +82,7 @@ impl FsFileStoreBinaryRepository {
                         "FsFileStoreDataRepository - Cannot delete file [{}]. Err: {}",
                         to, err
                     ),
+                    code: ErrorCodes::IO_ERROR,
                 })?;
             Ok(1)
         } else {

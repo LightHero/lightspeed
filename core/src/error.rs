@@ -5,6 +5,18 @@ use std::collections::HashMap;
 use thiserror::Error;
 use typescript_definitions::TypeScriptify;
 
+pub struct ErrorCodes {}
+
+impl ErrorCodes {
+    pub const INACTIVE_USER: &'static str = "INACTIVE_USER";
+    pub const IO_ERROR: &'static str = "IO_ERROR";
+    pub const JSON_PARSE_ERROR: &'static str = "JSON_PARSE_ERROR";
+    pub const NOT_FOUND: &'static str = "NOT_FOUND";
+    pub const NOT_PENDING_USER: &'static str = "NOT_PENDING_USER";
+    pub const PARSE_ERROR: &'static str = "PARSE_ERROR";
+    pub const WRONG_CREDENTIALS: &'static str = "WRONG_CREDENTIALS";
+}
+
 #[derive(Error, Debug)]
 pub enum LightSpeedError {
     // JWT
@@ -45,7 +57,7 @@ pub enum LightSpeedError {
     ValidationError { details: RootErrorDetails },
 
     #[error("BadRequest [{message}]")]
-    BadRequest { message: String },
+    BadRequest { message: String, code: &'static str },
 
     #[error("RequestConflict [{message}]")]
     RequestConflict { message: String, code: &'static str },
@@ -236,6 +248,7 @@ impl From<serde_json::Error> for LightSpeedError {
     fn from(err: serde_json::Error) -> Self {
         LightSpeedError::BadRequest {
             message: format!("{}", err),
+            code: ErrorCodes::JSON_PARSE_ERROR,
         }
     }
 }

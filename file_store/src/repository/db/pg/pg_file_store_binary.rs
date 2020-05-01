@@ -1,7 +1,7 @@
 use crate::dto::FileData;
 use crate::repository::db::DBFileStoreBinaryRepository;
 use c3p0::pg::*;
-use lightspeed_core::error::LightSpeedError;
+use lightspeed_core::error::{ErrorCodes, LightSpeedError};
 use tokio::fs::File;
 use tokio::io::AsyncReadExt;
 
@@ -52,6 +52,7 @@ impl DBFileStoreBinaryRepository for PgFileStoreBinaryRepository {
                         "PgFileStoreBinaryRepository - Cannot open file [{}]. Err: {}",
                         file_name, err
                     ),
+                    code: ErrorCodes::IO_ERROR,
                 })?;
         let mut contents = vec![];
         file.read_to_end(&mut contents)
@@ -61,6 +62,7 @@ impl DBFileStoreBinaryRepository for PgFileStoreBinaryRepository {
                     "PgFileStoreBinaryRepository - Cannot read file [{}]. Err: {}",
                     file_name, err
                 ),
+                code: ErrorCodes::IO_ERROR,
             })?;
 
         let sql = &format!(

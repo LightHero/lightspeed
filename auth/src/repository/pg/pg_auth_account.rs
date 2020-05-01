@@ -2,7 +2,7 @@ use crate::model::auth_account::{AuthAccountData, AuthAccountDataCodec, AuthAcco
 use crate::repository::AuthAccountRepository;
 use c3p0::pg::*;
 use c3p0::*;
-use lightspeed_core::error::LightSpeedError;
+use lightspeed_core::error::{ErrorCodes, LightSpeedError};
 use std::ops::Deref;
 
 #[derive(Clone)]
@@ -39,6 +39,7 @@ impl AuthAccountRepository for PgAuthAccountRepository {
             .await?
             .ok_or_else(|| LightSpeedError::BadRequest {
                 message: format!("No user found with username [{}]", username),
+                code: ErrorCodes::NOT_FOUND,
             })
     }
 

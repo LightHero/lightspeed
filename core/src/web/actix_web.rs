@@ -83,7 +83,13 @@ impl ResponseError for LightSpeedError {
                     details,
                 ))
             }
-            LightSpeedError::BadRequest { .. } => HttpResponse::BadRequest().finish(),
+            LightSpeedError::BadRequest { code, .. } => {
+                let http_code = http::StatusCode::BAD_REQUEST;
+                HttpResponseBuilder::new(http_code).json(WebErrorDetails::from_message(
+                    http_code.as_u16(),
+                    &Some((*code).to_string()),
+                ))
+            }
             LightSpeedError::RequestConflict { code, .. } => {
                 let http_code = http::StatusCode::CONFLICT;
                 HttpResponseBuilder::new(http_code).json(WebErrorDetails::from_message(
