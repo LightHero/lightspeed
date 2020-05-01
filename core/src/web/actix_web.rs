@@ -7,9 +7,7 @@ use log::*;
 
 pub const JWT_TOKEN_HEADER: &str = "Authorization";
 pub const JWT_TOKEN_HEADER_SUFFIX: &str = "Bearer ";
-
-// This must be equal to JWT_TOKEN_HEADER_SUFFIX.len()
-pub const JWT_TOKEN_HEADER_SUFFIX_LEN: usize = 7;
+pub const JWT_TOKEN_HEADER_SUFFIX_LEN: usize = JWT_TOKEN_HEADER_SUFFIX.len();
 
 #[derive(Clone)]
 pub struct WebAuthService<T: RolesProvider> {
@@ -65,7 +63,6 @@ impl<T: RolesProvider> WebAuthService<T> {
     }
 }
 
-
 impl ResponseError for LightSpeedError {
     fn error_response(&self) -> HttpResponse {
         match self {
@@ -74,13 +71,9 @@ impl ResponseError for LightSpeedError {
             | LightSpeedError::GenerateTokenError { .. }
             | LightSpeedError::MissingAuthTokenError { .. }
             | LightSpeedError::ParseAuthHeaderError { .. }
-            | LightSpeedError::UnauthenticatedError => {
-                HttpResponse::Unauthorized().finish()
-            }
-            LightSpeedError::ForbiddenError { .. } => {
-                HttpResponse::Forbidden().finish()
-            }
-            LightSpeedError::InternalServerError { message } => {
+            | LightSpeedError::UnauthenticatedError => HttpResponse::Unauthorized().finish(),
+            LightSpeedError::ForbiddenError { .. } => HttpResponse::Forbidden().finish(),
+            LightSpeedError::InternalServerError { .. } => {
                 HttpResponse::InternalServerError().finish()
             }
             LightSpeedError::ValidationError { details } => {
@@ -90,9 +83,7 @@ impl ResponseError for LightSpeedError {
                     details,
                 ))
             }
-            LightSpeedError::BadRequest { .. } => {
-                HttpResponse::BadRequest().finish()
-            }
+            LightSpeedError::BadRequest { .. } => HttpResponse::BadRequest().finish(),
             LightSpeedError::RequestConflict { code, .. } => {
                 let http_code = http::StatusCode::CONFLICT;
                 HttpResponseBuilder::new(http_code).json(WebErrorDetails::from_message(
@@ -117,8 +108,6 @@ impl ResponseError for LightSpeedError {
         }
     }
 }
-
-
 
 #[cfg(test)]
 mod test {

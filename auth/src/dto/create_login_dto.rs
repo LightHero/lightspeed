@@ -4,7 +4,7 @@ use lightspeed_core::service::validator::boolean::validate_is_true;
 use lightspeed_core::service::validator::email::validate_email;
 use lightspeed_core::service::validator::must_match::validate_must_be_equals;
 use lightspeed_core::service::validator::Validable;
-use serde_derive::{Deserialize, Serialize};
+use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use typescript_definitions::TypeScriptify;
 

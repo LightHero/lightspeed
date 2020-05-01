@@ -18,8 +18,7 @@ lettre_email = "0.9"
 native-tls = "0.2.3"
 log = "0.4"
 parking_lot = "0.10"
-serde = { version = "1.0" , features = ["rc"] }
-serde_derive = "1"
+serde = { version = "1.0" , features = ["derive", "rc"] }
 structopt = "0.3"
 tokio = { version = "0.2" , features = ["blocking"] }
 

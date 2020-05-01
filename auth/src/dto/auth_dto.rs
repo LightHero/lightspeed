@@ -1,5 +1,5 @@
 use lightspeed_core::service::auth::Auth;
-use serde_derive::{Deserialize, Serialize};
+use serde::{Deserialize, Serialize};
 use typescript_definitions::TypeScriptify;
 
 #[derive(Serialize, Deserialize, TypeScriptify)]

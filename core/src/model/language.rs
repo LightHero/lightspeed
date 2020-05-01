@@ -1,5 +1,5 @@
 use crate::error::LightSpeedError;
-use serde_derive::{Deserialize, Serialize};
+use serde::{Deserialize, Serialize};
 use std::str::FromStr;
 use strum_macros::{AsRefStr, Display, EnumIter};
 use typescript_definitions::TypeScriptify;

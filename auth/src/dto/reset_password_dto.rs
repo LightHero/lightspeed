@@ -1,7 +1,7 @@
 use lightspeed_core::error::{ErrorDetails, LightSpeedError};
 use lightspeed_core::service::validator::must_match::validate_must_be_equals;
 use lightspeed_core::service::validator::Validable;
-use serde_derive::{Deserialize, Serialize};
+use serde::{Deserialize, Serialize};
 use typescript_definitions::TypeScriptify;
 
 #[derive(Serialize, Deserialize, TypeScriptify)]

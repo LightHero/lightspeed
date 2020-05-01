@@ -1,5 +1,5 @@
 use crate::error::LightSpeedError;
-use serde_derive::{Deserialize, Serialize};
+use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::sync::Arc;
 use typescript_definitions::TypeScriptify;

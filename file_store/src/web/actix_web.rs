@@ -1,10 +1,7 @@
 use crate::dto::FileData;
 use actix_files::NamedFile;
-use actix_web_external::dev::HttpResponseBuilder;
-use actix_web_external::{http, HttpRequest, HttpResponse, Responder, ResponseError};
+use actix_web_external::{http, HttpRequest, HttpResponse, Responder};
 use futures::future::{ready, Ready};
-use futures::TryFutureExt;
-use lightspeed_core::error::LightSpeedError;
 use log::*;
 
 impl Responder for FileData {

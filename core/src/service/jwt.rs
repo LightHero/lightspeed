@@ -2,7 +2,7 @@ use crate::config::JwtConfig;
 use crate::error::LightSpeedError;
 use crate::utils::current_epoch_seconds;
 use jsonwebtoken::{DecodingKey, EncodingKey};
-use serde_derive::{Deserialize, Serialize};
+use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]

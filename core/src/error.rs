@@ -1,5 +1,5 @@
 use c3p0_common::error::C3p0Error;
-use serde_derive::Serialize;
+use serde::Serialize;
 use std::collections::hash_map::Entry;
 use std::collections::HashMap;
 use thiserror::Error;
