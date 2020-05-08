@@ -10,7 +10,7 @@ use lightspeed_auth::repository::AuthRepositoryManager;
 use lightspeed_auth::service::auth_account::AuthAccountService;
 use lightspeed_core::error::LightSpeedError;
 use lightspeed_core::model::language::Language;
-use lightspeed_core::utils::new_hyphenated_uuid;
+use lightspeed_core::utils::{current_epoch_seconds, new_hyphenated_uuid};
 use std::collections::HashMap;
 
 #[test]
@@ -456,11 +456,23 @@ fn should_login_active_user() -> Result<(), LightSpeedError> {
         let password = "123456789";
         let (user, _) = create_user_with_password(&auth_module, password, true).await?;
 
+        let auth_validity_seconds = auth_module.auth_config.auth_session_max_validity_minutes * 60;
+        let before_login_ts_seconds = current_epoch_seconds();
+
         let auth = auth_module
             .auth_account_service
             .login(&user.data.username, password)
             .await?;
+
+        let after_login_ts_seconds = current_epoch_seconds();
+
         assert_eq!(user.data.username, auth.username);
+
+        assert!(auth.creation_ts_seconds >= before_login_ts_seconds);
+        assert!(auth.creation_ts_seconds <= after_login_ts_seconds);
+
+        assert!(auth.expiration_ts_seconds >= before_login_ts_seconds + auth_validity_seconds);
+        assert!(auth.expiration_ts_seconds <= after_login_ts_seconds + auth_validity_seconds);
 
         Ok(())
     })

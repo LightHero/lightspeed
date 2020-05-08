@@ -1,9 +1,9 @@
 use crate::error::LightSpeedError;
+use crate::utils::current_epoch_seconds;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::sync::Arc;
 use typescript_definitions::TypeScriptify;
-use crate::utils::current_epoch_seconds;
 
 #[derive(Debug, Clone, Serialize, Deserialize, TypeScriptify)]
 #[serde(rename_all = "camelCase")]
@@ -16,7 +16,13 @@ pub struct Auth {
 }
 
 impl Auth {
-    pub fn new<S: Into<String>>(id: i64, username: S, roles: Vec<String>, creation_ts_seconds: i64, expiration_ts_seconds: i64) -> Self {
+    pub fn new<S: Into<String>>(
+        id: i64,
+        username: S,
+        roles: Vec<String>,
+        creation_ts_seconds: i64,
+        expiration_ts_seconds: i64,
+    ) -> Self {
         Self {
             id,
             username: username.into(),
@@ -34,7 +40,7 @@ impl Default for Auth {
             username: "".to_owned(),
             roles: vec![],
             creation_ts_seconds: 0,
-            expiration_ts_seconds: 0
+            expiration_ts_seconds: 0,
         }
     }
 }
@@ -76,7 +82,9 @@ impl<'a> AuthContext<'a> {
     }
 
     pub fn is_authenticated(&self) -> Result<&AuthContext, LightSpeedError> {
-        if self.auth.username.is_empty() || self.auth.expiration_ts_seconds < current_epoch_seconds() {
+        if self.auth.username.is_empty()
+            || self.auth.expiration_ts_seconds < current_epoch_seconds()
+        {
             return Err(LightSpeedError::UnauthenticatedError {});
         };
         Ok(&self)
@@ -405,7 +413,11 @@ mod test_auth_context {
             expiration_ts_seconds: current_epoch_seconds() + 100,
         };
         let auth_context = auth_service.auth(user);
-        assert!(auth_context.is_authenticated().is_err());
+
+        match auth_context.is_authenticated() {
+            Err(LightSpeedError::UnauthenticatedError) => {}
+            _ => assert!(false, "Should return UnauthenticatedError if no username"),
+        }
     }
 
     #[test]
@@ -422,7 +434,11 @@ mod test_auth_context {
             expiration_ts_seconds: current_epoch_seconds() - 1,
         };
         let auth_context = auth_service.auth(user);
-        assert!(auth_context.is_authenticated().is_err());
+
+        match auth_context.is_authenticated() {
+            Err(LightSpeedError::UnauthenticatedError) => {}
+            _ => assert!(false, "Should return UnauthenticatedError if expired"),
+        }
     }
 
     #[test]
