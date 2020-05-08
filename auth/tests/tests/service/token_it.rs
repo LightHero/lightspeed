@@ -62,7 +62,7 @@ fn should_generate_token() -> Result<(), LightSpeedError> {
                 .await?;
             let after = current_epoch_seconds();
 
-            let expiration_seconds = &auth_module.auth_config.token_validity_minutes * 60;
+            let expiration_seconds = &auth_module.auth_config.activation_token_validity_minutes * 60;
 
             assert_eq!(username, token.data.username);
 

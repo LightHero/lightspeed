@@ -3,6 +3,7 @@ use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::sync::Arc;
 use typescript_definitions::TypeScriptify;
+use crate::utils::current_epoch_seconds;
 
 #[derive(Debug, Clone, Serialize, Deserialize, TypeScriptify)]
 #[serde(rename_all = "camelCase")]
@@ -10,14 +11,18 @@ pub struct Auth {
     pub id: i64,
     pub username: String,
     pub roles: Vec<String>,
+    pub creation_ts_seconds: i64,
+    pub expiration_ts_seconds: i64,
 }
 
 impl Auth {
-    pub fn new<S: Into<String>>(id: i64, username: S, roles: Vec<String>) -> Self {
+    pub fn new<S: Into<String>>(id: i64, username: S, roles: Vec<String>, creation_ts_seconds: i64, expiration_ts_seconds: i64) -> Self {
         Self {
             id,
             username: username.into(),
             roles,
+            creation_ts_seconds,
+            expiration_ts_seconds,
         }
     }
 }
@@ -28,6 +33,8 @@ impl Default for Auth {
             id: -1,
             username: "".to_owned(),
             roles: vec![],
+            creation_ts_seconds: 0,
+            expiration_ts_seconds: 0
         }
     }
 }
@@ -69,7 +76,7 @@ impl<'a> AuthContext<'a> {
     }
 
     pub fn is_authenticated(&self) -> Result<&AuthContext, LightSpeedError> {
-        if self.auth.username.is_empty() {
+        if self.auth.username.is_empty() || self.auth.expiration_ts_seconds < current_epoch_seconds() {
             return Err(LightSpeedError::UnauthenticatedError {});
         };
         Ok(&self)
@@ -116,7 +123,7 @@ impl<'a> AuthContext<'a> {
     }
 
     pub fn has_permission(&self, permission: &str) -> Result<&AuthContext, LightSpeedError> {
-        self.is_authenticated()?.has_permission_bool(&permission);
+        self.is_authenticated()?;
 
         if !self.has_permission_bool(&permission) {
             return Err(LightSpeedError::ForbiddenError {
@@ -353,6 +360,7 @@ mod test_role_provider {
 mod test_auth_context {
 
     use super::*;
+    use crate::utils::current_epoch_seconds;
 
     #[test]
     fn service_should_be_send_and_sync() {
@@ -376,13 +384,15 @@ mod test_auth_context {
             id: 0,
             username: "name".to_string(),
             roles: vec![],
+            creation_ts_seconds: 0,
+            expiration_ts_seconds: current_epoch_seconds() + 100,
         };
         let auth_context = auth_service.auth(user);
         assert!(auth_context.is_authenticated().is_ok());
     }
 
     #[test]
-    fn should_be_not_authenticated() {
+    fn should_be_not_authenticated_if_no_username() {
         let provider = super::InMemoryRolesProvider::new(vec![]);
         let auth_service = super::AuthService {
             roles_provider: provider,
@@ -391,6 +401,25 @@ mod test_auth_context {
             id: 0,
             username: "".to_string(),
             roles: vec![],
+            creation_ts_seconds: 0,
+            expiration_ts_seconds: current_epoch_seconds() + 100,
+        };
+        let auth_context = auth_service.auth(user);
+        assert!(auth_context.is_authenticated().is_err());
+    }
+
+    #[test]
+    fn should_be_not_authenticated_if_expired() {
+        let provider = super::InMemoryRolesProvider::new(vec![]);
+        let auth_service = super::AuthService {
+            roles_provider: provider,
+        };
+        let user = Auth {
+            id: 10,
+            username: "name".to_string(),
+            roles: vec![],
+            creation_ts_seconds: 0,
+            expiration_ts_seconds: current_epoch_seconds() - 1,
         };
         let auth_context = auth_service.auth(user);
         assert!(auth_context.is_authenticated().is_err());
@@ -406,6 +435,8 @@ mod test_auth_context {
             id: 0,
             username: "".to_string(),
             roles: vec!["ADMIN".to_string()],
+            creation_ts_seconds: 0,
+            expiration_ts_seconds: current_epoch_seconds() + 100,
         };
         let auth_context = auth_service.auth(user);
         assert!(auth_context.has_role("ADMIN").is_err());
@@ -421,6 +452,8 @@ mod test_auth_context {
             id: 0,
             username: "name".to_string(),
             roles: vec!["ADMIN".to_string()],
+            creation_ts_seconds: 0,
+            expiration_ts_seconds: current_epoch_seconds() + 100,
         };
         let auth_context = auth_service.auth(user);
         assert!(auth_context.has_role("ADMIN").is_ok());
@@ -436,6 +469,8 @@ mod test_auth_context {
             id: 0,
             username: "name".to_string(),
             roles: vec!["ADMIN".to_string(), "USER".to_string()],
+            creation_ts_seconds: 0,
+            expiration_ts_seconds: current_epoch_seconds() + 100,
         };
         let auth_context = auth_service.auth(user);
         assert!(auth_context.has_role("USER").is_ok());
@@ -451,6 +486,8 @@ mod test_auth_context {
             id: 0,
             username: "name".to_string(),
             roles: vec!["ADMIN".to_string(), "USER".to_string()],
+            creation_ts_seconds: 0,
+            expiration_ts_seconds: current_epoch_seconds() + 100,
         };
         let auth = auth_service.auth(user);
         assert!(auth
@@ -469,6 +506,8 @@ mod test_auth_context {
             id: 0,
             username: "name".to_string(),
             roles: vec!["ADMIN".to_string()],
+            creation_ts_seconds: 0,
+            expiration_ts_seconds: current_epoch_seconds() + 100,
         };
         let auth_context = auth_service.auth(user);
         assert!(auth_context.has_role("USER").is_err());
@@ -484,6 +523,8 @@ mod test_auth_context {
             id: 0,
             username: "name".to_string(),
             roles: vec!["ADMIN".to_string(), "USER".to_string()],
+            creation_ts_seconds: 0,
+            expiration_ts_seconds: current_epoch_seconds() + 100,
         };
         let auth_context = auth_service.auth(user);
         assert!(auth_context.has_any_role(&["USER", "FRIEND"]).is_ok());
@@ -499,6 +540,8 @@ mod test_auth_context {
             id: 0,
             username: "name".to_string(),
             roles: vec!["ADMIN".to_string(), "OWNER".to_string()],
+            creation_ts_seconds: 0,
+            expiration_ts_seconds: current_epoch_seconds() + 100,
         };
         let auth_context = auth_service.auth(user);
         assert!(auth_context.has_any_role(&["USER", "FRIEND"]).is_err());
@@ -518,6 +561,8 @@ mod test_auth_context {
                 "USER".to_string(),
                 "FRIEND".to_string(),
             ],
+            creation_ts_seconds: 0,
+            expiration_ts_seconds: current_epoch_seconds() + 100,
         };
         let auth_context = auth_service.auth(user);
         assert!(auth_context.has_all_roles(&["USER", "FRIEND"]).is_ok());
@@ -533,6 +578,8 @@ mod test_auth_context {
             id: 0,
             username: "name".to_string(),
             roles: vec!["ADMIN".to_string(), "USER".to_string()],
+            creation_ts_seconds: 0,
+            expiration_ts_seconds: current_epoch_seconds() + 100,
         };
         let auth_context = auth_service.auth(user);
         assert!(auth_context.has_all_roles(&["USER", "FRIEND"]).is_err());
@@ -552,6 +599,8 @@ mod test_auth_context {
             id: 0,
             username: "".to_string(),
             roles: vec!["ADMIN".to_string()],
+            creation_ts_seconds: 0,
+            expiration_ts_seconds: current_epoch_seconds() + 100,
         };
         let auth_context = auth_service.auth(user);
         assert!(auth_context.has_permission("delete").is_err());
@@ -577,6 +626,8 @@ mod test_auth_context {
             id: 0,
             username: "name".to_string(),
             roles: vec!["ADMIN".to_string()],
+            creation_ts_seconds: 0,
+            expiration_ts_seconds: current_epoch_seconds() + 100,
         };
         let auth_context = auth_service.auth(user);
         assert!(auth_context.has_permission("delete").is_ok());
@@ -602,6 +653,8 @@ mod test_auth_context {
             id: 0,
             username: "name".to_string(),
             roles: vec!["ADMIN".to_string(), "OWNER".to_string()],
+            creation_ts_seconds: 0,
+            expiration_ts_seconds: current_epoch_seconds() + 100,
         };
         let auth_context = auth_service.auth(user);
         assert!(auth_context.has_permission("delete").is_ok());
@@ -627,6 +680,8 @@ mod test_auth_context {
             id: 0,
             username: "name".to_string(),
             roles: vec!["USER".to_string()],
+            creation_ts_seconds: 0,
+            expiration_ts_seconds: current_epoch_seconds() + 100,
         };
         let auth_context = auth_service.auth(user);
         assert!(auth_context.has_permission("delete").is_err());
@@ -652,6 +707,8 @@ mod test_auth_context {
             id: 0,
             username: "name".to_string(),
             roles: vec!["USER".to_string(), "ADMIN".to_string()],
+            creation_ts_seconds: 0,
+            expiration_ts_seconds: current_epoch_seconds() + 100,
         };
         let auth_context = auth_service.auth(user);
         assert!(auth_context
@@ -679,6 +736,8 @@ mod test_auth_context {
             id: 0,
             username: "name".to_string(),
             roles: vec!["USER".to_string()],
+            creation_ts_seconds: 0,
+            expiration_ts_seconds: current_epoch_seconds() + 100,
         };
         let auth_context = auth_service.auth(user);
         assert!(auth_context
@@ -710,6 +769,8 @@ mod test_auth_context {
             id: 0,
             username: "name".to_string(),
             roles: vec!["USER".to_string(), "ADMIN".to_string()],
+            creation_ts_seconds: 0,
+            expiration_ts_seconds: current_epoch_seconds() + 100,
         };
         let auth_context = auth_service.auth(user);
         assert!(auth_context
@@ -737,6 +798,8 @@ mod test_auth_context {
             id: 0,
             username: "name".to_string(),
             roles: vec!["USER".to_string(), "ADMIN".to_string()],
+            creation_ts_seconds: 0,
+            expiration_ts_seconds: current_epoch_seconds() + 100,
         };
         let auth_context = auth_service.auth(user);
         assert!(auth_context
@@ -755,6 +818,8 @@ mod test_auth_context {
             id: 0,
             username: "name".to_string(),
             roles: vec!["USER".to_string(), "ADMIN".to_string()],
+            creation_ts_seconds: 0,
+            expiration_ts_seconds: current_epoch_seconds() + 100,
         };
         let auth_context = auth_service.auth(user);
         assert!(auth_context.is_owner(&Ownable { owner_id: 0 }).is_ok());
@@ -771,6 +836,8 @@ mod test_auth_context {
             id: 0,
             username: "name".to_string(),
             roles: vec!["USER".to_string(), "ADMIN".to_string()],
+            creation_ts_seconds: 0,
+            expiration_ts_seconds: current_epoch_seconds() + 100,
         };
         let auth_context = auth_service.auth(user);
         assert!(auth_context.is_owner(&Ownable { owner_id: 1 }).is_err());
@@ -790,6 +857,8 @@ mod test_auth_context {
             id: 0,
             username: "name".to_string(),
             roles: vec!["ROLE_1".to_string()],
+            creation_ts_seconds: 0,
+            expiration_ts_seconds: current_epoch_seconds() + 100,
         };
         let auth_context = auth_service.auth(user);
         assert!(auth_context
@@ -811,6 +880,8 @@ mod test_auth_context {
             id: 0,
             username: "name".to_string(),
             roles: vec!["ROLE_1".to_string()],
+            creation_ts_seconds: 0,
+            expiration_ts_seconds: current_epoch_seconds() + 100,
         };
         let auth_context = auth_service.auth(user);
         assert!(auth_context
@@ -832,6 +903,8 @@ mod test_auth_context {
             id: 0,
             username: "name".to_string(),
             roles: vec!["ROLE_1".to_string()],
+            creation_ts_seconds: 0,
+            expiration_ts_seconds: current_epoch_seconds() + 100,
         };
         let auth_context = auth_service.auth(user);
         assert!(auth_context
@@ -853,6 +926,8 @@ mod test_auth_context {
             id: 0,
             username: "name".to_string(),
             roles: vec!["ROLE_1".to_string()],
+            creation_ts_seconds: 0,
+            expiration_ts_seconds: current_epoch_seconds() + 100,
         };
         let auth_context = auth_service.auth(user);
         assert!(auth_context
@@ -874,6 +949,8 @@ mod test_auth_context {
             id: 0,
             username: "name".to_string(),
             roles: vec!["ROLE_1".to_string()],
+            creation_ts_seconds: 0,
+            expiration_ts_seconds: current_epoch_seconds() + 100,
         };
         let auth_context = auth_service.auth(user);
         assert!(auth_context
@@ -895,6 +972,8 @@ mod test_auth_context {
             id: 0,
             username: "name".to_string(),
             roles: vec!["ROLE_1".to_string()],
+            creation_ts_seconds: 0,
+            expiration_ts_seconds: current_epoch_seconds() + 100,
         };
         let auth_context = auth_service.auth(user);
         assert!(auth_context
@@ -916,6 +995,8 @@ mod test_auth_context {
             id: 0,
             username: "name".to_string(),
             roles: vec!["ROLE_1".to_string(), "ROLE_2".to_string()],
+            creation_ts_seconds: 0,
+            expiration_ts_seconds: current_epoch_seconds() + 100,
         };
         let auth_context = auth_service.auth(user);
 
@@ -950,6 +1031,8 @@ mod test_auth_context {
             id: 0,
             username: "name".to_string(),
             roles: vec!["ROLE_1".to_string(), "ROLE_2".to_string()],
+            creation_ts_seconds: 0,
+            expiration_ts_seconds: current_epoch_seconds() + 100,
         };
         let auth_context = auth_service.auth(user);
 
