@@ -149,6 +149,8 @@ mod test {
                 username: "Amelia".to_owned(),
                 id: 100,
                 roles: vec![],
+                creation_ts_seconds: 0,
+                expiration_ts_seconds: i64::MAX,
             },
             exp: 0,
             iat: 0,
@@ -183,6 +185,8 @@ mod test {
             username: "Amelia".to_owned(),
             id: 100,
             roles: vec![],
+            creation_ts_seconds: 0,
+            expiration_ts_seconds: i64::MAX,
         };
         let token = new_service().token_from_auth(&auth).unwrap();
 
@@ -210,6 +214,8 @@ mod test {
             username: "Amelia".to_owned(),
             id: 100,
             roles: vec![],
+            creation_ts_seconds: 0,
+            expiration_ts_seconds: i64::MAX,
         };
         let token = new_service().token_from_auth(&auth).unwrap();
 
@@ -245,10 +251,13 @@ mod test {
 
     fn new_service() -> WebAuthService<InMemoryRolesProvider> {
         WebAuthService {
-            auth_service: AuthService::new(InMemoryRolesProvider::new(vec![Role {
-                name: "admin".to_owned(),
-                permissions: vec![],
-            }])),
+            auth_service: AuthService::new(InMemoryRolesProvider::new(
+                vec![Role {
+                    name: "admin".to_owned(),
+                    permissions: vec![],
+                }]
+                .into(),
+            )),
             jwt_service: JwtService::new(&JwtConfig {
                 secret: "secret".to_owned(),
                 signature_algorithm: Algorithm::HS256,
