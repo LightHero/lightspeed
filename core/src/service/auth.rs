@@ -1,7 +1,7 @@
 use crate::error::LightSpeedError;
 use crate::utils::current_epoch_seconds;
 use serde::{Deserialize, Serialize};
-use std::collections::{HashMap, BTreeMap};
+use std::collections::{BTreeMap, HashMap};
 use std::sync::Arc;
 use typescript_definitions::TypeScriptify;
 
@@ -62,43 +62,43 @@ pub struct AuthService<T: RolesProvider> {
 }
 
 impl<T: RolesProvider> AuthService<T> {
-
     pub fn new(roles_provider: T) -> AuthService<T> {
         AuthService {
-            permission_roles_map: AuthService::<T>::roles_map_to_permissions_map(roles_provider.fetch_all()),
-            roles_provider
+            permission_roles_map: AuthService::<T>::roles_map_to_permissions_map(
+                roles_provider.fetch_all(),
+            ),
+            roles_provider,
         }
     }
 
     pub fn auth(&self, auth: Auth) -> AuthContext {
         AuthContext {
             auth,
-            permission_roles_map: &self.permission_roles_map
+            permission_roles_map: &self.permission_roles_map,
         }
     }
 
     /// Creates a permission_roles_map from an array of Roles
-    fn roles_map_to_permissions_map(
-        roles: Vec<Role>,
-    ) -> BTreeMap<String, Vec<String>> {
+    fn roles_map_to_permissions_map(roles: Vec<Role>) -> BTreeMap<String, Vec<String>> {
         let mut result = BTreeMap::new();
         for role in roles {
             for permission in role.permissions {
-                result.entry(permission).or_insert_with(|| vec![]).push(role.name.clone())
+                result
+                    .entry(permission)
+                    .or_insert_with(|| vec![])
+                    .push(role.name.clone())
             }
         }
         result
     }
-
 }
 
 pub struct AuthContext<'a> {
     pub auth: Auth,
-    permission_roles_map: &'a BTreeMap<String, Vec<String>>
+    permission_roles_map: &'a BTreeMap<String, Vec<String>>,
 }
 
 impl<'a> AuthContext<'a> {
-
     pub fn is_authenticated(&self) -> Result<&AuthContext, LightSpeedError> {
         if self.auth.username.is_empty()
             || self.auth.expiration_ts_seconds < current_epoch_seconds()
