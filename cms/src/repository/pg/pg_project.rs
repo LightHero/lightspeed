@@ -26,7 +26,7 @@ impl Default for PgProjectRepository {
     }
 }
 
-#[async_trait::async_trait]
+#[async_trait::async_trait(?Send)]
 impl ProjectRepository for PgProjectRepository {
     type Conn = PgConnectionAsync;
 

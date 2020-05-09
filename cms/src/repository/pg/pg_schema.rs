@@ -26,7 +26,7 @@ impl Default for PgSchemaRepository {
     }
 }
 
-#[async_trait::async_trait]
+#[async_trait::async_trait(?Send)]
 impl SchemaRepository for PgSchemaRepository {
     type Conn = PgConnectionAsync;
 

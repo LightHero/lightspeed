@@ -71,7 +71,7 @@ impl FullEmailClient {
     }
 }
 
-#[async_trait::async_trait]
+#[async_trait::async_trait(?Send)]
 impl EmailClient for FullEmailClient {
     async fn send(&self, email_message: EmailMessage) -> Result<(), LightSpeedError> {
         let client = self.client.clone();

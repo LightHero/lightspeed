@@ -18,7 +18,7 @@ pub trait AuthRepositoryManager: Clone + Send + Sync {
     fn token_repo(&self) -> Self::TokenRepo;
 }
 
-#[async_trait::async_trait]
+#[async_trait::async_trait(?Send)]
 pub trait AuthAccountRepository: Clone + Send + Sync {
     type Conn: SqlConnectionAsync;
 
@@ -65,7 +65,7 @@ pub trait AuthAccountRepository: Clone + Send + Sync {
     ) -> Result<AuthAccountModel, LightSpeedError>;
 }
 
-#[async_trait::async_trait]
+#[async_trait::async_trait(?Send)]
 pub trait TokenRepository: Clone + Send + Sync {
     type Conn: SqlConnectionAsync;
 

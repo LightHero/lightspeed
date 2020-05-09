@@ -18,7 +18,7 @@ impl Default for PgAuthAccountRepository {
     }
 }
 
-#[async_trait::async_trait]
+#[async_trait::async_trait(?Send)]
 impl AuthAccountRepository for PgAuthAccountRepository {
     type Conn = PgConnectionAsync;
 

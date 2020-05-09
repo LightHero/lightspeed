@@ -26,7 +26,7 @@ impl Default for PgTokenRepository {
     }
 }
 
-#[async_trait::async_trait]
+#[async_trait::async_trait(?Send)]
 impl TokenRepository for PgTokenRepository {
     type Conn = PgConnectionAsync;
 

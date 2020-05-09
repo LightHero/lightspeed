@@ -16,7 +16,7 @@ pub trait DBFileStoreRepositoryManager: Clone + Send + Sync {
     fn file_store_binary_repo(&self) -> &Self::FileStoreBinaryRepo;
 }
 
-#[async_trait::async_trait]
+#[async_trait::async_trait(?Send)]
 pub trait DBFileStoreBinaryRepository: Clone + Send + Sync {
     type Conn: SqlConnectionAsync;
 
