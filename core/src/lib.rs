@@ -13,8 +13,8 @@ use std::sync::Arc;
 
 #[derive(Clone)]
 pub struct CoreModule {
-    pub auth: service::auth::AuthService<InMemoryRolesProvider>,
-    pub jwt: service::jwt::JwtService,
+    pub auth: Arc<service::auth::AuthService<InMemoryRolesProvider>>,
+    pub jwt: Arc<service::jwt::JwtService>,
 }
 
 impl CoreModule {
@@ -22,8 +22,8 @@ impl CoreModule {
         println!("Creating CoreModule");
         info!("Creating CoreModule");
 
-        let jwt = service::jwt::JwtService::new(&config.jwt)?;
-        let auth = service::auth::AuthService::new(InMemoryRolesProvider::new(Arc::new(vec![])));
+        let jwt = Arc::new(service::jwt::JwtService::new(&config.jwt)?);
+        let auth = Arc::new(service::auth::AuthService::new(InMemoryRolesProvider::new(Arc::new(vec![]))));
         Ok(CoreModule { jwt, auth })
     }
 }

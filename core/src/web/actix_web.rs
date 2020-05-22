@@ -4,6 +4,7 @@ use crate::service::jwt::JwtService;
 use actix_web_external::dev::HttpResponseBuilder;
 use actix_web_external::{http, HttpRequest, HttpResponse, ResponseError};
 use log::*;
+use std::sync::Arc;
 
 pub const JWT_TOKEN_HEADER: &str = "Authorization";
 pub const JWT_TOKEN_HEADER_SUFFIX: &str = "Bearer ";
@@ -11,12 +12,12 @@ pub const JWT_TOKEN_HEADER_SUFFIX_LEN: usize = JWT_TOKEN_HEADER_SUFFIX.len();
 
 #[derive(Clone)]
 pub struct WebAuthService<T: RolesProvider> {
-    auth_service: AuthService<T>,
-    jwt_service: JwtService,
+    auth_service: Arc<AuthService<T>>,
+    jwt_service: Arc<JwtService>,
 }
 
 impl<T: RolesProvider> WebAuthService<T> {
-    pub fn new(auth_service: AuthService<T>, jwt_service: JwtService) -> Self {
+    pub fn new(auth_service: Arc<AuthService<T>>, jwt_service: Arc<JwtService>) -> Self {
         Self {
             auth_service,
             jwt_service,
@@ -251,19 +252,19 @@ mod test {
 
     fn new_service() -> WebAuthService<InMemoryRolesProvider> {
         WebAuthService {
-            auth_service: AuthService::new(InMemoryRolesProvider::new(
+            auth_service: Arc::new(AuthService::new(InMemoryRolesProvider::new(
                 vec![Role {
                     name: "admin".to_owned(),
                     permissions: vec![],
                 }]
                 .into(),
-            )),
-            jwt_service: JwtService::new(&JwtConfig {
+            ))),
+            jwt_service: Arc::new(JwtService::new(&JwtConfig {
                 secret: "secret".to_owned(),
                 signature_algorithm: Algorithm::HS256,
                 token_validity_minutes: 10,
             })
-            .unwrap(),
+            .unwrap()),
         }
     }
 }
