@@ -1,12 +1,12 @@
 use crate::error::LightSpeedError;
 use log::info;
 
-#[async_trait::async_trait(?Send)]
+#[async_trait::async_trait]
 pub trait ModuleBuilder<T: Module> {
     async fn build(&self) -> Result<T, LightSpeedError>;
 }
 
-#[async_trait::async_trait(?Send)]
+#[async_trait::async_trait]
 pub trait Module {
     async fn start(&mut self) -> Result<(), LightSpeedError>;
 }
@@ -23,12 +23,12 @@ pub async fn start(modules: &mut [&mut dyn Module]) -> Result<(), LightSpeedErro
 mod test {
 
     use crate::LightSpeedError;
-    use std::rc::Rc;
+    use std::sync::Arc;
     use tokio::sync::Mutex;
 
     #[tokio::test]
     async fn should_start_all() {
-        let output = Rc::new(Mutex::new(vec![]));
+        let output = Arc::new(Mutex::new(vec![]));
 
         let mut mod1 = SimpleModOne {
             output: output.clone(),
@@ -58,7 +58,7 @@ mod test {
 
     #[tokio::test]
     async fn should_fail_on_start() {
-        let output = Rc::new(Mutex::new(vec![]));
+        let output = Arc::new(Mutex::new(vec![]));
 
         let mut mod1 = SimpleModOne {
             output: output.clone(),
@@ -95,11 +95,11 @@ mod test {
 
     #[derive(Clone)]
     struct SimpleModOne {
-        output: Rc<Mutex<Vec<String>>>,
+        output: Arc<Mutex<Vec<String>>>,
         name: String,
     }
 
-    #[async_trait::async_trait(?Send)]
+    #[async_trait::async_trait]
     impl super::Module for SimpleModOne {
         async fn start(&mut self) -> Result<(), LightSpeedError> {
             let mut owned = self.name.to_owned();
@@ -111,12 +111,12 @@ mod test {
 
     #[derive(Clone)]
     struct SimpleModTwo {
-        output: Rc<Mutex<Vec<String>>>,
+        output: Arc<Mutex<Vec<String>>>,
         name: String,
         fail: bool,
     }
 
-    #[async_trait::async_trait(?Send)]
+    #[async_trait::async_trait]
     impl super::Module for SimpleModTwo {
         async fn start(&mut self) -> Result<(), LightSpeedError> {
             if self.fail {

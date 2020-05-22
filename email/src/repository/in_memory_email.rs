@@ -16,7 +16,7 @@ impl InMemoryEmailClient {
     }
 }
 
-#[async_trait::async_trait(?Send)]
+#[async_trait::async_trait]
 impl EmailClient for InMemoryEmailClient {
     async fn send(&self, email_message: EmailMessage) -> Result<(), LightSpeedError> {
         warn!("InMemoryEmailService - Received an email. The email is NOT going to be sent but kept in memory");

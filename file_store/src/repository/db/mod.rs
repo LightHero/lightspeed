@@ -4,7 +4,7 @@ use lightspeed_core::error::LightSpeedError;
 
 pub mod pg;
 
-#[async_trait::async_trait(?Send)]
+#[async_trait::async_trait]
 pub trait DBFileStoreRepositoryManager: Clone + Send + Sync {
     type Conn: SqlConnectionAsync;
     type C3P0: C3p0PoolAsync<Conn = Self::Conn>;
@@ -16,7 +16,7 @@ pub trait DBFileStoreRepositoryManager: Clone + Send + Sync {
     fn file_store_binary_repo(&self) -> &Self::FileStoreBinaryRepo;
 }
 
-#[async_trait::async_trait(?Send)]
+#[async_trait::async_trait]
 pub trait DBFileStoreBinaryRepository: Clone + Send + Sync {
     type Conn: SqlConnectionAsync;
 

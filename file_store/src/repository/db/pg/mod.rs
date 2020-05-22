@@ -23,7 +23,7 @@ impl PgFileStoreRepositoryManager {
     }
 }
 
-#[async_trait::async_trait(?Send)]
+#[async_trait::async_trait]
 impl DBFileStoreRepositoryManager for PgFileStoreRepositoryManager {
     type Conn = PgConnectionAsync;
     type C3P0 = PgC3p0PoolAsync;

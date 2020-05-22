@@ -23,7 +23,7 @@ impl PgCmsRepositoryManager {
     }
 }
 
-#[async_trait::async_trait(?Send)]
+#[async_trait::async_trait]
 impl CmsRepositoryManager for PgCmsRepositoryManager {
     type Conn = PgConnectionAsync;
     type C3P0 = PgC3p0PoolAsync;

@@ -6,7 +6,7 @@ use lightspeed_core::error::LightSpeedError;
 
 pub mod pg;
 
-#[async_trait::async_trait(?Send)]
+#[async_trait::async_trait]
 pub trait CmsRepositoryManager: Clone + Send + Sync {
     type Conn: SqlConnectionAsync;
     type C3P0: C3p0PoolAsync<Conn = Self::Conn>;
@@ -22,7 +22,7 @@ pub trait CmsRepositoryManager: Clone + Send + Sync {
     fn schema_repo(&self) -> Self::SchemaRepo;
 }
 
-#[async_trait::async_trait(?Send)]
+#[async_trait::async_trait]
 pub trait ProjectRepository: Clone + Send + Sync {
     type Conn;
 
@@ -57,7 +57,7 @@ pub trait ProjectRepository: Clone + Send + Sync {
     ) -> Result<ProjectModel, LightSpeedError>;
 }
 
-#[async_trait::async_trait(?Send)]
+#[async_trait::async_trait]
 pub trait SchemaRepository: Clone + Send + Sync {
     type Conn;
 
@@ -99,7 +99,7 @@ pub trait SchemaRepository: Clone + Send + Sync {
     ) -> Result<u64, LightSpeedError>;
 }
 
-#[async_trait::async_trait(?Send)]
+#[async_trait::async_trait]
 pub trait ContentRepository: Clone + Send + Sync {
     type Conn;
 

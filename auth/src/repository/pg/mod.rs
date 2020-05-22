@@ -21,7 +21,7 @@ impl PgAuthRepositoryManager {
     }
 }
 
-#[async_trait::async_trait(?Send)]
+#[async_trait::async_trait]
 impl AuthRepositoryManager for PgAuthRepositoryManager {
     type Conn = PgConnectionAsync;
     type C3P0 = PgC3p0PoolAsync;

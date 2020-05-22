@@ -5,7 +5,7 @@ use lightspeed_core::error::LightSpeedError;
 
 pub mod pg;
 
-#[async_trait::async_trait(?Send)]
+#[async_trait::async_trait]
 pub trait AuthRepositoryManager: Clone + Send + Sync {
     type Conn: SqlConnectionAsync;
     type C3P0: C3p0PoolAsync<Conn = Self::Conn>;
@@ -18,7 +18,7 @@ pub trait AuthRepositoryManager: Clone + Send + Sync {
     fn token_repo(&self) -> Self::TokenRepo;
 }
 
-#[async_trait::async_trait(?Send)]
+#[async_trait::async_trait]
 pub trait AuthAccountRepository: Clone + Send + Sync {
     type Conn: SqlConnectionAsync;
 
@@ -65,7 +65,7 @@ pub trait AuthAccountRepository: Clone + Send + Sync {
     ) -> Result<AuthAccountModel, LightSpeedError>;
 }
 
-#[async_trait::async_trait(?Send)]
+#[async_trait::async_trait]
 pub trait TokenRepository: Clone + Send + Sync {
     type Conn: SqlConnectionAsync;
 

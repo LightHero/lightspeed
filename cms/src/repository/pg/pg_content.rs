@@ -26,7 +26,7 @@ impl Deref for PgContentRepository {
     }
 }
 
-#[async_trait::async_trait(?Send)]
+#[async_trait::async_trait]
 impl ContentRepository for PgContentRepository {
     type Conn = PgConnectionAsync;
 

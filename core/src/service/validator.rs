@@ -12,13 +12,13 @@ pub const ERR_NOT_UNIQUE: &str = "NOT_UNIQUE";
 pub const ERR_VALUE_REQUIRED: &str = "VALUE_REQUIRED";
 pub const ERR_UNKNOWN_FIELD: &str = "UNKNOWN_FIELD";
 
-pub trait Validable {
+pub trait Validable: Send + Sync {
     fn validate(&self, error_details: &mut ErrorDetails) -> Result<(), LightSpeedError>;
 }
 
 impl<F> Validable for F
 where
-    F: Fn(&mut ErrorDetails) -> Result<(), LightSpeedError>,
+    F: Send + Sync + Fn(&mut ErrorDetails) -> Result<(), LightSpeedError>,
 {
     #[inline]
     fn validate(&self, error_details: &mut ErrorDetails) -> Result<(), LightSpeedError> {

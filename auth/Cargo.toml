@@ -14,7 +14,7 @@ keywords = []
 lightspeed_core = { version = "0.8.1", path = "../core" }
 async-trait = "0.1.29"
 bcrypt = "0.7.0"
-c3p0 = { version = "0.52.0", features = ["pg_migrate"] }
+c3p0 = { version = "0.53.0", features = ["pg_migrate"] }
 log = "0.4"
 serde = { version = "1.0" , features = ["derive", "rc"] }
 serde_json = "1"

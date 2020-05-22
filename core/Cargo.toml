@@ -12,7 +12,7 @@ keywords = []
 
 [dependencies]
 async-trait = "0.1"
-c3p0_common = { version = "0.52.0" }
+c3p0_common = { version = "0.53.0" }
 chrono = "0.4"
 jsonwebtoken = "7.1"
 log = "0.4"
@@ -36,6 +36,7 @@ actix_web_external = {package = "actix-web", version = "2.0.0", optional = true 
 actix-service = "1.0.1"
 actix-rt = "1.0.0"
 lightspeed_logger = { version = "0.8.1", path = "../logger" }
+parking_lot = "0.10.2"
 tokio = { version = "0.2.0", features = ["full"] }
 
 [features]

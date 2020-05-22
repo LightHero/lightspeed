@@ -18,7 +18,7 @@ impl Default for PgFileStoreBinaryRepository {
     }
 }
 
-#[async_trait::async_trait(?Send)]
+#[async_trait::async_trait]
 impl DBFileStoreBinaryRepository for PgFileStoreBinaryRepository {
     type Conn = PgConnectionAsync;
 

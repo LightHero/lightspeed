@@ -42,7 +42,7 @@ impl<RepoManager: DBFileStoreRepositoryManager> FileStoreModule<RepoManager> {
     }
 }
 
-#[async_trait::async_trait(?Send)]
+#[async_trait::async_trait]
 impl<RepoManager: DBFileStoreRepositoryManager> lightspeed_core::module::Module
     for FileStoreModule<RepoManager>
 {
