@@ -13,6 +13,7 @@ use lightspeed_core::service::auth::Auth;
 use lightspeed_core::service::validator::{Validator, ERR_NOT_UNIQUE};
 use lightspeed_core::utils::current_epoch_seconds;
 use log::*;
+use std::sync::Arc;
 
 pub const WRONG_TYPE: &str = "WRONG_TYPE";
 
@@ -21,16 +22,16 @@ pub struct AuthAccountService<RepoManager: AuthRepositoryManager> {
     c3p0: RepoManager::C3P0,
     auth_config: AuthConfig,
     auth_repo: RepoManager::AuthAccountRepo,
-    password_service: PasswordCodecService,
-    token_service: TokenService<RepoManager>,
+    password_service: Arc<PasswordCodecService>,
+    token_service: Arc<TokenService<RepoManager>>,
 }
 
 impl<RepoManager: AuthRepositoryManager> AuthAccountService<RepoManager> {
     pub fn new(
         c3p0: RepoManager::C3P0,
         auth_config: AuthConfig,
-        token_service: TokenService<RepoManager>,
-        password_service: PasswordCodecService,
+        token_service: Arc<TokenService<RepoManager>>,
+        password_service: Arc<PasswordCodecService>,
         auth_repo: RepoManager::AuthAccountRepo,
     ) -> Self {
         AuthAccountService {

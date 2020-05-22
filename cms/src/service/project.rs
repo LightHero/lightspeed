@@ -6,19 +6,20 @@ use crate::service::schema::SchemaService;
 use c3p0::*;
 use lightspeed_core::error::{ErrorDetails, LightSpeedError};
 use lightspeed_core::service::validator::{Validator, ERR_NOT_UNIQUE};
+use std::sync::Arc;
 
 #[derive(Clone)]
 pub struct ProjectService<RepoManager: CmsRepositoryManager> {
     c3p0: RepoManager::C3P0,
     project_repo: RepoManager::ProjectRepo,
-    schema_service: SchemaService<RepoManager>,
+    schema_service: Arc<SchemaService<RepoManager>>,
 }
 
 impl<RepoManager: CmsRepositoryManager> ProjectService<RepoManager> {
     pub fn new(
         c3p0: RepoManager::C3P0,
         project_repo: RepoManager::ProjectRepo,
-        schema_service: SchemaService<RepoManager>,
+        schema_service: Arc<SchemaService<RepoManager>>,
     ) -> Self {
         ProjectService {
             c3p0,

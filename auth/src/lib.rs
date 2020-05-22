@@ -4,6 +4,7 @@ use crate::service::auth_account::AuthAccountService;
 use crate::service::password_codec::PasswordCodecService;
 use lightspeed_core::error::LightSpeedError;
 use log::*;
+use std::sync::Arc;
 
 pub mod config;
 pub mod dto;
@@ -17,9 +18,9 @@ pub struct AuthModule<RepoManager: AuthRepositoryManager> {
 
     pub repo_manager: RepoManager,
 
-    pub password_codec: service::password_codec::PasswordCodecService,
-    pub auth_account_service: service::auth_account::AuthAccountService<RepoManager>,
-    pub token_service: service::token::TokenService<RepoManager>,
+    pub password_codec: Arc<service::password_codec::PasswordCodecService>,
+    pub auth_account_service: Arc<service::auth_account::AuthAccountService<RepoManager>>,
+    pub token_service: Arc<service::token::TokenService<RepoManager>>,
 }
 
 impl<RepoManager: AuthRepositoryManager> AuthModule<RepoManager> {
@@ -27,18 +28,18 @@ impl<RepoManager: AuthRepositoryManager> AuthModule<RepoManager> {
         println!("Creating AuthModule");
         info!("Creating AuthModule");
 
-        let password_codec = PasswordCodecService::new(auth_config.bcrypt_password_hash_cost);
+        let password_codec = Arc::new(PasswordCodecService::new(auth_config.bcrypt_password_hash_cost));
 
         let token_service =
-            service::token::TokenService::new(auth_config.clone(), repo_manager.token_repo());
+            Arc::new(service::token::TokenService::new(auth_config.clone(), repo_manager.token_repo()));
 
-        let auth_account_service = AuthAccountService::new(
+        let auth_account_service = Arc::new(AuthAccountService::new(
             repo_manager.c3p0().clone(),
             auth_config.clone(),
             token_service.clone(),
             password_codec.clone(),
             repo_manager.auth_account_repo(),
-        );
+        ));
 
         AuthModule {
             auth_config,

@@ -5,6 +5,7 @@ use crate::service::project::ProjectService;
 use crate::service::schema::SchemaService;
 use lightspeed_core::error::LightSpeedError;
 use log::*;
+use std::sync::Arc;
 
 pub mod config;
 pub mod dto;
@@ -18,9 +19,9 @@ pub struct CmsModule<RepoManager: CmsRepositoryManager> {
 
     pub repo_manager: RepoManager,
 
-    pub content_service: ContentService<RepoManager>,
-    pub project_service: ProjectService<RepoManager>,
-    pub schema_service: SchemaService<RepoManager>,
+    pub content_service: Arc<ContentService<RepoManager>>,
+    pub project_service: Arc<ProjectService<RepoManager>>,
+    pub schema_service: Arc<SchemaService<RepoManager>>,
 }
 
 impl<RepoManager: CmsRepositoryManager> CmsModule<RepoManager> {
@@ -29,16 +30,16 @@ impl<RepoManager: CmsRepositoryManager> CmsModule<RepoManager> {
         info!("Creating CmsModule");
 
         let content_service =
-            ContentService::new(repo_manager.c3p0().clone(), repo_manager.clone());
+            Arc::new(ContentService::new(repo_manager.c3p0().clone(), repo_manager.clone()));
 
         let schema_service =
-            SchemaService::new(repo_manager.c3p0().clone(), repo_manager.schema_repo());
+            Arc::new(SchemaService::new(repo_manager.c3p0().clone(), repo_manager.schema_repo()));
 
-        let project_service = ProjectService::new(
+        let project_service = Arc::new(ProjectService::new(
             repo_manager.c3p0().clone(),
             repo_manager.project_repo(),
             schema_service.clone(),
-        );
+        ));
 
         CmsModule {
             cms_config,
