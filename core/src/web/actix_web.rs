@@ -259,12 +259,14 @@ mod test {
                 }]
                 .into(),
             ))),
-            jwt_service: Arc::new(JwtService::new(&JwtConfig {
-                secret: "secret".to_owned(),
-                signature_algorithm: Algorithm::HS256,
-                token_validity_minutes: 10,
-            })
-            .unwrap()),
+            jwt_service: Arc::new(
+                JwtService::new(&JwtConfig {
+                    secret: "secret".to_owned(),
+                    signature_algorithm: Algorithm::HS256,
+                    token_validity_minutes: 10,
+                })
+                .unwrap(),
+            ),
         }
     }
 }
