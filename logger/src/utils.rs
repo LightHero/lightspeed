@@ -14,16 +14,18 @@ pub async fn request_with_span<
     let req_id = req_id.as_str();
     let span = tracing::error_span!("req", req_id);
 
-    debug!("Start request [{}]", req_id);
-
-    fut.instrument(span)
-        .await
-        .map_err(|err| {
-            error!("Request error: {}", err);
-            err
-        })
-        .map(|res| {
-            debug!("Request completed successfully");
-            res
-        })
+    async move {
+        debug!("Start request [{}]", req_id);
+        fut.await
+            .map_err(|err| {
+                error!("Request error: {}", err);
+                err
+            })
+            .map(|res| {
+                debug!("Request completed successfully");
+                res
+            })
+    }
+    .instrument(span)
+    .await
 }
