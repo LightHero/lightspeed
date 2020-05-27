@@ -1,7 +1,7 @@
 [package]
 name = "lightspeed_email"
 license = "MIT"
-version = "0.9.2"
+version = "0.9.3"
 authors = ["Francesco Cina <ufoscout@gmail.com>"]
 description = "LightSpeed"
 edition = "2018"
@@ -11,7 +11,7 @@ repository = "https://github.com/LightHero/lightspeed"
 keywords = []
 
 [dependencies]
-lightspeed_core = { version = "0.9.2", path = "../core" }
+lightspeed_core = { version = "0.9.3", path = "../core" }
 async-trait = "0.1.29"
 lettre = "0.9"
 lettre_email = "0.9"
@@ -26,4 +26,4 @@ tokio = { version = "0.2" , features = ["blocking"] }
 testcontainers = "0.9"
 tokio = { version = "0.2" , features = ["full"] }
 
-lightspeed_logger = { version = "0.9.2", path = "../logger" }
+lightspeed_logger = { version = "0.9.3", path = "../logger" }
