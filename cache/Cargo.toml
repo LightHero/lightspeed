@@ -14,13 +14,12 @@ keywords = []
 
 [dependencies]
 chrono = "0.4"
-dashmap_rs = { package = "dashmap", version = "3.7", optional = true }
+dashmap = { version = "3.7", optional = true }
+tokio = { version = "0.2", features = ["sync"] }
 
 [dev-dependencies]
 thiserror = "1.0"
 tokio = { version = "0.2", features = ["macros", "rt-core"] }
 
 [features]
-default = ["dashmap"]
-
-dashmap = ["dashmap_rs"]
+default = []

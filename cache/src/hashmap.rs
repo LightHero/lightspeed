@@ -1,10 +1,11 @@
 use chrono::prelude::Local;
-use dashmap::{mapref::entry::Entry, DashMap};
 use std::hash::Hash;
 use std::sync::Arc;
+use tokio::sync::{RwLock, RwLockWriteGuard};
+use std::collections::HashMap;
 
 pub struct Cache<K: Hash + Eq, V> {
-    map: Arc<DashMap<K, (Arc<V>, i64)>>,
+    map: Arc<RwLock<HashMap<K, (Arc<V>, i64)>>>,
     ttl_ms: i64,
 }
 
@@ -20,20 +21,22 @@ impl<K: Hash + Eq, V> Clone for Cache<K, V> {
 impl<K: Hash + Eq, V> Cache<K, V> {
     pub fn new(ttl_seconds: u32) -> Self {
         Self {
-            map: Arc::new(DashMap::default()),
+            map: Arc::new(RwLock::new(HashMap::default())),
             ttl_ms: (ttl_seconds as i64) * 1000,
         }
     }
 
-    pub fn get(&self, key: &K) -> Option<Arc<V>> {
-        match self.map.get(key) {
+    pub async fn get(&self, key: &K) -> Option<Arc<V>> {
+        let read = self.map.read().await;
+        match read.get(key) {
             Some(value) => {
                 if value.1 < current_epoch_mills() {
                     drop(value);
-                    self.map.remove(key);
+                    drop(read);
+                    self.remove(key).await;
                     None
                 } else {
-                    Some(value.value().0.clone())
+                    Some(value.0.clone())
                 }
             }
             None => None,
@@ -45,15 +48,19 @@ impl<K: Hash + Eq, V> Cache<K, V> {
         key: K,
         default: F,
     ) -> Arc<V> {
-        match self.get(&key) {
+        match self.get(&key).await {
             Some(value) => value,
-            None => match self.map.entry(key) {
-                Entry::Occupied(entry) => entry.into_ref().value().0.clone(),
-                Entry::Vacant(entry) => {
-                    let arc_value = Arc::new(default().await);
-                    entry.insert(self.to_value(arc_value)).value().0.clone()
+            None => {
+                let write = self.map.write().await;
+                match write.get(&key) {
+                    Some(val) => val.0.clone(),
+                    None => {
+                        let new_value = Arc::new(default().await);
+                        self.insert_to_guard(write, key, new_value.clone());
+                        new_value
+                    }
                 }
-            },
+            }
         }
     }
 
@@ -66,25 +73,35 @@ impl<K: Hash + Eq, V> Cache<K, V> {
         key: K,
         default: F,
     ) -> Result<Arc<V>, E> {
-        match self.get(&key) {
+        match self.get(&key).await {
             Some(value) => Ok(value),
-            None => match self.map.entry(key) {
-                Entry::Occupied(entry) => Ok(entry.into_ref().value().0.clone()),
-                Entry::Vacant(entry) => {
-                    let arc_value = Arc::new(default().await?);
-                    let result = entry.insert(self.to_value(arc_value)).value().0.clone();
-                    Ok(result)
+            None => {
+                let write = self.map.write().await;
+                match write.get(&key) {
+                    Some(val) => Ok(val.0.clone()),
+                    None => {
+                        let new_value = Arc::new(default().await?);
+                        self.insert_to_guard(write, key, new_value.clone());
+                        Ok(new_value)
+                    }
                 }
-            },
+            }
         }
     }
 
-    pub fn insert(&self, key: K, value: V) {
-        self.map.insert(key, self.to_value(Arc::new(value)));
+    pub async fn insert(&self, key: K, value: V) {
+        let write = self.map.write().await;
+        self.insert_to_guard(write, key, Arc::new(value));
     }
 
-    pub fn remove(&self, key: &K) {
-        self.map.remove(key);
+    pub async fn remove(&self, key: &K) {
+        let mut write = self.map.write().await;
+        write.remove(key);
+    }
+
+
+    fn insert_to_guard(&self, mut write: RwLockWriteGuard<'_, HashMap<K, (Arc<V>, i64)>>, key: K, value: Arc<V>) {
+        write.insert(key, self.to_value(value));
     }
 
     #[inline]
@@ -107,9 +124,9 @@ mod test {
     #[tokio::test]
     async fn should_return_entry_not_expired() {
         let cache = Cache::new(1000);
-        cache.insert("hello", "world");
+        cache.insert("hello", "world").await;
 
-        let result = cache.get(&"hello");
+        let result = cache.get(&"hello").await;
 
         assert!(result.is_some());
         assert_eq!(&"world", result.unwrap().as_ref());
@@ -120,11 +137,11 @@ mod test {
         let mut cache = Cache::new(1);
         cache.ttl_ms = 1;
 
-        cache.insert("hello", "world");
+        cache.insert("hello", "world").await;
 
         sleep(Duration::from_millis(2));
 
-        let result = cache.get(&"hello");
+        let result = cache.get(&"hello").await;
 
         assert!(result.is_none());
     }
@@ -132,7 +149,7 @@ mod test {
     #[tokio::test]
     async fn should_not_insert_if_exists_on_get() {
         let cache = Cache::new(1000);
-        cache.insert("hello", "world");
+        cache.insert("hello", "world").await;
 
         let result = cache
             .get_or_insert_with(&"hello", || async { "new world!" })
@@ -146,7 +163,7 @@ mod test {
         let mut cache = Cache::new(1);
         cache.ttl_ms = 1;
 
-        cache.insert("hello", "world");
+        cache.insert("hello", "world").await;
 
         sleep(Duration::from_millis(2));
 
@@ -171,15 +188,15 @@ mod test {
     #[tokio::test]
     async fn should_remove_entry() {
         let cache = Cache::new(1000);
-        cache.insert("hello", "world");
-        cache.remove(&"hello");
-        assert!(cache.get(&"hello").is_none());
+        cache.insert("hello", "world").await;
+        cache.remove(&"hello").await;
+        assert!(cache.get(&"hello").await.is_none());
     }
 
     #[tokio::test]
     async fn should_not_try_insert_if_exists_on_get() {
         let cache = Cache::new(1000);
-        cache.insert("hello", "world");
+        cache.insert("hello", "world").await;
 
         let result = cache
             .get_or_try_insert_with(&"hello", insert_new_world_ok)
@@ -204,7 +221,7 @@ mod test {
         let mut cache = Cache::new(1);
         cache.ttl_ms = 1;
 
-        cache.insert("hello", "world");
+        cache.insert("hello", "world").await;
 
         sleep(Duration::from_millis(2));
 
@@ -247,8 +264,8 @@ mod test {
         }
     }
 
-    #[test]
-    fn should_not_overflow_when_ttl_is_max() {
+    #[tokio::test]
+    async fn should_not_overflow_when_ttl_is_max() {
         Cache::<String, String>::new(u32::max_value());
     }
 
@@ -259,15 +276,15 @@ mod test {
         Error { message: &'static str },
     }
 
-    #[test]
-    fn clone_should_link_to_same_map() {
+    #[tokio::test]
+    async fn clone_should_link_to_same_map() {
         let cache = Cache::new(1000);
         let cloned_cache = cache.clone();
 
-        cloned_cache.insert("hello", "world");
-        assert!(cache.get(&"hello").is_some());
+        cloned_cache.insert("hello", "world").await;
+        assert!(cache.get(&"hello").await.is_some());
 
-        cache.remove(&"hello");
-        assert!(cloned_cache.get(&"hello").is_none());
+        cache.remove(&"hello").await;
+        assert!(cloned_cache.get(&"hello").await.is_none());
     }
 }
