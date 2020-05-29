@@ -1,7 +1,7 @@
 [package]
 name = "lightspeed_cache"
 license = "MIT"
-version = "0.10.0"
+version = "0.10.1"
 authors = ["ufoscout <ufoscout@gmail.com>"]
 description = "LightSpeed"
 edition = "2018"
