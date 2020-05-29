@@ -8,7 +8,7 @@ use lightspeed_auth::model::auth_account::AuthAccountStatus;
 use lightspeed_auth::model::token::TokenType;
 use lightspeed_auth::repository::AuthRepositoryManager;
 use lightspeed_auth::service::auth_account::AuthAccountService;
-use lightspeed_core::error::LightSpeedError;
+use lightspeed_core::error::{ErrorCodes, LightSpeedError};
 use lightspeed_core::model::language::Language;
 use lightspeed_core::utils::{current_epoch_seconds, new_hyphenated_uuid};
 use std::collections::HashMap;
@@ -486,11 +486,47 @@ fn should_not_login_inactive_user() -> Result<(), LightSpeedError> {
         let password = "123456789";
         let (user, _) = create_user_with_password(&auth_module, password, false).await?;
 
-        assert!(auth_module
+        let result = auth_module
             .auth_account_service
             .login(&user.data.username, password)
-            .await
-            .is_err());
+            .await;
+
+        match result {
+            Err(LightSpeedError::BadRequest { code, message }) => {
+                assert_eq!(ErrorCodes::INACTIVE_USER, code);
+                assert_eq!(
+                    format!("User [{}] not in status Active", &user.data.username),
+                    message
+                );
+            }
+            _ => assert!(false),
+        }
+
+        Ok(())
+    })
+}
+
+#[test]
+fn should_return_wrong_credentials_on_login_of_inactive_user_with_wrong_password(
+) -> Result<(), LightSpeedError> {
+    test(async {
+        let data = data(false).await;
+        let auth_module = &data.0;
+        let password = "123456789";
+        let (user, _) = create_user_with_password(&auth_module, password, false).await?;
+
+        let result = auth_module
+            .auth_account_service
+            .login(&user.data.username, "wrong_password")
+            .await;
+
+        match result {
+            Err(LightSpeedError::BadRequest { code, message }) => {
+                assert_eq!(ErrorCodes::WRONG_CREDENTIALS, code);
+                assert_eq!(format!("Wrong credentials"), message);
+            }
+            _ => assert!(false),
+        }
 
         Ok(())
     })

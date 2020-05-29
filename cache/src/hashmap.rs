@@ -1,11 +1,13 @@
 use chrono::prelude::Local;
+use std::collections::HashMap;
 use std::hash::Hash;
 use std::sync::Arc;
 use tokio::sync::{RwLock, RwLockWriteGuard};
-use std::collections::HashMap;
+
+type InnerMap<K, V> = Arc<RwLock<HashMap<K, (Arc<V>, i64)>>>;
 
 pub struct Cache<K: Hash + Eq, V> {
-    map: Arc<RwLock<HashMap<K, (Arc<V>, i64)>>>,
+    map: InnerMap<K, V>,
     ttl_ms: i64,
 }
 
@@ -31,7 +33,6 @@ impl<K: Hash + Eq, V> Cache<K, V> {
         match read.get(key) {
             Some(value) => {
                 if value.1 < current_epoch_mills() {
-                    drop(value);
                     drop(read);
                     self.remove(key).await;
                     None
@@ -99,8 +100,12 @@ impl<K: Hash + Eq, V> Cache<K, V> {
         write.remove(key);
     }
 
-
-    fn insert_to_guard(&self, mut write: RwLockWriteGuard<'_, HashMap<K, (Arc<V>, i64)>>, key: K, value: Arc<V>) {
+    fn insert_to_guard(
+        &self,
+        mut write: RwLockWriteGuard<'_, HashMap<K, (Arc<V>, i64)>>,
+        key: K,
+        value: Arc<V>,
+    ) {
         write.insert(key, self.to_value(value));
     }
 

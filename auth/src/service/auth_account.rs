@@ -52,17 +52,23 @@ impl<RepoManager: AuthRepositoryManager> AuthAccountService<RepoManager> {
                     .fetch_by_username_optional(&mut conn, username)
                     .await
             })
-            .await?
-            .filter(|model| match model.data.status {
-                AuthAccountStatus::ACTIVE => true,
-                _ => false,
-            });
+            .await?;
 
         if let Some(user) = model {
             if self
                 .password_service
                 .verify_match(password, &user.data.password)?
             {
+                match &user.data.status {
+                    AuthAccountStatus::ACTIVE => {}
+                    _ => {
+                        return Err(LightSpeedError::BadRequest {
+                            message: format!("User [{}] not in status Active", username),
+                            code: ErrorCodes::INACTIVE_USER,
+                        })
+                    }
+                };
+
                 let creation_ts_seconds = current_epoch_seconds();
                 let expiration_ts_seconds =
                     creation_ts_seconds + (self.auth_config.auth_session_max_validity_minutes * 60);
@@ -78,7 +84,7 @@ impl<RepoManager: AuthRepositoryManager> AuthAccountService<RepoManager> {
         };
 
         Err(LightSpeedError::BadRequest {
-            message: "".to_string(),
+            message: "Wrong credentials".to_string(),
             code: ErrorCodes::WRONG_CREDENTIALS,
         })
     }
