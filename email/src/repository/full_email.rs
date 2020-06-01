@@ -76,7 +76,7 @@ impl EmailClient for FullEmailClient {
     async fn send(&self, email_message: EmailMessage) -> Result<(), LightSpeedError> {
         let client = self.client.clone();
         tokio::task::spawn_blocking(move || {
-            debug!("Sending email {:#?}", email_message);
+            debug!("Sending email {:?}", email_message);
 
             let mut builder = Email::builder();
 
