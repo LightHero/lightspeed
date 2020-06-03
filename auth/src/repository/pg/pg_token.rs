@@ -46,6 +46,21 @@ impl TokenRepository for PgTokenRepository {
             .await?)
     }
 
+    async fn fetch_by_username(
+        &self,
+        conn: &mut PgConnectionAsync,
+        username: &str,
+    ) -> Result<Vec<TokenModel>, LightSpeedError> {
+        let sql = r#"
+            select id, version, data from LS_AUTH_TOKEN
+            where data ->> 'username' = $1
+        "#;
+        Ok(self
+            .repo
+            .fetch_all_with_sql(conn, sql, &[&username])
+            .await?)
+    }
+
     async fn save(
         &self,
         conn: &mut Self::Conn,

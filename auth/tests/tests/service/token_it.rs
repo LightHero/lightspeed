@@ -129,3 +129,98 @@ fn should_validate_token_on_fetch() -> Result<(), LightSpeedError> {
         .await
     })
 }
+
+#[test]
+fn should_return_all_tokens_by_username() -> Result<(), LightSpeedError> {
+    test(async {
+        let data = data(false).await;
+        let auth_module = &data.0;
+        let token_service = &auth_module.token_service;
+
+        let c3p0 = auth_module.repo_manager.c3p0();
+        let token_repo = auth_module.repo_manager.token_repo();
+
+        let username_1 = new_hyphenated_uuid();
+        let username_2 = new_hyphenated_uuid();
+
+        c3p0.transaction(|mut conn| async move {
+            let conn = &mut conn;
+
+            assert_eq!(
+                0,
+                token_service
+                    .fetch_all_by_username(conn, &username_1)
+                    .await?
+                    .len()
+            );
+            assert_eq!(
+                0,
+                token_service
+                    .fetch_all_by_username(conn, &username_2)
+                    .await?
+                    .len()
+            );
+
+            let token_1 = token_repo
+                .save(
+                    conn,
+                    NewModel {
+                        version: 0,
+                        data: TokenData {
+                            token: new_hyphenated_uuid(),
+                            expire_at_epoch_seconds: current_epoch_seconds() - 1,
+                            token_type: TokenType::RESET_PASSWORD,
+                            username: username_1.clone(),
+                        },
+                    },
+                )
+                .await?;
+
+            assert_eq!(
+                1,
+                token_service
+                    .fetch_all_by_username(conn, &username_1)
+                    .await?
+                    .len()
+            );
+
+            let token_2 = token_repo
+                .save(
+                    conn,
+                    NewModel {
+                        version: 0,
+                        data: TokenData {
+                            token: new_hyphenated_uuid(),
+                            expire_at_epoch_seconds: current_epoch_seconds() - 1,
+                            token_type: TokenType::ACCOUNT_ACTIVATION,
+                            username: username_1.clone(),
+                        },
+                    },
+                )
+                .await?;
+
+            assert_eq!(
+                0,
+                token_service
+                    .fetch_all_by_username(conn, &username_2)
+                    .await?
+                    .len()
+            );
+
+            let user_1_tokens = token_service
+                .fetch_all_by_username(conn, &username_1)
+                .await?;
+            assert_eq!(2, user_1_tokens.len());
+
+            assert!(user_1_tokens
+                .iter()
+                .any(|token| token.data.username == username_1 && token_1.id == token.id));
+            assert!(user_1_tokens
+                .iter()
+                .any(|token| token.data.username == username_1 && token_2.id == token.id));
+
+            Ok(())
+        })
+        .await
+    })
+}

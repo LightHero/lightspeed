@@ -28,7 +28,7 @@ impl<RepoManager: AuthRepositoryManager> TokenService<RepoManager> {
         token_type: TokenType,
     ) -> Result<TokenModel, LightSpeedError> {
         let username = username.into();
-        debug!(
+        info!(
             "Generate and save token of type [{:?}] for username [{}]",
             token_type, username
         );
@@ -58,6 +58,15 @@ impl<RepoManager: AuthRepositoryManager> TokenService<RepoManager> {
         };
 
         Ok(token_model)
+    }
+
+    pub async fn fetch_all_by_username(
+        &self,
+        conn: &mut RepoManager::Conn,
+        username: &str,
+    ) -> Result<Vec<TokenModel>, LightSpeedError> {
+        debug!("Fetch by username [{}]", username);
+        self.token_repo.fetch_by_username(conn, username).await
     }
 
     pub async fn delete(

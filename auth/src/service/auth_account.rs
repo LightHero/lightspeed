@@ -176,19 +176,66 @@ impl<RepoManager: AuthRepositoryManager> AuthAccountService<RepoManager> {
             .await
     }
 
-    pub async fn generate_new_activation_token(
+    pub async fn generate_new_activation_token_by_username_and_email(
+        &self,
+        username: &str,
+        email: &str,
+    ) -> Result<(AuthAccountModel, TokenModel), LightSpeedError> {
+        self.c3p0
+            .transaction(|mut conn| async move {
+                let auth_account = self
+                    .fetch_by_username_with_conn(&mut conn, username)
+                    .await?;
+
+                Validator::validate(&|error_details: &mut ErrorDetails| {
+                    if auth_account.data.email != email {
+                        error_details.add_detail("email", "WRONG_EMAIL");
+                    };
+                    Ok(())
+                })?;
+
+                let previous_activation_token = self
+                    .token_service
+                    .fetch_all_by_username(&mut conn, username)
+                    .await?
+                    .into_iter()
+                    .filter(|token| token.data.token_type == TokenType::ACCOUNT_ACTIVATION)
+                    .map(|token| token.data.token)
+                    .collect::<Vec<String>>()
+                    .first()
+                    .cloned()
+                    .ok_or_else(|| LightSpeedError::BadRequest {
+                        message: format!(
+                            "Previous activation token not found for user [{}]",
+                            username
+                        ),
+                        code: ErrorCodes::NOT_PENDING_USER,
+                    })?;
+                self.generate_new_activation_token_by_token_with_conn(
+                    &mut conn,
+                    &previous_activation_token,
+                )
+                .await
+            })
+            .await
+    }
+
+    pub async fn generate_new_activation_token_by_token(
         &self,
         previous_activation_token: &str,
     ) -> Result<(AuthAccountModel, TokenModel), LightSpeedError> {
         self.c3p0
             .transaction(|mut conn| async move {
-                self.generate_new_activation_token_with_conn(&mut conn, previous_activation_token)
-                    .await
+                self.generate_new_activation_token_by_token_with_conn(
+                    &mut conn,
+                    previous_activation_token,
+                )
+                .await
             })
             .await
     }
 
-    pub async fn generate_new_activation_token_with_conn(
+    pub async fn generate_new_activation_token_by_token_with_conn(
         &self,
         conn: &mut RepoManager::Conn,
         previous_activation_token: &str,

@@ -339,8 +339,59 @@ fn should_regenerate_activation_token() -> Result<(), LightSpeedError> {
 
         let (new_user, new_token) = auth_module
             .auth_account_service
-            .generate_new_activation_token(&token.data.token)
+            .generate_new_activation_token_by_token(&token.data.token)
             .await?;
+        assert_eq!(user.id, new_user.id);
+        assert!(!(token.id == new_token.id));
+        assert!(!(token.data.token == new_token.data.token));
+
+        assert!(auth_module
+            .auth_account_service
+            .activate_user(&token.data.token)
+            .await
+            .is_err());
+
+        let activated_user = auth_module
+            .auth_account_service
+            .activate_user(&new_token.data.token)
+            .await?;
+
+        assert_eq!(AuthAccountStatus::ACTIVE, activated_user.data.status);
+        assert_eq!(user.id, activated_user.id);
+
+        Ok(())
+    })
+}
+
+#[test]
+fn should_regenerate_activation_token_by_email_and_username() -> Result<(), LightSpeedError> {
+    test(async {
+        let data = data(false).await;
+        let auth_module = &data.0;
+        let (user, token) = create_user(&auth_module, false).await?;
+
+        // use wrong email
+        assert!(auth_module
+            .auth_account_service
+            .generate_new_activation_token_by_username_and_email(&user.data.username, "email")
+            .await
+            .is_err());
+
+        // use wrong username
+        assert!(auth_module
+            .auth_account_service
+            .generate_new_activation_token_by_username_and_email("name", &user.data.email)
+            .await
+            .is_err());
+
+        let (new_user, new_token) = auth_module
+            .auth_account_service
+            .generate_new_activation_token_by_username_and_email(
+                &user.data.username,
+                &user.data.email,
+            )
+            .await?;
+
         assert_eq!(user.id, new_user.id);
         assert!(!(token.id == new_token.id));
         assert!(!(token.data.token == new_token.data.token));
@@ -403,7 +454,7 @@ fn should_regenerate_activation_token_even_if_token_expired() -> Result<(), Ligh
 
         let (_, new_token) = auth_module
             .auth_account_service
-            .generate_new_activation_token(&token_model.data.token)
+            .generate_new_activation_token_by_token(&token_model.data.token)
             .await?;
 
         assert!(auth_module
@@ -440,7 +491,7 @@ fn should_resend_activation_token_only_if_correct_token_type() -> Result<(), Lig
 
         assert!(auth_module
             .auth_account_service
-            .generate_new_activation_token(&token.data.token)
+            .generate_new_activation_token_by_token(&token.data.token)
             .await
             .is_err());
 

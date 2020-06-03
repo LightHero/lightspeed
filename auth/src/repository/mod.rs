@@ -75,6 +75,12 @@ pub trait TokenRepository: Clone + Send + Sync {
         token_string: &str,
     ) -> Result<TokenModel, LightSpeedError>;
 
+    async fn fetch_by_username(
+        &self,
+        conn: &mut Self::Conn,
+        username: &str,
+    ) -> Result<Vec<TokenModel>, LightSpeedError>;
+
     async fn save(
         &self,
         conn: &mut Self::Conn,
