@@ -8,3 +8,11 @@ pub struct SendNewActivationTokenDto {
     pub token: String,
     pub language: Language,
 }
+
+#[derive(Serialize, Deserialize, TypeScriptify)]
+#[serde(rename_all = "camelCase")]
+pub struct SendNewActivationTokenByUsernameAndEmailDto {
+    pub username: String,
+    pub email: String,
+    pub language: Language,
+}
