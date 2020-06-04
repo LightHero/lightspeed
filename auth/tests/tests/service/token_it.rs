@@ -32,7 +32,7 @@ fn should_delete_token() -> Result<(), LightSpeedError> {
             assert!(token_repo.exists_by_id(conn, &saved_token.id).await?);
             assert!(auth_module
                 .token_service
-                .delete(conn, saved_token.clone())
+                .delete_with_conn(conn, saved_token.clone())
                 .await
                 .is_ok());
             assert!(!token_repo.exists_by_id(conn, &saved_token.id).await?);
@@ -58,7 +58,7 @@ fn should_generate_token() -> Result<(), LightSpeedError> {
             let before = current_epoch_seconds();
             let token = auth_module
                 .token_service
-                .generate_and_save_token(conn, username.clone(), token_type.clone())
+                .generate_and_save_token_with_conn(conn, username.clone(), token_type.clone())
                 .await?;
             let after = current_epoch_seconds();
 
@@ -76,17 +76,17 @@ fn should_generate_token() -> Result<(), LightSpeedError> {
 
             assert!(auth_module
                 .token_service
-                .fetch_by_token(conn, &token.data.token, true)
+                .fetch_by_token_with_conn(conn, &token.data.token, true)
                 .await
                 .is_ok());
             assert!(auth_module
                 .token_service
-                .delete(conn, token.clone())
+                .delete_with_conn(conn, token.clone())
                 .await
                 .is_ok());
             assert!(auth_module
                 .token_service
-                .fetch_by_token(conn, &token.data.token, true)
+                .fetch_by_token_with_conn(conn, &token.data.token, true)
                 .await
                 .is_err());
             Ok(())
@@ -120,7 +120,7 @@ fn should_validate_token_on_fetch() -> Result<(), LightSpeedError> {
 
             assert!(auth_module
                 .token_service
-                .fetch_by_token(conn, &saved_token.data.token, true)
+                .fetch_by_token_with_conn(conn, &saved_token.data.token, true)
                 .await
                 .is_err());
 
@@ -149,14 +149,14 @@ fn should_return_all_tokens_by_username() -> Result<(), LightSpeedError> {
             assert_eq!(
                 0,
                 token_service
-                    .fetch_all_by_username(conn, &username_1)
+                    .fetch_all_by_username_with_conn(conn, &username_1)
                     .await?
                     .len()
             );
             assert_eq!(
                 0,
                 token_service
-                    .fetch_all_by_username(conn, &username_2)
+                    .fetch_all_by_username_with_conn(conn, &username_2)
                     .await?
                     .len()
             );
@@ -179,7 +179,7 @@ fn should_return_all_tokens_by_username() -> Result<(), LightSpeedError> {
             assert_eq!(
                 1,
                 token_service
-                    .fetch_all_by_username(conn, &username_1)
+                    .fetch_all_by_username_with_conn(conn, &username_1)
                     .await?
                     .len()
             );
@@ -202,13 +202,13 @@ fn should_return_all_tokens_by_username() -> Result<(), LightSpeedError> {
             assert_eq!(
                 0,
                 token_service
-                    .fetch_all_by_username(conn, &username_2)
+                    .fetch_all_by_username_with_conn(conn, &username_2)
                     .await?
                     .len()
             );
 
             let user_1_tokens = token_service
-                .fetch_all_by_username(conn, &username_1)
+                .fetch_all_by_username_with_conn(conn, &username_1)
                 .await?;
             assert_eq!(2, user_1_tokens.len());
 

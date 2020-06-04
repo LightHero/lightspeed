@@ -248,7 +248,7 @@ fn should_activate_user() -> Result<(), LightSpeedError> {
             .transaction(|mut conn| async move {
                 auth_module
                     .token_service
-                    .fetch_by_token(&mut conn, &token.data.token, false)
+                    .fetch_by_token_with_conn(&mut conn, &token.data.token, false)
                     .await
             })
             .await
@@ -273,7 +273,7 @@ fn should_activate_user_only_if_activation_token_type() -> Result<(), LightSpeed
             .transaction(|mut conn| async move {
                 let token = auth_module
                     .token_service
-                    .generate_and_save_token(
+                    .generate_and_save_token_with_conn(
                         &mut conn,
                         &user.data.username,
                         TokenType::RESET_PASSWORD,
@@ -308,7 +308,7 @@ fn should_activate_user_only_if_pending_activation() -> Result<(), LightSpeedErr
             .transaction::<_, LightSpeedError, _, _>(|mut conn| async move {
                 let token = auth_module
                     .token_service
-                    .generate_and_save_token(
+                    .generate_and_save_token_with_conn(
                         &mut conn,
                         &user.data.username,
                         TokenType::ACCOUNT_ACTIVATION,
@@ -440,7 +440,7 @@ fn should_regenerate_activation_token_even_if_token_expired() -> Result<(), Ligh
             .transaction(|mut conn| async move {
                 auth_module
                     .token_service
-                    .fetch_by_token(&mut conn, &token_model.data.token, true)
+                    .fetch_by_token_with_conn(&mut conn, &token_model.data.token, true)
                     .await
             })
             .await
@@ -480,7 +480,7 @@ fn should_resend_activation_token_only_if_correct_token_type() -> Result<(), Lig
             .transaction(|mut conn| async move {
                 auth_module
                     .token_service
-                    .generate_and_save_token(
+                    .generate_and_save_token_with_conn(
                         &mut conn,
                         &user.data.username,
                         TokenType::RESET_PASSWORD,
@@ -817,7 +817,7 @@ fn should_reset_password_by_token() -> Result<(), LightSpeedError> {
             .transaction(|mut conn| async move {
                 auth_module
                     .token_service
-                    .generate_and_save_token(
+                    .generate_and_save_token_with_conn(
                         &mut conn,
                         &user.data.username,
                         TokenType::RESET_PASSWORD,
@@ -870,7 +870,7 @@ fn should_reset_password_only_if_correct_token_type() -> Result<(), LightSpeedEr
             .transaction(|mut conn| async move {
                 auth_module
                     .token_service
-                    .generate_and_save_token(
+                    .generate_and_save_token_with_conn(
                         &mut conn,
                         &user.data.username,
                         TokenType::ACCOUNT_ACTIVATION,
@@ -911,7 +911,7 @@ fn should_reset_password_only_if_user_is_active() -> Result<(), LightSpeedError>
             .transaction(|mut conn| async move {
                 auth_module
                     .token_service
-                    .generate_and_save_token(
+                    .generate_and_save_token_with_conn(
                         &mut conn,
                         &user.data.username,
                         TokenType::RESET_PASSWORD,
@@ -951,7 +951,7 @@ fn should_reset_password_only_if_passwords_match() -> Result<(), LightSpeedError
             .transaction(|mut conn| async move {
                 auth_module
                     .token_service
-                    .generate_and_save_token(
+                    .generate_and_save_token_with_conn(
                         &mut conn,
                         &user.data.username,
                         TokenType::RESET_PASSWORD,

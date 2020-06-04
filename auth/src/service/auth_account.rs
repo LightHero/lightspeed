@@ -160,19 +160,19 @@ impl<RepoManager: AuthRepositoryManager> AuthAccountService<RepoManager> {
             .await?;
 
         let token = self
-            .generate_activation_token(conn, &auth_account_model.data.username)
+            .generate_activation_token_witn_conn(conn, &auth_account_model.data.username)
             .await?;
         Ok((auth_account_model, token))
     }
 
-    async fn generate_activation_token(
+    async fn generate_activation_token_witn_conn(
         &self,
         conn: &mut RepoManager::Conn,
         username: &str,
     ) -> Result<TokenModel, LightSpeedError> {
         debug!("Generate activation token for username [{}]", username);
         self.token_service
-            .generate_and_save_token(conn, username, TokenType::ACCOUNT_ACTIVATION)
+            .generate_and_save_token_with_conn(conn, username, TokenType::ACCOUNT_ACTIVATION)
             .await
     }
 
@@ -181,42 +181,53 @@ impl<RepoManager: AuthRepositoryManager> AuthAccountService<RepoManager> {
         username: &str,
         email: &str,
     ) -> Result<(AuthAccountModel, TokenModel), LightSpeedError> {
-        self.c3p0
-            .transaction(|mut conn| async move {
-                let auth_account = self
-                    .fetch_by_username_with_conn(&mut conn, username)
-                    .await?;
+        self.c3p0.transaction(|mut conn| async move {
+            self.generate_new_activation_token_by_username_and_email_with_conn(
+                &mut conn, username, email,
+            )
+            .await
+        }).await
+    }
 
-                Validator::validate(&|error_details: &mut ErrorDetails| {
-                    if auth_account.data.email != email {
-                        error_details.add_detail("email", "WRONG_EMAIL");
-                    };
-                    Ok(())
-                })?;
+    pub async fn generate_new_activation_token_by_username_and_email_with_conn(
+        &self,
+        conn: &mut RepoManager::Conn,
+        username: &str,
+        email: &str,
+    ) -> Result<(AuthAccountModel, TokenModel), LightSpeedError> {
+        debug!(
+            "Generate new activation token for username [{}] and email [{}]",
+            username, email
+        );
+        let auth_account = self
+            .fetch_by_username_with_conn(conn, username)
+            .await?;
 
-                let previous_activation_token = self
-                    .token_service
-                    .fetch_all_by_username(&mut conn, username)
-                    .await?
-                    .into_iter()
-                    .filter(|token| token.data.token_type == TokenType::ACCOUNT_ACTIVATION)
-                    .map(|token| token.data.token)
-                    .collect::<Vec<String>>()
-                    .first()
-                    .cloned()
-                    .ok_or_else(|| LightSpeedError::BadRequest {
-                        message: format!(
-                            "Previous activation token not found for user [{}]",
-                            username
-                        ),
-                        code: ErrorCodes::NOT_PENDING_USER,
-                    })?;
-                self.generate_new_activation_token_by_token_with_conn(
-                    &mut conn,
-                    &previous_activation_token,
-                )
-                .await
-            })
+        Validator::validate(&|error_details: &mut ErrorDetails| {
+            if auth_account.data.email != email {
+                error_details.add_detail("email", "WRONG_EMAIL");
+            };
+            Ok(())
+        })?;
+
+        let previous_activation_token = self
+            .token_service
+            .fetch_all_by_username_with_conn(conn, username)
+            .await?
+            .into_iter()
+            .filter(|token| token.data.token_type == TokenType::ACCOUNT_ACTIVATION)
+            .map(|token| token.data.token)
+            .collect::<Vec<String>>()
+            .first()
+            .cloned()
+            .ok_or_else(|| LightSpeedError::BadRequest {
+                message: format!(
+                    "Previous activation token not found for user [{}]",
+                    username
+                ),
+                code: ErrorCodes::NOT_PENDING_USER,
+            })?;
+        self.generate_new_activation_token_by_token_with_conn(conn, &previous_activation_token)
             .await
     }
 
@@ -246,7 +257,7 @@ impl<RepoManager: AuthRepositoryManager> AuthAccountService<RepoManager> {
         );
         let token = self
             .token_service
-            .fetch_by_token(conn, previous_activation_token, false)
+            .fetch_by_token_with_conn(conn, previous_activation_token, false)
             .await?;
 
         Validator::validate(&|error_details: &mut ErrorDetails| {
@@ -280,10 +291,10 @@ impl<RepoManager: AuthRepositoryManager> AuthAccountService<RepoManager> {
             }
         };
 
-        self.token_service.delete(conn, token).await?;
+        self.token_service.delete_with_conn(conn, token).await?;
 
         let token = self
-            .generate_activation_token(conn, &user.data.username)
+            .generate_activation_token_witn_conn(conn, &user.data.username)
             .await?;
         Ok((user, token))
     }
@@ -298,7 +309,7 @@ impl<RepoManager: AuthRepositoryManager> AuthAccountService<RepoManager> {
                 let conn = &mut conn;
                 let token = self
                     .token_service
-                    .fetch_by_token(conn, activation_token, true)
+                    .fetch_by_token_with_conn(conn, activation_token, true)
                     .await?;
 
                 Validator::validate(&|error_details: &mut ErrorDetails| {
@@ -329,7 +340,7 @@ impl<RepoManager: AuthRepositoryManager> AuthAccountService<RepoManager> {
                     }
                 };
 
-                self.token_service.delete(conn, token).await?;
+                self.token_service.delete_with_conn(conn, token).await?;
 
                 user.data.status = AuthAccountStatus::ACTIVE;
                 user = self.auth_repo.update(conn, user).await?;
@@ -371,7 +382,7 @@ impl<RepoManager: AuthRepositoryManager> AuthAccountService<RepoManager> {
 
         let token = self
             .token_service
-            .generate_and_save_token(conn, username, TokenType::RESET_PASSWORD)
+            .generate_and_save_token_with_conn(conn, username, TokenType::RESET_PASSWORD)
             .await?;
 
         Ok((user, token))
@@ -393,7 +404,7 @@ impl<RepoManager: AuthRepositoryManager> AuthAccountService<RepoManager> {
                 let conn = &mut conn;
                 let token = self
                     .token_service
-                    .fetch_by_token(conn, &reset_password_dto.token, false)
+                    .fetch_by_token_with_conn(conn, &reset_password_dto.token, false)
                     .await?;
 
                 info!("Reset password of user [{}]", token.data.username);
@@ -421,7 +432,7 @@ impl<RepoManager: AuthRepositoryManager> AuthAccountService<RepoManager> {
                     }
                 };
 
-                self.token_service.delete(conn, token).await?;
+                self.token_service.delete_with_conn(conn, token).await?;
 
                 user.data.password = self
                     .password_service

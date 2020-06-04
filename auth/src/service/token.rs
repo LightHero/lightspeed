@@ -21,7 +21,7 @@ impl<RepoManager: AuthRepositoryManager> TokenService<RepoManager> {
         }
     }
 
-    pub async fn generate_and_save_token<S: Into<String>>(
+    pub async fn generate_and_save_token_with_conn<S: Into<String>>(
         &self,
         conn: &mut RepoManager::Conn,
         username: S,
@@ -44,7 +44,7 @@ impl<RepoManager: AuthRepositoryManager> TokenService<RepoManager> {
         self.token_repo.save(conn, token).await
     }
 
-    pub async fn fetch_by_token(
+    pub async fn fetch_by_token_with_conn(
         &self,
         conn: &mut RepoManager::Conn,
         token: &str,
@@ -60,7 +60,7 @@ impl<RepoManager: AuthRepositoryManager> TokenService<RepoManager> {
         Ok(token_model)
     }
 
-    pub async fn fetch_all_by_username(
+    pub async fn fetch_all_by_username_with_conn(
         &self,
         conn: &mut RepoManager::Conn,
         username: &str,
@@ -69,7 +69,7 @@ impl<RepoManager: AuthRepositoryManager> TokenService<RepoManager> {
         self.token_repo.fetch_by_username(conn, username).await
     }
 
-    pub async fn delete(
+    pub async fn delete_with_conn(
         &self,
         conn: &mut RepoManager::Conn,
         token_model: TokenModel,
