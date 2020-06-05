@@ -22,8 +22,8 @@ pub enum Scheduler {
 }
 
 impl Scheduler {
-    pub fn from(schedule: &[&dyn IntoScheduler]) -> Result<Scheduler, SchedulerError> {
-        schedule.into_scheduler()
+    pub fn from(schedule: &[&dyn TryToScheduler]) -> Result<Scheduler, SchedulerError> {
+        schedule.to_scheduler()
     }
 
     // Determine the next time we should execute (from a reference point)
@@ -81,19 +81,19 @@ impl Scheduler {
     }
 }
 
-pub trait IntoScheduler {
-    fn into_scheduler(&self) -> Result<Scheduler, SchedulerError>;
+pub trait TryToScheduler {
+    fn to_scheduler(&self) -> Result<Scheduler, SchedulerError>;
 }
 
-impl IntoScheduler for Vec<&str> {
-    fn into_scheduler(&self) -> Result<Scheduler, SchedulerError> {
+impl TryToScheduler for Vec<&str> {
+    fn to_scheduler(&self) -> Result<Scheduler, SchedulerError> {
         match self.len() {
             0 => Ok(Scheduler::Never),
-            1 => self[0].into_scheduler(),
+            1 => self[0].to_scheduler(),
             _ => {
                 let mut result = vec![];
                 for scheduler in self {
-                    result.push(scheduler.into_scheduler()?);
+                    result.push(scheduler.to_scheduler()?);
                 }
                 Ok(Scheduler::Multi(result))
             }
@@ -101,21 +101,21 @@ impl IntoScheduler for Vec<&str> {
     }
 }
 
-impl IntoScheduler for Vec<&dyn IntoScheduler> {
-    fn into_scheduler(&self) -> Result<Scheduler, SchedulerError> {
-        (&self[..]).into_scheduler()
+impl TryToScheduler for Vec<&dyn TryToScheduler> {
+    fn to_scheduler(&self) -> Result<Scheduler, SchedulerError> {
+        (&self[..]).to_scheduler()
     }
 }
 
-impl IntoScheduler for &[&dyn IntoScheduler] {
-    fn into_scheduler(&self) -> Result<Scheduler, SchedulerError> {
+impl TryToScheduler for &[&dyn TryToScheduler] {
+    fn to_scheduler(&self) -> Result<Scheduler, SchedulerError> {
         match self.len() {
             0 => Ok(Scheduler::Never),
-            1 => self[0].into_scheduler(),
+            1 => self[0].to_scheduler(),
             _ => {
                 let mut result = vec![];
                 for scheduler in *self {
-                    result.push(scheduler.into_scheduler()?);
+                    result.push(scheduler.to_scheduler()?);
                 }
                 Ok(Scheduler::Multi(result))
             }
@@ -123,8 +123,8 @@ impl IntoScheduler for &[&dyn IntoScheduler] {
     }
 }
 
-impl<'a> IntoScheduler for &'a str {
-    fn into_scheduler(&self) -> Result<Scheduler, SchedulerError> {
+impl<'a> TryToScheduler for &'a str {
+    fn to_scheduler(&self) -> Result<Scheduler, SchedulerError> {
         Ok(Scheduler::Cron(self.parse().map_err(|err| {
             SchedulerError::ScheduleDefinitionError {
                 message: format!("Cannot create schedule for [{}]. Err: {}", self, err),
@@ -133,14 +133,14 @@ impl<'a> IntoScheduler for &'a str {
     }
 }
 
-impl IntoScheduler for String {
-    fn into_scheduler(&self) -> Result<Scheduler, SchedulerError> {
-        self.as_str().into_scheduler()
+impl TryToScheduler for String {
+    fn to_scheduler(&self) -> Result<Scheduler, SchedulerError> {
+        self.as_str().to_scheduler()
     }
 }
 
-impl IntoScheduler for Duration {
-    fn into_scheduler(&self) -> Result<Scheduler, SchedulerError> {
+impl TryToScheduler for Duration {
+    fn to_scheduler(&self) -> Result<Scheduler, SchedulerError> {
         Ok(Scheduler::Interval {
             interval_duration: *self,
             execute_at_startup: false,
@@ -148,8 +148,8 @@ impl IntoScheduler for Duration {
     }
 }
 
-impl IntoScheduler for (Duration, bool) {
-    fn into_scheduler(&self) -> Result<Scheduler, SchedulerError> {
+impl TryToScheduler for (Duration, bool) {
+    fn to_scheduler(&self) -> Result<Scheduler, SchedulerError> {
         Ok(Scheduler::Interval {
             interval_duration: self.0,
             execute_at_startup: self.1,
@@ -173,7 +173,7 @@ pub mod test {
     fn interval_should_schedule_plus_duration() {
         let now = Utc::now();
         let secs = 10;
-        let mut schedule = Duration::new(secs, 0).into_scheduler().unwrap();
+        let mut schedule = Duration::new(secs, 0).to_scheduler().unwrap();
 
         let next = schedule.next(&now, None).unwrap();
 
@@ -184,7 +184,7 @@ pub mod test {
     fn interval_should_schedule_at_startup() {
         let now = Utc::now();
         let secs = 10;
-        let mut schedule = (Duration::new(secs, 0), true).into_scheduler().unwrap();
+        let mut schedule = (Duration::new(secs, 0), true).to_scheduler().unwrap();
 
         let first = schedule.next(&now, None).unwrap();
         assert_eq!(now.timestamp(), first.timestamp());
@@ -195,7 +195,7 @@ pub mod test {
 
     #[test]
     fn should_build_an_interval_schedule_from_duration() {
-        let schedule = Duration::new(1, 1).into_scheduler().unwrap();
+        let schedule = Duration::new(1, 1).to_scheduler().unwrap();
         match schedule {
             Scheduler::Interval { .. } => assert!(true),
             _ => assert!(false),
@@ -204,7 +204,7 @@ pub mod test {
 
     #[test]
     fn should_build_a_periodic_schedule_from_str() {
-        let schedule = "* * * * * *".into_scheduler().unwrap();
+        let schedule = "* * * * * *".to_scheduler().unwrap();
         match schedule {
             Scheduler::Cron(_) => assert!(true),
             _ => assert!(false),
@@ -249,7 +249,7 @@ pub mod test {
 
     #[test]
     fn cron_should_be_time_zone_aware_with_utc() {
-        let mut schedule = "* 11 10 * * *".into_scheduler().unwrap();
+        let mut schedule = "* 11 10 * * *".to_scheduler().unwrap();
         let date = Utc.ymd(2010, 1, 1).and_hms(10, 10, 0);
 
         let expected_utc = Utc.ymd(2010, 1, 1).and_hms(10, 11, 0);
@@ -261,7 +261,7 @@ pub mod test {
 
     #[test]
     fn cron_should_be_time_zone_aware_with_custom_time_zone() {
-        let mut schedule = "* 11 10 * * *".into_scheduler().unwrap();
+        let mut schedule = "* 11 10 * * *".to_scheduler().unwrap();
 
         let date = Utc.ymd(2010, 1, 1).and_hms(10, 10, 0);
         let expected_utc = Utc.ymd(2010, 1, 2).and_hms(09, 11, 0);

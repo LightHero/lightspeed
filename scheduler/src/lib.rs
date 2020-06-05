@@ -1,6 +1,6 @@
 use crate::error::SchedulerError;
 use crate::job::{Job, JobScheduler};
-use crate::scheduler::{IntoScheduler, Scheduler};
+use crate::scheduler::{TryToScheduler, Scheduler};
 use chrono::Utc;
 use chrono_tz::{Tz, UTC};
 use log::*;
@@ -120,10 +120,10 @@ impl JobExecutor {
     /// Adds a job to the JobExecutor.
     pub fn add_job(
         &mut self,
-        schedule: &[&dyn IntoScheduler],
+        schedule: &[&dyn TryToScheduler],
         job: Job,
     ) -> Result<(), SchedulerError> {
-        self.add_job_with_scheduler(schedule.into_scheduler()?, job);
+        self.add_job_with_scheduler(schedule.to_scheduler()?, job);
         Ok(())
     }
 
