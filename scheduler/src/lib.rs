@@ -1,10 +1,9 @@
 use crate::error::SchedulerError;
 use crate::job::{Job, JobScheduler};
-use crate::scheduler::Scheduler;
+use crate::scheduler::{IntoScheduler, Scheduler};
 use chrono::Utc;
 use chrono_tz::{Tz, UTC};
 use log::*;
-use std::convert::TryInto;
 use std::sync::Arc;
 
 pub mod error;
@@ -119,15 +118,12 @@ impl JobExecutor {
     }
 
     /// Adds a job to the JobExecutor.
-    pub fn add_job<S: TryInto<Scheduler>>(
+    pub fn add_job(
         &mut self,
-        schedule: S,
+        schedule: &[&dyn IntoScheduler],
         job: Job,
-    ) -> Result<(), SchedulerError>
-    where
-        SchedulerError: std::convert::From<<S as std::convert::TryInto<Scheduler>>::Error>,
-    {
-        self.add_job_with_scheduler(schedule.try_into()?, job);
+    ) -> Result<(), SchedulerError> {
+        self.add_job_with_scheduler(schedule.into_scheduler()?, job);
         Ok(())
     }
 
@@ -158,7 +154,7 @@ pub mod test {
 
         executor
             .add_job(
-                Duration::new(0, 1),
+                &[&Duration::new(0, 1)],
                 Job::new("g", "n", None, move || {
                     tx.send("").unwrap();
                     println!("job - started");
@@ -192,7 +188,7 @@ pub mod test {
         let tx_1 = tx.clone();
         executor
             .add_job(
-                Duration::new(0, 1),
+                &[&Duration::new(0, 1)],
                 Job::new("g", "n", None, move || {
                     tx_1.send("").unwrap();
                     println!("job 1 - started");
@@ -208,7 +204,7 @@ pub mod test {
         let tx_2 = tx.clone();
         executor
             .add_job(
-                Duration::new(0, 1),
+                &[&Duration::new(0, 1)],
                 Job::new("g", "n", None, move || {
                     tx_2.send("").unwrap();
                     println!("job 2 - started");
@@ -224,7 +220,7 @@ pub mod test {
         let tx_3 = tx.clone();
         executor
             .add_job(
-                Duration::new(0, 1),
+                &[&Duration::new(0, 1)],
                 Job::new("g", "n", None, move || {
                     tx_3.send("").unwrap();
                     println!("job 3 - started");

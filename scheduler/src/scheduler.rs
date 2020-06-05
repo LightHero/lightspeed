@@ -1,7 +1,6 @@
 use crate::error::SchedulerError;
 use chrono::prelude::*;
 use chrono_tz::Tz;
-use std::convert::TryFrom;
 use std::time::Duration;
 
 pub enum Scheduler {
@@ -15,11 +14,18 @@ pub enum Scheduler {
         execute_at_startup: bool,
     },
 
+    /// Multi shceduler: the execution is trigger where at least one of the schedulers in matched
+    Multi(Vec<Scheduler>),
+
     /// Set to execute to never
     Never,
 }
 
 impl Scheduler {
+    pub fn from(schedule: &[&dyn IntoScheduler]) -> Result<Scheduler, SchedulerError> {
+        schedule.into_scheduler()
+    }
+
     // Determine the next time we should execute (from a reference point)
     pub fn next(&mut self, after: &DateTime<Utc>, timezone: Option<Tz>) -> Option<DateTime<Utc>> {
         match *self {
@@ -51,46 +57,102 @@ impl Scheduler {
                 }
             }
 
+            Scheduler::Multi(ref mut schedulers) => {
+                let mut result = None;
+                for scheduler in schedulers {
+                    if let Some(local_next) = scheduler.next(after, timezone) {
+                        result = match result {
+                            Some(current_next) => {
+                                if local_next < current_next {
+                                    Some(local_next)
+                                } else {
+                                    Some(current_next)
+                                }
+                            }
+                            None => Some(local_next),
+                        }
+                    }
+                }
+                result
+            }
+
             Scheduler::Never => None,
         }
     }
 }
 
-impl<'a> TryFrom<&'a str> for Scheduler {
-    type Error = SchedulerError;
-    fn try_from(value: &str) -> Result<Self, Self::Error> {
-        Ok(Scheduler::Cron(value.parse().map_err(|err| {
+pub trait IntoScheduler {
+    fn into_scheduler(&self) -> Result<Scheduler, SchedulerError>;
+}
+
+impl IntoScheduler for Vec<&str> {
+    fn into_scheduler(&self) -> Result<Scheduler, SchedulerError> {
+        match self.len() {
+            0 => Ok(Scheduler::Never),
+            1 => self[0].into_scheduler(),
+            _ => {
+                let mut result = vec![];
+                for scheduler in self {
+                    result.push(scheduler.into_scheduler()?);
+                }
+                Ok(Scheduler::Multi(result))
+            }
+        }
+    }
+}
+
+impl IntoScheduler for Vec<&dyn IntoScheduler> {
+    fn into_scheduler(&self) -> Result<Scheduler, SchedulerError> {
+        (&self[..]).into_scheduler()
+    }
+}
+
+impl IntoScheduler for &[&dyn IntoScheduler] {
+    fn into_scheduler(&self) -> Result<Scheduler, SchedulerError> {
+        match self.len() {
+            0 => Ok(Scheduler::Never),
+            1 => self[0].into_scheduler(),
+            _ => {
+                let mut result = vec![];
+                for scheduler in *self {
+                    result.push(scheduler.into_scheduler()?);
+                }
+                Ok(Scheduler::Multi(result))
+            }
+        }
+    }
+}
+
+impl<'a> IntoScheduler for &'a str {
+    fn into_scheduler(&self) -> Result<Scheduler, SchedulerError> {
+        Ok(Scheduler::Cron(self.parse().map_err(|err| {
             SchedulerError::ScheduleDefinitionError {
-                message: format!("Cannot create schedule for [{}]. Err: {}", value, err),
+                message: format!("Cannot create schedule for [{}]. Err: {}", self, err),
             }
         })?))
     }
 }
 
-impl TryFrom<String> for Scheduler {
-    type Error = SchedulerError;
-    fn try_from(value: String) -> Result<Self, Self::Error> {
-        use std::convert::TryInto;
-        value.as_str().try_into()
+impl IntoScheduler for String {
+    fn into_scheduler(&self) -> Result<Scheduler, SchedulerError> {
+        self.as_str().into_scheduler()
     }
 }
 
-impl TryFrom<Duration> for Scheduler {
-    type Error = SchedulerError;
-    fn try_from(value: Duration) -> Result<Self, Self::Error> {
+impl IntoScheduler for Duration {
+    fn into_scheduler(&self) -> Result<Scheduler, SchedulerError> {
         Ok(Scheduler::Interval {
-            interval_duration: value,
+            interval_duration: *self,
             execute_at_startup: false,
         })
     }
 }
 
-impl TryFrom<(Duration, bool)> for Scheduler {
-    type Error = SchedulerError;
-    fn try_from(value: (Duration, bool)) -> Result<Self, Self::Error> {
+impl IntoScheduler for (Duration, bool) {
+    fn into_scheduler(&self) -> Result<Scheduler, SchedulerError> {
         Ok(Scheduler::Interval {
-            interval_duration: value.0,
-            execute_at_startup: value.1,
+            interval_duration: self.0,
+            execute_at_startup: self.1,
         })
     }
 }
@@ -100,7 +162,6 @@ pub mod test {
 
     use super::*;
     use chrono_tz::UTC;
-    use std::convert::TryInto;
 
     #[test]
     fn never_should_not_schedule() {
@@ -112,7 +173,7 @@ pub mod test {
     fn interval_should_schedule_plus_duration() {
         let now = Utc::now();
         let secs = 10;
-        let mut schedule: Scheduler = Duration::new(secs, 0).try_into().unwrap();
+        let mut schedule = Duration::new(secs, 0).into_scheduler().unwrap();
 
         let next = schedule.next(&now, None).unwrap();
 
@@ -123,7 +184,7 @@ pub mod test {
     fn interval_should_schedule_at_startup() {
         let now = Utc::now();
         let secs = 10;
-        let mut schedule: Scheduler = (Duration::new(secs, 0), true).try_into().unwrap();
+        let mut schedule = (Duration::new(secs, 0), true).into_scheduler().unwrap();
 
         let first = schedule.next(&now, None).unwrap();
         assert_eq!(now.timestamp(), first.timestamp());
@@ -134,7 +195,7 @@ pub mod test {
 
     #[test]
     fn should_build_an_interval_schedule_from_duration() {
-        let schedule: Scheduler = Duration::new(1, 1).try_into().unwrap();
+        let schedule = Duration::new(1, 1).into_scheduler().unwrap();
         match schedule {
             Scheduler::Interval { .. } => assert!(true),
             _ => assert!(false),
@@ -143,7 +204,7 @@ pub mod test {
 
     #[test]
     fn should_build_a_periodic_schedule_from_str() {
-        let schedule: Scheduler = "* * * * * *".try_into().unwrap();
+        let schedule = "* * * * * *".into_scheduler().unwrap();
         match schedule {
             Scheduler::Cron(_) => assert!(true),
             _ => assert!(false),
@@ -151,8 +212,44 @@ pub mod test {
     }
 
     #[test]
+    fn should_build_a_multi_scheduler_from_empty_array() {
+        let schedule = Scheduler::from(&vec![]).unwrap();
+        match schedule {
+            Scheduler::Never => assert!(true),
+            _ => assert!(false),
+        }
+    }
+
+    #[test]
+    fn should_build_a_multi_scheduler_from_single_entry_array() {
+        let schedule = Scheduler::from(&[&vec!["* * * * * *"]]).unwrap();
+        match schedule {
+            Scheduler::Cron(_) => assert!(true),
+            _ => assert!(false),
+        }
+    }
+
+    #[test]
+    fn should_build_a_multi_scheduler_from_array() {
+        let schedule = Scheduler::from(&[&"* * * * * *", &Duration::from_secs(9)]).unwrap();
+        match schedule {
+            Scheduler::Multi(inner) => {
+                match inner[0] {
+                    Scheduler::Cron(_) => assert!(true),
+                    _ => assert!(false),
+                };
+                match inner[1] {
+                    Scheduler::Interval { .. } => assert!(true),
+                    _ => assert!(false),
+                };
+            }
+            _ => assert!(false),
+        }
+    }
+
+    #[test]
     fn cron_should_be_time_zone_aware_with_utc() {
-        let mut schedule: Scheduler = "* 11 10 * * *".try_into().unwrap();
+        let mut schedule = "* 11 10 * * *".into_scheduler().unwrap();
         let date = Utc.ymd(2010, 1, 1).and_hms(10, 10, 0);
 
         let expected_utc = Utc.ymd(2010, 1, 1).and_hms(10, 11, 0);
@@ -164,7 +261,7 @@ pub mod test {
 
     #[test]
     fn cron_should_be_time_zone_aware_with_custom_time_zone() {
-        let mut schedule: Scheduler = "* 11 10 * * *".try_into().unwrap();
+        let mut schedule = "* 11 10 * * *".into_scheduler().unwrap();
 
         let date = Utc.ymd(2010, 1, 1).and_hms(10, 10, 0);
         let expected_utc = Utc.ymd(2010, 1, 2).and_hms(09, 11, 0);
@@ -175,4 +272,35 @@ pub mod test {
 
         assert_eq!(next.with_timezone(&Utc), expected_utc);
     }
+
+    #[test]
+    fn multi_should_return_first_possible_next_execution() {
+        let mut schedule = Scheduler::from(&[&"* 10 10 * * *", &"* 20 20 * * *"]).unwrap();
+
+        {
+            let date = Utc.ymd(2010, 1, 1).and_hms(10, 8, 0);
+            let expected = Utc.ymd(2010, 1, 1).and_hms(10, 10, 0);
+
+            let next = schedule.next(&date, Some(UTC)).unwrap();
+            assert_eq!(next.with_timezone(&Utc), expected);
+        }
+
+        {
+            let date = Utc.ymd(2010, 1, 1).and_hms(11, 8, 0);
+            let expected = Utc.ymd(2010, 1, 1).and_hms(20, 20, 0);
+
+            let next = schedule.next(&date, Some(UTC)).unwrap();
+            assert_eq!(next.with_timezone(&Utc), expected);
+        }
+
+        {
+            let date = Utc.ymd(2010, 1, 1).and_hms(22, 8, 0);
+            let expected = Utc.ymd(2010, 1, 2).and_hms(10, 10, 0);
+
+            let next = schedule.next(&date, Some(UTC)).unwrap();
+            assert_eq!(next.with_timezone(&Utc), expected);
+        }
+
+    }
+
 }
