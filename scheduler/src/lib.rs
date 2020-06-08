@@ -120,6 +120,16 @@ impl JobExecutor {
     /// Adds a job to the JobExecutor.
     pub fn add_job(
         &mut self,
+        schedule: &dyn TryToScheduler,
+        job: Job,
+    ) -> Result<(), SchedulerError> {
+        self.add_job_with_scheduler(schedule.to_scheduler()?, job);
+        Ok(())
+    }
+
+    /// Adds a job to the JobExecutor.
+    pub fn add_job_with_multi_schedule(
+        &mut self,
         schedule: &[&dyn TryToScheduler],
         job: Job,
     ) -> Result<(), SchedulerError> {
@@ -154,7 +164,7 @@ pub mod test {
 
         executor
             .add_job(
-                &[&Duration::new(0, 1)],
+                &Duration::new(0, 1),
                 Job::new("g", "n", None, move || {
                     tx.send("").unwrap();
                     println!("job - started");
@@ -187,7 +197,7 @@ pub mod test {
         let count_clone_1 = count_1.clone();
         let tx_1 = tx.clone();
         executor
-            .add_job(
+            .add_job_with_multi_schedule(
                 &[&Duration::new(0, 1)],
                 Job::new("g", "n", None, move || {
                     tx_1.send("").unwrap();
@@ -204,7 +214,7 @@ pub mod test {
         let tx_2 = tx.clone();
         executor
             .add_job(
-                &[&Duration::new(0, 1)],
+                &Duration::new(0, 1),
                 Job::new("g", "n", None, move || {
                     tx_2.send("").unwrap();
                     println!("job 2 - started");
@@ -220,7 +230,7 @@ pub mod test {
         let tx_3 = tx.clone();
         executor
             .add_job(
-                &[&Duration::new(0, 1)],
+                &Duration::new(0, 1),
                 Job::new("g", "n", None, move || {
                     tx_3.send("").unwrap();
                     println!("job 3 - started");
@@ -253,5 +263,12 @@ pub mod test {
     fn should_add_with_explicit_scheduler() {
         let mut executor = new_executor_with_utc_tz();
         executor.add_job_with_scheduler(Scheduler::Never, Job::new("g", "n", None, move || Ok(())));
+    }
+
+    #[test]
+    fn should_register_a_schedule_by_vec() {
+        let mut executor = new_executor_with_utc_tz();
+        executor.add_job(&vec!["0 1 * * * * *"], Job::new("g", "n", None, move || Ok(()))).unwrap();
+        executor.add_job(&vec!["0 1 * * * * *".to_owned(), "0 1 * * * * *".to_owned()], Job::new("g", "n", None, move || Ok(()))).unwrap();
     }
 }

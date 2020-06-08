@@ -85,6 +85,13 @@ pub trait TryToScheduler {
     fn to_scheduler(&self) -> Result<Scheduler, SchedulerError>;
 }
 
+impl TryToScheduler for Vec<String> {
+    fn to_scheduler(&self) -> Result<Scheduler, SchedulerError> {
+        let refs: Vec<&str> = self.iter().map(|s| s.as_ref()).collect();
+        refs.to_scheduler()
+    }
+}
+
 impl TryToScheduler for Vec<&str> {
     fn to_scheduler(&self) -> Result<Scheduler, SchedulerError> {
         match self.len() {
