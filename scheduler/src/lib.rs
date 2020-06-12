@@ -1,6 +1,6 @@
 use crate::error::SchedulerError;
 use crate::job::{Job, JobScheduler};
-use crate::scheduler::{TryToScheduler, Scheduler};
+use crate::scheduler::{Scheduler, TryToScheduler};
 use chrono::Utc;
 use chrono_tz::{Tz, UTC};
 use log::*;
@@ -138,9 +138,12 @@ impl JobExecutor {
     }
 
     /// Adds a job to the JobExecutor.
-    pub fn add_job_with_scheduler(&mut self, schedule: Scheduler, job: Job) {
-        self.jobs
-            .push(Arc::new(JobScheduler::new(schedule, self.timezone, job)));
+    pub fn add_job_with_scheduler<S: Into<Scheduler>>(&mut self, schedule: S, job: Job) {
+        self.jobs.push(Arc::new(JobScheduler::new(
+            schedule.into(),
+            self.timezone,
+            job,
+        )));
     }
 }
 
@@ -268,7 +271,17 @@ pub mod test {
     #[test]
     fn should_register_a_schedule_by_vec() {
         let mut executor = new_executor_with_utc_tz();
-        executor.add_job(&vec!["0 1 * * * * *"], Job::new("g", "n", None, move || Ok(()))).unwrap();
-        executor.add_job(&vec!["0 1 * * * * *".to_owned(), "0 1 * * * * *".to_owned()], Job::new("g", "n", None, move || Ok(()))).unwrap();
+        executor
+            .add_job(
+                &vec!["0 1 * * * * *"],
+                Job::new("g", "n", None, move || Ok(())),
+            )
+            .unwrap();
+        executor
+            .add_job(
+                &vec!["0 1 * * * * *".to_owned(), "0 1 * * * * *".to_owned()],
+                Job::new("g", "n", None, move || Ok(())),
+            )
+            .unwrap();
     }
 }

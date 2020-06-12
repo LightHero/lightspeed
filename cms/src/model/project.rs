@@ -1,6 +1,6 @@
 use c3p0::Model;
 use lightspeed_core::error::{ErrorDetails, LightSpeedError};
-use lightspeed_core::service::validator::number::validate_number_ge;
+use lightspeed_core::service::validator::order::validate_ge;
 use lightspeed_core::service::validator::Validable;
 use serde::{Deserialize, Serialize};
 
@@ -13,7 +13,7 @@ pub struct ProjectData {
 
 impl Validable for ProjectData {
     fn validate(&self, error_details: &mut ErrorDetails) -> Result<(), LightSpeedError> {
-        validate_number_ge(error_details, "name", 3, self.name.len());
+        validate_ge(error_details, "name", 3, self.name.len());
         Ok(())
     }
 }
@@ -23,7 +23,7 @@ pub mod test {
 
     use super::*;
     use lightspeed_core::error::ErrorDetail;
-    use lightspeed_core::service::validator::number::MUST_BE_GREATER_OR_EQUAL;
+    use lightspeed_core::service::validator::order::MUST_BE_GREATER_OR_EQUAL;
     use lightspeed_core::service::validator::Validator;
 
     #[test]

@@ -164,6 +164,12 @@ impl TryToScheduler for (Duration, bool) {
     }
 }
 
+impl Into<Scheduler> for Vec<Scheduler> {
+    fn into(self) -> Scheduler {
+        Scheduler::Multi(self)
+    }
+}
+
 #[cfg(test)]
 pub mod test {
 
@@ -307,7 +313,5 @@ pub mod test {
             let next = schedule.next(&date, Some(UTC)).unwrap();
             assert_eq!(next.with_timezone(&Utc), expected);
         }
-
     }
-
 }

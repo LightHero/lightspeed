@@ -14,7 +14,7 @@ pub fn new_mail_server(
         ),
     );
 
-    (node.get_host_port(1025).unwrap() as u16, node)
+    (node.get_host_port(1025).unwrap(), node)
 }
 
 #[tokio::test]

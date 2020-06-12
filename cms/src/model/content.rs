@@ -3,7 +3,7 @@ use crate::model::schema::{
 };
 use c3p0::Model;
 use lightspeed_core::error::ErrorDetails;
-use lightspeed_core::service::validator::number::{validate_number_ge, validate_number_le};
+use lightspeed_core::service::validator::order::{validate_ge, validate_le};
 use lightspeed_core::service::validator::{ERR_UNKNOWN_FIELD, ERR_VALUE_REQUIRED};
 use once_cell::sync::OnceCell;
 use regex::Regex;
@@ -46,7 +46,7 @@ pub struct Content {
 #[serde(tag = "tag")]
 pub enum ContentFieldValue {
     Number {
-        value: ContentFieldValueArity<Option<usize>>,
+        value: ContentFieldValueArity<Option<u64>>,
     },
     Slug {
         value: ContentFieldValueArity<Option<String>>,
@@ -115,7 +115,7 @@ fn validate_content_field(
     schema_field: &SchemaField,
     error_details: &mut ErrorDetails,
 ) {
-    validate_number_ge(error_details, "name", 1, content_field_name.len());
+    validate_ge(error_details, "name", 1, content_field_name.len());
 
     let full_field_name = "value";
     match &schema_field.field_type {
@@ -267,17 +267,17 @@ fn validate_boolean<S: Into<String>>(
 fn validate_number<S: Into<String> + Clone>(
     required: bool,
     full_field_name: S,
-    value: &Option<usize>,
-    min: &Option<usize>,
-    max: &Option<usize>,
+    value: &Option<u64>,
+    min: &Option<u64>,
+    max: &Option<u64>,
     error_details: &mut ErrorDetails,
 ) {
     if let Some(value) = value {
         if let Some(min) = min {
-            validate_number_ge(error_details, full_field_name.clone(), *min, *value)
+            validate_ge(error_details, full_field_name.clone(), *min, *value)
         }
         if let Some(max) = max {
-            validate_number_le(error_details, full_field_name, *max, *value)
+            validate_le(error_details, full_field_name, *max, *value)
         }
     } else if required {
         error_details.add_detail(full_field_name, ERR_VALUE_REQUIRED);
@@ -309,7 +309,7 @@ fn validate_string<S: Into<String> + Clone>(
 ) {
     if let Some(value) = value {
         if let Some(min_length) = min_length {
-            validate_number_ge(
+            validate_ge(
                 error_details,
                 full_field_name.clone(),
                 *min_length,
@@ -317,7 +317,7 @@ fn validate_string<S: Into<String> + Clone>(
             )
         }
         if let Some(max_length) = max_length {
-            validate_number_le(error_details, full_field_name, *max_length, value.len())
+            validate_le(error_details, full_field_name, *max_length, value.len())
         }
     } else if required {
         error_details.add_detail(full_field_name, ERR_VALUE_REQUIRED);
@@ -329,7 +329,7 @@ mod test {
     use super::*;
     use crate::model::schema::{SchemaField, SchemaFieldArity, SchemaFieldType};
     use lightspeed_core::error::{ErrorDetail, LightSpeedError};
-    use lightspeed_core::service::validator::number::{
+    use lightspeed_core::service::validator::order::{
         MUST_BE_GREATER_OR_EQUAL, MUST_BE_LESS_OR_EQUAL,
     };
     use lightspeed_core::service::validator::Validator;

@@ -181,12 +181,14 @@ impl<RepoManager: AuthRepositoryManager> AuthAccountService<RepoManager> {
         username: &str,
         email: &str,
     ) -> Result<(AuthAccountModel, TokenModel), LightSpeedError> {
-        self.c3p0.transaction(|mut conn| async move {
-            self.generate_new_activation_token_by_username_and_email_with_conn(
-                &mut conn, username, email,
-            )
+        self.c3p0
+            .transaction(|mut conn| async move {
+                self.generate_new_activation_token_by_username_and_email_with_conn(
+                    &mut conn, username, email,
+                )
+                .await
+            })
             .await
-        }).await
     }
 
     pub async fn generate_new_activation_token_by_username_and_email_with_conn(
@@ -199,9 +201,7 @@ impl<RepoManager: AuthRepositoryManager> AuthAccountService<RepoManager> {
             "Generate new activation token for username [{}] and email [{}]",
             username, email
         );
-        let auth_account = self
-            .fetch_by_username_with_conn(conn, username)
-            .await?;
+        let auth_account = self.fetch_by_username_with_conn(conn, username).await?;
 
         Validator::validate(&|error_details: &mut ErrorDetails| {
             if auth_account.data.email != email {

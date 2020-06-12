@@ -1,6 +1,6 @@
 use c3p0::Model;
 use lightspeed_core::error::{ErrorDetails, LightSpeedError};
-use lightspeed_core::service::validator::number::{validate_number_ge, validate_number_le};
+use lightspeed_core::service::validator::order::{validate_ge, validate_le};
 use lightspeed_core::service::validator::{Validable, ERR_NOT_UNIQUE};
 use once_cell::sync::OnceCell;
 use regex::Regex;
@@ -29,7 +29,7 @@ pub struct SchemaData {
 
 impl Validable for SchemaData {
     fn validate(&self, error_details: &mut ErrorDetails) -> Result<(), LightSpeedError> {
-        validate_number_ge(error_details, "name", 3, self.name.len());
+        validate_ge(error_details, "name", 3, self.name.len());
         (&self.schema).validate(&mut error_details.with_scope("schema"))?;
         Ok(())
     }
@@ -69,8 +69,8 @@ pub struct SchemaField {
 
 impl Validable for SchemaField {
     fn validate(&self, error_details: &mut ErrorDetails) -> Result<(), LightSpeedError> {
-        validate_number_ge(error_details, "name", 1, self.name.len());
-        validate_number_le(
+        validate_ge(error_details, "name", 1, self.name.len());
+        validate_le(
             error_details,
             "name",
             SCHEMA_FIELD_NAME_MAX_LENGHT,
@@ -92,9 +92,9 @@ pub enum SchemaFieldType {
         arity: SchemaFieldArity,
     },
     Number {
-        min: Option<usize>,
-        max: Option<usize>,
-        default: Option<usize>,
+        min: Option<u64>,
+        max: Option<u64>,
+        default: Option<u64>,
         arity: SchemaFieldArity,
     },
     Slug,
@@ -133,7 +133,7 @@ pub enum LocalizableOptions {
 mod test {
     use super::*;
     use lightspeed_core::error::ErrorDetail;
-    use lightspeed_core::service::validator::number::MUST_BE_GREATER_OR_EQUAL;
+    use lightspeed_core::service::validator::order::MUST_BE_GREATER_OR_EQUAL;
     use lightspeed_core::service::validator::Validator;
 
     #[test]

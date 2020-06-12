@@ -70,7 +70,7 @@ pub struct Job {
     name: String,
     is_active: bool,
     is_running: RwLock<bool>,
-    retries_after_failure: Option<usize>,
+    retries_after_failure: Option<u64>,
 }
 
 impl Job {
@@ -81,7 +81,7 @@ impl Job {
     >(
         group: G,
         name: N,
-        retries_after_failure: Option<usize>,
+        retries_after_failure: Option<u64>,
         function: F,
     ) -> Self
     where
