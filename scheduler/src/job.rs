@@ -63,9 +63,14 @@ impl JobScheduler {
     }
 }
 
-pub type JobFn =
-    dyn 'static + Send + Sync
-        + Fn() -> Pin<Box<dyn Future<Output = Result<(), Box<dyn std::error::Error + Send + Sync>>> + Send + Sync >>;
+pub type JobFn = dyn 'static
+    + Send
+    + Sync
+    + Fn() -> Pin<
+        Box<
+            dyn Future<Output = Result<(), Box<dyn std::error::Error + Send + Sync>>> + Send + Sync,
+        >,
+    >;
 
 pub struct Job {
     function: Mutex<Box<JobFn>>,
@@ -77,7 +82,20 @@ pub struct Job {
 }
 
 impl Job {
-    pub fn new<G: Into<String>, N: Into<String>, F: 'static + Send + Sync + Fn() -> Pin<Box<dyn Future<Output = Result<(), Box<dyn std::error::Error + Send + Sync>>> + Send + Sync>>>(
+    pub fn new<
+        G: Into<String>,
+        N: Into<String>,
+        F: 'static
+            + Send
+            + Sync
+            + Fn() -> Pin<
+                Box<
+                    dyn Future<Output = Result<(), Box<dyn std::error::Error + Send + Sync>>>
+                        + Send
+                        + Sync,
+                >,
+            >,
+    >(
         group: G,
         name: N,
         retries_after_failure: Option<u64>,
@@ -160,16 +178,16 @@ pub mod test {
 
     use super::*;
     use chrono_tz::UTC;
-    use tokio::sync::mpsc::channel;
     use std::sync::Arc;
     use std::time::Duration;
+    use tokio::sync::mpsc::channel;
 
     #[tokio::test]
     async fn should_be_running() {
         let lock = Arc::new(Mutex::new(true));
         let lock_clone = lock.clone();
         let (mut tx, mut rx) = channel(10000);
-        let mut tx_clone = tx.clone();
+        let tx_clone = tx.clone();
 
         let job_scheduler = Arc::new(JobScheduler::new(
             Scheduler::Interval {
@@ -177,24 +195,24 @@ pub mod test {
                 execute_at_startup: false,
             },
             Some(UTC),
-            Job::new("g", "n", None, Box::new(move || {
+            Job::new("g", "n", None, move || {
                 let lock_clone = lock_clone.clone();
                 let mut tx_clone = tx_clone.clone();
                 Box::pin(async move {
                     println!("job - started");
                     tx_clone.send("").await.unwrap();
                     println!("job - Trying to get the lock");
-                    let _lock = lock_clone.lock();
+                    let _lock = lock_clone.lock().await;
                     println!("job - lock acquired");
                     Ok(())
                 })
-            })),
+            }),
         ));
 
         assert!(!job_scheduler.job.is_running().await);
 
         {
-            let _lock = lock.lock();
+            let _lock = lock.lock().await;
             let job_clone = job_scheduler.clone();
             tokio::spawn(async move {
                 println!("starting job");
@@ -210,7 +228,6 @@ pub mod test {
         assert!(!job_scheduler.job.is_running().await);
     }
 
-    /*
     #[tokio::test]
     async fn job_should_not_retry_run_if_ok() {
         let lock = Arc::new(Mutex::new(0));
@@ -219,20 +236,23 @@ pub mod test {
         let max_retries = 12;
 
         let job = Job::new("g", "n", Some(max_retries), move || {
-            println!("job - started");
-            println!("job - Trying to get the lock");
-            let mut lock = lock_clone.lock();
-            let count = *lock;
-            *lock = count + 1;
-            println!("job - count {}", count);
-            Ok(())
+            let lock_clone = lock_clone.clone();
+            Box::pin(async move {
+                println!("job - started");
+                println!("job - Trying to get the lock");
+                let mut lock = lock_clone.lock().await;
+                let count = *lock;
+                *lock = count + 1;
+                println!("job - count {}", count);
+                Ok(())
+            })
         });
 
-        let result = job.run();
+        let result = job.run().await;
 
         assert!(result.is_ok());
 
-        let lock = lock.lock();
+        let lock = lock.lock().await;
         let count = *lock;
         assert_eq!(1, count);
     }
@@ -245,22 +265,26 @@ pub mod test {
         let max_retries = 12;
 
         let job = Job::new("g", "n", Some(max_retries), move || {
+            let lock_clone = lock_clone.clone();
+            Box::pin(async move{
             println!("job - started");
             println!("job - Trying to get the lock");
-            let mut lock = lock_clone.lock();
+            let mut lock = lock_clone.lock().await;
             let count = *lock;
             *lock = count + 1;
             println!("job - count {}", count);
             Err(SchedulerError::JobLockError {
                 message: "".to_owned(),
             })?
+
+            })
         });
 
-        let result = job.run();
+        let result = job.run().await;
 
         assert!(result.is_err());
 
-        let lock = lock.lock();
+        let lock = lock.lock().await;
         let count = *lock;
         assert_eq!(max_retries + 1, count);
     }
@@ -274,9 +298,11 @@ pub mod test {
         let max_retries = 12;
 
         let job = Job::new("g", "n", Some(max_retries), move || {
+            let lock_clone = lock_clone.clone();
+            Box::pin(async move{
             println!("job - started");
             println!("job - Trying to get the lock");
-            let mut lock = lock_clone.lock();
+            let mut lock = lock_clone.lock().await;
             let count = *lock;
             *lock = count + 1;
             println!("job - count {}", count);
@@ -288,15 +314,15 @@ pub mod test {
                     message: "".to_owned(),
                 })?
             }
+            })
         });
 
-        let result = job.run();
+        let result = job.run().await;
 
         assert!(result.is_ok());
 
-        let lock = lock.lock();
+        let lock = lock.lock().await;
         let count = *lock;
         assert_eq!(succeed_at + 1, count);
     }
-    */
 }
