@@ -98,9 +98,9 @@ impl Job {
     }
 
     /// Returns true if this job is currently running.
-    pub fn is_running(&self) -> Result<bool, SchedulerError> {
+    pub fn is_running(&self) -> bool {
         let read = self.is_running.read();
-        Ok(*read)
+        *read
     }
 
     pub fn name(&self) -> &str {
@@ -191,7 +191,7 @@ pub mod test {
             }),
         ));
 
-        assert!(!job_scheduler.job.is_running().unwrap());
+        assert!(!job_scheduler.job.is_running());
 
         {
             let _lock = lock.lock();
@@ -203,11 +203,11 @@ pub mod test {
                 tx.send("").unwrap();
             });
             rx.recv().unwrap();
-            assert!(job_scheduler.job.is_running().unwrap());
+            assert!(job_scheduler.job.is_running());
         }
 
         rx.recv().unwrap();
-        assert!(!job_scheduler.job.is_running().unwrap());
+        assert!(!job_scheduler.job.is_running());
     }
 
     #[test]

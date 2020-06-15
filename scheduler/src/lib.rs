@@ -87,10 +87,8 @@ impl JobExecutor {
         for job_scheduler in &self.jobs {
             //println!("check JOB IS PENDING: {}", job.is_pending());
             if job_scheduler.is_pending() {
-                match job_scheduler.job.is_running() {
-                    Ok(is_running) => {
                         //println!("JOB IS RUNNING? {}", is_running);
-                        if !is_running {
+                        if !job_scheduler.job.is_running() {
                             let job_clone = job_scheduler.clone();
                             std::thread::spawn(move || {
                                 let timestamp = Utc::now().timestamp();
@@ -125,14 +123,7 @@ impl JobExecutor {
                                 job_scheduler.job.name()
                             )
                         }
-                    }
-                    Err(err) => error!(
-                        "Cannot start execution of Job [{}/{}] because status is unknown. Err: {}",
-                        job_scheduler.job.group(),
-                        job_scheduler.job.name(),
-                        err
-                    ),
-                }
+
             }
         }
     }
