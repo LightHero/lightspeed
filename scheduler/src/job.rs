@@ -266,17 +266,16 @@ pub mod test {
 
         let job = Job::new("g", "n", Some(max_retries), move || {
             let lock_clone = lock_clone.clone();
-            Box::pin(async move{
-            println!("job - started");
-            println!("job - Trying to get the lock");
-            let mut lock = lock_clone.lock().await;
-            let count = *lock;
-            *lock = count + 1;
-            println!("job - count {}", count);
-            Err(SchedulerError::JobLockError {
-                message: "".to_owned(),
-            })?
-
+            Box::pin(async move {
+                println!("job - started");
+                println!("job - Trying to get the lock");
+                let mut lock = lock_clone.lock().await;
+                let count = *lock;
+                *lock = count + 1;
+                println!("job - count {}", count);
+                Err(SchedulerError::JobLockError {
+                    message: "".to_owned(),
+                })?
             })
         });
 
@@ -299,21 +298,21 @@ pub mod test {
 
         let job = Job::new("g", "n", Some(max_retries), move || {
             let lock_clone = lock_clone.clone();
-            Box::pin(async move{
-            println!("job - started");
-            println!("job - Trying to get the lock");
-            let mut lock = lock_clone.lock().await;
-            let count = *lock;
-            *lock = count + 1;
-            println!("job - count {}", count);
+            Box::pin(async move {
+                println!("job - started");
+                println!("job - Trying to get the lock");
+                let mut lock = lock_clone.lock().await;
+                let count = *lock;
+                *lock = count + 1;
+                println!("job - count {}", count);
 
-            if count == succeed_at {
-                Ok(())
-            } else {
-                Err(SchedulerError::JobLockError {
-                    message: "".to_owned(),
-                })?
-            }
+                if count == succeed_at {
+                    Ok(())
+                } else {
+                    Err(SchedulerError::JobLockError {
+                        message: "".to_owned(),
+                    })?
+                }
             })
         });
 
