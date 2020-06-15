@@ -1,18 +1,20 @@
 use crate::error::SchedulerError;
 use crate::job::{Job, JobScheduler};
 use crate::scheduler::{Scheduler, TryToScheduler};
-use chrono::{Utc, Duration};
+use chrono::Utc;
 use chrono_tz::{Tz, UTC};
 use log::*;
-use std::sync::Arc;
 use parking_lot::RwLock;
+use std::sync::Arc;
+use std::time::Duration;
 
 pub mod error;
 pub mod job;
 pub mod scheduler;
 
 pub struct JobExecutor {
-    started: RwLock<bool>,
+    sleep_between_checks: Duration,
+    running: RwLock<bool>,
     timezone: Option<Tz>,
     jobs: Vec<Arc<JobScheduler>>,
 }
@@ -33,7 +35,8 @@ pub fn new_executor_with_utc_tz() -> JobExecutor {
 /// For example, the cron expressions will refer to the specified time zone.
 pub fn new_executor_with_tz(timezone: Option<Tz>) -> JobExecutor {
     JobExecutor {
-        started: RwLock::new(false),
+        sleep_between_checks: Duration::new(1, 0),
+        running: RwLock::new(false),
         timezone,
         jobs: vec![],
     }
@@ -57,12 +60,12 @@ impl JobExecutor {
 
     /// Returns true if the Job Executor is running
     pub fn is_running(&self) -> bool {
-        let read = self.started.read();
+        let read = self.running.read();
         *read
     }
 
     /// Returns true if there is at least one job pending.
-    fn is_pending_job(&self) -> bool {
+    pub fn is_pending_job(&self) -> bool {
         for job in &self.jobs {
             if job.is_pending() {
                 return true;
@@ -72,7 +75,7 @@ impl JobExecutor {
     }
 
     /// Returns true if there is at least one job running.
-    fn is_running_job(&self) -> bool {
+    pub fn is_running_job(&self) -> bool {
         for job in &self.jobs {
             if job.is_pending() {
                 return true;
@@ -87,43 +90,39 @@ impl JobExecutor {
         for job_scheduler in &self.jobs {
             //println!("check JOB IS PENDING: {}", job.is_pending());
             if job_scheduler.is_pending() {
-                        //println!("JOB IS RUNNING? {}", is_running);
-                        if !job_scheduler.job.is_running() {
-                            let job_clone = job_scheduler.clone();
-                            std::thread::spawn(move || {
-                                let timestamp = Utc::now().timestamp();
-                                let group = job_clone.job.group();
-                                let name = job_clone.job.name();
-                                let span =
-                                    tracing::error_span!("run_pending", group, name, timestamp);
-                                let _enter = span.enter();
+                //println!("JOB IS RUNNING? {}", is_running);
+                if !job_scheduler.job.is_running() {
+                    let job_clone = job_scheduler.clone();
+                    std::thread::spawn(move || {
+                        let timestamp = Utc::now().timestamp();
+                        let group = job_clone.job.group();
+                        let name = job_clone.job.name();
+                        let span = tracing::error_span!("run_pending", group, name, timestamp);
+                        let _enter = span.enter();
 
-                                info!("Start execution of Job [{}/{}]", group, name);
-                                match job_clone.run() {
-                                    Ok(()) => {
-                                        info!(
-                                            "Execution of Job [{}/{}] completed successfully",
-                                            group, name
-                                        );
-                                    }
-                                    Err(err) => {
-                                        error!(
-                                            "Execution of Job [{}/{}] completed with errors. Err: {}",
-                                            group,
-                                            name,
-                                            err
-                                        );
-                                    }
-                                }
-                            });
-                        } else {
-                            debug!(
-                                "Job [{}/{}] is pending but already running. It will not be executed.",
-                                job_scheduler.job.group(),
-                                job_scheduler.job.name()
-                            )
+                        info!("Start execution of Job [{}/{}]", group, name);
+                        match job_clone.run() {
+                            Ok(()) => {
+                                info!(
+                                    "Execution of Job [{}/{}] completed successfully",
+                                    group, name
+                                );
+                            }
+                            Err(err) => {
+                                error!(
+                                    "Execution of Job [{}/{}] completed with errors. Err: {}",
+                                    group, name, err
+                                );
+                            }
                         }
-
+                    });
+                } else {
+                    debug!(
+                        "Job [{}/{}] is pending but already running. It will not be executed.",
+                        job_scheduler.job.group(),
+                        job_scheduler.job.name()
+                    )
+                }
             }
         }
     }
@@ -157,41 +156,55 @@ impl JobExecutor {
         )));
     }
 
+    pub fn set_sleep_between_checks(&mut self, sleep: Duration) {
+        self.sleep_between_checks = sleep;
+    }
+
     /// Starts the JobExecutor
-    pub fn start(&self) {
-        let mut started = {
-            let read = self.started.read();
-            *read
-        };
-        if !started {
+    pub fn run(&self) {
+        let mut running = self.is_running();
+        if !running {
             info!("Starting the job executor");
             {
-                let mut write = self.started.write();
+                let mut write = self.running.write();
                 *write = true;
             };
-            started = true;
-            while started {
-                /*
-                executor.run_pending();
-                std::thread::sleep(Duration::new(2, 0));
-
-                 */
+            running = true;
+            while running {
+                self.run_pending_jobs();
+                std::thread::sleep(self.sleep_between_checks);
+                running = self.is_running();
             }
         } else {
-            warn!("The JobExecutor is already started.")
+            warn!("The JobExecutor is already running.")
         }
     }
 
     /// Stops the JobExecutor
-    pub fn stop(&self) {
-        /*
-        loop {
-            trace!("Run pending jobs");
-            executor.run_pending();
-            std::thread::sleep(Duration::new(2, 0));
+    pub fn stop(&self, grateful: bool) {
+        let running = self.is_running();
+        if running {
+            info!("Stopping the job executor");
+            {
+                let mut write = self.running.write();
+                *write = false;
+            };
+            if grateful {
+                info!("Wait for all Jobs to complete");
+                while self.is_running_job() {
+                    std::thread::sleep(self.sleep_between_checks);
+                }
+                info!("All Jobs completed");
+            }
+        } else {
+            warn!("The JobExecutor is not running.")
         }
+    }
+}
 
-         */
+impl Drop for JobExecutor {
+    fn drop(&mut self) {
+        self.stop(true);
     }
 }
 
@@ -308,6 +321,40 @@ pub mod test {
         assert_eq!(count_1.load(Ordering::SeqCst), 1);
         assert_eq!(count_2.load(Ordering::SeqCst), 1);
         assert_eq!(count_3.load(Ordering::SeqCst), 1);
+    }
+
+    #[test]
+    fn should_gracefully_shutdown_the_job_executor() {
+        let mut executor = new_executor_with_utc_tz();
+
+        let count = Arc::new(AtomicUsize::new(0));
+        let count_clone = count.clone();
+
+        let (tx, rx) = channel();
+
+        executor
+            .add_job(
+                &Duration::new(0, 1),
+                Job::new("g", "n", None, move || {
+                    tx.send("").unwrap();
+                    println!("job - started");
+                    count_clone.fetch_add(1, Ordering::SeqCst);
+                    std::thread::sleep(Duration::new(1, 0));
+                    Ok(())
+                }),
+            )
+            .unwrap();
+
+        for i in 0..100 {
+            println!("run_pending {}", i);
+            executor.run_pending_jobs();
+            std::thread::sleep(Duration::new(0, 2));
+        }
+
+        println!("run_pending completed");
+        rx.recv().unwrap();
+
+        assert_eq!(count.load(Ordering::Relaxed), 1);
     }
 
     #[test]
