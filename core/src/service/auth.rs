@@ -85,7 +85,7 @@ impl<T: RolesProvider> AuthService<T> {
             for permission in role.permissions {
                 result
                     .entry(permission)
-                    .or_insert_with(|| vec![])
+                    .or_insert_with(Vec::new)
                     .push(role.name.clone())
             }
         }

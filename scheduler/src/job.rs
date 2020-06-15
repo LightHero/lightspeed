@@ -65,7 +65,8 @@ impl JobScheduler {
 
 pub type JobFn = dyn 'static
     + Send
-    + Fn() -> Pin<Box<dyn Future<Output = Result<(), Box<dyn std::error::Error + Send + Sync>>> + Send>>;
+    + Fn()
+        -> Pin<Box<dyn Future<Output = Result<(), Box<dyn std::error::Error + Send + Sync>>> + Send>>;
 
 pub struct Job {
     function: Mutex<Box<JobFn>>,
@@ -83,7 +84,10 @@ impl Job {
         F: 'static
             + Send
             + Fn() -> Pin<
-                Box<dyn Future<Output = Result<(), Box<dyn std::error::Error + Send + Sync>>> + Send>,
+                Box<
+                    dyn Future<Output = Result<(), Box<dyn std::error::Error + Send + Sync>>>
+                        + Send,
+                >,
             >,
     >(
         group: G,
