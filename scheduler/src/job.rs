@@ -63,18 +63,12 @@ impl JobScheduler {
     }
 }
 
-pub type JobFn = Box<
-    dyn Send
-        + Sync
-        + Fn() -> Pin<Box<
-            dyn Future<Output = Result<(), Box<dyn std::error::Error + Send + Sync>>>
-                + Send
-                + Sync
-        >>,
->;
+pub type JobFn =
+    dyn 'static + Send + Sync
+        + Fn() -> Pin<Box<dyn Future<Output = Result<(), Box<dyn std::error::Error + Send + Sync>>> + Send + Sync >>;
 
 pub struct Job {
-    function: Mutex<JobFn>,
+    function: Mutex<Box<JobFn>>,
     group: String,
     name: String,
     is_active: bool,
@@ -83,14 +77,14 @@ pub struct Job {
 }
 
 impl Job {
-    pub fn new<G: Into<String>, N: Into<String>>(
+    pub fn new<G: Into<String>, N: Into<String>, F: 'static + Send + Sync + Fn() -> Pin<Box<dyn Future<Output = Result<(), Box<dyn std::error::Error + Send + Sync>>> + Send + Sync>>>(
         group: G,
         name: N,
         retries_after_failure: Option<u64>,
-        function: JobFn,
+        function: F,
     ) -> Self {
         Job {
-            function: Mutex::new(function),
+            function: Mutex::new(Box::new(function)),
             name: name.into(),
             group: group.into(),
             retries_after_failure,
