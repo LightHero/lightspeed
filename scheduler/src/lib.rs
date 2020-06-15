@@ -208,14 +208,13 @@ impl JobExecutor {
         }
     }
 }
-/*
 #[cfg(test)]
 pub mod test {
 
     use super::*;
     use chrono::Utc;
     use std::sync::atomic::{AtomicUsize, Ordering};
-    use std::sync::mpsc::channel;
+    use tokio::sync::mpsc::channel;
     use std::time::Duration;
 
     #[tokio::test]
@@ -225,29 +224,33 @@ pub mod test {
         let count = Arc::new(AtomicUsize::new(0));
         let count_clone = count.clone();
 
-        let (tx, rx) = channel();
+        let (tx, mut rx) = channel(1000);
 
         executor
             .add_job(
                 &Duration::new(0, 1),
                 Job::new("g", "n", None, move || {
-                    tx.send("").unwrap();
-                    println!("job - started");
-                    count_clone.fetch_add(1, Ordering::SeqCst);
-                    std::thread::sleep(Duration::new(1, 0));
-                    Ok(())
+                    let count_clone = count_clone.clone();
+                    let mut tx = tx.clone();
+                    Box::pin(async move {
+                        tx.send("").await.unwrap();
+                        println!("job - started");
+                        count_clone.fetch_add(1, Ordering::SeqCst);
+                        tokio::time::delay_for(Duration::new(1, 0)).await;
+                        Ok(())
+                    })
                 }),
             )
             .unwrap();
 
         for i in 0..100 {
             println!("run_pending {}", i);
-            executor.run_pending_jobs();
-            std::thread::sleep(Duration::new(0, 2));
+            executor.run_pending_jobs().await;
+            tokio::time::delay_for(Duration::new(0, 2)).await;
         }
 
         println!("run_pending completed");
-        rx.recv().unwrap();
+        rx.recv().await.unwrap();
 
         assert_eq!(count.load(Ordering::Relaxed), 1);
     }
@@ -256,20 +259,24 @@ pub mod test {
     async fn a_running_job_should_not_block_the_executor() {
         let mut executor = new_executor_with_local_tz();
 
-        let (tx, rx) = channel();
+        let (tx, mut rx) = channel(959898);
 
         let count_1 = Arc::new(AtomicUsize::new(0));
-        let count_clone_1 = count_1.clone();
+        let count_1_clone = count_1.clone();
         let tx_1 = tx.clone();
         executor
             .add_job_with_multi_schedule(
                 &[&Duration::new(0, 1)],
                 Job::new("g", "n", None, move || {
-                    tx_1.send("").unwrap();
-                    println!("job 1 - started");
-                    count_clone_1.fetch_add(1, Ordering::SeqCst);
-                    std::thread::sleep(Duration::new(1, 0));
-                    Ok(())
+                    let count_1_clone = count_1_clone.clone();
+                    let mut tx_1 = tx_1.clone();
+                    Box::pin(async move {
+                        tx_1.send("").await.unwrap();
+                        println!("job 1 - started");
+                        count_1_clone.fetch_add(1, Ordering::SeqCst);
+                        tokio::time::delay_for(Duration::new(1, 0)).await;
+                        Ok(())
+                    })
                 }),
             )
             .unwrap();
@@ -281,11 +288,15 @@ pub mod test {
             .add_job(
                 &Duration::new(0, 1),
                 Job::new("g", "n", None, move || {
-                    tx_2.send("").unwrap();
-                    println!("job 2 - started");
-                    count_2_clone.fetch_add(1, Ordering::SeqCst);
-                    std::thread::sleep(Duration::new(1, 0));
-                    Ok(())
+                    let count_2_clone = count_2_clone.clone();
+                    let mut tx_2 = tx_2.clone();
+                    Box::pin(async move {
+                        tx_2.send("").await.unwrap();
+                        println!("job 2 - started");
+                        count_2_clone.fetch_add(1, Ordering::SeqCst);
+                        tokio::time::delay_for(Duration::new(1, 0)).await;
+                        Ok(())
+                    })
                 }),
             )
             .unwrap();
@@ -297,11 +308,16 @@ pub mod test {
             .add_job(
                 &Duration::new(0, 1),
                 Job::new("g", "n", None, move || {
-                    tx_3.send("").unwrap();
-                    println!("job 3 - started");
-                    count_3_clone.fetch_add(1, Ordering::SeqCst);
-                    std::thread::sleep(Duration::new(1, 0));
-                    Ok(())
+                    let count_3_clone = count_3_clone.clone();
+                    let mut tx_3 = tx_3.clone();
+                    Box::pin(async move {
+                        tx_3.send("").await.unwrap();
+                        println!("job 3 - started");
+                        count_3_clone.fetch_add(1, Ordering::SeqCst);
+                        tokio::time::delay_for(Duration::new(1, 0)).await;
+                        Ok(())
+
+                    })
                 }),
             )
             .unwrap();
@@ -309,20 +325,21 @@ pub mod test {
         let before_millis = Utc::now().timestamp_millis();
         for i in 0..100 {
             println!("run_pending {}", i);
-            executor.run_pending_jobs();
-            std::thread::sleep(Duration::new(0, 1_000_000));
+            executor.run_pending_jobs().await;
+            tokio::time::delay_for(Duration::new(0, 1_000_000)).await;
         }
         let after_millis = Utc::now().timestamp_millis();
 
         assert!((after_millis - before_millis) >= 100);
         assert!((after_millis - before_millis) < 1000);
 
-        rx.recv().unwrap();
+        rx.recv().await.unwrap();
 
         assert_eq!(count_1.load(Ordering::SeqCst), 1);
         assert_eq!(count_2.load(Ordering::SeqCst), 1);
         assert_eq!(count_3.load(Ordering::SeqCst), 1);
     }
+
 
     #[tokio::test]
     async fn should_gracefully_shutdown_the_job_executor() {
@@ -338,10 +355,13 @@ pub mod test {
                 .add_job(
                     &Duration::new(0, 1),
                     Job::new("g", "n", None, move || {
-                        std::thread::sleep(Duration::new(1, 0));
-                        println!("job - started");
-                        count_clone.fetch_add(1, Ordering::SeqCst);
-                        Ok(())
+                        let count_clone = count_clone.clone();
+                        Box::pin(async move {
+                            tokio::time::delay_for(Duration::new(1, 0)).await;
+                            println!("job - started");
+                            count_clone.fetch_add(1, Ordering::SeqCst);
+                            Ok(())
+                        })
                     }),
                 )
                 .unwrap();
@@ -351,43 +371,49 @@ pub mod test {
 
         let executor = Arc::new(executor);
         let executor_clone = executor.clone();
-        std::thread::spawn(move || {
-            executor_clone.run();
+        tokio::spawn(async move {
+            executor_clone.run().await;
         });
 
         loop {
-            if executor.is_running_job() {
+            if executor.is_running_job().await {
                 break;
             }
-            std::thread::sleep(Duration::from_nanos(1));
+            tokio::time::delay_for(Duration::from_nanos(1)).await;
         }
 
-        executor.stop(true);
+        executor.stop(true).await;
 
         assert_eq!(count.load(Ordering::Relaxed), tasks);
     }
 
-    #[tokio::test]
-    async fn should_add_with_explicit_scheduler() {
+    #[test]
+    fn should_add_with_explicit_scheduler() {
         let mut executor = new_executor_with_utc_tz();
-        executor.add_job_with_scheduler(Scheduler::Never, Job::new("g", "n", None, move || Ok(())));
+        executor.add_job_with_scheduler(Scheduler::Never, Job::new("g", "n", None, move || Box::pin(async {
+            Ok(())
+        })));
     }
 
-    #[tokio::test]
-    async fn should_register_a_schedule_by_vec() {
+    #[test]
+    fn should_register_a_schedule_by_vec() {
         let mut executor = new_executor_with_utc_tz();
         executor
             .add_job(
                 &vec!["0 1 * * * * *"],
-                Job::new("g", "n", None, move || Ok(())),
+                Job::new("g", "n", None, move || Box::pin(async {
+                    Ok(())
+                })),
             )
             .unwrap();
         executor
             .add_job(
                 &vec!["0 1 * * * * *".to_owned(), "0 1 * * * * *".to_owned()],
-                Job::new("g", "n", None, move || Ok(())),
+                Job::new("g", "n", None, move || Box::pin(async {
+                    Ok(())
+                })),
             )
             .unwrap();
     }
+
 }
-*/
