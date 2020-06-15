@@ -66,8 +66,8 @@ impl JobExecutor {
 
     /// Returns true if there is at least one job pending.
     pub fn is_pending_job(&self) -> bool {
-        for job in &self.jobs {
-            if job.is_pending() {
+        for job_scheduler in &self.jobs {
+            if job_scheduler.is_pending() {
                 return true;
             }
         }
@@ -76,8 +76,8 @@ impl JobExecutor {
 
     /// Returns true if there is at least one job running.
     pub fn is_running_job(&self) -> bool {
-        for job in &self.jobs {
-            if job.is_pending() {
+        for job_scheduler in &self.jobs {
+            if job_scheduler.job.is_running() {
                 return true;
             }
         }
@@ -328,33 +328,42 @@ pub mod test {
         let mut executor = new_executor_with_utc_tz();
 
         let count = Arc::new(AtomicUsize::new(0));
-        let count_clone = count.clone();
 
-        let (tx, rx) = channel();
+        let tasks = 100;
 
-        executor
-            .add_job(
-                &Duration::new(0, 1),
-                Job::new("g", "n", None, move || {
-                    tx.send("").unwrap();
-                    println!("job - started");
-                    count_clone.fetch_add(1, Ordering::SeqCst);
-                    std::thread::sleep(Duration::new(1, 0));
-                    Ok(())
-                }),
-            )
-            .unwrap();
+        for _i in  0..tasks {
+            let count_clone = count.clone();
+            executor
+                .add_job(
+                    &Duration::new(0, 1),
+                    Job::new("g", "n", None, move || {
+                        std::thread::sleep(Duration::new(1, 0));
+                        println!("job - started");
+                        count_clone.fetch_add(1, Ordering::SeqCst);
+                        Ok(())
+                    }),
+                )
+                .unwrap();
+        };
 
-        for i in 0..100 {
-            println!("run_pending {}", i);
-            executor.run_pending_jobs();
-            std::thread::sleep(Duration::new(0, 2));
+        executor.set_sleep_between_checks(Duration::from_millis(10));
+
+        let executor = Arc::new(executor);
+        let executor_clone = executor.clone();
+        std::thread::spawn(move || {
+            executor_clone.run();
+        });
+
+        loop {
+            if executor.is_running_job() {
+                break;
+            }
+            std::thread::sleep(Duration::from_nanos(1));
         }
 
-        println!("run_pending completed");
-        rx.recv().unwrap();
+        executor.stop(true);
 
-        assert_eq!(count.load(Ordering::Relaxed), 1);
+        assert_eq!(count.load(Ordering::Relaxed), tasks);
     }
 
     #[test]
