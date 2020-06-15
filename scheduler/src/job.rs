@@ -3,8 +3,8 @@ use crate::scheduler::Scheduler;
 use chrono::{DateTime, Utc};
 use chrono_tz::Tz;
 use log::*;
-use tokio::sync::{Mutex, RwLock};
 use tokio::macros::support::Future;
+use tokio::sync::{Mutex, RwLock};
 
 pub struct JobScheduler {
     pub job: Job,
@@ -63,7 +63,16 @@ impl JobScheduler {
     }
 }
 
-pub type JobFn = Box<dyn Send + Sync + Fn() -> Box<dyn Future<Output = Result<(), Box<dyn std::error::Error + Send + Sync>>> + Send + Sync + Unpin>>;
+pub type JobFn = Box<
+    dyn Send
+        + Sync
+        + Fn() -> Box<
+            dyn Future<Output = Result<(), Box<dyn std::error::Error + Send + Sync>>>
+                + Send
+                + Sync
+                + Unpin,
+        >,
+>;
 
 pub struct Job {
     function: Mutex<JobFn>,
@@ -75,16 +84,12 @@ pub struct Job {
 }
 
 impl Job {
-    pub fn new<
-        G: Into<String>,
-        N: Into<String>,
-    >(
+    pub fn new<G: Into<String>, N: Into<String>>(
         group: G,
         name: N,
         retries_after_failure: Option<u64>,
         function: JobFn,
-    ) -> Self
-    {
+    ) -> Self {
         Job {
             function: Mutex::new(function),
             name: name.into(),
@@ -132,7 +137,7 @@ impl Job {
 
         self.set_running(false).await?;
 
-        run_result.map_err(|err| SchedulerError::JobExecutionError{ cause: err} )
+        run_result.map_err(|err| SchedulerError::JobExecutionError { cause: err })
     }
 
     async fn exec(&self) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {

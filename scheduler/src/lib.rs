@@ -7,6 +7,7 @@ use log::*;
 use std::sync::Arc;
 use std::time::Duration;
 use tokio::sync::RwLock;
+use tracing_futures::Instrument;
 
 pub mod error;
 pub mod job;
@@ -94,12 +95,14 @@ impl JobExecutor {
                 if !job_scheduler.job.is_running().await {
                     let job_clone = job_scheduler.clone();
 
-                    tokio::spawn(async move {
-                        let timestamp = Utc::now().timestamp();
+                    let timestamp = Utc::now().timestamp();
+                    let group = job_clone.job.group();
+                    let name = job_clone.job.name();
+                    let span = tracing::error_span!("run_pending", group, name, timestamp);
+
+                    let fut = async move {
                         let group = job_clone.job.group();
                         let name = job_clone.job.name();
-                        let span = tracing::error_span!("run_pending", group, name, timestamp);
-                        let _enter = span.enter();
 
                         info!("Start execution of Job [{}/{}]", group, name);
                         match job_clone.run().await {
@@ -116,7 +119,10 @@ impl JobExecutor {
                                 );
                             }
                         }
-                    });
+                    }
+                    .instrument(span);
+
+                    tokio::spawn(fut);
                 } else {
                     debug!(
                         "Job [{}/{}] is pending but already running. It will not be executed.",
@@ -326,7 +332,7 @@ pub mod test {
 
         let tasks = 100;
 
-        for _i in  0..tasks {
+        for _i in 0..tasks {
             let count_clone = count.clone();
             executor
                 .add_job(
@@ -339,7 +345,7 @@ pub mod test {
                     }),
                 )
                 .unwrap();
-        };
+        }
 
         executor.set_sleep_between_checks(Duration::from_millis(10));
 
