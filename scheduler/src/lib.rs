@@ -1,16 +1,18 @@
 use crate::error::SchedulerError;
 use crate::job::{Job, JobScheduler};
 use crate::scheduler::{Scheduler, TryToScheduler};
-use chrono::Utc;
+use chrono::{Utc, Duration};
 use chrono_tz::{Tz, UTC};
 use log::*;
 use std::sync::Arc;
+use parking_lot::RwLock;
 
 pub mod error;
 pub mod job;
 pub mod scheduler;
 
 pub struct JobExecutor {
+    started: RwLock<bool>,
     timezone: Option<Tz>,
     jobs: Vec<Arc<JobScheduler>>,
 }
@@ -31,6 +33,7 @@ pub fn new_executor_with_utc_tz() -> JobExecutor {
 /// For example, the cron expressions will refer to the specified time zone.
 pub fn new_executor_with_tz(timezone: Option<Tz>) -> JobExecutor {
     JobExecutor {
+        started: RwLock::new(false),
         timezone,
         jobs: vec![],
     }
@@ -52,8 +55,24 @@ impl JobExecutor {
         self.jobs.clear()
     }
 
+    /// Returns true if the Job Executor is running
+    pub fn is_running(&self) -> bool {
+        let read = self.started.read();
+        *read
+    }
+
     /// Returns true if there is at least one job pending.
-    pub fn is_pending(&self) -> bool {
+    fn is_pending_job(&self) -> bool {
+        for job in &self.jobs {
+            if job.is_pending() {
+                return true;
+            }
+        }
+        false
+    }
+
+    /// Returns true if there is at least one job running.
+    fn is_running_job(&self) -> bool {
         for job in &self.jobs {
             if job.is_pending() {
                 return true;
@@ -63,7 +82,8 @@ impl JobExecutor {
     }
 
     /// Run pending jobs in the JobExecutor.
-    pub fn run_pending(&mut self) {
+    fn run_pending_jobs(&self) {
+        trace!("Check pending jobs");
         for job_scheduler in &self.jobs {
             //println!("check JOB IS PENDING: {}", job.is_pending());
             if job_scheduler.is_pending() {
@@ -145,6 +165,43 @@ impl JobExecutor {
             job,
         )));
     }
+
+    /// Starts the JobExecutor
+    pub fn start(&self) {
+        let mut started = {
+            let read = self.started.read();
+            *read
+        };
+        if !started {
+            info!("Starting the job executor");
+            {
+                let mut write = self.started.write();
+                *write = true;
+            };
+            started = true;
+            while started {
+                /*
+                executor.run_pending();
+                std::thread::sleep(Duration::new(2, 0));
+
+                 */
+            }
+        } else {
+            warn!("The JobExecutor is already started.")
+        }
+    }
+
+    /// Stops the JobExecutor
+    pub fn stop(&self) {
+        /*
+        loop {
+            trace!("Run pending jobs");
+            executor.run_pending();
+            std::thread::sleep(Duration::new(2, 0));
+        }
+
+         */
+    }
 }
 
 #[cfg(test)]
@@ -180,7 +237,7 @@ pub mod test {
 
         for i in 0..100 {
             println!("run_pending {}", i);
-            executor.run_pending();
+            executor.run_pending_jobs();
             std::thread::sleep(Duration::new(0, 2));
         }
 
@@ -247,7 +304,7 @@ pub mod test {
         let before_millis = Utc::now().timestamp_millis();
         for i in 0..100 {
             println!("run_pending {}", i);
-            executor.run_pending();
+            executor.run_pending_jobs();
             std::thread::sleep(Duration::new(0, 1_000_000));
         }
         let after_millis = Utc::now().timestamp_millis();
