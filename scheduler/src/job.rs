@@ -3,7 +3,8 @@ use crate::scheduler::Scheduler;
 use chrono::{DateTime, Utc};
 use chrono_tz::Tz;
 use log::*;
-use parking_lot::{Mutex, RwLock};
+use tokio::sync::{Mutex, RwLock};
+use tokio::macros::support::Future;
 
 pub struct JobScheduler {
     pub job: Job,
@@ -27,14 +28,14 @@ impl JobScheduler {
     }
 
     /// Returns true if this job is pending execution.
-    pub fn is_pending(&self) -> bool {
+    pub async fn is_pending(&self) -> bool {
         // Check if paused
         if !self.job.is_active {
             return false;
         }
 
         // Check if NOW is on or after next_run_at
-        if let Some(next_run_at) = self.next_run_at.lock().as_ref() {
+        if let Some(next_run_at) = self.next_run_at.lock().await.as_ref() {
             *next_run_at < Utc::now()
         } else {
             false
@@ -42,30 +43,30 @@ impl JobScheduler {
     }
 
     /// Run the job immediately and re-schedule it.
-    pub fn run(&self) -> Result<(), Box<dyn std::error::Error>> {
+    pub async fn run(&self) -> Result<(), SchedulerError> {
         // Execute the job function
-        let run_result = self.job.run();
+        let run_result = self.job.run().await;
 
         let now = Utc::now();
 
-        let mut schedule = self.schedule.lock();
+        let mut schedule = self.schedule.lock().await;
 
         // Determine the next time it should run
-        let mut next_run_at = self.next_run_at.lock();
+        let mut next_run_at = self.next_run_at.lock().await;
         *next_run_at = schedule.next(&now, self.timezone);
 
         // Save the last time this ran
-        let mut last_run_at = self.last_run_at.lock();
+        let mut last_run_at = self.last_run_at.lock().await;
         *last_run_at = Some(now);
 
         run_result
     }
 }
 
-pub type JobFn = dyn Fn() -> Result<(), Box<dyn std::error::Error>> + Send;
+pub type JobFn = Box<dyn Send + Sync + Fn() -> Box<dyn Future<Output = Result<(), Box<dyn std::error::Error + Send + Sync>>> + Send + Sync + Unpin>>;
 
 pub struct Job {
-    function: Mutex<Box<JobFn>>,
+    function: Mutex<JobFn>,
     group: String,
     name: String,
     is_active: bool,
@@ -77,18 +78,15 @@ impl Job {
     pub fn new<
         G: Into<String>,
         N: Into<String>,
-        F: Fn() -> Result<(), Box<dyn std::error::Error>> + Send,
     >(
         group: G,
         name: N,
         retries_after_failure: Option<u64>,
-        function: F,
+        function: JobFn,
     ) -> Self
-    where
-        F: 'static,
     {
         Job {
-            function: Mutex::new(Box::new(function)),
+            function: Mutex::new(function),
             name: name.into(),
             group: group.into(),
             retries_after_failure,
@@ -98,8 +96,8 @@ impl Job {
     }
 
     /// Returns true if this job is currently running.
-    pub fn is_running(&self) -> bool {
-        let read = self.is_running.read();
+    pub async fn is_running(&self) -> bool {
+        let read = self.is_running.read().await;
         *read
     }
 
@@ -112,11 +110,11 @@ impl Job {
     }
 
     /// Run the job immediately and re-schedule it.
-    pub fn run(&self) -> Result<(), Box<dyn std::error::Error>> {
-        self.set_running(true)?;
+    pub async fn run(&self) -> Result<(), SchedulerError> {
+        self.set_running(true).await?;
 
         // Execute the job function
-        let mut run_result = self.exec();
+        let mut run_result = self.exec().await;
 
         if let Some(retries) = self.retries_after_failure {
             for attempt in 1..=retries {
@@ -125,25 +123,25 @@ impl Job {
                         "Execution failed for job [{}/{}] - Retry execution, attempt {}/{}. Previous err: {}",
                         self.group, self.name, attempt, retries, e
                     );
-                    run_result = self.exec();
+                    run_result = self.exec().await;
                 } else {
                     break;
                 }
             }
         }
 
-        self.set_running(false)?;
+        self.set_running(false).await?;
 
-        run_result
+        run_result.map_err(|err| SchedulerError::JobExecutionError{ cause: err} )
     }
 
-    fn exec(&self) -> Result<(), Box<dyn std::error::Error>> {
-        let function = self.function.lock();
-        (function)()
+    async fn exec(&self) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+        let function = self.function.lock().await;
+        (function)().await
     }
 
-    fn set_running(&self, is_running: bool) -> Result<(), SchedulerError> {
-        let mut write = self.is_running.write();
+    async fn set_running(&self, is_running: bool) -> Result<(), SchedulerError> {
+        let mut write = self.is_running.write().await;
 
         if is_running.eq(&*write) {
             return Err(SchedulerError::JobLockError {

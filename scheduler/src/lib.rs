@@ -4,9 +4,9 @@ use crate::scheduler::{Scheduler, TryToScheduler};
 use chrono::Utc;
 use chrono_tz::{Tz, UTC};
 use log::*;
-use parking_lot::RwLock;
 use std::sync::Arc;
 use std::time::Duration;
+use tokio::sync::RwLock;
 
 pub mod error;
 pub mod job;
@@ -59,15 +59,15 @@ impl JobExecutor {
     }
 
     /// Returns true if the Job Executor is running
-    pub fn is_running(&self) -> bool {
-        let read = self.running.read();
+    pub async fn is_running(&self) -> bool {
+        let read = self.running.read().await;
         *read
     }
 
     /// Returns true if there is at least one job pending.
-    pub fn is_pending_job(&self) -> bool {
+    pub async fn is_pending_job(&self) -> bool {
         for job_scheduler in &self.jobs {
-            if job_scheduler.is_pending() {
+            if job_scheduler.is_pending().await {
                 return true;
             }
         }
@@ -75,9 +75,9 @@ impl JobExecutor {
     }
 
     /// Returns true if there is at least one job running.
-    pub fn is_running_job(&self) -> bool {
+    pub async fn is_running_job(&self) -> bool {
         for job_scheduler in &self.jobs {
-            if job_scheduler.job.is_running() {
+            if job_scheduler.job.is_running().await {
                 return true;
             }
         }
@@ -85,15 +85,16 @@ impl JobExecutor {
     }
 
     /// Run pending jobs in the JobExecutor.
-    fn run_pending_jobs(&self) {
+    async fn run_pending_jobs(&self) {
         trace!("Check pending jobs");
         for job_scheduler in &self.jobs {
             //println!("check JOB IS PENDING: {}", job.is_pending());
-            if job_scheduler.is_pending() {
+            if job_scheduler.is_pending().await {
                 //println!("JOB IS RUNNING? {}", is_running);
-                if !job_scheduler.job.is_running() {
+                if !job_scheduler.job.is_running().await {
                     let job_clone = job_scheduler.clone();
-                    std::thread::spawn(move || {
+
+                    tokio::spawn(async move {
                         let timestamp = Utc::now().timestamp();
                         let group = job_clone.job.group();
                         let name = job_clone.job.name();
@@ -101,7 +102,7 @@ impl JobExecutor {
                         let _enter = span.enter();
 
                         info!("Start execution of Job [{}/{}]", group, name);
-                        match job_clone.run() {
+                        match job_clone.run().await {
                             Ok(()) => {
                                 info!(
                                     "Execution of Job [{}/{}] completed successfully",
@@ -161,19 +162,19 @@ impl JobExecutor {
     }
 
     /// Starts the JobExecutor
-    pub fn run(&self) {
-        let mut running = self.is_running();
+    pub async fn run(&self) {
+        let mut running = self.is_running().await;
         if !running {
             info!("Starting the job executor");
             {
-                let mut write = self.running.write();
+                let mut write = self.running.write().await;
                 *write = true;
             };
             running = true;
             while running {
-                self.run_pending_jobs();
-                std::thread::sleep(self.sleep_between_checks);
-                running = self.is_running();
+                self.run_pending_jobs().await;
+                tokio::time::delay_for(self.sleep_between_checks).await;
+                running = self.is_running().await;
             }
         } else {
             warn!("The JobExecutor is already running.")
@@ -181,30 +182,24 @@ impl JobExecutor {
     }
 
     /// Stops the JobExecutor
-    pub fn stop(&self, grateful: bool) {
-        let running = self.is_running();
+    pub async fn stop(&self, grateful: bool) {
+        let running = self.is_running().await;
         if running {
             info!("Stopping the job executor");
             {
-                let mut write = self.running.write();
+                let mut write = self.running.write().await;
                 *write = false;
             };
             if grateful {
                 info!("Wait for all Jobs to complete");
-                while self.is_running_job() {
-                    std::thread::sleep(self.sleep_between_checks);
+                while self.is_running_job().await {
+                    tokio::time::delay_for(self.sleep_between_checks).await;
                 }
                 info!("All Jobs completed");
             }
         } else {
             warn!("The JobExecutor is not running.")
         }
-    }
-}
-
-impl Drop for JobExecutor {
-    fn drop(&mut self) {
-        self.stop(true);
     }
 }
 
