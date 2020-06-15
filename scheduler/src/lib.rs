@@ -214,8 +214,8 @@ pub mod test {
     use super::*;
     use chrono::Utc;
     use std::sync::atomic::{AtomicUsize, Ordering};
-    use tokio::sync::mpsc::channel;
     use std::time::Duration;
+    use tokio::sync::mpsc::channel;
 
     #[tokio::test]
     async fn should_not_run_an_already_running_job() {
@@ -316,7 +316,6 @@ pub mod test {
                         count_3_clone.fetch_add(1, Ordering::SeqCst);
                         tokio::time::delay_for(Duration::new(1, 0)).await;
                         Ok(())
-
                     })
                 }),
             )
@@ -339,7 +338,6 @@ pub mod test {
         assert_eq!(count_2.load(Ordering::SeqCst), 1);
         assert_eq!(count_3.load(Ordering::SeqCst), 1);
     }
-
 
     #[tokio::test]
     async fn should_gracefully_shutdown_the_job_executor() {
@@ -390,9 +388,10 @@ pub mod test {
     #[test]
     fn should_add_with_explicit_scheduler() {
         let mut executor = new_executor_with_utc_tz();
-        executor.add_job_with_scheduler(Scheduler::Never, Job::new("g", "n", None, move || Box::pin(async {
-            Ok(())
-        })));
+        executor.add_job_with_scheduler(
+            Scheduler::Never,
+            Job::new("g", "n", None, move || Box::pin(async { Ok(()) })),
+        );
     }
 
     #[test]
@@ -401,19 +400,14 @@ pub mod test {
         executor
             .add_job(
                 &vec!["0 1 * * * * *"],
-                Job::new("g", "n", None, move || Box::pin(async {
-                    Ok(())
-                })),
+                Job::new("g", "n", None, move || Box::pin(async { Ok(()) })),
             )
             .unwrap();
         executor
             .add_job(
                 &vec!["0 1 * * * * *".to_owned(), "0 1 * * * * *".to_owned()],
-                Job::new("g", "n", None, move || Box::pin(async {
-                    Ok(())
-                })),
+                Job::new("g", "n", None, move || Box::pin(async { Ok(()) })),
             )
             .unwrap();
     }
-
 }
