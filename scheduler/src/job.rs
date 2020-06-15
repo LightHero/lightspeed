@@ -65,12 +65,7 @@ impl JobScheduler {
 
 pub type JobFn = dyn 'static
     + Send
-   
-    + Fn() -> Pin<
-        Box<
-            dyn Future<Output = Result<(), Box<dyn std::error::Error + Send>>> + Send,
-        >,
-    >;
+    + Fn() -> Pin<Box<dyn Future<Output = Result<(), Box<dyn std::error::Error + Send + Sync>>> + Send>>;
 
 pub struct Job {
     function: Mutex<Box<JobFn>>,
@@ -87,13 +82,8 @@ impl Job {
         N: Into<String>,
         F: 'static
             + Send
-           
             + Fn() -> Pin<
-                Box<
-                    dyn Future<Output = Result<(), Box<dyn std::error::Error + Send>>>
-                        + Send
-                       ,
-                >,
+                Box<dyn Future<Output = Result<(), Box<dyn std::error::Error + Send + Sync>>> + Send>,
             >,
     >(
         group: G,
@@ -151,8 +141,9 @@ impl Job {
         run_result.map_err(|err| SchedulerError::JobExecutionError { cause: err })
     }
 
-    async fn exec(&self) -> Result<(), Box<dyn std::error::Error + Send>> {
-        let result = { let function = self.function.lock().await;
+    async fn exec(&self) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+        let result = {
+            let function = self.function.lock().await;
             (function)()
         };
         result.await
@@ -229,7 +220,7 @@ pub mod test {
         rx.recv().await.unwrap();
         assert!(!job_scheduler.job.is_running().await);
     }
-/*
+
     #[tokio::test]
     async fn job_should_not_retry_run_if_ok() {
         let lock = Arc::new(Mutex::new(0));
@@ -326,5 +317,4 @@ pub mod test {
         let count = *lock;
         assert_eq!(succeed_at + 1, count);
     }
-    */
 }
