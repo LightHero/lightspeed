@@ -1,16 +1,16 @@
 use crate::error::SchedulerError;
 use crate::job::{Job, JobScheduler};
 use crate::scheduler::{Scheduler, TryToScheduler};
+use atomic::Atomic;
 use chrono::Utc;
 use chrono_tz::{Tz, UTC};
 use log::*;
-use std::sync::{Arc};
-use tokio::sync::{RwLock};
-use std::time::Duration;
-use tracing_futures::Instrument;
 use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::Arc;
+use std::time::Duration;
+use tokio::sync::RwLock;
 use tokio::task::JoinHandle;
-use atomic::Atomic;
+use tracing_futures::Instrument;
 
 pub mod error;
 pub mod job;
@@ -42,7 +42,7 @@ pub fn new_executor_with_tz(timezone: Option<Tz>) -> JobExecutor {
             running: AtomicBool::new(false),
             timezone,
             jobs: RwLock::new(vec![]),
-        })
+        }),
     }
 }
 
@@ -54,36 +54,36 @@ struct JobExecutorInternal {
 }
 
 impl JobExecutorInternal {
-/*
-    /// Returns true if the JobExecutor contains no jobs.
-    pub async fn is_empty(&self) -> bool {
-        let jobs = self.jobs.read().await;
-        jobs.is_empty()
-    }
-
-    /// Returns the number of jobs in the JobExecutor.
-    pub async fn len(&self) -> usize {
-        let jobs = self.jobs.read().await;
-        jobs.len()
-    }
-
-    /// Clear the JobExecutor, removing all jobs.
-    pub async fn clear(&mut self) {
-        let mut jobs = self.jobs.write().await;
-        jobs.clear()
-    }
-
-    /// Returns true if there is at least one job pending.
-    pub async fn is_pending_job(&self) -> bool {
-        let jobs = self.jobs.read().await;
-        for job_scheduler in jobs.iter() {
-            if job_scheduler.is_pending().await {
-                return true;
-            }
+    /*
+        /// Returns true if the JobExecutor contains no jobs.
+        pub async fn is_empty(&self) -> bool {
+            let jobs = self.jobs.read().await;
+            jobs.is_empty()
         }
-        false
-    }
-*/
+
+        /// Returns the number of jobs in the JobExecutor.
+        pub async fn len(&self) -> usize {
+            let jobs = self.jobs.read().await;
+            jobs.len()
+        }
+
+        /// Clear the JobExecutor, removing all jobs.
+        pub async fn clear(&mut self) {
+            let mut jobs = self.jobs.write().await;
+            jobs.clear()
+        }
+
+        /// Returns true if there is at least one job pending.
+        pub async fn is_pending_job(&self) -> bool {
+            let jobs = self.jobs.read().await;
+            for job_scheduler in jobs.iter() {
+                if job_scheduler.is_pending().await {
+                    return true;
+                }
+            }
+            false
+        }
+    */
     /// Returns true if the Job Executor is running
     fn is_running(&self) -> bool {
         self.running.load(Ordering::SeqCst)
@@ -159,18 +159,17 @@ impl JobExecutorInternal {
             job,
         )));
     }
-
 }
 
 impl JobExecutor {
-
     /// Adds a job to the JobExecutor.
     pub async fn add_job(
         &self,
         schedule: &dyn TryToScheduler,
         job: Job,
     ) -> Result<(), SchedulerError> {
-        self.add_job_with_scheduler(schedule.to_scheduler()?, job).await;
+        self.add_job_with_scheduler(schedule.to_scheduler()?, job)
+            .await;
         Ok(())
     }
 
@@ -180,7 +179,8 @@ impl JobExecutor {
         schedule: &[&dyn TryToScheduler],
         job: Job,
     ) -> Result<(), SchedulerError> {
-        self.add_job_with_scheduler(schedule.to_scheduler()?, job).await;
+        self.add_job_with_scheduler(schedule.to_scheduler()?, job)
+            .await;
         Ok(())
     }
 
@@ -198,14 +198,15 @@ impl JobExecutor {
                 info!("Starting the job executor");
                 while executor.is_running() {
                     executor.run_pending_jobs().await;
-                    tokio::time::delay_for(executor.sleep_between_checks.load(Ordering::SeqCst)).await;
+                    tokio::time::delay_for(executor.sleep_between_checks.load(Ordering::SeqCst))
+                        .await;
                 }
                 info!("Job executor stopped");
             }))
         } else {
             warn!("The JobExecutor is already running.");
             Err(SchedulerError::JobExecutionStateError {
-                message: "The JobExecutor is already running.".to_owned()
+                message: "The JobExecutor is already running.".to_owned(),
             })
         }
     }
@@ -218,7 +219,10 @@ impl JobExecutor {
             if grateful {
                 info!("Wait for all Jobs to complete");
                 while self.executor.is_running_job().await {
-                    tokio::time::delay_for(self.executor.sleep_between_checks.load(Ordering::SeqCst)).await;
+                    tokio::time::delay_for(
+                        self.executor.sleep_between_checks.load(Ordering::SeqCst),
+                    )
+                    .await;
                 }
                 info!("All Jobs completed");
             }
@@ -226,7 +230,7 @@ impl JobExecutor {
         } else {
             warn!("The JobExecutor is not running.");
             Err(SchedulerError::JobExecutionStateError {
-                message: "The JobExecutor is not running.".to_owned()
+                message: "The JobExecutor is not running.".to_owned(),
             })
         }
     }
@@ -234,10 +238,10 @@ impl JobExecutor {
     /// Sets the sleep time between checks for pending Jobs.
     /// The default is 1 second.
     pub fn set_sleep_between_checks(&self, sleep: Duration) {
-        self.executor.sleep_between_checks.store(sleep, Ordering::SeqCst);
+        self.executor
+            .sleep_between_checks
+            .store(sleep, Ordering::SeqCst);
     }
-
-
 }
 
 #[cfg(test)]
@@ -272,7 +276,8 @@ pub mod test {
                         Ok(())
                     })
                 }),
-            ).await
+            )
+            .await
             .unwrap();
 
         for i in 0..100 {
@@ -310,7 +315,8 @@ pub mod test {
                         Ok(())
                     })
                 }),
-            ).await
+            )
+            .await
             .unwrap();
 
         let count_2 = Arc::new(AtomicUsize::new(0));
@@ -330,7 +336,8 @@ pub mod test {
                         Ok(())
                     })
                 }),
-            ).await
+            )
+            .await
             .unwrap();
 
         let count_3 = Arc::new(AtomicUsize::new(0));
@@ -350,7 +357,8 @@ pub mod test {
                         Ok(())
                     })
                 }),
-            ).await
+            )
+            .await
             .unwrap();
 
         let before_millis = Utc::now().timestamp_millis();
@@ -393,7 +401,8 @@ pub mod test {
                             Ok(())
                         })
                     }),
-                ).await
+                )
+                .await
                 .unwrap();
         }
 
@@ -416,10 +425,12 @@ pub mod test {
     #[tokio::test]
     async fn should_add_with_explicit_scheduler() {
         let executor = new_executor_with_utc_tz();
-        executor.add_job_with_scheduler(
-            Scheduler::Never,
-            Job::new("g", "n", None, move || Box::pin(async { Ok(()) })),
-        ).await;
+        executor
+            .add_job_with_scheduler(
+                Scheduler::Never,
+                Job::new("g", "n", None, move || Box::pin(async { Ok(()) })),
+            )
+            .await;
     }
 
     #[tokio::test]
@@ -429,13 +440,15 @@ pub mod test {
             .add_job(
                 &vec!["0 1 * * * * *"],
                 Job::new("g", "n", None, move || Box::pin(async { Ok(()) })),
-            ).await
+            )
+            .await
             .unwrap();
         executor
             .add_job(
                 &vec!["0 1 * * * * *".to_owned(), "0 1 * * * * *".to_owned()],
                 Job::new("g", "n", None, move || Box::pin(async { Ok(()) })),
-            ).await
+            )
+            .await
             .unwrap();
     }
 }
