@@ -4,11 +4,13 @@ use crate::repository::email::EmailClient;
 use lettre::smtp::authentication::IntoCredentials;
 use lettre::smtp::ConnectionReuseParameters;
 use lettre::{ClientSecurity, ClientTlsParameters, SmtpClient, SmtpTransport, Transport};
+use lettre_email::mime::Mime;
 use lettre_email::{Email, Mailbox};
 use lightspeed_core::error::{ErrorCodes, LightSpeedError};
 use log::*;
 use native_tls::TlsConnector;
 use parking_lot::Mutex;
+use std::path::Path;
 use std::sync::Arc;
 
 #[derive(Clone)]
@@ -105,6 +107,30 @@ impl EmailClient for FullEmailClient {
             }
             for bcc in email_message.bcc {
                 builder = builder.bcc(parse_mailbox(&bcc)?)
+            }
+
+            for attachment in email_message.attachment {
+                let path = Path::new(&attachment.path);
+                let filename = attachment.filename.as_deref();
+                let content_type: Mime =
+                    (&attachment.mime_type)
+                        .parse()
+                        .map_err(|err| LightSpeedError::BadRequest {
+                            message: format!(
+                                "Cannot parse the mime type [{}]. Err: {}",
+                                attachment.mime_type, err
+                            ),
+                            code: "",
+                        })?;
+                builder = builder
+                    .attachment_from_file(path, filename, &content_type)
+                    .map_err(|err| LightSpeedError::BadRequest {
+                        message: format!(
+                            "Cannot attach the requested attachment [{:?}]. Err: {}",
+                            attachment, err
+                        ),
+                        code: "",
+                    })?;
             }
 
             let email = builder
