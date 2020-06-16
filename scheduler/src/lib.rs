@@ -85,12 +85,12 @@ impl JobExecutorInternal {
     }
 */
     /// Returns true if the Job Executor is running
-    pub fn is_running(&self) -> bool {
+    fn is_running(&self) -> bool {
         self.running.load(Ordering::SeqCst)
     }
 
     /// Returns true if there is at least one job running.
-    pub async fn is_running_job(&self) -> bool {
+    async fn is_running_job(&self) -> bool {
         let jobs = self.jobs.read().await;
         for job_scheduler in jobs.iter() {
             if job_scheduler.job.is_running().await {
@@ -151,38 +151,13 @@ impl JobExecutorInternal {
     }
 
     /// Adds a job to the JobExecutor.
-    pub async fn add_job(
-        &self,
-        schedule: &dyn TryToScheduler,
-        job: Job,
-    ) -> Result<(), SchedulerError> {
-        self.add_job_with_scheduler(schedule.to_scheduler()?, job).await;
-        Ok(())
-    }
-
-    /// Adds a job to the JobExecutor.
-    pub async fn add_job_with_multi_schedule(
-        &self,
-        schedule: &[&dyn TryToScheduler],
-        job: Job,
-    ) -> Result<(), SchedulerError> {
-        self.add_job_with_scheduler(schedule.to_scheduler()?, job).await;
-        Ok(())
-    }
-
-    /// Adds a job to the JobExecutor.
-    pub async fn add_job_with_scheduler<S: Into<Scheduler>>(&self, schedule: S, job: Job) {
+    async fn add_job_with_scheduler<S: Into<Scheduler>>(&self, schedule: S, job: Job) {
         let mut jobs = self.jobs.write().await;
         jobs.push(Arc::new(JobScheduler::new(
             schedule.into(),
             self.timezone,
             job,
         )));
-    }
-
-    #[cfg(test)]
-    pub fn set_sleep_between_checks(&self, sleep: Duration) {
-        self.sleep_between_checks.store(sleep, Ordering::SeqCst);
     }
 
 }
@@ -195,7 +170,8 @@ impl JobExecutor {
         schedule: &dyn TryToScheduler,
         job: Job,
     ) -> Result<(), SchedulerError> {
-        self.executor.add_job(schedule, job).await
+        self.add_job_with_scheduler(schedule.to_scheduler()?, job).await;
+        Ok(())
     }
 
     /// Adds a job to the JobExecutor.
@@ -204,7 +180,8 @@ impl JobExecutor {
         schedule: &[&dyn TryToScheduler],
         job: Job,
     ) -> Result<(), SchedulerError> {
-        self.executor.add_job_with_multi_schedule(schedule, job).await
+        self.add_job_with_scheduler(schedule.to_scheduler()?, job).await;
+        Ok(())
     }
 
     /// Adds a job to the JobExecutor.
@@ -253,6 +230,13 @@ impl JobExecutor {
             })
         }
     }
+
+    /// Sets the sleep time between checks for pending Jobs.
+    /// The default is 1 second.
+    pub fn set_sleep_between_checks(&self, sleep: Duration) {
+        self.executor.sleep_between_checks.store(sleep, Ordering::SeqCst);
+    }
+
 
 }
 
@@ -413,7 +397,7 @@ pub mod test {
                 .unwrap();
         }
 
-        executor.executor.set_sleep_between_checks(Duration::from_millis(10));
+        executor.set_sleep_between_checks(Duration::from_millis(10));
 
         executor.run().await.unwrap();
 
