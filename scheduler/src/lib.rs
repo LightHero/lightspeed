@@ -4,7 +4,8 @@ use crate::scheduler::{Scheduler, TryToScheduler};
 use chrono::Utc;
 use chrono_tz::{Tz, UTC};
 use log::*;
-use std::sync::Arc;
+use std::sync::{Arc};
+use tokio::sync::{RwLock};
 use std::time::Duration;
 use tracing_futures::Instrument;
 use std::sync::atomic::{AtomicBool, Ordering};
@@ -21,60 +22,66 @@ pub struct JobExecutorHandler {
     executor: Arc<JobExecutorInternal>,
 }
 
-pub struct JobExecutorInternal {
-    sleep_between_checks: Duration,
-    running: AtomicBool,
-    timezone: Option<Tz>,
-    jobs: Vec<Arc<JobScheduler>>,
-}
-
 /// Creates a new Executor that uses the Local time zone for the execution times evaluation.
 /// For example, the cron expressions will refer to the Local time zone.
-pub fn new_executor_with_local_tz() -> JobExecutorInternal {
+pub fn new_executor_with_local_tz() -> JobExecutor {
     new_executor_with_tz(None)
 }
 
 /// Creates a new Executor that uses the UTC time zone for the execution times evaluation.
 /// For example, the cron expressions will refer to the UTC time zone.
-pub fn new_executor_with_utc_tz() -> JobExecutorInternal {
+pub fn new_executor_with_utc_tz() -> JobExecutor {
     new_executor_with_tz(Some(UTC))
 }
 
 /// Creates a new Executor that uses a custom time zone for the execution times evaluation.
 /// For example, the cron expressions will refer to the specified time zone.
-pub fn new_executor_with_tz(timezone: Option<Tz>) -> JobExecutorInternal {
-    JobExecutorInternal {
-        sleep_between_checks: Duration::new(1, 0),
-        running: AtomicBool::new(false),
-        timezone,
-        jobs: vec![],
+pub fn new_executor_with_tz(timezone: Option<Tz>) -> JobExecutor {
+    JobExecutor {
+        executor: Arc::new(JobExecutorInternal {
+            sleep_between_checks: Duration::new(1, 0),
+            running: AtomicBool::new(false),
+            timezone,
+            jobs: RwLock::new(vec![]),
+        })
     }
 }
 
+struct JobExecutorInternal {
+    sleep_between_checks: Duration,
+    running: AtomicBool,
+    timezone: Option<Tz>,
+    jobs: RwLock<Vec<Arc<JobScheduler>>>,
+}
+
 impl JobExecutorInternal {
+
     /// Returns true if the JobExecutor contains no jobs.
-    pub fn is_empty(&self) -> bool {
-        self.jobs.is_empty()
+    #[cfg(test)]
+    pub async fn is_empty(&self) -> bool {
+        let jobs = self.jobs.read().await;
+        jobs.is_empty()
     }
 
     /// Returns the number of jobs in the JobExecutor.
-    pub fn len(&self) -> usize {
-        self.jobs.len()
+    #[cfg(test)]
+    pub async fn len(&self) -> usize {
+        let jobs = self.jobs.read().await;
+        jobs.len()
     }
 
     /// Clear the JobExecutor, removing all jobs.
-    pub fn clear(&mut self) {
-        self.jobs.clear()
-    }
-
-    /// Returns true if the Job Executor is running
-    pub fn is_running(&self) -> bool {
-        self.running.load(Ordering::SeqCst)
+    #[cfg(test)]
+    pub async fn clear(&mut self) {
+        let mut jobs = self.jobs.write().await;
+        jobs.clear()
     }
 
     /// Returns true if there is at least one job pending.
+    #[cfg(test)]
     pub async fn is_pending_job(&self) -> bool {
-        for job_scheduler in &self.jobs {
+        let jobs = self.jobs.read().await;
+        for job_scheduler in jobs.iter() {
             if job_scheduler.is_pending().await {
                 return true;
             }
@@ -82,9 +89,15 @@ impl JobExecutorInternal {
         false
     }
 
+    /// Returns true if the Job Executor is running
+    pub fn is_running(&self) -> bool {
+        self.running.load(Ordering::SeqCst)
+    }
+
     /// Returns true if there is at least one job running.
     pub async fn is_running_job(&self) -> bool {
-        for job_scheduler in &self.jobs {
+        let jobs = self.jobs.read().await;
+        for job_scheduler in jobs.iter() {
             if job_scheduler.job.is_running().await {
                 return true;
             }
@@ -95,7 +108,8 @@ impl JobExecutorInternal {
     /// Run pending jobs in the JobExecutor.
     async fn run_pending_jobs(&self) {
         trace!("Check pending jobs");
-        for job_scheduler in &self.jobs {
+        let jobs = self.jobs.read().await;
+        for job_scheduler in jobs.iter() {
             //println!("check JOB IS PENDING: {}", job.is_pending());
             if job_scheduler.is_pending().await {
                 //println!("JOB IS RUNNING? {}", is_running);
@@ -142,69 +156,143 @@ impl JobExecutorInternal {
     }
 
     /// Adds a job to the JobExecutor.
-    pub fn add_job(
-        &mut self,
+    pub async fn add_job(
+        &self,
         schedule: &dyn TryToScheduler,
         job: Job,
     ) -> Result<(), SchedulerError> {
-        self.add_job_with_scheduler(schedule.to_scheduler()?, job);
+        self.add_job_with_scheduler(schedule.to_scheduler()?, job).await;
         Ok(())
     }
 
     /// Adds a job to the JobExecutor.
-    pub fn add_job_with_multi_schedule(
-        &mut self,
+    pub async fn add_job_with_multi_schedule(
+        &self,
         schedule: &[&dyn TryToScheduler],
         job: Job,
     ) -> Result<(), SchedulerError> {
-        self.add_job_with_scheduler(schedule.to_scheduler()?, job);
+        self.add_job_with_scheduler(schedule.to_scheduler()?, job).await;
         Ok(())
     }
 
     /// Adds a job to the JobExecutor.
-    pub fn add_job_with_scheduler<S: Into<Scheduler>>(&mut self, schedule: S, job: Job) {
-        self.jobs.push(Arc::new(JobScheduler::new(
+    pub async fn add_job_with_scheduler<S: Into<Scheduler>>(&self, schedule: S, job: Job) {
+        let mut jobs = self.jobs.write().await;
+        jobs.push(Arc::new(JobScheduler::new(
             schedule.into(),
             self.timezone,
             job,
         )));
     }
 
+    #[cfg(test)]
     pub fn set_sleep_between_checks(&mut self, sleep: Duration) {
         self.sleep_between_checks = sleep;
     }
 
+}
+
+impl JobExecutor {
+
+    /// Adds a job to the JobExecutor.
+    pub async fn add_job(
+        &self,
+        schedule: &dyn TryToScheduler,
+        job: Job,
+    ) -> Result<(), SchedulerError> {
+        self.executor.add_job(schedule, job).await
+    }
+
+    /// Adds a job to the JobExecutor.
+    pub async fn add_job_with_multi_schedule(
+        &self,
+        schedule: &[&dyn TryToScheduler],
+        job: Job,
+    ) -> Result<(), SchedulerError> {
+        self.executor.add_job_with_multi_schedule(schedule, job).await
+    }
+
+    /// Adds a job to the JobExecutor.
+    pub async fn add_job_with_scheduler<S: Into<Scheduler>>(&self, schedule: S, job: Job) {
+        self.executor.add_job_with_scheduler(schedule, job).await
+    }
+
     /// Starts the JobExecutor
-    pub async fn run(&self) {
-        if !self.is_running() {
-            self.running.store(true, Ordering::SeqCst);
-            info!("Starting the job executor");
-            while self.is_running() {
-                self.run_pending_jobs().await;
-                tokio::time::delay_for(self.sleep_between_checks).await;
-            }
+    pub async fn run(self) -> Result<JobExecutorHandler, SchedulerError> {
+        if !self.executor.is_running() {
+            self.executor.running.store(true, Ordering::SeqCst);
+            let executor = self.executor.clone();
+            tokio::spawn(async move {
+                info!("Starting the job executor");
+                while executor.is_running() {
+                    executor.run_pending_jobs().await;
+                    tokio::time::delay_for(executor.sleep_between_checks).await;
+                }
+                info!("Job executor stopped");
+            });
+            Ok(JobExecutorHandler {
+                executor: self.executor
+            })
         } else {
-            warn!("The JobExecutor is already running.")
+            warn!("The JobExecutor is already running.");
+            Err(SchedulerError::JobExecutionStateError {
+                message: "The JobExecutor is already running.".to_owned()
+            })
         }
     }
 
+}
+
+impl JobExecutorHandler {
+
+    /// Adds a job to the JobExecutor.
+    pub async fn add_job(
+        &self,
+        schedule: &dyn TryToScheduler,
+        job: Job,
+    ) -> Result<(), SchedulerError> {
+        self.executor.add_job(schedule, job).await
+    }
+
+    /// Adds a job to the JobExecutor.
+    pub async fn add_job_with_multi_schedule(
+        &self,
+        schedule: &[&dyn TryToScheduler],
+        job: Job,
+    ) -> Result<(), SchedulerError> {
+        self.executor.add_job_with_multi_schedule(schedule, job).await
+    }
+
+    /// Adds a job to the JobExecutor.
+    pub async fn add_job_with_scheduler<S: Into<Scheduler>>(&self, schedule: S, job: Job) {
+        self.executor.add_job_with_scheduler(schedule, job).await
+    }
+
     /// Stops the JobExecutor
-    pub async fn stop(&self, grateful: bool) {
-        if self.is_running() {
+    pub async fn stop(self, grateful: bool) -> Result<JobExecutor, SchedulerError> {
+        if self.executor.is_running() {
             info!("Stopping the job executor");
-            self.running.store(false, Ordering::SeqCst);
+            self.executor.running.store(false, Ordering::SeqCst);
             if grateful {
                 info!("Wait for all Jobs to complete");
-                while self.is_running_job().await {
-                    tokio::time::delay_for(self.sleep_between_checks).await;
+                while self.executor.is_running_job().await {
+                    tokio::time::delay_for(self.executor.sleep_between_checks).await;
                 }
                 info!("All Jobs completed");
             }
+            Ok(JobExecutor {
+                executor: self.executor
+            })
         } else {
-            warn!("The JobExecutor is not running.")
+            warn!("The JobExecutor is not running.");
+            Err(SchedulerError::JobExecutionStateError {
+                message: "The JobExecutor is not running.".to_owned()
+            })
         }
     }
+
 }
+
 
 #[cfg(test)]
 pub mod test {
