@@ -423,6 +423,23 @@ pub mod test {
     }
 
     #[tokio::test]
+    async fn start_should_fail_if_already_running() {
+        let executor = new_executor_with_utc_tz();
+        assert!(executor.run().await.is_ok());
+        assert!(executor.run().await.is_err());
+        assert!(executor.stop(false).await.is_ok());
+    }
+
+    #[tokio::test]
+    async fn stop_should_fail_if_not_running() {
+        let executor = new_executor_with_utc_tz();
+        assert!(executor.stop(false).await.is_err());
+        assert!(executor.run().await.is_ok());
+        assert!(executor.stop(false).await.is_ok());
+        assert!(executor.stop(false).await.is_err());
+    }
+
+    #[tokio::test]
     async fn should_add_with_explicit_scheduler() {
         let executor = new_executor_with_utc_tz();
         executor
