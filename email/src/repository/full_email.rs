@@ -1,5 +1,5 @@
 use crate::config::EmailClientConfig;
-use crate::model::email::EmailMessage;
+use crate::model::email::{EmailAttachment, EmailMessage};
 use crate::repository::email::EmailClient;
 use lettre::smtp::authentication::IntoCredentials;
 use lettre::smtp::ConnectionReuseParameters;
@@ -109,28 +109,41 @@ impl EmailClient for FullEmailClient {
                 builder = builder.bcc(parse_mailbox(&bcc)?)
             }
 
-            for attachment in email_message.attachment {
-                let path = Path::new(&attachment.path);
-                let filename = attachment.filename.as_deref();
-                let content_type: Mime =
-                    (&attachment.mime_type)
-                        .parse()
-                        .map_err(|err| LightSpeedError::BadRequest {
-                            message: format!(
-                                "Cannot parse the mime type [{}]. Err: {}",
-                                attachment.mime_type, err
-                            ),
-                            code: "",
-                        })?;
-                builder = builder
-                    .attachment_from_file(path, filename, &content_type)
-                    .map_err(|err| LightSpeedError::BadRequest {
-                        message: format!(
-                            "Cannot attach the requested attachment [{:?}]. Err: {}",
-                            attachment, err
-                        ),
-                        code: "",
-                    })?;
+            for attachment in email_message.attachments {
+                match &attachment {
+                    EmailAttachment::Binary {
+                        body,
+                        filename,
+                        mime_type,
+                    } => {
+                        builder = builder
+                            .attachment(body, filename, &to_mime_type(mime_type)?)
+                            .map_err(|err| LightSpeedError::BadRequest {
+                                message: format!(
+                                    "Cannot attach the requested attachment [{:?}]. Err: {}",
+                                    attachment, err
+                                ),
+                                code: "",
+                            })?;
+                    }
+                    EmailAttachment::FromFile {
+                        path,
+                        filename,
+                        mime_type,
+                    } => {
+                        let path = Path::new(path);
+                        let filename = filename.as_deref();
+                        builder = builder
+                            .attachment_from_file(path, filename, &to_mime_type(mime_type)?)
+                            .map_err(|err| LightSpeedError::BadRequest {
+                                message: format!(
+                                    "Cannot attach the requested attachment [{:?}]. Err: {}",
+                                    attachment, err
+                                ),
+                                code: "",
+                            })?;
+                    }
+                }
             }
 
             let email = builder
@@ -197,6 +210,15 @@ fn parse_mailbox(address: &str) -> Result<Mailbox, LightSpeedError> {
         .map_err(|err| LightSpeedError::BadRequest {
             message: format!("Cannot parse email address [{}]. Err: {}", address, err),
             code: ErrorCodes::PARSE_ERROR,
+        })
+}
+
+fn to_mime_type(mime_type: &str) -> Result<Mime, LightSpeedError> {
+    mime_type
+        .parse()
+        .map_err(|err| LightSpeedError::BadRequest {
+            message: format!("Cannot parse the mime type [{}]. Err: {}", mime_type, err),
+            code: "",
         })
 }
 

@@ -1,6 +1,6 @@
 use lightspeed_core::model::boolean::Boolean;
 use lightspeed_email::config::EmailClientConfig;
-use lightspeed_email::model::email::*;
+use lightspeed_email::model::email::{EmailAttachment, EmailMessage};
 use lightspeed_email::repository::email::{new, EmailClientType};
 use lightspeed_email::service::EmailService;
 use testcontainers::*;
@@ -41,10 +41,10 @@ async fn should_start_the_mailserver() {
     message.to.push("ufoscout@gmail.com".to_owned());
     message.to.push("NAME <test@gmail.com>".to_owned());
     message.subject = Some("subject".to_owned());
-    message.attachment.push(EmailAttachment {
+    message.attachments.push(EmailAttachment::FromFile {
         mime_type: "plain/text".to_owned(),
         path: "./Cargo.toml".to_owned(),
-        filename: Some("cargo.txt".to_owned())
+        filename: Some("cargo.txt".to_owned()),
     });
 
     // Act
@@ -73,7 +73,7 @@ async fn should_start_the_mailserver() {
 //     message.from = Some("UFOSCOUT <ufoscout@gmail.com>".to_owned());
 //     message.to.push("FRANCESCO <ufoscout@gmail.com>".to_owned());
 //     message.subject = Some("EMAIL FROM RUST!!".to_owned());
-//     message.attachment.push(EmailAttachment {
+//     message.attachments.push(EmailAttachment::FromFile {
 //         mime_type: "plain/text".to_owned(),
 //         path: "./Cargo.toml".to_owned(),
 //         filename: Some("cargo.txt".to_owned())
