@@ -6,44 +6,52 @@ use chrono_tz::{Tz, UTC};
 use log::*;
 use std::sync::Arc;
 use std::time::Duration;
-use tokio::sync::RwLock;
 use tracing_futures::Instrument;
+use std::sync::atomic::{AtomicBool, Ordering};
 
 pub mod error;
 pub mod job;
 pub mod scheduler;
 
 pub struct JobExecutor {
+    executor: Arc<JobExecutorInternal>,
+}
+
+pub struct JobExecutorHandler {
+    executor: Arc<JobExecutorInternal>,
+}
+
+pub struct JobExecutorInternal {
     sleep_between_checks: Duration,
-    running: RwLock<bool>,
+    running: AtomicBool,
     timezone: Option<Tz>,
     jobs: Vec<Arc<JobScheduler>>,
 }
 
 /// Creates a new Executor that uses the Local time zone for the execution times evaluation.
 /// For example, the cron expressions will refer to the Local time zone.
-pub fn new_executor_with_local_tz() -> JobExecutor {
+pub fn new_executor_with_local_tz() -> JobExecutorInternal {
     new_executor_with_tz(None)
 }
 
 /// Creates a new Executor that uses the UTC time zone for the execution times evaluation.
 /// For example, the cron expressions will refer to the UTC time zone.
-pub fn new_executor_with_utc_tz() -> JobExecutor {
+pub fn new_executor_with_utc_tz() -> JobExecutorInternal {
     new_executor_with_tz(Some(UTC))
 }
 
 /// Creates a new Executor that uses a custom time zone for the execution times evaluation.
 /// For example, the cron expressions will refer to the specified time zone.
-pub fn new_executor_with_tz(timezone: Option<Tz>) -> JobExecutor {
-    JobExecutor {
+pub fn new_executor_with_tz(timezone: Option<Tz>) -> JobExecutorInternal {
+    JobExecutorInternal {
         sleep_between_checks: Duration::new(1, 0),
-        running: RwLock::new(false),
+        running: AtomicBool::new(false),
         timezone,
         jobs: vec![],
     }
 }
 
-impl JobExecutor {
+impl JobExecutorInternal {
     /// Returns true if the JobExecutor contains no jobs.
     pub fn is_empty(&self) -> bool {
         self.jobs.is_empty()
@@ -60,9 +68,8 @@ impl JobExecutor {
     }
 
     /// Returns true if the Job Executor is running
-    pub async fn is_running(&self) -> bool {
-        let read = self.running.read().await;
-        *read
+    pub fn is_running(&self) -> bool {
+        self.running.load(Ordering::SeqCst)
     }
 
     /// Returns true if there is at least one job pending.
@@ -169,18 +176,12 @@ impl JobExecutor {
 
     /// Starts the JobExecutor
     pub async fn run(&self) {
-        let mut running = self.is_running().await;
-        if !running {
+        if !self.is_running() {
+            self.running.store(true, Ordering::SeqCst);
             info!("Starting the job executor");
-            {
-                let mut write = self.running.write().await;
-                *write = true;
-            };
-            running = true;
-            while running {
+            while self.is_running() {
                 self.run_pending_jobs().await;
                 tokio::time::delay_for(self.sleep_between_checks).await;
-                running = self.is_running().await;
             }
         } else {
             warn!("The JobExecutor is already running.")
@@ -189,13 +190,9 @@ impl JobExecutor {
 
     /// Stops the JobExecutor
     pub async fn stop(&self, grateful: bool) {
-        let running = self.is_running().await;
-        if running {
+        if self.is_running() {
             info!("Stopping the job executor");
-            {
-                let mut write = self.running.write().await;
-                *write = false;
-            };
+            self.running.store(false, Ordering::SeqCst);
             if grateful {
                 info!("Wait for all Jobs to complete");
                 while self.is_running_job().await {
@@ -208,6 +205,7 @@ impl JobExecutor {
         }
     }
 }
+
 #[cfg(test)]
 pub mod test {
 
