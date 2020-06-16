@@ -191,8 +191,8 @@ impl JobExecutor {
 
     /// Starts the JobExecutor
     pub async fn run(&self) -> Result<JoinHandle<()>, SchedulerError> {
-        if !self.executor.is_running() {
-            self.executor.running.store(true, Ordering::SeqCst);
+        let was_running = self.executor.running.swap(true, Ordering::SeqCst);
+        if !was_running {
             let executor = self.executor.clone();
             Ok(tokio::spawn(async move {
                 info!("Starting the job executor");
@@ -212,9 +212,9 @@ impl JobExecutor {
 
     /// Stops the JobExecutor
     pub async fn stop(&self, grateful: bool) -> Result<(), SchedulerError> {
-        if self.executor.is_running() {
+        let was_running = self.executor.running.swap(false, Ordering::SeqCst);
+        if was_running {
             info!("Stopping the job executor");
-            self.executor.running.store(false, Ordering::SeqCst);
             if grateful {
                 info!("Wait for all Jobs to complete");
                 while self.executor.is_running_job().await {
