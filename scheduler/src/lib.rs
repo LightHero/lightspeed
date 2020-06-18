@@ -468,4 +468,64 @@ pub mod test {
             .await
             .unwrap();
     }
+
+    #[tokio::test]
+    async fn the_executor_should_catch_panics() {
+        let executor = new_executor_with_local_tz();
+
+        let (tx, mut rx) = channel(1000000);
+
+        let count_1 = Arc::new(AtomicUsize::new(0));
+        let count_1_clone = count_1.clone();
+        let tx_1 = tx.clone();
+        executor
+            .add_job_with_multi_schedule(
+                &[&Duration::new(0, 1)],
+                Job::new("g", "n", None, move || {
+                    let count_1_clone = count_1_clone.clone();
+                    let mut tx_1 = tx_1.clone();
+                    Box::pin(async move {
+                        tx_1.send("").await.unwrap();
+                        println!("job 1 - started");
+                        count_1_clone.fetch_add(1, Ordering::SeqCst);
+                        panic!("Simulate Job panic for test")
+                    })
+                }),
+            )
+            .await
+            .unwrap();
+
+        let count_2 = Arc::new(AtomicUsize::new(0));
+        let count_2_clone = count_2.clone();
+        let tx_2 = tx.clone();
+        executor
+            .add_job(
+                &Duration::new(0, 1),
+                Job::new("g", "n", None, move || {
+                    let count_2_clone = count_2_clone.clone();
+                    let mut tx_2 = tx_2.clone();
+                    Box::pin(async move {
+                        tx_2.send("").await.unwrap();
+                        println!("job 2 - started");
+                        count_2_clone.fetch_add(1, Ordering::SeqCst);
+                        Ok(())
+                    })
+                }),
+            )
+            .await
+            .unwrap();
+
+        let runs = 100;
+
+        for i in 0..runs {
+            println!("run_pending {}", i);
+            executor.executor.run_pending_jobs().await;
+            tokio::time::delay_for(Duration::new(0, 1_000_000)).await;
+        }
+
+        rx.recv().await.unwrap();
+
+        assert_eq!(count_1.load(Ordering::SeqCst), runs);
+        assert_eq!(count_2.load(Ordering::SeqCst), runs);
+    }
 }

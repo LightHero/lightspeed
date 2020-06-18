@@ -12,4 +12,6 @@ pub enum SchedulerError {
     JobExecutionError {
         cause: Box<dyn std::error::Error + Send + Sync>,
     },
+    #[error("JobExecutionPanic: [{cause}]")]
+    JobExecutionPanic { cause: String },
 }
