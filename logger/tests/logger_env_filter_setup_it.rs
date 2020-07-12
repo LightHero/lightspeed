@@ -19,11 +19,11 @@ mod inner1 {
 mod inner2 {
     use super::*;
 
-    #[tracing::instrument]
-    pub async fn log_smt(yak: u32) {
-        debug!("inner2 - this is debug");
-        info!("inner2 - this is info");
-        warn!("inner2 - this is warn. Yak {}", yak);
+    #[tracing::instrument(skip(data), fields(id=data.id, show=true))]
+    pub async fn log_smt(yak: u32, data: Data) {
+        debug!("inner2 - id: {} - this is debug", data.id);
+        info!("inner2 - id: {} - this is info", data.id);
+        warn!("inner2 - id: {} - this is warn. Yak {}", data.id, yak);
 
         // info!(excitement = "yay!", "hello! I'm gonna shave a yak.");
 
@@ -31,11 +31,15 @@ mod inner2 {
     }
 }
 
+pub struct Data {
+    id: u32
+}
+
 #[tokio::test]
 async fn should_setup_logger_with_env_filter() -> Result<(), std::io::Error> {
     let config = LoggerConfig {
         stdout_output: true,
-        env_filter: "warn".to_owned(),
+        env_filter: "debug".to_owned(),
     };
     setup_logger(&config).unwrap();
 
@@ -43,7 +47,7 @@ async fn should_setup_logger_with_env_filter() -> Result<(), std::io::Error> {
     info!("main - this is info");
     warn!("main - this is warn");
     inner1::log_smt().await;
-    inner2::log_smt(3).await;
+    inner2::log_smt(3, Data{ id: 789}).await;
 
     Ok(())
 }
