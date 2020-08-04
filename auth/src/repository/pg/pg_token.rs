@@ -1,17 +1,17 @@
 use crate::model::token::{TokenData, TokenDataCodec, TokenModel};
 use crate::repository::TokenRepository;
-use c3p0::pg::*;
+use c3p0::postgres::*;
 use c3p0::*;
 use lightspeed_core::error::LightSpeedError;
 use std::ops::Deref;
 
 #[derive(Clone)]
 pub struct PgTokenRepository {
-    repo: PgC3p0JsonAsync<TokenData, TokenDataCodec>,
+    repo: PgC3p0Json<TokenData, TokenDataCodec>,
 }
 
 impl Deref for PgTokenRepository {
-    type Target = PgC3p0JsonAsync<TokenData, TokenDataCodec>;
+    type Target = PgC3p0Json<TokenData, TokenDataCodec>;
 
     fn deref(&self) -> &Self::Target {
         &self.repo
@@ -28,11 +28,11 @@ impl Default for PgTokenRepository {
 
 #[async_trait::async_trait]
 impl TokenRepository for PgTokenRepository {
-    type Conn = PgConnectionAsync;
+    type Conn = PgConnection;
 
     async fn fetch_by_token(
         &self,
-        conn: &mut PgConnectionAsync,
+        conn: &mut PgConnection,
         token_string: &str,
     ) -> Result<TokenModel, LightSpeedError> {
         let sql = r#"
@@ -48,7 +48,7 @@ impl TokenRepository for PgTokenRepository {
 
     async fn fetch_by_username(
         &self,
-        conn: &mut PgConnectionAsync,
+        conn: &mut PgConnection,
         username: &str,
     ) -> Result<Vec<TokenModel>, LightSpeedError> {
         let sql = r#"

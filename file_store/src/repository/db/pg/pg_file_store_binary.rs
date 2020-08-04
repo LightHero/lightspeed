@@ -1,6 +1,6 @@
 use crate::dto::FileData;
 use crate::repository::db::DBFileStoreBinaryRepository;
-use c3p0::pg::*;
+use c3p0::postgres::*;
 use lightspeed_core::error::{ErrorCodes, LightSpeedError};
 use tokio::fs::File;
 use tokio::io::AsyncReadExt;
@@ -20,7 +20,7 @@ impl Default for PgFileStoreBinaryRepository {
 
 #[async_trait::async_trait]
 impl DBFileStoreBinaryRepository for PgFileStoreBinaryRepository {
-    type Conn = PgConnectionAsync;
+    type Conn = PgConnection;
 
     async fn read_file(
         &self,

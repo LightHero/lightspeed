@@ -1,6 +1,6 @@
-use c3p0::pg::deadpool;
-use c3p0::pg::tokio_postgres::*;
-use c3p0::pg::*;
+use c3p0::postgres::deadpool;
+use c3p0::postgres::tokio_postgres::*;
+use c3p0::postgres::*;
 use maybe_single::*;
 use testcontainers::*;
 
@@ -39,7 +39,7 @@ async fn init() -> MaybeType {
     pool_config.timeouts.wait = Some(Duration::from_secs(5));
     config.pool = Some(pool_config);
 
-    let c3p0 = PgC3p0PoolAsync::new(config.create_pool(NoTls).unwrap());
+    let c3p0 = PgC3p0Pool::new(config.create_pool(NoTls).unwrap());
 
     let repo_manager = RepoManager::new(c3p0);
 

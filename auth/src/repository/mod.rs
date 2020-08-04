@@ -7,8 +7,8 @@ pub mod pg;
 
 #[async_trait::async_trait]
 pub trait AuthRepositoryManager: Clone + Send + Sync {
-    type Conn: SqlConnectionAsync;
-    type C3P0: C3p0PoolAsync<Conn = Self::Conn>;
+    type Conn: SqlConnection;
+    type C3P0: C3p0Pool<Conn = Self::Conn>;
     type AuthAccountRepo: AuthAccountRepository<Conn = Self::Conn>;
     type TokenRepo: TokenRepository<Conn = Self::Conn>;
 
@@ -20,7 +20,7 @@ pub trait AuthRepositoryManager: Clone + Send + Sync {
 
 #[async_trait::async_trait]
 pub trait AuthAccountRepository: Clone + Send + Sync {
-    type Conn: SqlConnectionAsync;
+    type Conn: SqlConnection;
 
     async fn fetch_by_id(
         &self,
@@ -67,7 +67,7 @@ pub trait AuthAccountRepository: Clone + Send + Sync {
 
 #[async_trait::async_trait]
 pub trait TokenRepository: Clone + Send + Sync {
-    type Conn: SqlConnectionAsync;
+    type Conn: SqlConnection;
 
     async fn fetch_by_token(
         &self,

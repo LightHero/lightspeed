@@ -1,7 +1,7 @@
 use crate::repository::pg::pg_auth_account::PgAuthAccountRepository;
 use crate::repository::pg::pg_token::PgTokenRepository;
 use crate::repository::AuthRepositoryManager;
-use c3p0::pg::*;
+use c3p0::postgres::*;
 use c3p0::*;
 use lightspeed_core::error::LightSpeedError;
 
@@ -12,23 +12,23 @@ const MIGRATIONS: include_dir::Dir = include_dir::include_dir!("./src_resources/
 
 #[derive(Clone)]
 pub struct PgAuthRepositoryManager {
-    c3p0: PgC3p0PoolAsync,
+    c3p0: PgC3p0Pool,
 }
 
 impl PgAuthRepositoryManager {
-    pub fn new(c3p0: PgC3p0PoolAsync) -> Self {
+    pub fn new(c3p0: PgC3p0Pool) -> Self {
         Self { c3p0 }
     }
 }
 
 #[async_trait::async_trait]
 impl AuthRepositoryManager for PgAuthRepositoryManager {
-    type Conn = PgConnectionAsync;
-    type C3P0 = PgC3p0PoolAsync;
+    type Conn = PgConnection;
+    type C3P0 = PgC3p0Pool;
     type AuthAccountRepo = PgAuthAccountRepository;
     type TokenRepo = PgTokenRepository;
 
-    fn c3p0(&self) -> &PgC3p0PoolAsync {
+    fn c3p0(&self) -> &PgC3p0Pool {
         &self.c3p0
     }
 

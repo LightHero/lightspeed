@@ -8,8 +8,8 @@ pub mod pg;
 
 #[async_trait::async_trait]
 pub trait CmsRepositoryManager: Clone + Send + Sync {
-    type Conn: SqlConnectionAsync;
-    type C3P0: C3p0PoolAsync<Conn = Self::Conn>;
+    type Conn: SqlConnection;
+    type C3P0: C3p0Pool<Conn = Self::Conn>;
     type ContentRepo: ContentRepository<Conn = Self::Conn>;
     type ProjectRepo: ProjectRepository<Conn = Self::Conn>;
     type SchemaRepo: SchemaRepository<Conn = Self::Conn>;

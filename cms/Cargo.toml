@@ -14,7 +14,7 @@ keywords = []
 lightspeed_cache = { version = "0.13.6", path = "../cache" }
 lightspeed_core = { version = "0.13.6", path = "../core" }
 async-trait = "0.1.29"
-c3p0 = { version = "0.53.0", features = ["pg_migrate"] }
+c3p0 = { version = "0.60.0", features = ["postgres_migrate"] }
 log = "0.4"
 once_cell = "1.4"
 regex = "1.3"

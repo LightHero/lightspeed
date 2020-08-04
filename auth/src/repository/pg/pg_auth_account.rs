@@ -1,13 +1,13 @@
 use crate::model::auth_account::{AuthAccountData, AuthAccountDataCodec, AuthAccountModel};
 use crate::repository::AuthAccountRepository;
-use c3p0::pg::*;
+use c3p0::postgres::*;
 use c3p0::*;
 use lightspeed_core::error::{ErrorCodes, LightSpeedError};
 use std::ops::Deref;
 
 #[derive(Clone)]
 pub struct PgAuthAccountRepository {
-    repo: PgC3p0JsonAsync<AuthAccountData, AuthAccountDataCodec>,
+    repo: PgC3p0Json<AuthAccountData, AuthAccountDataCodec>,
 }
 
 impl Default for PgAuthAccountRepository {
@@ -20,7 +20,7 @@ impl Default for PgAuthAccountRepository {
 
 #[async_trait::async_trait]
 impl AuthAccountRepository for PgAuthAccountRepository {
-    type Conn = PgConnectionAsync;
+    type Conn = PgConnection;
 
     async fn fetch_by_id(
         &self,
@@ -32,7 +32,7 @@ impl AuthAccountRepository for PgAuthAccountRepository {
 
     async fn fetch_by_username(
         &self,
-        conn: &mut PgConnectionAsync,
+        conn: &mut PgConnection,
         username: &str,
     ) -> Result<AuthAccountModel, LightSpeedError> {
         self.fetch_by_username_optional(conn, username)
@@ -61,7 +61,7 @@ impl AuthAccountRepository for PgAuthAccountRepository {
 
     async fn fetch_by_email_optional(
         &self,
-        conn: &mut PgConnectionAsync,
+        conn: &mut PgConnection,
         email: &str,
     ) -> Result<Option<AuthAccountModel>, LightSpeedError> {
         let sql = r#"
@@ -101,7 +101,7 @@ impl AuthAccountRepository for PgAuthAccountRepository {
 }
 
 impl Deref for PgAuthAccountRepository {
-    type Target = PgC3p0JsonAsync<AuthAccountData, AuthAccountDataCodec>;
+    type Target = PgC3p0Json<AuthAccountData, AuthAccountDataCodec>;
 
     fn deref(&self) -> &Self::Target {
         &self.repo

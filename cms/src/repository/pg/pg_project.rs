@@ -1,17 +1,17 @@
 use crate::model::project::ProjectData;
 use crate::repository::ProjectRepository;
-use c3p0::pg::*;
+use c3p0::postgres::*;
 use c3p0::*;
 use lightspeed_core::error::LightSpeedError;
 use std::ops::Deref;
 
 #[derive(Clone)]
 pub struct PgProjectRepository {
-    repo: PgC3p0JsonAsync<ProjectData, DefaultJsonCodec>,
+    repo: PgC3p0Json<ProjectData, DefaultJsonCodec>,
 }
 
 impl Deref for PgProjectRepository {
-    type Target = PgC3p0JsonAsync<ProjectData, DefaultJsonCodec>;
+    type Target = PgC3p0Json<ProjectData, DefaultJsonCodec>;
 
     fn deref(&self) -> &Self::Target {
         &self.repo
@@ -28,7 +28,7 @@ impl Default for PgProjectRepository {
 
 #[async_trait::async_trait]
 impl ProjectRepository for PgProjectRepository {
-    type Conn = PgConnectionAsync;
+    type Conn = PgConnection;
 
     async fn fetch_by_id(
         &self,

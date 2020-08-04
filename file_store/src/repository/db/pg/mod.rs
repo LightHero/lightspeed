@@ -1,6 +1,6 @@
 use crate::repository::db::pg::pg_file_store_binary::PgFileStoreBinaryRepository;
 use crate::repository::db::DBFileStoreRepositoryManager;
-use c3p0::pg::*;
+use c3p0::postgres::*;
 use c3p0::*;
 use lightspeed_core::error::LightSpeedError;
 
@@ -10,12 +10,12 @@ const MIGRATIONS: include_dir::Dir = include_dir::include_dir!("./src_resources/
 
 #[derive(Clone)]
 pub struct PgFileStoreRepositoryManager {
-    c3p0: PgC3p0PoolAsync,
+    c3p0: PgC3p0Pool,
     binary_repo: PgFileStoreBinaryRepository,
 }
 
 impl PgFileStoreRepositoryManager {
-    pub fn new(c3p0: PgC3p0PoolAsync) -> Self {
+    pub fn new(c3p0: PgC3p0Pool) -> Self {
         Self {
             c3p0,
             binary_repo: PgFileStoreBinaryRepository::default(),
@@ -25,11 +25,11 @@ impl PgFileStoreRepositoryManager {
 
 #[async_trait::async_trait]
 impl DBFileStoreRepositoryManager for PgFileStoreRepositoryManager {
-    type Conn = PgConnectionAsync;
-    type C3P0 = PgC3p0PoolAsync;
+    type Conn = PgConnection;
+    type C3P0 = PgC3p0Pool;
     type FileStoreBinaryRepo = PgFileStoreBinaryRepository;
 
-    fn c3p0(&self) -> &PgC3p0PoolAsync {
+    fn c3p0(&self) -> &PgC3p0Pool {
         &self.c3p0
     }
 
