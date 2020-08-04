@@ -32,7 +32,7 @@ mod inner2 {
 }
 
 pub struct Data {
-    id: u32
+    id: u32,
 }
 
 #[tokio::test]
@@ -47,7 +47,7 @@ async fn should_setup_logger_with_env_filter() -> Result<(), std::io::Error> {
     info!("main - this is info");
     warn!("main - this is warn");
     inner1::log_smt().await;
-    inner2::log_smt(3, Data{ id: 789}).await;
+    inner2::log_smt(3, Data { id: 789 }).await;
 
     Ok(())
 }
