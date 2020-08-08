@@ -20,7 +20,7 @@ pub struct FileStoreService<RepoManager: DBFileStoreRepositoryManager> {
 }
 
 impl<RepoManager: DBFileStoreRepositoryManager> FileStoreService<RepoManager> {
-    pub fn new(repo_manager: &RepoManager, fs_repositories: HashMap<String, String>) -> Self {
+    pub fn new(repo_manager: &RepoManager, fs_repositories: Vec<(String, String)>) -> Self {
         FileStoreService {
             c3p0: repo_manager.c3p0().clone(),
             db_binary_repo: repo_manager.file_store_binary_repo(),

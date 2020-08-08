@@ -11,7 +11,7 @@ use lightspeed_file_store::FileStoreModule;
 use once_cell::sync::OnceCell;
 use tokio::time::Duration;
 
-//mod tests;
+mod tests;
 
 pub type RepoManager = PgFileStoreRepositoryManager;
 
@@ -44,7 +44,9 @@ async fn init() -> MaybeType {
 
     let repo_manager = RepoManager::new(c3p0.clone());
 
-    let file_store_config = FileStoreConfig::build();
+    let mut file_store_config = FileStoreConfig::build();
+    file_store_config.fs_repo_base_folders.push(("REPO_ONE".to_owned(), "./target/repo_one".to_owned()));
+    file_store_config.fs_repo_base_folders.push(("REPO_TWO".to_owned(), "./target/repo_two".to_owned()));
 
     let mut file_store_module = FileStoreModule::new(repo_manager, file_store_config).unwrap();
     {

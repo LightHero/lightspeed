@@ -3,7 +3,6 @@ use crate::repository::db::DBFileStoreRepositoryManager;
 use crate::service::file_store::FileStoreService;
 use lightspeed_core::error::LightSpeedError;
 use log::*;
-use std::collections::HashMap;
 use std::sync::Arc;
 
 pub mod config;
@@ -35,7 +34,7 @@ impl<RepoManager: DBFileStoreRepositoryManager> FileStoreModule<RepoManager> {
 
 
         */
-        let file_store_service = Arc::new(FileStoreService::new(&repo_manager, HashMap::new()));
+        let file_store_service = Arc::new(FileStoreService::new(&repo_manager, config.fs_repo_base_folders.clone()));
 
         Ok(FileStoreModule {
             config,
