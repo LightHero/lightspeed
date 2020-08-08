@@ -19,15 +19,15 @@ pub struct FileStoreDataData {
     pub created_date_epoch_seconds: i64,
 }
 
-#[derive(Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(tag = "_json_tag")]
 pub enum Repository {
     DB {
         file_id: IdType
     },
     FS {
-        relative_path: Option<String>,
-        repository_name: Option<String>,
+        relative_path: String,
+        repository_name: String,
     }
 }
 

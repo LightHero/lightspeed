@@ -25,20 +25,19 @@ pub trait DBFileStoreBinaryRepository: Clone + Send + Sync {
     async fn read_file(
         &self,
         conn: &mut Self::Conn,
-        file_name: &str,
+        id: IdType,
     ) -> Result<BinaryContent, LightSpeedError>;
 
     async fn save_file(
         &self,
         conn: &mut Self::Conn,
-        file_name: &str,
         content: &BinaryContent,
-    ) -> Result<(), LightSpeedError>;
+    ) -> Result<IdType, LightSpeedError>;
 
-    async fn delete_by_filename(
+    async fn delete_file(
         &self,
         conn: &mut Self::Conn,
-        file_name: &str,
+        id: IdType,
     ) -> Result<u64, LightSpeedError>;
 }
 

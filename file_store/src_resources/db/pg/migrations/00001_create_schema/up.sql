@@ -17,10 +17,8 @@ create table LS_FILE_STORE_DATA (
 -----------------------------------
 
 create table LS_FILE_STORE_BINARY (
-    filename    TEXT NOT NULL,
+    ID bigserial primary key,
     data  BYTEA
 );
-
-CREATE UNIQUE INDEX LS_FILE_STORE_BINARY_UNIQUE_FILENAME ON LS_FILE_STORE_BINARY( filename );
 
 -- End - LS_FILE_STORE_BINARY -

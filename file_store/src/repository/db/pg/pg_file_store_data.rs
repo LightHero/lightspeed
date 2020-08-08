@@ -1,9 +1,8 @@
 use crate::repository::db::{FileStoreDataRepository};
 use c3p0::postgres::*;
 use c3p0::*;
-use lightspeed_core::error::{ErrorCodes, LightSpeedError};
+use lightspeed_core::error::LightSpeedError;
 use crate::model::{FileStoreDataData, FileStoreDataDataCodec, FileStoreDataModel};
-use std::ops::Deref;
 
 #[derive(Clone)]
 pub struct PgFileStoreDataRepository {

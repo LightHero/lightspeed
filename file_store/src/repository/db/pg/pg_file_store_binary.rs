@@ -5,6 +5,7 @@ use lightspeed_core::error::{ErrorCodes, LightSpeedError};
 use tokio::fs::File;
 use tokio::io::AsyncReadExt;
 use std::borrow::Cow;
+use c3p0::IdType;
 
 #[derive(Clone)]
 pub struct PgFileStoreBinaryRepository {
@@ -26,12 +27,12 @@ impl DBFileStoreBinaryRepository for PgFileStoreBinaryRepository {
     async fn read_file(
         &self,
         conn: &mut Self::Conn,
-        file_name: &str,
+        id: IdType,
     ) -> Result<BinaryContent, LightSpeedError> {
-        let sql = &format!("SELECT DATA FROM {} WHERE filename = $1", self.table_name);
+        let sql = &format!("SELECT DATA FROM {} WHERE id = $1", self.table_name);
 
         let content = conn
-            .fetch_one(&sql, &[&file_name], |row| {
+            .fetch_one(&sql, &[&id], |row| {
                 let content: Vec<u8> = row.try_get(0).map_err(into_c3p0_error)?;
                 Ok(content)
             })
@@ -42,9 +43,8 @@ impl DBFileStoreBinaryRepository for PgFileStoreBinaryRepository {
     async fn save_file(
         &self,
         conn: &mut Self::Conn,
-        file_name: &str,
         content: &BinaryContent,
-    ) -> Result<(), LightSpeedError> {
+    ) -> Result<IdType, LightSpeedError> {
 
         let binary_content = match content {
             BinaryContent::InMemory { content } => Cow::Borrowed(content),
@@ -55,7 +55,7 @@ impl DBFileStoreBinaryRepository for PgFileStoreBinaryRepository {
                         .map_err(|err| LightSpeedError::BadRequest {
                             message: format!(
                                 "PgFileStoreBinaryRepository - Cannot open file [{}]. Err: {}",
-                                file_name, err
+                                file_path, err
                             ),
                             code: ErrorCodes::IO_ERROR,
                         })?;
@@ -65,7 +65,7 @@ impl DBFileStoreBinaryRepository for PgFileStoreBinaryRepository {
                     .map_err(|err| LightSpeedError::BadRequest {
                         message: format!(
                             "PgFileStoreBinaryRepository - Cannot read file [{}]. Err: {}",
-                            file_name, err
+                            file_path, err
                         ),
                         code: ErrorCodes::IO_ERROR,
                     })?;
@@ -74,22 +74,21 @@ impl DBFileStoreBinaryRepository for PgFileStoreBinaryRepository {
         };
 
         let sql = &format!(
-            "INSERT INTO {} (filename, data) VALUES ($1, $2)",
+            "INSERT INTO {} (data) VALUES ($1) RETURNING ID",
             self.table_name
         );
 
         Ok(conn
-            .execute(&sql, &[&file_name, binary_content.as_ref()])
-            .await
-            .map(|_| ())?)
+            .fetch_one_value(&sql, &[binary_content.as_ref()])
+            .await?)
     }
 
-    async fn delete_by_filename(
+    async fn delete_file(
         &self,
         conn: &mut Self::Conn,
-        file_name: &str,
+        id: IdType,
     ) -> Result<u64, LightSpeedError> {
-        let sql = &format!("DELETE FROM {} WHERE filename = $1", self.table_name);
-        Ok(conn.execute(&sql, &[&file_name]).await?)
+        let sql = &format!("DELETE FROM {} WHERE id = $1", self.table_name);
+        Ok(conn.execute(&sql, &[&id]).await?)
     }
 }

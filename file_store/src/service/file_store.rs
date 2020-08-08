@@ -1,10 +1,10 @@
 use crate::repository::db::{DBFileStoreBinaryRepository, DBFileStoreRepositoryManager, FileStoreDataRepository};
 use c3p0::*;
-use lightspeed_core::error::LightSpeedError;
+use lightspeed_core::error::{LightSpeedError, ErrorCodes};
 use log::*;
 use std::collections::HashMap;
 use crate::repository::filesystem::fs_file_store_binary::FsFileStoreBinaryRepository;
-use crate::model::FileStoreDataModel;
+use crate::model::{FileStoreDataModel, BinaryContent, Repository};
 
 #[derive(Clone)]
 pub struct FileStoreService<RepoManager: DBFileStoreRepositoryManager> {
@@ -20,32 +20,8 @@ impl<RepoManager: DBFileStoreRepositoryManager> FileStoreService<RepoManager> {
             c3p0: repo_manager.c3p0().clone(),
             db_binary_repo: repo_manager.file_store_binary_repo(),
             db_data_repo: repo_manager.file_store_data_repo(),
-            fs_repositories: HashMap::new()
+            fs_repositories: fs_repositories.into_iter().map(|(name, base_path)| (name, FsFileStoreBinaryRepository::new(base_path)) ).collect()
         }
-    }
-
-    pub async fn read_file_data_by_id_with_conn(&self, conn: &mut RepoManager::Conn, id: IdType) -> Result<FileStoreDataModel, LightSpeedError> {
-        debug!("FileStoreService - Read file by id [{}]", id);
-
-        self.db_data_repo.fetch_one_by_id(conn, id).await
-
-            /*
-        match &self.repo_manager {
-            FileStoreRepoManager::FS{fs} => fs.read_file(file_name).await,
-            FileStoreRepoManager::DB{db} => {
-                db
-                    .c3p0()
-                    .transaction(|mut conn| async move {
-                        repo_manager
-                            .file_store_binary_repo()
-                            .read_file(&mut conn, file_name)
-                            .await
-                    })
-                    .await
-            }
-        }
-
-             */
     }
 
     pub async fn read_file_data_by_id(&self, id: IdType) -> Result<FileStoreDataModel, LightSpeedError> {
@@ -53,6 +29,48 @@ impl<RepoManager: DBFileStoreRepositoryManager> FileStoreService<RepoManager> {
             self.read_file_data_by_id_with_conn(&mut conn,id).await
         }).await
     }
+
+    pub async fn read_file_data_by_id_with_conn(&self, conn: &mut RepoManager::Conn, id: IdType) -> Result<FileStoreDataModel, LightSpeedError> {
+        debug!("FileStoreService - Read file by id [{}]", id);
+        self.db_data_repo.fetch_one_by_id(conn, id).await
+    }
+
+    pub async fn read_file_content(&self, repository: &Repository) -> Result<BinaryContent, LightSpeedError> {
+        debug!("FileStoreService - Read file [{:?}]", repository);
+        match repository {
+            Repository::DB {file_id} => {
+                self.c3p0.transaction(|mut conn| async move {
+                    self.db_binary_repo.read_file(&mut conn, *file_id).await
+                }).await
+            },
+            Repository::FS {relative_path, repository_name} => {
+                self.read_file_content_from_fs(&relative_path, &repository_name).await
+            }
+        }
+    }
+
+    #[inline]
+    async fn read_file_content_from_fs(&self, filename: &str, repository_name: &str) -> Result<BinaryContent, LightSpeedError> {
+        let repo = self.fs_repositories.get(repository_name).ok_or_else(|| LightSpeedError::BadRequest {
+            message: format!("FileStoreService - Cannot find FS repository with name [{}]", repository_name),
+            code: ErrorCodes::NOT_FOUND
+        })?;
+        repo.read_file(filename).await
+    }
+
+    pub async fn read_file_content_with_conn(&self, conn: &mut RepoManager::Conn, repository: &Repository) -> Result<BinaryContent, LightSpeedError> {
+        debug!("FileStoreService - Read file [{:?}]", repository);
+        match repository {
+            Repository::DB {file_id} => {
+                self.db_binary_repo.read_file(conn, *file_id).await
+            },
+            Repository::FS {relative_path, repository_name} => {
+                self.read_file_content_from_fs(relative_path, repository_name).await
+            }
+        }
+    }
+
+
 
     /*
     pub async fn read_file_with_conn(
