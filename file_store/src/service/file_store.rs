@@ -121,7 +121,7 @@ impl<RepoManager: DBFileStoreRepositoryManager> FileStoreService<RepoManager> {
                 file_path,
             } => {
                 let repo = self.get_fs_repository(&repository_name)?;
-                let file_path = format!("{}/{}", file_path.unwrap_or_else(|| "".to_owned()), filename.clone());
+                let file_path = fs_file_path(file_path.as_deref(), &filename);
                 repo.save_file(&file_path, content).await?;
                 Repository::FS {
                     file_path,
@@ -179,6 +179,8 @@ impl<RepoManager: DBFileStoreRepositoryManager> FileStoreService<RepoManager> {
 
         let file_data = self.read_file_data_by_id_with_conn(conn, id).await?;
 
+        self.db_data_repo.delete_by_id(conn, id).await?;
+
         match file_data.data.repository {
             Repository::DB { file_id } => self.db_binary_repo.delete_file(conn, file_id).await,
             Repository::FS {
@@ -205,5 +207,12 @@ impl<RepoManager: DBFileStoreRepositoryManager> FileStoreService<RepoManager> {
                 ),
                 code: ErrorCodes::NOT_FOUND,
             })
+    }
+}
+
+fn fs_file_path(file_path: Option<&str>, filename: &str) -> String {
+    match file_path {
+        Some(path) => format!("{}/{}", path, filename),
+        None => filename.to_owned(),
     }
 }

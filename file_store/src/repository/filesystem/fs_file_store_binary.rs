@@ -119,12 +119,13 @@ mod test {
     async fn should_save_file_from_fs() -> Result<(), LightSpeedError> {
         let random: u32 = rand::random();
         let file_name = format!("file_{}", random);
-        let binary_content = BinaryContent::FromFs {file_path: SOURCE_FILE.to_owned()};
+        let binary_content = BinaryContent::FromFs {
+            file_path: SOURCE_FILE.to_owned(),
+        };
 
         let tempdir = tempfile::tempdir().unwrap();
         let temp_dir_path = tempdir.path().to_str().unwrap().to_owned();
         let file_store = FsFileStoreBinaryRepository::new(temp_dir_path.clone());
-
 
         file_store.save_file(&file_name, &binary_content).await?;
 
@@ -145,7 +146,7 @@ mod test {
         let file_name = format!("file_{}", random);
 
         let binary_content = BinaryContent::InMemory {
-            content: "Hello world!".to_owned().into_bytes()
+            content: "Hello world!".to_owned().into_bytes(),
         };
 
         let tempdir = tempfile::tempdir().unwrap();
@@ -169,14 +170,19 @@ mod test {
     async fn save_file_should_fail_if_file_exists() -> Result<(), LightSpeedError> {
         let random: u32 = rand::random();
         let file_name = format!("file_{}", random);
-        let binary_content = BinaryContent::FromFs {file_path: SOURCE_FILE.to_owned()};
+        let binary_content = BinaryContent::FromFs {
+            file_path: SOURCE_FILE.to_owned(),
+        };
 
         let tempdir = tempfile::tempdir().unwrap();
         let temp_dir_path = tempdir.path().to_str().unwrap().to_owned();
         let file_store = FsFileStoreBinaryRepository::new(temp_dir_path.clone());
 
         file_store.save_file(&file_name, &binary_content).await?;
-        assert!(file_store.save_file(&file_name, &binary_content).await.is_err());
+        assert!(file_store
+            .save_file(&file_name, &binary_content)
+            .await
+            .is_err());
 
         Ok(())
     }
@@ -185,7 +191,9 @@ mod test {
     async fn should_save_file_with_relative_folder() -> Result<(), LightSpeedError> {
         let random: u32 = rand::random();
         let file_name = format!("test/temp/file_{}", random);
-        let binary_content = BinaryContent::FromFs {file_path: SOURCE_FILE.to_owned()};
+        let binary_content = BinaryContent::FromFs {
+            file_path: SOURCE_FILE.to_owned(),
+        };
 
         let tempdir = tempfile::tempdir().unwrap();
         let temp_dir_path = tempdir.path().to_str().unwrap().to_owned();
@@ -208,7 +216,9 @@ mod test {
     async fn should_delete_file_with_relative_folder() -> Result<(), LightSpeedError> {
         let random: u32 = rand::random();
         let file_name = format!("/test/temp/file_{}", random);
-        let binary_content = BinaryContent::FromFs {file_path: SOURCE_FILE.to_owned()};
+        let binary_content = BinaryContent::FromFs {
+            file_path: SOURCE_FILE.to_owned(),
+        };
 
         let tempdir = tempfile::tempdir().unwrap();
         let temp_dir_path = tempdir.path().to_str().unwrap().to_owned();
@@ -227,7 +237,9 @@ mod test {
     async fn should_read_a_saved_file() -> Result<(), LightSpeedError> {
         let random: u32 = rand::random();
         let file_name = format!("file_{}", random);
-        let binary_content = BinaryContent::FromFs {file_path: SOURCE_FILE.to_owned()};
+        let binary_content = BinaryContent::FromFs {
+            file_path: SOURCE_FILE.to_owned(),
+        };
 
         let tempdir = tempfile::tempdir().unwrap();
         let temp_dir_path = tempdir.path().to_str().unwrap().to_owned();

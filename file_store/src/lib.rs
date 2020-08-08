@@ -34,7 +34,10 @@ impl<RepoManager: DBFileStoreRepositoryManager> FileStoreModule<RepoManager> {
 
 
         */
-        let file_store_service = Arc::new(FileStoreService::new(&repo_manager, config.fs_repo_base_folders.clone()));
+        let file_store_service = Arc::new(FileStoreService::new(
+            &repo_manager,
+            config.fs_repo_base_folders.clone(),
+        ));
 
         Ok(FileStoreModule {
             config,
