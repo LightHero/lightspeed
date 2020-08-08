@@ -121,7 +121,7 @@ impl<RepoManager: DBFileStoreRepositoryManager> FileStoreService<RepoManager> {
                 file_path,
             } => {
                 let repo = self.get_fs_repository(&repository_name)?;
-                let file_path = file_path.unwrap_or_else(|| filename.to_owned());
+                let file_path = format!("{}/{}", file_path.unwrap_or_else(|| "".to_owned()), filename.clone());
                 repo.save_file(&file_path, content).await?;
                 Repository::FS {
                     file_path,

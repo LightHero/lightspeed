@@ -10,7 +10,7 @@ pub enum BinaryContent {
     InMemory { content: Vec<u8> },
 }
 
-#[derive(Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct FileStoreDataData {
     pub filename: String,
@@ -19,7 +19,7 @@ pub struct FileStoreDataData {
     pub created_date_epoch_seconds: i64,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "_json_tag")]
 pub enum Repository {
     DB {
