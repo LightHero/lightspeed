@@ -26,7 +26,16 @@ pub enum Repository {
         file_id: IdType
     },
     FS {
-        relative_path: String,
+        file_path: String,
+        repository_name: String,
+    }
+}
+
+#[derive(Debug, Clone)]
+pub enum SaveRepository {
+    DB,
+    FS {
+        file_path: Option<String>,
         repository_name: String,
     }
 }

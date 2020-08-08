@@ -28,7 +28,7 @@ impl FsFileStoreBinaryRepository {
     pub async fn save_file(
         &self,
         file_name: &str,
-        content: BinaryContent
+        content: &BinaryContent
     ) -> Result<(), LightSpeedError> {
         let destination_file_path = self.get_file_path(file_name);
         let destination_path = Path::new(&destination_file_path);
@@ -62,7 +62,7 @@ impl FsFileStoreBinaryRepository {
 
         match content {
             BinaryContent::InMemory {content} => {
-                tokio::fs::write(destination_path, &content).await
+                tokio::fs::write(destination_path, content).await
                     .map_err(|err| LightSpeedError::BadRequest {
                         message: format!(
                             "FsFileStoreDataRepository - Cannot write data to [{}]. Err: {}",
@@ -73,7 +73,7 @@ impl FsFileStoreBinaryRepository {
                 Ok(())
             },
             BinaryContent::FromFs { file_path} => {
-                tokio::fs::copy(&file_path, destination_path)
+                tokio::fs::copy(file_path, destination_path)
                     .await
                     .map_err(|err| LightSpeedError::BadRequest {
                         message: format!(

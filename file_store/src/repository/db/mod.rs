@@ -1,6 +1,6 @@
 use c3p0::*;
 use lightspeed_core::error::LightSpeedError;
-use crate::model::{BinaryContent, FileStoreDataModel};
+use crate::model::{BinaryContent, FileStoreDataModel, FileStoreDataData};
 
 pub mod pg;
 
@@ -50,5 +50,17 @@ pub trait FileStoreDataRepository: Clone + Send + Sync {
         conn: &mut Self::Conn,
         id: IdType,
     ) -> Result<FileStoreDataModel, LightSpeedError>;
+
+    async fn save(
+        &self,
+        conn: &mut Self::Conn,
+        model: NewModel<FileStoreDataData>,
+    ) -> Result<FileStoreDataModel, LightSpeedError>;
+
+    async fn delete_by_id(
+        &self,
+        conn: &mut Self::Conn,
+        id: IdType,
+    ) -> Result<u64, LightSpeedError>;
 
 }
