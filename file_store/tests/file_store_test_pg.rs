@@ -11,7 +11,7 @@ use lightspeed_file_store::FileStoreModule;
 use once_cell::sync::OnceCell;
 use tokio::time::Duration;
 
-mod tests;
+//mod tests;
 
 pub type RepoManager = PgFileStoreRepositoryManager;
 

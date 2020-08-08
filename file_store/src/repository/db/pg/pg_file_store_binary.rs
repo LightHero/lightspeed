@@ -1,11 +1,11 @@
 use crate::model::BinaryContent;
 use crate::repository::db::DBFileStoreBinaryRepository;
 use c3p0::postgres::*;
+use c3p0::IdType;
 use lightspeed_core::error::{ErrorCodes, LightSpeedError};
+use std::borrow::Cow;
 use tokio::fs::File;
 use tokio::io::AsyncReadExt;
-use std::borrow::Cow;
-use c3p0::IdType;
 
 #[derive(Clone)]
 pub struct PgFileStoreBinaryRepository {
@@ -45,7 +45,6 @@ impl DBFileStoreBinaryRepository for PgFileStoreBinaryRepository {
         conn: &mut Self::Conn,
         content: &BinaryContent,
     ) -> Result<IdType, LightSpeedError> {
-
         let binary_content = match content {
             BinaryContent::InMemory { content } => Cow::Borrowed(content),
             BinaryContent::FromFs { file_path } => {
@@ -60,15 +59,15 @@ impl DBFileStoreBinaryRepository for PgFileStoreBinaryRepository {
                             code: ErrorCodes::IO_ERROR,
                         })?;
                 let mut contents = vec![];
-                file.read_to_end(&mut contents)
-                    .await
-                    .map_err(|err| LightSpeedError::BadRequest {
+                file.read_to_end(&mut contents).await.map_err(|err| {
+                    LightSpeedError::BadRequest {
                         message: format!(
                             "PgFileStoreBinaryRepository - Cannot read file [{}]. Err: {}",
                             file_path, err
                         ),
                         code: ErrorCodes::IO_ERROR,
-                    })?;
+                    }
+                })?;
                 Cow::Owned(contents)
             }
         };
@@ -83,11 +82,7 @@ impl DBFileStoreBinaryRepository for PgFileStoreBinaryRepository {
             .await?)
     }
 
-    async fn delete_file(
-        &self,
-        conn: &mut Self::Conn,
-        id: IdType,
-    ) -> Result<u64, LightSpeedError> {
+    async fn delete_file(&self, conn: &mut Self::Conn, id: IdType) -> Result<u64, LightSpeedError> {
         let sql = &format!("DELETE FROM {} WHERE id = $1", self.table_name);
         Ok(conn.execute(&sql, &[&id]).await?)
     }

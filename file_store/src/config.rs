@@ -3,7 +3,6 @@ use structopt::StructOpt;
 #[derive(Debug, Clone, StructOpt)]
 #[structopt(rename_all = "kebab-case")]
 pub struct FileStoreConfig {
-
     /// The base folder used in case of 'FS' FileStoreType.
     #[structopt(long, env = "LS_FILE_STORE_FS_BASE_FOLDER")]
     pub file_store_fs_base_folder: Option<String>,

@@ -1,9 +1,9 @@
 use crate::repository::db::pg::pg_file_store_binary::PgFileStoreBinaryRepository;
+use crate::repository::db::pg::pg_file_store_data::PgFileStoreDataRepository;
 use crate::repository::db::DBFileStoreRepositoryManager;
 use c3p0::postgres::*;
 use c3p0::*;
 use lightspeed_core::error::LightSpeedError;
-use crate::repository::db::pg::pg_file_store_data::PgFileStoreDataRepository;
 
 pub mod pg_file_store_binary;
 pub mod pg_file_store_data;
@@ -17,9 +17,7 @@ pub struct PgFileStoreRepositoryManager {
 
 impl PgFileStoreRepositoryManager {
     pub fn new(c3p0: PgC3p0Pool) -> Self {
-        Self {
-            c3p0,
-        }
+        Self { c3p0 }
     }
 }
 

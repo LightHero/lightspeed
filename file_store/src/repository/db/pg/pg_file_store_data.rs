@@ -1,8 +1,8 @@
-use crate::repository::db::{FileStoreDataRepository};
+use crate::model::{FileStoreDataData, FileStoreDataDataCodec, FileStoreDataModel};
+use crate::repository::db::FileStoreDataRepository;
 use c3p0::postgres::*;
 use c3p0::*;
 use lightspeed_core::error::LightSpeedError;
-use crate::model::{FileStoreDataData, FileStoreDataDataCodec, FileStoreDataModel};
 
 #[derive(Clone)]
 pub struct PgFileStoreDataRepository {
@@ -12,7 +12,8 @@ pub struct PgFileStoreDataRepository {
 impl Default for PgFileStoreDataRepository {
     fn default() -> Self {
         PgFileStoreDataRepository {
-            repo: C3p0JsonBuilder::new("LS_FILE_STORE_DATA").build_with_codec(FileStoreDataDataCodec {}),
+            repo: C3p0JsonBuilder::new("LS_FILE_STORE_DATA")
+                .build_with_codec(FileStoreDataDataCodec {}),
         }
     }
 }
@@ -44,5 +45,4 @@ impl FileStoreDataRepository for PgFileStoreDataRepository {
     ) -> Result<u64, LightSpeedError> {
         Ok(self.repo.delete_by_id(conn, &id).await?)
     }
-
 }

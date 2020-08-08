@@ -1,7 +1,7 @@
+use crate::model::BinaryContent;
 use lightspeed_core::error::{ErrorCodes, LightSpeedError};
 use log::*;
 use std::path::Path;
-use crate::model::BinaryContent;
 
 #[derive(Clone)]
 pub struct FsFileStoreBinaryRepository {
@@ -28,7 +28,7 @@ impl FsFileStoreBinaryRepository {
     pub async fn save_file(
         &self,
         file_name: &str,
-        content: &BinaryContent
+        content: &BinaryContent,
     ) -> Result<(), LightSpeedError> {
         let destination_file_path = self.get_file_path(file_name);
         let destination_path = Path::new(&destination_file_path);
@@ -61,8 +61,9 @@ impl FsFileStoreBinaryRepository {
         }
 
         match content {
-            BinaryContent::InMemory {content} => {
-                tokio::fs::write(destination_path, content).await
+            BinaryContent::InMemory { content } => {
+                tokio::fs::write(destination_path, content)
+                    .await
                     .map_err(|err| LightSpeedError::BadRequest {
                         message: format!(
                             "FsFileStoreDataRepository - Cannot write data to [{}]. Err: {}",
@@ -71,8 +72,8 @@ impl FsFileStoreBinaryRepository {
                         code: ErrorCodes::IO_ERROR,
                     })?;
                 Ok(())
-            },
-            BinaryContent::FromFs { file_path} => {
+            }
+            BinaryContent::FromFs { file_path } => {
                 tokio::fs::copy(file_path, destination_path)
                     .await
                     .map_err(|err| LightSpeedError::BadRequest {
@@ -115,15 +116,17 @@ mod test {
     const SOURCE_FILE: &str = "./Cargo.toml";
 
     #[tokio::test]
-    async fn should_save_file() -> Result<(), LightSpeedError> {
+    async fn should_save_file_from_fs() -> Result<(), LightSpeedError> {
         let random: u32 = rand::random();
         let file_name = format!("file_{}", random);
+        let binary_content = BinaryContent::FromFs {file_path: SOURCE_FILE.to_owned()};
 
         let tempdir = tempfile::tempdir().unwrap();
         let temp_dir_path = tempdir.path().to_str().unwrap().to_owned();
         let file_store = FsFileStoreBinaryRepository::new(temp_dir_path.clone());
 
-        file_store.save_file(SOURCE_FILE, &file_name).await?;
+
+        file_store.save_file(&file_name, &binary_content).await?;
 
         let expected_file_path = format!("{}/{}", temp_dir_path, file_name);
         assert!(std::path::Path::new(&expected_file_path).exists());
@@ -140,13 +143,14 @@ mod test {
     async fn save_file_should_fail_if_file_exists() -> Result<(), LightSpeedError> {
         let random: u32 = rand::random();
         let file_name = format!("file_{}", random);
+        let binary_content = BinaryContent::FromFs {file_path: SOURCE_FILE.to_owned()};
 
         let tempdir = tempfile::tempdir().unwrap();
         let temp_dir_path = tempdir.path().to_str().unwrap().to_owned();
         let file_store = FsFileStoreBinaryRepository::new(temp_dir_path.clone());
 
-        file_store.save_file(SOURCE_FILE, &file_name).await?;
-        assert!(file_store.save_file(SOURCE_FILE, &file_name).await.is_err());
+        file_store.save_file(&file_name, &binary_content).await?;
+        assert!(file_store.save_file(&file_name, &binary_content).await.is_err());
 
         Ok(())
     }
@@ -155,12 +159,13 @@ mod test {
     async fn should_save_file_with_relative_folder() -> Result<(), LightSpeedError> {
         let random: u32 = rand::random();
         let file_name = format!("test/temp/file_{}", random);
+        let binary_content = BinaryContent::FromFs {file_path: SOURCE_FILE.to_owned()};
 
         let tempdir = tempfile::tempdir().unwrap();
         let temp_dir_path = tempdir.path().to_str().unwrap().to_owned();
         let file_store = FsFileStoreBinaryRepository::new(temp_dir_path.clone());
 
-        file_store.save_file(SOURCE_FILE, &file_name).await?;
+        file_store.save_file(&file_name, &binary_content).await?;
 
         let expected_file_path = format!("{}/{}", temp_dir_path, file_name);
         assert!(std::path::Path::new(&expected_file_path).exists());
@@ -177,12 +182,13 @@ mod test {
     async fn should_delete_file_with_relative_folder() -> Result<(), LightSpeedError> {
         let random: u32 = rand::random();
         let file_name = format!("/test/temp/file_{}", random);
+        let binary_content = BinaryContent::FromFs {file_path: SOURCE_FILE.to_owned()};
 
         let tempdir = tempfile::tempdir().unwrap();
         let temp_dir_path = tempdir.path().to_str().unwrap().to_owned();
         let file_store = FsFileStoreBinaryRepository::new(temp_dir_path.clone());
 
-        file_store.save_file(SOURCE_FILE, &file_name).await?;
+        file_store.save_file(&file_name, &binary_content).await?;
 
         file_store.delete_by_filename(&file_name).await?;
 
@@ -195,15 +201,16 @@ mod test {
     async fn should_read_a_saved_file() -> Result<(), LightSpeedError> {
         let random: u32 = rand::random();
         let file_name = format!("file_{}", random);
+        let binary_content = BinaryContent::FromFs {file_path: SOURCE_FILE.to_owned()};
 
         let tempdir = tempfile::tempdir().unwrap();
         let temp_dir_path = tempdir.path().to_str().unwrap().to_owned();
         let file_store = FsFileStoreBinaryRepository::new(temp_dir_path.clone());
 
-        file_store.save_file(SOURCE_FILE, &file_name).await?;
+        file_store.save_file(&file_name, &binary_content).await?;
 
         match file_store.read_file(&file_name).await {
-            Ok(FileData::FromFs { file_path }) => {
+            Ok(BinaryContent::FromFs { file_path }) => {
                 let mut buffer: Vec<u8> = vec![];
                 read_file(&file_path, &mut buffer).await?;
                 let file_content = std::str::from_utf8(&buffer).unwrap();
