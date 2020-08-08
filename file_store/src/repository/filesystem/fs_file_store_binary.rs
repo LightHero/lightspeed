@@ -2,6 +2,7 @@ use crate::dto::FileData;
 use lightspeed_core::error::{ErrorCodes, LightSpeedError};
 use log::*;
 use std::path::Path;
+use crate::model::BinaryContent;
 
 #[derive(Clone)]
 pub struct FsFileStoreBinaryRepository {
@@ -19,16 +20,16 @@ impl FsFileStoreBinaryRepository {
         format!("{}/{}", &self.base_folder, file_name)
     }
 
-    pub async fn read_file(&self, file_name: &str) -> Result<FileData, LightSpeedError> {
-        Ok(FileData::FromFs {
+    pub async fn read_file(&self, file_name: &str) -> Result<BinaryContent, LightSpeedError> {
+        Ok(BinaryContent::FromFs {
             file_path: self.get_file_path(file_name),
         })
     }
 
     pub async fn save_file(
         &self,
-        source_path: &str,
         file_name: &str,
+        content: BinaryContent
     ) -> Result<(), LightSpeedError> {
         let destination_file_path = self.get_file_path(file_name);
         let destination_path = Path::new(&destination_file_path);
@@ -60,16 +61,31 @@ impl FsFileStoreBinaryRepository {
             ),
         }
 
-        tokio::fs::copy(source_path, destination_path)
-            .await
-            .map_err(|err| LightSpeedError::BadRequest {
-                message: format!(
-                    "FsFileStoreDataRepository - Cannot copy file from [{:?}] to [{}]. Err: {}",
-                    source_path, destination_file_path, err
-                ),
-                code: ErrorCodes::IO_ERROR,
-            })?;
-        Ok(())
+        match content {
+            BinaryContent::InMemory {content} => {
+                tokio::fs::write(destination_path, &content).await
+                    .map_err(|err| LightSpeedError::BadRequest {
+                        message: format!(
+                            "FsFileStoreDataRepository - Cannot write data to [{}]. Err: {}",
+                            destination_file_path, err
+                        ),
+                        code: ErrorCodes::IO_ERROR,
+                    })?;
+                Ok(())
+            },
+            BinaryContent::FromFs { file_path} => {
+                tokio::fs::copy(file_path, destination_path)
+                    .await
+                    .map_err(|err| LightSpeedError::BadRequest {
+                        message: format!(
+                            "FsFileStoreDataRepository - Cannot copy file from [{:?}] to [{}]. Err: {}",
+                            source_path, destination_file_path, err
+                        ),
+                        code: ErrorCodes::IO_ERROR,
+                    })?;
+                Ok(())
+            }
+        }
     }
 
     pub async fn delete_by_filename(&self, file_name: &str) -> Result<u64, LightSpeedError> {

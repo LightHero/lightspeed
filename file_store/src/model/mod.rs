@@ -1,27 +1,47 @@
-use c3p0::{C3p0Error, JsonCodec, Model};
+use c3p0::{C3p0Error, JsonCodec, Model, IdType};
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use std::borrow::Cow;
 
-pub type FileStoreModel = Model<FileStoreData>;
+pub type FileStoreDataModel = Model<FileStoreDataData>;
+
+pub enum BinaryContent {
+    FromFs { file_path: String },
+    InMemory { content: Vec<u8> },
+}
 
 #[derive(Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
-pub struct FileStoreData {
+pub struct FileStoreDataData {
     pub filename: String,
+    pub repository: Repository,
+    pub content_type: String,
+    pub created_date_epoch_seconds: i64,
+}
+
+#[derive(Clone, Serialize, Deserialize)]
+#[serde(tag = "_json_tag")]
+enum Repository {
+    DB {
+        file_id: IdType
+    },
+    FS {
+        relative_path: Option<String>,
+        repository_name: Option<String>,
+    }
 }
 
 #[derive(Clone, Serialize, Deserialize)]
 #[serde(tag = "_json_tag")]
 enum FileStoreDataVersioning<'a> {
-    V1(Cow<'a, FileStoreData>),
+    V1(Cow<'a, FileStoreDataData>),
 }
 
 #[derive(Clone)]
-pub struct FileStoreDataCodec {}
+pub struct FileStoreDataDataCodec {}
 
-impl JsonCodec<FileStoreData> for FileStoreDataCodec {
-    fn from_value(&self, value: Value) -> Result<FileStoreData, C3p0Error> {
+impl JsonCodec<FileStoreDataData> for FileStoreDataDataCodec {
+    fn from_value(&self, value: Value) -> Result<FileStoreDataData, C3p0Error> {
         let versioning = serde_json::from_value(value)?;
         let data = match versioning {
             FileStoreDataVersioning::V1(data_v1) => data_v1.into_owned(),
@@ -29,7 +49,7 @@ impl JsonCodec<FileStoreData> for FileStoreDataCodec {
         Ok(data)
     }
 
-    fn to_value(&self, data: &FileStoreData) -> Result<Value, C3p0Error> {
+    fn to_value(&self, data: &FileStoreDataData) -> Result<Value, C3p0Error> {
         serde_json::to_value(FileStoreDataVersioning::V1(Cow::Borrowed(data)))
             .map_err(C3p0Error::from)
     }

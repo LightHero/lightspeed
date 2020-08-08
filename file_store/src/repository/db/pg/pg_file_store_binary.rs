@@ -1,4 +1,4 @@
-use crate::dto::FileData;
+use crate::model::BinaryContent;
 use crate::repository::db::DBFileStoreBinaryRepository;
 use c3p0::postgres::*;
 use lightspeed_core::error::{ErrorCodes, LightSpeedError};
@@ -26,7 +26,7 @@ impl DBFileStoreBinaryRepository for PgFileStoreBinaryRepository {
         &self,
         conn: &mut Self::Conn,
         file_name: &str,
-    ) -> Result<FileData, LightSpeedError> {
+    ) -> Result<BinaryContent, LightSpeedError> {
         let sql = &format!("SELECT DATA FROM {} WHERE filename = $1", self.table_name);
 
         let content = conn
@@ -35,35 +35,42 @@ impl DBFileStoreBinaryRepository for PgFileStoreBinaryRepository {
                 Ok(content)
             })
             .await?;
-        Ok(FileData::InMemory { content })
+        Ok(BinaryContent::InMemory { content })
     }
 
     async fn save_file(
         &self,
         conn: &mut Self::Conn,
-        source_path: &str,
         file_name: &str,
+        content: BinaryContent,
     ) -> Result<(), LightSpeedError> {
-        let mut file =
-            File::open(source_path)
-                .await
-                .map_err(|err| LightSpeedError::BadRequest {
-                    message: format!(
-                        "PgFileStoreBinaryRepository - Cannot open file [{}]. Err: {}",
-                        file_name, err
-                    ),
-                    code: ErrorCodes::IO_ERROR,
-                })?;
-        let mut contents = vec![];
-        file.read_to_end(&mut contents)
-            .await
-            .map_err(|err| LightSpeedError::BadRequest {
-                message: format!(
-                    "PgFileStoreBinaryRepository - Cannot read file [{}]. Err: {}",
-                    file_name, err
-                ),
-                code: ErrorCodes::IO_ERROR,
-            })?;
+
+        let binary_content = match content {
+            BinaryContent::InMemory { content } => content,
+            BinaryContent::FromFs { file_path } => {
+                let mut file =
+                    File::open(file_path)
+                        .await
+                        .map_err(|err| LightSpeedError::BadRequest {
+                            message: format!(
+                                "PgFileStoreBinaryRepository - Cannot open file [{}]. Err: {}",
+                                file_name, err
+                            ),
+                            code: ErrorCodes::IO_ERROR,
+                        })?;
+                let mut contents = vec![];
+                file.read_to_end(&mut contents)
+                    .await
+                    .map_err(|err| LightSpeedError::BadRequest {
+                        message: format!(
+                            "PgFileStoreBinaryRepository - Cannot read file [{}]. Err: {}",
+                            file_name, err
+                        ),
+                        code: ErrorCodes::IO_ERROR,
+                    })?;
+                contents
+            }
+        };
 
         let sql = &format!(
             "INSERT INTO {} (filename, data) VALUES ($1, $2)",
@@ -71,7 +78,7 @@ impl DBFileStoreBinaryRepository for PgFileStoreBinaryRepository {
         );
 
         Ok(conn
-            .execute(&sql, &[&file_name, &contents])
+            .execute(&sql, &[&file_name, &binary_content])
             .await
             .map(|_| ())?)
     }
