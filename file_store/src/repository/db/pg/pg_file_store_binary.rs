@@ -4,6 +4,7 @@ use c3p0::postgres::*;
 use lightspeed_core::error::{ErrorCodes, LightSpeedError};
 use tokio::fs::File;
 use tokio::io::AsyncReadExt;
+use std::borrow::Cow;
 
 #[derive(Clone)]
 pub struct PgFileStoreBinaryRepository {
@@ -42,11 +43,11 @@ impl DBFileStoreBinaryRepository for PgFileStoreBinaryRepository {
         &self,
         conn: &mut Self::Conn,
         file_name: &str,
-        content: BinaryContent,
+        content: &BinaryContent,
     ) -> Result<(), LightSpeedError> {
 
         let binary_content = match content {
-            BinaryContent::InMemory { content } => content,
+            BinaryContent::InMemory { content } => Cow::Borrowed(content),
             BinaryContent::FromFs { file_path } => {
                 let mut file =
                     File::open(file_path)
@@ -68,7 +69,7 @@ impl DBFileStoreBinaryRepository for PgFileStoreBinaryRepository {
                         ),
                         code: ErrorCodes::IO_ERROR,
                     })?;
-                contents
+                Cow::Owned(contents)
             }
         };
 
@@ -78,7 +79,7 @@ impl DBFileStoreBinaryRepository for PgFileStoreBinaryRepository {
         );
 
         Ok(conn
-            .execute(&sql, &[&file_name, &binary_content])
+            .execute(&sql, &[&file_name, binary_content.as_ref()])
             .await
             .map(|_| ())?)
     }

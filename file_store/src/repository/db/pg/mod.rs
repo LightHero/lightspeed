@@ -13,16 +13,12 @@ const MIGRATIONS: include_dir::Dir = include_dir::include_dir!("./src_resources/
 #[derive(Clone)]
 pub struct PgFileStoreRepositoryManager {
     c3p0: PgC3p0Pool,
-    binary_repo: PgFileStoreBinaryRepository,
-    data_repo: PgFileStoreDataRepository,
 }
 
 impl PgFileStoreRepositoryManager {
     pub fn new(c3p0: PgC3p0Pool) -> Self {
         Self {
             c3p0,
-            binary_repo: PgFileStoreBinaryRepository::default(),
-            data_repo: PgFileStoreDataRepository::default(),
         }
     }
 }
@@ -64,11 +60,11 @@ impl DBFileStoreRepositoryManager for PgFileStoreRepositoryManager {
             })
     }
 
-    fn file_store_binary_repo(&self) -> &Self::FileStoreBinaryRepo {
-        &self.binary_repo
+    fn file_store_binary_repo(&self) -> Self::FileStoreBinaryRepo {
+        PgFileStoreBinaryRepository::default()
     }
 
-    fn file_store_data_repo(&self) -> &Self::FileStoreDataRepo {
-        &self.data_repo
+    fn file_store_data_repo(&self) -> Self::FileStoreDataRepo {
+        PgFileStoreDataRepository::default()
     }
 }

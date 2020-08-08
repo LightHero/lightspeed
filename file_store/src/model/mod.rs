@@ -21,7 +21,7 @@ pub struct FileStoreDataData {
 
 #[derive(Clone, Serialize, Deserialize)]
 #[serde(tag = "_json_tag")]
-enum Repository {
+pub enum Repository {
     DB {
         file_id: IdType
     },

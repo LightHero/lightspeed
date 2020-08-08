@@ -1,4 +1,3 @@
-use crate::dto::FileData;
 use lightspeed_core::error::{ErrorCodes, LightSpeedError};
 use log::*;
 use std::path::Path;
@@ -74,12 +73,12 @@ impl FsFileStoreBinaryRepository {
                 Ok(())
             },
             BinaryContent::FromFs { file_path} => {
-                tokio::fs::copy(file_path, destination_path)
+                tokio::fs::copy(&file_path, destination_path)
                     .await
                     .map_err(|err| LightSpeedError::BadRequest {
                         message: format!(
                             "FsFileStoreDataRepository - Cannot copy file from [{:?}] to [{}]. Err: {}",
-                            source_path, destination_file_path, err
+                            file_path, destination_file_path, err
                         ),
                         code: ErrorCodes::IO_ERROR,
                     })?;
