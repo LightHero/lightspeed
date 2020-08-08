@@ -140,6 +140,32 @@ mod test {
     }
 
     #[tokio::test]
+    async fn should_save_file_from_memory() -> Result<(), LightSpeedError> {
+        let random: u32 = rand::random();
+        let file_name = format!("file_{}", random);
+
+        let binary_content = BinaryContent::InMemory {
+            content: "Hello world!".to_owned().into_bytes()
+        };
+
+        let tempdir = tempfile::tempdir().unwrap();
+        let temp_dir_path = tempdir.path().to_str().unwrap().to_owned();
+        let file_store = FsFileStoreBinaryRepository::new(temp_dir_path.clone());
+
+        file_store.save_file(&file_name, &binary_content).await?;
+
+        let expected_file_path = format!("{}/{}", temp_dir_path, file_name);
+        assert!(std::path::Path::new(&expected_file_path).exists());
+
+        assert_eq!(
+            "Hello world!",
+            std::fs::read_to_string(&expected_file_path).unwrap()
+        );
+
+        Ok(())
+    }
+
+    #[tokio::test]
     async fn save_file_should_fail_if_file_exists() -> Result<(), LightSpeedError> {
         let random: u32 = rand::random();
         let file_name = format!("file_{}", random);
