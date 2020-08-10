@@ -17,8 +17,11 @@ create table LS_FILE_STORE_DATA (
 -----------------------------------
 
 create table LS_FILE_STORE_BINARY (
-    ID bigserial primary key,
-    data  BYTEA
+    repository    TEXT NOT NULL,
+    filepath      TEXT NOT NULL,
+    data          BYTEA
 );
+
+CREATE UNIQUE INDEX LS_FILE_STORE_BINARY_UNIQUE_REPOSITORY_FILEPATH ON LS_FILE_STORE_BINARY( repository, filepath );
 
 -- End - LS_FILE_STORE_BINARY -

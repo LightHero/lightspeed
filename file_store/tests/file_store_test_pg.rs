@@ -47,10 +47,10 @@ async fn init() -> MaybeType {
     let mut file_store_config = FileStoreConfig::build();
     file_store_config
         .fs_repo_base_folders
-        .push(("REPO_ONE".to_owned(), "./target/repo_one".to_owned()));
+        .push(("REPO_ONE".to_owned(), "../target/repo_one".to_owned()));
     file_store_config
         .fs_repo_base_folders
-        .push(("REPO_TWO".to_owned(), "./target/repo_two".to_owned()));
+        .push(("REPO_TWO".to_owned(), "../target/repo_two".to_owned()));
 
     let mut file_store_module = FileStoreModule::new(repo_manager, file_store_config).unwrap();
     {

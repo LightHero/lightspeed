@@ -1,7 +1,6 @@
 use crate::model::BinaryContent;
 use crate::repository::db::DBFileStoreBinaryRepository;
 use c3p0::postgres::*;
-use c3p0::IdType;
 use lightspeed_core::error::{ErrorCodes, LightSpeedError};
 use std::borrow::Cow;
 use tokio::fs::File;
@@ -27,12 +26,16 @@ impl DBFileStoreBinaryRepository for PgFileStoreBinaryRepository {
     async fn read_file(
         &self,
         conn: &mut Self::Conn,
-        id: IdType,
+        repository_name: &str,
+        file_path: &str,
     ) -> Result<BinaryContent, LightSpeedError> {
-        let sql = &format!("SELECT DATA FROM {} WHERE id = $1", self.table_name);
+        let sql = &format!(
+            "SELECT DATA FROM {} WHERE repository = $1 AND filepath = $2",
+            self.table_name
+        );
 
         let content = conn
-            .fetch_one(&sql, &[&id], |row| {
+            .fetch_one(&sql, &[&repository_name, &file_path], |row| {
                 let content: Vec<u8> = row.try_get(0).map_err(into_c3p0_error)?;
                 Ok(content)
             })
@@ -43,8 +46,10 @@ impl DBFileStoreBinaryRepository for PgFileStoreBinaryRepository {
     async fn save_file(
         &self,
         conn: &mut Self::Conn,
+        repository_name: &str,
+        file_path: &str,
         content: &BinaryContent,
-    ) -> Result<IdType, LightSpeedError> {
+    ) -> Result<u64, LightSpeedError> {
         let binary_content = match content {
             BinaryContent::InMemory { content } => Cow::Borrowed(content),
             BinaryContent::FromFs { file_path } => {
@@ -73,17 +78,28 @@ impl DBFileStoreBinaryRepository for PgFileStoreBinaryRepository {
         };
 
         let sql = &format!(
-            "INSERT INTO {} (data) VALUES ($1) RETURNING ID",
+            "INSERT INTO {} (repository, filepath, data) VALUES ($1, $2, $3)",
             self.table_name
         );
 
         Ok(conn
-            .fetch_one_value(&sql, &[binary_content.as_ref()])
+            .execute(
+                &sql,
+                &[&repository_name, &file_path, binary_content.as_ref()],
+            )
             .await?)
     }
 
-    async fn delete_file(&self, conn: &mut Self::Conn, id: IdType) -> Result<u64, LightSpeedError> {
-        let sql = &format!("DELETE FROM {} WHERE id = $1", self.table_name);
-        Ok(conn.execute(&sql, &[&id]).await?)
+    async fn delete_file(
+        &self,
+        conn: &mut Self::Conn,
+        repository_name: &str,
+        file_path: &str,
+    ) -> Result<u64, LightSpeedError> {
+        let sql = &format!(
+            "DELETE FROM {} WHERE repository = $1 AND filepath = $2",
+            self.table_name
+        );
+        Ok(conn.execute(&sql, &[&repository_name, &file_path]).await?)
     }
 }

@@ -1,4 +1,4 @@
-use c3p0::{C3p0Error, IdType, JsonCodec, Model};
+use c3p0::{C3p0Error, JsonCodec, Model};
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use std::borrow::Cow;
@@ -23,7 +23,8 @@ pub struct FileStoreDataData {
 #[serde(tag = "_json_tag")]
 pub enum Repository {
     DB {
-        file_id: IdType,
+        file_path: String,
+        repository_name: String,
     },
     FS {
         file_path: String,
@@ -33,7 +34,10 @@ pub enum Repository {
 
 #[derive(Debug, Clone)]
 pub enum SaveRepository {
-    DB,
+    DB {
+        file_path: Option<String>,
+        repository_name: String,
+    },
     FS {
         file_path: Option<String>,
         repository_name: String,
