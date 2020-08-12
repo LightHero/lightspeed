@@ -11,6 +11,7 @@ declare -a publish_list=(
     "auth"
     "cms"
     "email"
+    "file_store"
 )
 
 for i in "${publish_list[@]}"
