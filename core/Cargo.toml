@@ -38,6 +38,7 @@ actix-service = "1.0.1"
 actix-rt = "1.1.1"
 lightspeed_logger = { version = "0.16.0", path = "../logger" }
 parking_lot = "0.10"
+typemap = "0.3.3"
 tokio = { version = "0.2.0", features = ["full"] }
 
 [features]

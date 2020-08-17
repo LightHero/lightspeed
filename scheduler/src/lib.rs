@@ -121,17 +121,29 @@ impl JobExecutorInternal {
                         let name = job_clone.job.name();
 
                         info!("Start execution of Job [{}/{}]", group, name);
-                        match job_clone.run().await {
+                        let start = std::time::Instant::now();
+                        let result = job_clone.run().await;
+
+                        let duration = start.elapsed();
+
+                        let mills = duration.subsec_millis();
+                        let duration_secs = duration.as_secs();
+                        let seconds = duration_secs % 60;
+                        let minutes = (duration_secs / 60) % 60;
+                        let hours = (duration_secs / 60) / 60;
+                        let duration_fmt = format!("{:02} hour(s), {:02} minute(s), {:02} second(s) and {:03} millis", hours, minutes, seconds, mills);
+
+                        match result {
                             Ok(()) => {
                                 info!(
-                                    "Execution of Job [{}/{}] completed successfully",
-                                    group, name
+                                    "Execution of Job [{}/{}] completed successfully in {}",
+                                    group, name, duration_fmt
                                 );
                             }
                             Err(err) => {
                                 error!(
-                                    "Execution of Job [{}/{}] completed with errors. Err: {}",
-                                    group, name, err
+                                    "Execution of Job [{}/{}] completed with errors in {}. Err: {}",
+                                    group, name, duration_fmt, err
                                 );
                             }
                         }
@@ -152,6 +164,7 @@ impl JobExecutorInternal {
 
     /// Adds a job to the JobExecutor.
     async fn add_job_with_scheduler<S: Into<Scheduler>>(&self, schedule: S, job: Job) {
+        info!("Add job to scheduler. Group [{}] - Name [{}]", job.group(), job.name());
         let mut jobs = self.jobs.write().await;
         jobs.push(Arc::new(JobScheduler::new(
             schedule.into(),
