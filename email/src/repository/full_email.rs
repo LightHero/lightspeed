@@ -13,6 +13,7 @@ use parking_lot::Mutex;
 use std::path::Path;
 use std::sync::Arc;
 
+/// A EmailClient implementation that forwards the email to the expected recipients
 #[derive(Clone)]
 pub struct FullEmailClient {
     email_config: EmailClientConfig,

@@ -5,6 +5,9 @@ use log::warn;
 use parking_lot::Mutex;
 use std::sync::Arc;
 
+/// A EmailClient implementation that keeps in memory all the emails
+/// without forwarding them to the real recipients.
+/// This is mostly useful for unit testing.
 #[derive(Clone, Default)]
 pub struct InMemoryEmailClient {
     emails: Arc<Mutex<Vec<EmailMessage>>>,

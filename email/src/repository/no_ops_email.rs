@@ -3,6 +3,7 @@ use crate::repository::email::EmailClient;
 use lightspeed_core::error::LightSpeedError;
 use log::warn;
 
+/// A EmailClient implementation that does nothing.
 #[derive(Clone, Default)]
 pub struct NoOpsEmailClient {}
 
