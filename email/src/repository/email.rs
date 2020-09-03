@@ -1,13 +1,13 @@
 use crate::config::EmailClientConfig;
 use crate::model::email::EmailMessage;
+use crate::repository::fixed_recipient_email::FixedRecipientEmailClient;
 use crate::repository::full_email::FullEmailClient;
 use crate::repository::in_memory_email::InMemoryEmailClient;
 use crate::repository::no_ops_email::NoOpsEmailClient;
 use lightspeed_core::error::LightSpeedError;
+use log::*;
 use std::str::FromStr;
 use std::sync::Arc;
-use crate::repository::fixed_recipient_email::FixedRecipientEmailClient;
-use log::*;
 
 #[async_trait::async_trait]
 pub trait EmailClient: Send + Sync {
@@ -21,7 +21,6 @@ pub trait EmailClient: Send + Sync {
 }
 
 pub fn new(email_config: EmailClientConfig) -> Result<Arc<dyn EmailClient>, LightSpeedError> {
-
     let client: Arc<dyn EmailClient> = match &email_config.client_type {
         EmailClientType::Full => Arc::new(FullEmailClient::new(email_config.clone())?),
         EmailClientType::InMemory => Arc::new(InMemoryEmailClient::new()),
@@ -29,7 +28,10 @@ pub fn new(email_config: EmailClientConfig) -> Result<Arc<dyn EmailClient>, Ligh
     };
 
     if let Some(recipients) = email_config.forward_all_emails_to_fixed_recipients {
-        warn!("All emails will be sent to the fixed recipients: {}", recipients.join("; "));
+        warn!(
+            "All emails will be sent to the fixed recipients: {}",
+            recipients.join("; ")
+        );
         if recipients.is_empty() {
             Err(LightSpeedError::ConfigurationError {
                 message: "Cannot build the email client. Based on the current config all emails should be sent to fixed recipients, but the recipient list is empty".to_owned()
@@ -40,7 +42,6 @@ pub fn new(email_config: EmailClientConfig) -> Result<Arc<dyn EmailClient>, Ligh
     } else {
         Ok(client)
     }
-
 }
 
 #[derive(Debug, PartialEq, Copy, Clone)]
@@ -62,5 +63,71 @@ impl FromStr for EmailClientType {
                 message: format!("Unknown Email client_type [{}]", s),
             }),
         }
+    }
+}
+
+#[cfg(test)]
+mod test {
+
+    use super::*;
+
+    #[tokio::test]
+    async fn should_build_fixed_recipient_client() {
+        // Arrange
+        let mut config = EmailClientConfig::build();
+        config.client_type = EmailClientType::InMemory;
+        config.forward_all_emails_to_fixed_recipients = Some(vec!["to@me.com".to_owned()]);
+
+        let mut email = EmailMessage::new();
+        email.to.push("original_to@mail.com".to_owned());
+
+        // Act
+        let client = new(config).unwrap();
+        client.send(email).await.unwrap();
+
+        // Assert
+        let emails = client.get_emails().unwrap();
+        assert_eq!(1, emails.len());
+        let received_email = &emails[0];
+
+        assert_eq!(vec!["to@me.com".to_owned()], received_email.to);
+    }
+
+    #[tokio::test]
+    async fn should_build_in_memory_client() {
+        // Arrange
+        let mut config = EmailClientConfig::build();
+        config.client_type = EmailClientType::InMemory;
+
+        let mut email = EmailMessage::new();
+        email.to.push("original_to@mail.com".to_owned());
+
+        // Act
+        let client = new(config).unwrap();
+        client.send(email).await.unwrap();
+
+        // Assert
+        let emails = client.get_emails().unwrap();
+        assert_eq!(1, emails.len());
+        let received_email = &emails[0];
+
+        assert_eq!(vec!["original_to@mail.com".to_owned()], received_email.to);
+    }
+
+    #[test]
+    fn should_fail_if_fixed_recipient_empty() {
+        // Arrange
+        let mut config = EmailClientConfig::build();
+        config.client_type = EmailClientType::InMemory;
+        config.forward_all_emails_to_fixed_recipients = Some(vec![]);
+
+        let mut email = EmailMessage::new();
+        email.to.push("original_to@mail.com".to_owned());
+
+        // Act
+        let result = new(config);
+
+        // Assert
+        assert!(result.is_err());
     }
 }

@@ -24,9 +24,9 @@ pub struct EmailClientConfig {
     pub server_use_tls: Boolean,
 
     #[structopt(
-    long,
-    env = "LS_EMAIL_FORWARD_ALL_EMAILS_TO_FIXED_RECIPIENTS",
-    value_delimiter = ";"
+        long,
+        env = "LS_EMAIL_FORWARD_ALL_EMAILS_TO_FIXED_RECIPIENTS",
+        value_delimiter = ";"
     )]
     pub forward_all_emails_to_fixed_recipients: Option<Vec<String>>,
 }
@@ -48,4 +48,16 @@ mod test {
         let config = EmailClientConfig::build();
         assert!(config.forward_all_emails_to_fixed_recipients.is_none());
     }
+
+    /*
+    #[test]
+    fn should_build_optional_fixed_recipients() {
+
+        std::env::set_var("LS_EMAIL_FORWARD_ALL_EMAILS_TO_FIXED_RECIPIENTS", "to@me.com;to@they.com");
+
+        let config = EmailClientConfig::build();
+        assert_eq!(Some(vec!["to@me.com".to_owned(), "to@they.com".to_owned()]), config.forward_all_emails_to_fixed_recipients);
+
+    }
+    */
 }
