@@ -44,21 +44,24 @@ impl<RepoManager: AuthRepositoryManager> AuthAccountService<RepoManager> {
     }
 
     pub async fn login(&self, username: &str, password: &str) -> Result<Auth, LightSpeedError> {
-        self
-            .c3p0
+        self.c3p0
             .transaction(|mut conn| async move {
-                self.login_with_conn(&mut conn, username, password)
-                    .await
+                self.login_with_conn(&mut conn, username, password).await
             })
             .await
     }
 
-    pub async fn login_with_conn(&self, conn: &mut RepoManager::Conn, username: &str, password: &str) -> Result<Auth, LightSpeedError> {
+    pub async fn login_with_conn(
+        &self,
+        conn: &mut RepoManager::Conn,
+        username: &str,
+        password: &str,
+    ) -> Result<Auth, LightSpeedError> {
         debug!("login attempt with username [{}]", username);
-        let model =
-                self.auth_repo
-                    .fetch_by_username_optional(conn, username)
-                    .await?;
+        let model = self
+            .auth_repo
+            .fetch_by_username_optional(conn, username)
+            .await?;
 
         if let Some(user) = model {
             if self
@@ -311,7 +314,8 @@ impl<RepoManager: AuthRepositoryManager> AuthAccountService<RepoManager> {
     ) -> Result<AuthAccountModel, LightSpeedError> {
         self.c3p0
             .transaction(|mut conn| async move {
-                self.activate_user_with_conn(&mut conn, activation_token).await
+                self.activate_user_with_conn(&mut conn, activation_token)
+                    .await
             })
             .await
     }
@@ -323,45 +327,44 @@ impl<RepoManager: AuthRepositoryManager> AuthAccountService<RepoManager> {
     ) -> Result<AuthAccountModel, LightSpeedError> {
         debug!("Activate user called with token [{}]", activation_token);
 
-                let token = self
-                    .token_service
-                    .fetch_by_token_with_conn(conn, activation_token, true)
-                    .await?;
+        let token = self
+            .token_service
+            .fetch_by_token_with_conn(conn, activation_token, true)
+            .await?;
 
-                Validator::validate(&|error_details: &mut ErrorDetails| {
-                    match &token.data.token_type {
-                        TokenType::ACCOUNT_ACTIVATION => {}
-                        _ => error_details.add_detail("token_type", WRONG_TYPE),
-                    };
-                    Ok(())
-                })?;
+        Validator::validate(&|error_details: &mut ErrorDetails| {
+            match &token.data.token_type {
+                TokenType::ACCOUNT_ACTIVATION => {}
+                _ => error_details.add_detail("token_type", WRONG_TYPE),
+            };
+            Ok(())
+        })?;
 
-                info!("Activate user [{}]", token.data.username);
+        info!("Activate user [{}]", token.data.username);
 
-                let mut user = self
-                    .auth_repo
-                    .fetch_by_username(conn, &token.data.username)
-                    .await?;
+        let mut user = self
+            .auth_repo
+            .fetch_by_username(conn, &token.data.username)
+            .await?;
 
-                match &user.data.status {
-                    AuthAccountStatus::PENDING_ACTIVATION => {}
-                    _ => {
-                        return Err(LightSpeedError::BadRequest {
-                            message: format!(
-                                "User [{}] not in status PendingActivation",
-                                token.data.username
-                            ),
-                            code: ErrorCodes::NOT_PENDING_USER,
-                        })
-                    }
-                };
+        match &user.data.status {
+            AuthAccountStatus::PENDING_ACTIVATION => {}
+            _ => {
+                return Err(LightSpeedError::BadRequest {
+                    message: format!(
+                        "User [{}] not in status PendingActivation",
+                        token.data.username
+                    ),
+                    code: ErrorCodes::NOT_PENDING_USER,
+                })
+            }
+        };
 
-                self.token_service.delete_with_conn(conn, token).await?;
+        self.token_service.delete_with_conn(conn, token).await?;
 
-                user.data.status = AuthAccountStatus::ACTIVE;
-                user = self.auth_repo.update(conn, user).await?;
-                Ok(user)
-
+        user.data.status = AuthAccountStatus::ACTIVE;
+        user = self.auth_repo.update(conn, user).await?;
+        Ok(user)
     }
 
     pub async fn generate_reset_password_token(
@@ -407,10 +410,10 @@ impl<RepoManager: AuthRepositoryManager> AuthAccountService<RepoManager> {
         &self,
         reset_password_dto: ResetPasswordDto,
     ) -> Result<AuthAccountModel, LightSpeedError> {
-        self
-            .c3p0
+        self.c3p0
             .transaction(|mut conn| async move {
-                self.reset_password_by_token_with_conn(&mut conn, reset_password_dto).await
+                self.reset_password_by_token_with_conn(&mut conn, reset_password_dto)
+                    .await
             })
             .await
     }
@@ -426,44 +429,43 @@ impl<RepoManager: AuthRepositoryManager> AuthAccountService<RepoManager> {
         );
         Validator::validate(&reset_password_dto)?;
 
-                let token = self
-                    .token_service
-                    .fetch_by_token_with_conn(conn, &reset_password_dto.token, false)
-                    .await?;
+        let token = self
+            .token_service
+            .fetch_by_token_with_conn(conn, &reset_password_dto.token, false)
+            .await?;
 
-                info!("Reset password of user [{}]", token.data.username);
+        info!("Reset password of user [{}]", token.data.username);
 
-                Validator::validate(&|error_details: &mut ErrorDetails| {
-                    match &token.data.token_type {
-                        TokenType::RESET_PASSWORD => {}
-                        _ => error_details.add_detail("token_type", WRONG_TYPE),
-                    };
-                    Ok(())
-                })?;
+        Validator::validate(&|error_details: &mut ErrorDetails| {
+            match &token.data.token_type {
+                TokenType::RESET_PASSWORD => {}
+                _ => error_details.add_detail("token_type", WRONG_TYPE),
+            };
+            Ok(())
+        })?;
 
-                let mut user = self
-                    .auth_repo
-                    .fetch_by_username(conn, &token.data.username)
-                    .await?;
+        let mut user = self
+            .auth_repo
+            .fetch_by_username(conn, &token.data.username)
+            .await?;
 
-                match &user.data.status {
-                    AuthAccountStatus::ACTIVE => {}
-                    _ => {
-                        return Err(LightSpeedError::BadRequest {
-                            message: format!("User [{}] not in status Active", token.data.username),
-                            code: ErrorCodes::INACTIVE_USER,
-                        })
-                    }
-                };
+        match &user.data.status {
+            AuthAccountStatus::ACTIVE => {}
+            _ => {
+                return Err(LightSpeedError::BadRequest {
+                    message: format!("User [{}] not in status Active", token.data.username),
+                    code: ErrorCodes::INACTIVE_USER,
+                })
+            }
+        };
 
-                self.token_service.delete_with_conn(conn, token).await?;
+        self.token_service.delete_with_conn(conn, token).await?;
 
-                user.data.password = self
-                    .password_service
-                    .hash_password(&reset_password_dto.password)?;
-                user = self.auth_repo.update(conn, user).await?;
-                Ok(user)
-
+        user.data.password = self
+            .password_service
+            .hash_password(&reset_password_dto.password)?;
+        user = self.auth_repo.update(conn, user).await?;
+        Ok(user)
     }
 
     pub async fn change_password(
@@ -471,9 +473,9 @@ impl<RepoManager: AuthRepositoryManager> AuthAccountService<RepoManager> {
         dto: ChangePasswordDto,
     ) -> Result<AuthAccountModel, LightSpeedError> {
         self.c3p0
-            .transaction(|mut conn| async move {
-                self.change_password_with_conn(&mut conn, dto).await
-            })
+            .transaction(
+                |mut conn| async move { self.change_password_with_conn(&mut conn, dto).await },
+            )
             .await
     }
 
@@ -486,34 +488,33 @@ impl<RepoManager: AuthRepositoryManager> AuthAccountService<RepoManager> {
 
         Validator::validate(&dto)?;
 
-                let mut user = self.auth_repo.fetch_by_id(conn, dto.user_id).await?;
-                info!("Change password of user [{}]", user.data.username);
+        let mut user = self.auth_repo.fetch_by_id(conn, dto.user_id).await?;
+        info!("Change password of user [{}]", user.data.username);
 
-                match &user.data.status {
-                    AuthAccountStatus::ACTIVE => {}
-                    _ => {
-                        return Err(LightSpeedError::BadRequest {
-                            message: format!("User [{}] not in status Active", user.data.username),
-                            code: ErrorCodes::INACTIVE_USER,
-                        })
-                    }
-                };
+        match &user.data.status {
+            AuthAccountStatus::ACTIVE => {}
+            _ => {
+                return Err(LightSpeedError::BadRequest {
+                    message: format!("User [{}] not in status Active", user.data.username),
+                    code: ErrorCodes::INACTIVE_USER,
+                })
+            }
+        };
 
-                if !self
-                    .password_service
-                    .verify_match(&dto.old_password, &user.data.password)?
-                {
-                    return Err(LightSpeedError::BadRequest {
-                        message: "Wrong credentials".to_owned(),
-                        code: ErrorCodes::WRONG_CREDENTIALS,
-                    });
-                }
+        if !self
+            .password_service
+            .verify_match(&dto.old_password, &user.data.password)?
+        {
+            return Err(LightSpeedError::BadRequest {
+                message: "Wrong credentials".to_owned(),
+                code: ErrorCodes::WRONG_CREDENTIALS,
+            });
+        }
 
-                user.data.password = self.password_service.hash_password(&dto.new_password)?;
+        user.data.password = self.password_service.hash_password(&dto.new_password)?;
 
-                user = self.auth_repo.update(conn, user).await?;
-                Ok(user)
-
+        user = self.auth_repo.update(conn, user).await?;
+        Ok(user)
     }
 
     pub async fn fetch_by_user_id_with_conn(

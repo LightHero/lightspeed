@@ -32,7 +32,7 @@ async fn should_start_the_mailserver() {
         server_username: "".to_owned(),
         server_password: "".to_owned(),
         server_use_tls: Boolean::False,
-        forward_all_emails_to_fixed_recipients: None
+        forward_all_emails_to_fixed_recipients: None,
     };
 
     let email_service = EmailService::new(new(config).unwrap());
