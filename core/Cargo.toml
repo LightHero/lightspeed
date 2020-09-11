@@ -30,12 +30,13 @@ validator = "0.11"
 #typescript-definitions = "0.1.10"
 typescript-definitions = {package = "typescript-definitions-ufo-patch", version = "0.1.10"}
 
-actix_web_external = {package = "actix-web", version = "2.0.0", optional = true }
-warp_external = {package = "warp", version = "0.2.3", optional = true }
+actix_web_3_ext = {package = "actix-web", version = "3.0.0", optional = true }
+warp_external = {package = "warp", version = "0.2.5", optional = true }
 
 [dev-dependencies]
-actix-service = "1.0.1"
+# Could be remove. See https://github.com/actix/actix-web/issues/1669
 actix-rt = "1.1.1"
+
 lightspeed_logger = { version = "0.18.2", path = "../logger" }
 parking_lot = "0.11"
 typemap = "0.3.3"
@@ -44,5 +45,5 @@ tokio = { version = "0.2.0", features = ["full"] }
 [features]
 default = []
 
-actix-web = ["actix_web_external"]
+actix_web_3 = ["actix_web_3_ext"]
 warp = ["warp_external"]

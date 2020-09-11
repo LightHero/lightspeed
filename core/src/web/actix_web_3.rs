@@ -1,8 +1,8 @@
 use crate::error::{LightSpeedError, WebErrorDetails};
 use crate::service::auth::{Auth, AuthContext, AuthService, RolesProvider};
 use crate::service::jwt::JwtService;
-use actix_web_external::dev::HttpResponseBuilder;
-use actix_web_external::{http, HttpRequest, HttpResponse, ResponseError};
+use actix_web_3_ext::dev::HttpResponseBuilder;
+use actix_web_3_ext::{http, HttpRequest, HttpResponse, ResponseError};
 use log::*;
 use std::sync::Arc;
 
@@ -123,12 +123,12 @@ mod test {
     use crate::config::JwtConfig;
     use crate::service::auth::{InMemoryRolesProvider, Role};
     use crate::service::jwt::JWT;
-    use actix_service::Service;
-    use actix_web_external::test::{init_service, TestRequest};
-    use actix_web_external::{http::StatusCode, web, App};
+    use actix_web_3_ext::dev::Service;
+    use actix_web_3_ext::test::{init_service, TestRequest};
+    use actix_web_3_ext::{http::StatusCode, web, App};
     use jsonwebtoken::Algorithm;
 
-    #[actix_rt::test]
+    #[actix_web_3_ext::rt::test]
     async fn access_protected_url_should_return_unauthorized_if_no_token() {
         // Arrange
         let mut srv = init_service(App::new().service(web::resource("/auth").to(username))).await;
@@ -142,7 +142,7 @@ mod test {
         assert_eq!(resp.status(), StatusCode::UNAUTHORIZED);
     }
 
-    #[actix_rt::test]
+    #[actix_web_3_ext::rt::test]
     async fn access_protected_url_should_return_unauthorized_if_expired_token() {
         // Arrange
         let token = JWT {
@@ -179,7 +179,7 @@ mod test {
         assert_eq!(resp.status(), StatusCode::UNAUTHORIZED);
     }
 
-    #[actix_rt::test]
+    #[actix_web_3_ext::rt::test]
     async fn access_protected_url_should_return_ok_if_valid_token() {
         // Arrange
         let auth = Auth {
@@ -208,7 +208,7 @@ mod test {
         assert_eq!(resp.status(), StatusCode::OK);
     }
 
-    #[actix_rt::test]
+    #[actix_web_3_ext::rt::test]
     async fn access_admin_url_should_return_forbidden_if_not_admin_role() {
         // Arrange
         let auth = Auth {
@@ -237,14 +237,14 @@ mod test {
         assert_eq!(resp.status(), StatusCode::FORBIDDEN);
     }
 
-    async fn admin(req: HttpRequest) -> actix_web_external::Result<String> {
+    async fn admin(req: HttpRequest) -> actix_web_3_ext::Result<String> {
         let auth_service = new_service();
         let auth_context = auth_service.auth_from_request(&req)?;
         auth_context.has_role("admin")?;
         Ok(auth_context.auth.username.clone())
     }
 
-    async fn username(req: HttpRequest) -> actix_web_external::Result<String> {
+    async fn username(req: HttpRequest) -> actix_web_3_ext::Result<String> {
         let auth_service = new_service();
         let auth_context = auth_service.auth_from_request(&req)?;
         Ok(auth_context.auth.username)

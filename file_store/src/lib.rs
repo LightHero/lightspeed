@@ -11,7 +11,6 @@ pub mod model;
 pub mod repository;
 pub mod service;
 pub mod utils;
-pub mod web;
 
 #[derive(Clone)]
 pub struct FileStoreModule<RepoManager: DBFileStoreRepositoryManager> {
