@@ -7,5 +7,4 @@ use lightspeed_core::model::language::Language;
 pub struct LoginDto {
     pub username: String,
     pub password: String,
-    pub language: Option<Language>,
 }
