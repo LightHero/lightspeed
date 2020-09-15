@@ -9,6 +9,7 @@ use std::path::Path;
 use std::sync::Arc;
 use lettre::transport::smtp::client::{Tls, TlsParameters};
 use lettre::message::mime::Mime;
+use lettre::message::{MultiPartBuilder, Part};
 
 /// A EmailClient implementation that forwards the email to the expected recipients
 #[derive(Clone)]
@@ -70,19 +71,6 @@ impl EmailClient for FullEmailClient {
                 builder = builder.from(parse_mailbox(&val)?)
             }
 
-        let ADD_HTML = 'i';
-        let ADD_TEXT = 'i';
-/*
-            if let Some(html) = email_message.html {
-                if let Some(text) = email_message.text {
-                    builder = builder.alternative(html, text)
-                } else {
-                    builder = builder.html(html);
-                }
-            } else if let Some(text) = email_message.text {
-                builder = builder.text(text)
-            }
-*/
             for to in email_message.to {
                 builder = builder.to(parse_mailbox(&to)?)
             }
@@ -92,6 +80,20 @@ impl EmailClient for FullEmailClient {
             for bcc in email_message.bcc {
                 builder = builder.bcc(parse_mailbox(&bcc)?)
             }
+
+        let ADD_HTML = 'i';
+        let ADD_TEXT = 'i';
+        /*
+                    if let Some(html) = email_message.html {
+                        if let Some(text) = email_message.text {
+                            builder = builder.alternative(html, text)
+                        } else {
+                            builder = builder.html(html);
+                        }
+                    } else if let Some(text) = email_message.text {
+                        builder = builder.text(text)
+                    }
+        */
 
         let ADD_ATTACHEMT = 'i';
         /*
