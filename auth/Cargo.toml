@@ -22,7 +22,7 @@ structopt = "0.3"
 
 # See
 #typescript-definitions = "0.1.10"
-typescript-definitions = {package = "typescript-definitions-ufo-patch", version = "0.1.10"}
+typescript-definitions = {package = "typescript-definitions-ufo-patch", version = "0.1.11"}
 
 [dev-dependencies]
 futures = "0.3"

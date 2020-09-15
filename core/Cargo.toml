@@ -28,7 +28,7 @@ validator = "0.11"
 
 # See
 #typescript-definitions = "0.1.10"
-typescript-definitions = {package = "typescript-definitions-ufo-patch", version = "0.1.10"}
+typescript-definitions = {package = "typescript-definitions-ufo-patch", version = "0.1.11"}
 
 actix_web_3_ext = {package = "actix-web", version = "3.0.0", optional = true }
 warp_external = {package = "warp", version = "0.2.5", optional = true }
