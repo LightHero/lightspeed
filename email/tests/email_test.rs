@@ -5,6 +5,7 @@ use lightspeed_email::repository::email::{new, EmailClientType};
 use lightspeed_email::service::EmailService;
 use testcontainers::*;
 
+
 pub fn new_mail_server(
     docker: &clients::Cli,
 ) -> (u16, Container<clients::Cli, images::generic::GenericImage>) {
@@ -49,38 +50,40 @@ async fn should_start_the_mailserver() {
     });
 
     // Act
+    email_service.send(message.clone()).await.unwrap();
     assert!(email_service.send(message.clone()).await.is_ok());
     // should reuse the client
     assert!(email_service.send(message.clone()).await.is_ok());
     assert!(email_service.send(message.clone()).await.is_ok());
 }
 
-// #[tokio::test]
-// async fn full_client_should_use_gmail() {
-//     // Arrange
-//
-//     let config = EmailClientConfig {
-//         server_port: 465,
-//         server_address: "smtp.gmail.com".to_owned(),
-//         client_type: EmailClientType::Full,
-//         server_username: "ufoscout@gmail.com".to_owned(),
-//         server_password: "".to_owned(),
-//         server_use_tls: Boolean::True,
-//     };
-//
-//     let email_service = new(config).unwrap();
-//
-//     let mut message = EmailMessage::new();
-//     message.from = Some("UFOSCOUT <ufoscout@gmail.com>".to_owned());
-//     message.to.push("FRANCESCO <ufoscout@gmail.com>".to_owned());
-//     message.subject = Some("EMAIL FROM RUST!!".to_owned());
-//     message.attachments.push(EmailAttachment::FromFile {
-//         mime_type: "plain/text".to_owned(),
-//         path: "./Cargo.toml".to_owned(),
-//         filename: Some("cargo.txt".to_owned())
-//     });
-//
-//     // Act
-//     email_service.send(message.clone()).await.unwrap();
-//
-// }
+#[tokio::test]
+async fn full_client_should_use_gmail() {
+    // Arrange
+
+    let config = EmailClientConfig {
+        server_port: 465,
+        server_address: "smtp.gmail.com".to_owned(),
+        client_type: EmailClientType::Full,
+        server_username: "ufoscout@gmail.com".to_owned(),
+        server_password: "".to_owned(),
+        server_use_tls: Boolean::True,
+        forward_all_emails_to_fixed_recipients: None,
+    };
+
+    let email_service = new(config).unwrap();
+
+    let mut message = EmailMessage::new();
+    message.from = Some("UFOSCOUT <ufoscout@gmail.com>".to_owned());
+    message.to.push("FRANCESCO <ufoscout@gmail.com>".to_owned());
+    message.subject = Some("EMAIL FROM RUST!!".to_owned());
+    message.attachments.push(EmailAttachment::FromFile {
+        mime_type: "plain/text".to_owned(),
+        path: "./Cargo.toml".to_owned(),
+        filename: Some("cargo.txt".to_owned())
+    });
+
+    // Act
+    email_service.send(message.clone()).await.unwrap();
+
+}
