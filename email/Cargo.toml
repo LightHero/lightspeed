@@ -13,7 +13,7 @@ keywords = []
 [dependencies]
 lightspeed_core = { version = "0.19.0", path = "../core" }
 async-trait = "0.1.29"
-lettre = { version = "0.10.0-alpha.2", default-features = false , features = ["smtp-transport", "builder", "tokio02-rustls-tls"]}
+lettre = { version = "0.10.0-alpha.2", default-features = false , features = ["smtp-transport", "builder", "hostname", "tokio02-rustls-tls"]}
 log = "0.4"
 parking_lot = "0.11"
 serde = { version = "1.0" , features = ["derive", "rc"] }
