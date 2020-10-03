@@ -271,8 +271,8 @@ impl<RepoManager: DBFileStoreRepositoryManager> FileStoreService<RepoManager> {
     pub fn get_file_path<'a>(
         &self,
         subfolder: Option<&str>,
-        filename: Cow<'a, String>,
-    ) -> Cow<'a, String> {
+        filename: Cow<'a, str>,
+    ) -> Cow<'a, str> {
         match subfolder {
             Some(path) => Cow::Owned(format!("{}/{}", path, filename)),
             None => filename,
