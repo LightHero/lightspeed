@@ -1,4 +1,4 @@
-use crate::model::{FileStoreDataData, FileStoreDataDataCodec, FileStoreDataModel};
+use crate::model::{FileStoreDataData, FileStoreDataDataCodec, FileStoreDataModel, Repository};
 use crate::repository::db::FileStoreDataRepository;
 use c3p0::postgres::*;
 use c3p0::*;
@@ -28,6 +28,31 @@ impl FileStoreDataRepository for PgFileStoreDataRepository {
         id: IdType,
     ) -> Result<FileStoreDataModel, LightSpeedError> {
         Ok(self.repo.fetch_one_by_id(conn, &id).await?)
+    }
+
+    async fn fetch_one_by_repository(
+        &self,
+        conn: &mut Self::Conn,
+        repository: &Repository,
+    ) -> Result<FileStoreDataModel, LightSpeedError> {
+        let sql =
+            "SELECT id, version, DATA FROM LS_FILE_STORE_DATA WHERE (data -> 'repository' ->> '_json_tag') = $1 AND (data -> 'repository' ->> 'repository_name') = $2 AND (data -> 'repository' ->> 'file_path') = $3";
+
+        let (db, repository_name, file_path) = match repository {
+            Repository::DB {
+                file_path,
+                repository_name,
+            } => (repository.as_ref(), repository_name, file_path),
+            Repository::FS {
+                file_path,
+                repository_name,
+            } => (repository.as_ref(), repository_name, file_path),
+        };
+
+        Ok(self
+            .repo
+            .fetch_one_with_sql(conn, sql, &[&db, repository_name, file_path])
+            .await?)
     }
 
     async fn save(

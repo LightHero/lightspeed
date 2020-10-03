@@ -128,6 +128,7 @@ fn should_save_file_to_db_with_specific_repo() -> Result<(), LightSpeedError> {
         let content_type = "application/text".to_owned();
         let file_name_1 = format!("file_2_{}", random);
         let file_name_2 = format!("file_1_{}", random);
+
         let save_repository_1 = SaveRepository::DB {
             file_path: None,
             repository_name: "REPO_ONE".to_owned(),
@@ -170,6 +171,20 @@ fn should_save_file_to_db_with_specific_repo() -> Result<(), LightSpeedError> {
             }
             _ => assert!(false),
         }
+
+        println!("{:#?}", serde_json::to_string(&saved_1).unwrap());
+
+        let loaded_data_by_repository_1 = file_store
+            .read_file_data_by_repository(&saved_1.data.repository)
+            .await
+            .unwrap();
+        assert_eq!(saved_1, loaded_data_by_repository_1);
+
+        let loaded_data_by_repository_2 = file_store
+            .read_file_data_by_repository(&saved_2.data.repository)
+            .await
+            .unwrap();
+        assert_eq!(saved_2, loaded_data_by_repository_2);
 
         Ok(())
     })
@@ -228,6 +243,18 @@ fn should_save_file_to_fs_with_specific_repo() -> Result<(), LightSpeedError> {
             }
             _ => assert!(false),
         }
+
+        let loaded_data_by_repository_1 = file_store
+            .read_file_data_by_repository(&save_1.data.repository)
+            .await
+            .unwrap();
+        assert_eq!(save_1, loaded_data_by_repository_1);
+
+        let loaded_data_by_repository_2 = file_store
+            .read_file_data_by_repository(&save_2.data.repository)
+            .await
+            .unwrap();
+        assert_eq!(save_2, loaded_data_by_repository_2);
 
         Ok(())
     })
@@ -586,6 +613,261 @@ fn should_delete_file_from_fs() -> Result<(), LightSpeedError> {
         assert!(file_store.read_file_data_by_id(saved.id).await.is_err());
 
         assert!(!Path::new(&file_path).exists());
+
+        Ok(())
+    })
+}
+
+#[test]
+fn should_allow_same_files_with_same_repository_name_and_path_but_different_repository_type(
+) -> Result<(), LightSpeedError> {
+    test(async {
+        let data = data(false).await;
+        let file_store = &data.0.file_store_service;
+
+        // Arrange
+        let random: u32 = rand::random();
+        let same_file_name = format!("folder/file_{}", random);
+        let same_file_path = format!("path_{}", random);
+        let same_repository_name = "REPO_ONE";
+
+        let binary_content = BinaryContent::FromFs {
+            file_path: SOURCE_FILE.to_owned(),
+        };
+
+        let content_type = "application/text".to_owned();
+
+        let save_repository_db = SaveRepository::DB {
+            file_path: Some(same_file_path.clone()),
+            repository_name: same_repository_name.to_owned(),
+        };
+
+        let save_repository_fs = SaveRepository::FS {
+            file_path: Some(same_file_path.clone()),
+            repository_name: same_repository_name.to_owned(),
+        };
+
+        // Act
+        let saved_db = file_store
+            .save_file(
+                same_file_name.clone(),
+                content_type.clone(),
+                &binary_content,
+                save_repository_db.clone(),
+            )
+            .await?;
+
+        let saved_fs = file_store
+            .save_file(
+                same_file_name.clone(),
+                content_type.clone(),
+                &binary_content,
+                save_repository_fs.clone(),
+            )
+            .await?;
+
+        // Assert
+        let loaded_db = file_store.read_file_data_by_id(saved_db.id).await?;
+        assert_eq!(loaded_db, saved_db);
+        match &loaded_db.data.repository {
+            Repository::DB {
+                repository_name,
+                file_path,
+            } => {
+                assert_eq!(same_repository_name, repository_name);
+                assert_eq!(&format!("{}/{}", same_file_path, same_file_name), file_path);
+            }
+            _ => assert!(false),
+        }
+
+        let loaded_fs = file_store.read_file_data_by_id(saved_fs.id).await?;
+        assert_eq!(loaded_fs, saved_fs);
+        match &loaded_fs.data.repository {
+            Repository::FS {
+                repository_name,
+                file_path,
+            } => {
+                assert_eq!(same_repository_name, repository_name);
+                assert_eq!(&format!("{}/{}", same_file_path, same_file_name), file_path);
+            }
+            _ => assert!(false),
+        }
+
+        Ok(())
+    })
+}
+
+#[test]
+fn should_fail_if_file_already_exists_in_db() -> Result<(), LightSpeedError> {
+    test(async {
+        let data = data(false).await;
+        let file_store = &data.0.file_store_service;
+
+        // Arrange
+        let random: u32 = rand::random();
+        let same_file_name = format!("folder/file_{}", random);
+        let same_file_path = format!("path_{}", random);
+        let same_repository_name = "REPO_ONE";
+
+        let binary_content = BinaryContent::FromFs {
+            file_path: SOURCE_FILE.to_owned(),
+        };
+
+        let content_type = "application/text".to_owned();
+
+        let save_repository_db = SaveRepository::DB {
+            file_path: Some(same_file_path.clone()),
+            repository_name: same_repository_name.to_owned(),
+        };
+
+        // Act & Assert
+        assert!(file_store
+            .save_file(
+                same_file_name.clone(),
+                content_type.clone(),
+                &binary_content,
+                save_repository_db.clone(),
+            )
+            .await
+            .is_ok());
+
+        // fail if file already exists
+        assert!(file_store
+            .save_file(
+                same_file_name.clone(),
+                content_type.clone(),
+                &binary_content,
+                save_repository_db.clone(),
+            )
+            .await
+            .is_err());
+
+        // success if file has different name
+        assert!(file_store
+            .save_file(
+                format!("{}-1", same_file_name),
+                content_type.clone(),
+                &binary_content,
+                save_repository_db.clone(),
+            )
+            .await
+            .is_ok());
+
+        // success if file has different repository_name
+        assert!(file_store
+            .save_file(
+                same_file_name.clone(),
+                content_type.clone(),
+                &binary_content,
+                SaveRepository::DB {
+                    file_path: Some(same_file_path.clone()),
+                    repository_name: "REPO_TWO".to_owned(),
+                },
+            )
+            .await
+            .is_ok());
+
+        // success if file has different file_path
+        assert!(file_store
+            .save_file(
+                same_file_name.clone(),
+                content_type.clone(),
+                &binary_content,
+                SaveRepository::DB {
+                    file_path: Some(format!("{}-1", same_file_path)),
+                    repository_name: same_repository_name.to_owned(),
+                },
+            )
+            .await
+            .is_ok());
+
+        Ok(())
+    })
+}
+
+#[test]
+fn should_fail_if_file_already_exists_in_fs() -> Result<(), LightSpeedError> {
+    test(async {
+        let data = data(false).await;
+        let file_store = &data.0.file_store_service;
+
+        // Arrange
+        let random: u32 = rand::random();
+        let same_file_name = format!("folder/file_{}", random);
+        let same_file_path = format!("path_{}", random);
+        let same_repository_name = "REPO_ONE";
+
+        let binary_content = BinaryContent::FromFs {
+            file_path: SOURCE_FILE.to_owned(),
+        };
+
+        let content_type = "application/text".to_owned();
+
+        let save_repository_db = SaveRepository::FS {
+            file_path: Some(same_file_path.clone()),
+            repository_name: same_repository_name.to_owned(),
+        };
+
+        // Act & Assert
+        assert!(file_store
+            .save_file(
+                same_file_name.clone(),
+                content_type.clone(),
+                &binary_content,
+                save_repository_db.clone(),
+            )
+            .await
+            .is_ok());
+
+        // fail if file already exists
+        assert!(file_store
+            .save_file(
+                same_file_name.clone(),
+                content_type.clone(),
+                &binary_content,
+                save_repository_db.clone(),
+            )
+            .await
+            .is_err());
+
+        // success if file has different name
+        assert!(file_store
+            .save_file(
+                format!("{}-1", same_file_name),
+                content_type.clone(),
+                &binary_content,
+                save_repository_db.clone(),
+            )
+            .await
+            .is_ok());
+
+        // success if file has different repository_name
+        assert!(file_store
+            .save_file(
+                same_file_name.clone(),
+                content_type.clone(),
+                &binary_content,
+                SaveRepository::FS {
+                    file_path: Some(same_file_path.clone()),
+                    repository_name: "REPO_TWO".to_owned(),
+                },
+            )
+            .await
+            .is_ok());
+
+        // success if file has different file_path
+        assert!(file_store
+            .save_file(
+                same_file_name.clone(),
+                content_type.clone(),
+                &binary_content,
+                SaveRepository::FS {
+                    file_path: Some(format!("{}-1", same_file_path)),
+                    repository_name: same_repository_name.to_owned(),
+                },
+            )
+            .await
+            .is_ok());
 
         Ok(())
     })

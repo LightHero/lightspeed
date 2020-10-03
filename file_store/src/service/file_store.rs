@@ -52,6 +52,32 @@ impl<RepoManager: DBFileStoreRepositoryManager> FileStoreService<RepoManager> {
         self.db_data_repo.fetch_one_by_id(conn, id).await
     }
 
+    pub async fn read_file_data_by_repository(
+        &self,
+        repository: &Repository,
+    ) -> Result<FileStoreDataModel, LightSpeedError> {
+        self.c3p0
+            .transaction(|mut conn| async move {
+                self.read_file_data_by_repository_with_conn(&mut conn, repository)
+                    .await
+            })
+            .await
+    }
+
+    pub async fn read_file_data_by_repository_with_conn(
+        &self,
+        conn: &mut RepoManager::Conn,
+        repository: &Repository,
+    ) -> Result<FileStoreDataModel, LightSpeedError> {
+        debug!(
+            "FileStoreService - Read file data by repository [{:?}]",
+            repository
+        );
+        self.db_data_repo
+            .fetch_one_by_repository(conn, repository)
+            .await
+    }
+
     pub async fn read_file_content(
         &self,
         repository: &Repository,

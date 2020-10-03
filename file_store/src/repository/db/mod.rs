@@ -1,4 +1,4 @@
-use crate::model::{BinaryContent, FileStoreDataData, FileStoreDataModel};
+use crate::model::{BinaryContent, FileStoreDataData, FileStoreDataModel, Repository};
 use c3p0::*;
 use lightspeed_core::error::LightSpeedError;
 
@@ -53,6 +53,12 @@ pub trait FileStoreDataRepository: Clone + Send + Sync {
         &self,
         conn: &mut Self::Conn,
         id: IdType,
+    ) -> Result<FileStoreDataModel, LightSpeedError>;
+
+    async fn fetch_one_by_repository(
+        &self,
+        conn: &mut Self::Conn,
+        repository: &Repository,
     ) -> Result<FileStoreDataModel, LightSpeedError>;
 
     async fn save(

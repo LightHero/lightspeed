@@ -2,6 +2,7 @@ use c3p0::{C3p0Error, JsonCodec, Model};
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use std::borrow::Cow;
+use strum_macros::{AsRefStr, Display};
 
 pub type FileStoreDataModel = Model<FileStoreDataData>;
 
@@ -19,7 +20,7 @@ pub struct FileStoreDataData {
     pub created_date_epoch_seconds: i64,
 }
 
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, AsRefStr, Display)]
 #[serde(tag = "_json_tag")]
 pub enum Repository {
     DB {
