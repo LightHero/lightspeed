@@ -22,7 +22,7 @@ fn should_save_file_to_db() -> Result<(), LightSpeedError> {
         };
         let content_type = "application/text".to_owned();
         let save_repository = SaveRepository::DB {
-            file_path: None,
+            subfolder: None,
             repository_name: "MY_REPO".to_owned(),
         };
 
@@ -73,7 +73,7 @@ fn should_save_file_to_fs() -> Result<(), LightSpeedError> {
         };
         let content_type = "application/text".to_owned();
         let save_repository = SaveRepository::FS {
-            file_path: None,
+            subfolder: None,
             repository_name: "REPO_ONE".to_owned(),
         };
 
@@ -133,12 +133,12 @@ fn should_save_file_to_db_with_specific_repo() -> Result<(), LightSpeedError> {
         let file_name_2 = format!("file_1_{}", random);
 
         let save_repository_1 = SaveRepository::DB {
-            file_path: None,
+            subfolder: None,
             repository_name: "REPO_ONE".to_owned(),
         };
 
         let save_repository_2 = SaveRepository::DB {
-            file_path: None,
+            subfolder: None,
             repository_name: "REPO_TWO".to_owned(),
         };
 
@@ -207,12 +207,12 @@ fn should_save_file_to_fs_with_specific_repo() -> Result<(), LightSpeedError> {
         let file_name_1 = format!("file_2_{}", random);
         let file_name_2 = format!("file_1_{}", random);
         let save_repository_1 = SaveRepository::FS {
-            file_path: None,
+            subfolder: None,
             repository_name: "REPO_ONE".to_owned(),
         };
 
         let save_repository_2 = SaveRepository::FS {
-            file_path: None,
+            subfolder: None,
             repository_name: "REPO_TWO".to_owned(),
         };
 
@@ -282,7 +282,7 @@ fn save_should_fails_if_fs_repo_does_not_exist() -> Result<(), LightSpeedError> 
         let content_type = "application/text".to_owned();
         let file_name_1 = format!("file_2_{}", random);
         let save_repository_1 = SaveRepository::FS {
-            file_path: None,
+            subfolder: None,
             repository_name: "REPO_NOT_EXISTING".to_owned(),
         };
 
@@ -313,7 +313,7 @@ fn should_save_file_to_db_with_relative_folder() -> Result<(), LightSpeedError> 
         };
         let content_type = "application/text".to_owned();
         let save_repository = SaveRepository::DB {
-            file_path: None,
+            subfolder: None,
             repository_name: "REPO_ONE".to_owned(),
         };
 
@@ -364,7 +364,7 @@ fn should_save_file_to_fs_with_relative_folder() -> Result<(), LightSpeedError> 
         };
         let content_type = "application/text".to_owned();
         let save_repository = SaveRepository::FS {
-            file_path: None,
+            subfolder: None,
             repository_name: "REPO_ONE".to_owned(),
         };
 
@@ -421,7 +421,7 @@ fn should_save_file_to_db_with_relative_folder_in_repository() -> Result<(), Lig
         };
         let content_type = "application/text".to_owned();
         let save_repository = SaveRepository::DB {
-            file_path: Some("relative".to_owned()),
+            subfolder: Some("relative".to_owned()),
             repository_name: "REPO_ONE".to_owned(),
         };
 
@@ -472,7 +472,7 @@ fn should_save_file_to_fs_with_relative_folder_in_repository() -> Result<(), Lig
         };
         let content_type = "application/text".to_owned();
         let save_repository = SaveRepository::FS {
-            file_path: Some("relative".to_owned()),
+            subfolder: Some("relative".to_owned()),
             repository_name: "REPO_ONE".to_owned(),
         };
 
@@ -531,7 +531,7 @@ fn should_delete_file_from_db() -> Result<(), LightSpeedError> {
         };
         let content_type = "application/text".to_owned();
         let save_repository = SaveRepository::DB {
-            file_path: Some("relative".to_owned()),
+            subfolder: Some("relative".to_owned()),
             repository_name: "REPO_ONE".to_owned(),
         };
 
@@ -596,7 +596,7 @@ fn should_delete_file_from_fs() -> Result<(), LightSpeedError> {
         };
         let content_type = "application/text".to_owned();
         let save_repository = SaveRepository::FS {
-            file_path: None,
+            subfolder: None,
             repository_name: "REPO_ONE".to_owned(),
         };
 
@@ -650,12 +650,12 @@ fn should_allow_same_files_with_same_repository_name_and_path_but_different_repo
         let content_type = "application/text".to_owned();
 
         let save_repository_db = SaveRepository::DB {
-            file_path: Some(same_file_path.clone()),
+            subfolder: Some(same_file_path.clone()),
             repository_name: same_repository_name.to_owned(),
         };
 
         let save_repository_fs = SaveRepository::FS {
-            file_path: Some(same_file_path.clone()),
+            subfolder: Some(same_file_path.clone()),
             repository_name: same_repository_name.to_owned(),
         };
 
@@ -728,7 +728,7 @@ fn should_fail_if_file_already_exists_in_db() -> Result<(), LightSpeedError> {
         let content_type = "application/text".to_owned();
 
         let save_repository_db = SaveRepository::DB {
-            file_path: Some(same_file_path.clone()),
+            subfolder: Some(same_file_path.clone()),
             repository_name: same_repository_name.to_owned(),
         };
 
@@ -772,7 +772,7 @@ fn should_fail_if_file_already_exists_in_db() -> Result<(), LightSpeedError> {
                 content_type.clone(),
                 &binary_content,
                 SaveRepository::DB {
-                    file_path: Some(same_file_path.clone()),
+                    subfolder: Some(same_file_path.clone()),
                     repository_name: "REPO_TWO".to_owned(),
                 },
             )
@@ -786,7 +786,7 @@ fn should_fail_if_file_already_exists_in_db() -> Result<(), LightSpeedError> {
                 content_type.clone(),
                 &binary_content,
                 SaveRepository::DB {
-                    file_path: Some(format!("{}-1", same_file_path)),
+                    subfolder: Some(format!("{}-1", same_file_path)),
                     repository_name: same_repository_name.to_owned(),
                 },
             )
@@ -816,7 +816,7 @@ fn should_fail_if_file_already_exists_in_fs() -> Result<(), LightSpeedError> {
         let content_type = "application/text".to_owned();
 
         let save_repository_db = SaveRepository::FS {
-            file_path: Some(same_file_path.clone()),
+            subfolder: Some(same_file_path.clone()),
             repository_name: same_repository_name.to_owned(),
         };
 
@@ -860,7 +860,7 @@ fn should_fail_if_file_already_exists_in_fs() -> Result<(), LightSpeedError> {
                 content_type.clone(),
                 &binary_content,
                 SaveRepository::FS {
-                    file_path: Some(same_file_path.clone()),
+                    subfolder: Some(same_file_path.clone()),
                     repository_name: "REPO_TWO".to_owned(),
                 },
             )
@@ -874,7 +874,7 @@ fn should_fail_if_file_already_exists_in_fs() -> Result<(), LightSpeedError> {
                 content_type.clone(),
                 &binary_content,
                 SaveRepository::FS {
-                    file_path: Some(format!("{}-1", same_file_path)),
+                    subfolder: Some(format!("{}-1", same_file_path)),
                     repository_name: same_repository_name.to_owned(),
                 },
             )

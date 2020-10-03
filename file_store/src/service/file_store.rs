@@ -10,6 +10,7 @@ use lightspeed_core::error::{ErrorCodes, LightSpeedError};
 use lightspeed_core::utils::current_epoch_seconds;
 use log::*;
 use std::collections::HashMap;
+use std::borrow::Cow;
 
 #[derive(Clone)]
 pub struct FileStoreService<RepoManager: DBFileStoreRepositoryManager> {
@@ -156,10 +157,10 @@ impl<RepoManager: DBFileStoreRepositoryManager> FileStoreService<RepoManager> {
         let saved_repository = match repository {
             SaveRepository::FS {
                 repository_name,
-                file_path,
+                subfolder: file_path,
             } => {
                 let repo = self.get_fs_repository(&repository_name)?;
-                let file_path = fs_file_path(file_path.as_deref(), &filename);
+                let file_path = self.get_file_path(file_path.as_deref(), Cow::Borrowed(&filename)).into_owned();
                 repo.save_file(&file_path, content).await?;
                 Repository::FS {
                     file_path,
@@ -168,9 +169,9 @@ impl<RepoManager: DBFileStoreRepositoryManager> FileStoreService<RepoManager> {
             }
             SaveRepository::DB {
                 repository_name,
-                file_path,
+                subfolder: file_path,
             } => {
-                let file_path = fs_file_path(file_path.as_deref(), &filename);
+                let file_path = self.get_file_path(file_path.as_deref(), Cow::Borrowed(&filename)).into_owned();
                 self.db_binary_repo
                     .save_file(conn, &repository_name, &file_path, content)
                     .await?;
@@ -262,11 +263,12 @@ impl<RepoManager: DBFileStoreRepositoryManager> FileStoreService<RepoManager> {
                 code: ErrorCodes::NOT_FOUND,
             })
     }
-}
 
-fn fs_file_path(file_path: Option<&str>, filename: &str) -> String {
-    match file_path {
-        Some(path) => format!("{}/{}", path, filename),
-        None => filename.to_owned(),
+    pub fn get_file_path<'a>(&self, subfolder: Option<&str>, filename: Cow<'a, String>) -> Cow<'a, String> {
+        match subfolder {
+            Some(path) => Cow::Owned(format!("{}/{}", path, filename)),
+            None => filename,
+        }
     }
+
 }

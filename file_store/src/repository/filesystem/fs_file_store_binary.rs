@@ -15,22 +15,22 @@ impl FsFileStoreBinaryRepository {
         }
     }
 
-    pub fn get_file_path(&self, file_name: &str) -> String {
-        format!("{}/{}", &self.base_folder, file_name)
+    pub fn get_fs_file_path(&self, file_path: &str) -> String {
+        format!("{}/{}", &self.base_folder, file_path)
     }
 
-    pub async fn read_file(&self, file_name: &str) -> Result<BinaryContent, LightSpeedError> {
+    pub async fn read_file(&self, file_path: &str) -> Result<BinaryContent, LightSpeedError> {
         Ok(BinaryContent::FromFs {
-            file_path: self.get_file_path(file_name).into(),
+            file_path: self.get_fs_file_path(file_path).into(),
         })
     }
 
     pub async fn save_file(
         &self,
-        file_name: &str,
+        file_path: &str,
         content: &BinaryContent,
     ) -> Result<(), LightSpeedError> {
-        let destination_file_path = self.get_file_path(file_name);
+        let destination_file_path = self.get_fs_file_path(file_path);
         let destination_path = Path::new(&destination_file_path);
 
         if destination_path.exists() {
@@ -89,7 +89,7 @@ impl FsFileStoreBinaryRepository {
     }
 
     pub async fn delete_by_filename(&self, file_name: &str) -> Result<u64, LightSpeedError> {
-        let to = self.get_file_path(file_name);
+        let to = self.get_fs_file_path(file_name);
         if std::path::Path::new(&to).exists() {
             tokio::fs::remove_file(&to)
                 .await

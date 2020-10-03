@@ -37,11 +37,11 @@ pub enum Repository {
 #[derive(Debug, Clone)]
 pub enum SaveRepository {
     DB {
-        file_path: Option<String>,
+        subfolder: Option<String>,
         repository_name: String,
     },
     FS {
-        file_path: Option<String>,
+        subfolder: Option<String>,
         repository_name: String,
     },
 }
