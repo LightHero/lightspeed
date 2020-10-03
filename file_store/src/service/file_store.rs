@@ -134,11 +134,11 @@ impl<RepoManager: DBFileStoreRepositoryManager> FileStoreService<RepoManager> {
 
     pub async fn read_file_content_from_fs(
         &self,
-        filename: &str,
+        file_path: &str,
         repository_name: &str,
     ) -> Result<BinaryContent, LightSpeedError> {
         let repo = self.get_fs_repository(repository_name)?;
-        repo.read_file(filename).await
+        repo.read_file(file_path).await
     }
 
     pub async fn save_file_with_conn(
