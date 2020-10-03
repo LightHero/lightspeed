@@ -21,7 +21,7 @@ impl FsFileStoreBinaryRepository {
 
     pub async fn read_file(&self, file_name: &str) -> Result<BinaryContent, LightSpeedError> {
         Ok(BinaryContent::FromFs {
-            file_path: self.get_file_path(file_name),
+            file_path: self.get_file_path(file_name).into(),
         })
     }
 
@@ -120,7 +120,7 @@ mod test {
         let random: u32 = rand::random();
         let file_name = format!("file_{}", random);
         let binary_content = BinaryContent::FromFs {
-            file_path: SOURCE_FILE.to_owned(),
+            file_path: SOURCE_FILE.to_owned().into(),
         };
 
         let tempdir = tempfile::tempdir().unwrap();
@@ -171,7 +171,7 @@ mod test {
         let random: u32 = rand::random();
         let file_name = format!("file_{}", random);
         let binary_content = BinaryContent::FromFs {
-            file_path: SOURCE_FILE.to_owned(),
+            file_path: SOURCE_FILE.to_owned().into(),
         };
 
         let tempdir = tempfile::tempdir().unwrap();
@@ -192,7 +192,7 @@ mod test {
         let random: u32 = rand::random();
         let file_name = format!("test/temp/file_{}", random);
         let binary_content = BinaryContent::FromFs {
-            file_path: SOURCE_FILE.to_owned(),
+            file_path: SOURCE_FILE.to_owned().into(),
         };
 
         let tempdir = tempfile::tempdir().unwrap();
@@ -217,7 +217,7 @@ mod test {
         let random: u32 = rand::random();
         let file_name = format!("/test/temp/file_{}", random);
         let binary_content = BinaryContent::FromFs {
-            file_path: SOURCE_FILE.to_owned(),
+            file_path: SOURCE_FILE.to_owned().into(),
         };
 
         let tempdir = tempfile::tempdir().unwrap();
@@ -238,7 +238,7 @@ mod test {
         let random: u32 = rand::random();
         let file_name = format!("file_{}", random);
         let binary_content = BinaryContent::FromFs {
-            file_path: SOURCE_FILE.to_owned(),
+            file_path: SOURCE_FILE.to_owned().into(),
         };
 
         let tempdir = tempfile::tempdir().unwrap();

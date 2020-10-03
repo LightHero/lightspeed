@@ -15,7 +15,7 @@ fn should_save_file_from_fs() -> Result<(), LightSpeedError> {
         let repo_manager = &data.0.repo_manager;
         let file_store = repo_manager.file_store_binary_repo();
         let binary_content = BinaryContent::FromFs {
-            file_path: SOURCE_FILE.to_owned(),
+            file_path: SOURCE_FILE.to_owned().into(),
         };
         let repository_name = &format!("repository_{}", rand::random::<u32>());
         let file_path = &format!("file_path_{}", rand::random::<u32>());
@@ -86,7 +86,7 @@ fn save_file_should_fail_if_file_exists_in_same_repository() -> Result<(), Light
         let repo_manager = &data.0.repo_manager;
         let file_store = repo_manager.file_store_binary_repo();
         let binary_content = BinaryContent::FromFs {
-            file_path: SOURCE_FILE.to_owned(),
+            file_path: SOURCE_FILE.to_owned().into(),
         };
         let repository_name = &format!("repository_{}", rand::random::<u32>());
         let file_path = &format!("file_path_{}", rand::random::<u32>());
@@ -115,7 +115,7 @@ fn save_file_not_should_fail_if_file_exists_in_different_repository() -> Result<
         let repo_manager = &data.0.repo_manager;
         let file_store = repo_manager.file_store_binary_repo();
         let binary_content = BinaryContent::FromFs {
-            file_path: SOURCE_FILE.to_owned(),
+            file_path: SOURCE_FILE.to_owned().into(),
         };
         let repository_name_1 = &format!("repository_{}", rand::random::<u32>());
         let repository_name_2 = &format!("repository_{}", rand::random::<u32>());

@@ -2,12 +2,13 @@ use c3p0::{C3p0Error, JsonCodec, Model};
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use std::borrow::Cow;
+use std::path::PathBuf;
 use strum_macros::{AsRefStr, Display};
 
 pub type FileStoreDataModel = Model<FileStoreDataData>;
 
 pub enum BinaryContent {
-    FromFs { file_path: String },
+    FromFs { file_path: PathBuf },
     InMemory { content: Vec<u8> },
 }
 

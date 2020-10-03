@@ -59,7 +59,8 @@ impl DBFileStoreBinaryRepository for PgFileStoreBinaryRepository {
                         .map_err(|err| LightSpeedError::BadRequest {
                             message: format!(
                                 "PgFileStoreBinaryRepository - Cannot open file [{}]. Err: {}",
-                                file_path, err
+                                file_path.display(),
+                                err
                             ),
                             code: ErrorCodes::IO_ERROR,
                         })?;
@@ -68,7 +69,8 @@ impl DBFileStoreBinaryRepository for PgFileStoreBinaryRepository {
                     LightSpeedError::BadRequest {
                         message: format!(
                             "PgFileStoreBinaryRepository - Cannot read file [{}]. Err: {}",
-                            file_path, err
+                            file_path.display(),
+                            err
                         ),
                         code: ErrorCodes::IO_ERROR,
                     }
