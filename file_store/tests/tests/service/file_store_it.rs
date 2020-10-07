@@ -1,7 +1,8 @@
 use crate::{data, test};
 use c3p0::*;
 use lightspeed_core::error::LightSpeedError;
-use lightspeed_file_store::model::{BinaryContent, Repository, SaveRepository};
+use lightspeed_core::utils::new_hyphenated_uuid;
+use lightspeed_file_store::model::{BinaryContent, Repository, RepositoryFile, SaveRepository};
 use lightspeed_file_store::repository::db::{
     DBFileStoreBinaryRepository, DBFileStoreRepositoryManager,
 };
@@ -38,7 +39,7 @@ fn should_save_file_to_db() -> Result<(), LightSpeedError> {
         let loaded = file_store.read_file_data_by_id(saved.id).await?;
         assert_eq!(loaded.data, saved.data);
         match &loaded.data.repository {
-            Repository::DB {
+            RepositoryFile::DB {
                 repository_name,
                 file_path,
             } => {
@@ -89,7 +90,7 @@ fn should_save_file_to_fs() -> Result<(), LightSpeedError> {
         let loaded = file_store.read_file_data_by_id(saved.id).await?;
         assert_eq!(loaded.data, saved.data);
         match &loaded.data.repository {
-            Repository::FS {
+            RepositoryFile::FS {
                 repository_name,
                 file_path,
             } => {
@@ -329,7 +330,7 @@ fn should_save_file_to_db_with_relative_folder() -> Result<(), LightSpeedError> 
         let loaded = file_store.read_file_data_by_id(saved.id).await?;
         assert_eq!(loaded.data, saved.data);
         match &loaded.data.repository {
-            Repository::DB {
+            RepositoryFile::DB {
                 repository_name,
                 file_path,
             } => {
@@ -380,7 +381,7 @@ fn should_save_file_to_fs_with_relative_folder() -> Result<(), LightSpeedError> 
         let loaded = file_store.read_file_data_by_id(saved.id).await?;
         assert_eq!(loaded.data, saved.data);
         match &loaded.data.repository {
-            Repository::FS {
+            RepositoryFile::FS {
                 repository_name,
                 file_path,
             } => {
@@ -437,7 +438,7 @@ fn should_save_file_to_db_with_relative_folder_in_repository() -> Result<(), Lig
         let loaded = file_store.read_file_data_by_id(saved.id).await?;
         assert_eq!(loaded.data, saved.data);
         match &loaded.data.repository {
-            Repository::DB {
+            RepositoryFile::DB {
                 repository_name,
                 file_path,
             } => {
@@ -488,7 +489,7 @@ fn should_save_file_to_fs_with_relative_folder_in_repository() -> Result<(), Lig
         let loaded = file_store.read_file_data_by_id(saved.id).await?;
         assert_eq!(loaded.data, saved.data);
         match &loaded.data.repository {
-            Repository::FS {
+            RepositoryFile::FS {
                 repository_name,
                 file_path,
             } => {
@@ -540,7 +541,7 @@ fn should_delete_file_from_db() -> Result<(), LightSpeedError> {
             .await?;
 
         let (repository_name, file_path) = match &saved.data.repository {
-            Repository::DB {
+            RepositoryFile::DB {
                 repository_name,
                 file_path,
             } => (repository_name.as_str(), file_path.as_str()),
@@ -610,7 +611,7 @@ fn should_delete_file_from_fs() -> Result<(), LightSpeedError> {
             .await?;
 
         let file_path = match &saved.data.repository {
-            Repository::FS { file_path, .. } => format!("../target/repo_one/{}", file_path),
+            RepositoryFile::FS { file_path, .. } => format!("../target/repo_one/{}", file_path),
             _ => {
                 assert!(false);
                 "".to_owned()
@@ -682,7 +683,7 @@ fn should_allow_same_files_with_same_repository_name_and_path_but_different_repo
         let loaded_db = file_store.read_file_data_by_id(saved_db.id).await?;
         assert_eq!(loaded_db, saved_db);
         match &loaded_db.data.repository {
-            Repository::DB {
+            RepositoryFile::DB {
                 repository_name,
                 file_path,
             } => {
@@ -695,7 +696,7 @@ fn should_allow_same_files_with_same_repository_name_and_path_but_different_repo
         let loaded_fs = file_store.read_file_data_by_id(saved_fs.id).await?;
         assert_eq!(loaded_fs, saved_fs);
         match &loaded_fs.data.repository {
-            Repository::FS {
+            RepositoryFile::FS {
                 repository_name,
                 file_path,
             } => {
@@ -880,6 +881,106 @@ fn should_fail_if_file_already_exists_in_fs() -> Result<(), LightSpeedError> {
             )
             .await
             .is_ok());
+
+        Ok(())
+    })
+}
+
+#[test]
+fn should_read_all_file_data_by_repository() -> Result<(), LightSpeedError> {
+    test(async {
+        let data = data(false).await;
+        let file_store = &data.0.file_store_service;
+
+        let random: u32 = rand::random();
+        let binary_content = BinaryContent::FromFs {
+            file_path: SOURCE_FILE.to_owned().into(),
+        };
+        let content_type = "application/text".to_owned();
+        let file_name_1 = format!("file_1_{}", random);
+        let file_name_2 = format!("file_2_{}", random);
+        let file_name_3 = format!("file_3_{}", random);
+        let repository_name = new_hyphenated_uuid();
+
+        let save_repository = SaveRepository::DB {
+            subfolder: None,
+            repository_name: repository_name.clone(),
+        };
+
+        let repository = Repository::DB {
+            repository_name: repository_name.clone(),
+        };
+
+        let all_repo_files = file_store
+            .read_all_file_data_by_repository(&repository, 0, 100, &OrderBy::Asc)
+            .await
+            .unwrap();
+        assert_eq!(0, all_repo_files.len());
+
+        file_store
+            .save_file(
+                file_name_1.clone(),
+                content_type.clone(),
+                &binary_content,
+                save_repository.clone(),
+            )
+            .await?;
+
+        let all_repo_files = file_store
+            .read_all_file_data_by_repository(&repository, 0, 100, &OrderBy::Asc)
+            .await
+            .unwrap();
+        assert_eq!(1, all_repo_files.len());
+
+        file_store
+            .save_file(
+                file_name_2.clone(),
+                content_type.clone(),
+                &binary_content,
+                save_repository.clone(),
+            )
+            .await?;
+
+        let all_repo_files = file_store
+            .read_all_file_data_by_repository(&repository, 0, 100, &OrderBy::Asc)
+            .await
+            .unwrap();
+        assert_eq!(2, all_repo_files.len());
+
+        file_store
+            .save_file(
+                file_name_3.clone(),
+                content_type,
+                &binary_content,
+                save_repository,
+            )
+            .await?;
+
+        let all_repo_files = file_store
+            .read_all_file_data_by_repository(&repository, 0, 100, &OrderBy::Asc)
+            .await
+            .unwrap();
+        assert_eq!(3, all_repo_files.len());
+
+        assert!(all_repo_files
+            .iter()
+            .any(|file| file.data.filename == file_name_1));
+        assert!(all_repo_files
+            .iter()
+            .any(|file| file.data.filename == file_name_2));
+        assert!(all_repo_files
+            .iter()
+            .any(|file| file.data.filename == file_name_3));
+
+        let all_repo_files = file_store
+            .read_all_file_data_by_repository(&repository, 1, 1, &OrderBy::Asc)
+            .await
+            .unwrap();
+        assert_eq!(1, all_repo_files.len());
+
+        assert!(all_repo_files
+            .iter()
+            .any(|file| file.data.filename == file_name_2));
 
         Ok(())
     })

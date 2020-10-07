@@ -1,5 +1,6 @@
 use crate::model::{
-    BinaryContent, FileStoreDataData, FileStoreDataModel, Repository, SaveRepository,
+    BinaryContent, FileStoreDataData, FileStoreDataModel, Repository, RepositoryFile,
+    SaveRepository,
 };
 use crate::repository::db::{
     DBFileStoreBinaryRepository, DBFileStoreRepositoryManager, FileStoreDataRepository,
@@ -55,7 +56,7 @@ impl<RepoManager: DBFileStoreRepositoryManager> FileStoreService<RepoManager> {
 
     pub async fn read_file_data_by_repository(
         &self,
-        repository: &Repository,
+        repository: &RepositoryFile,
     ) -> Result<FileStoreDataModel, LightSpeedError> {
         self.c3p0
             .transaction(|mut conn| async move {
@@ -68,7 +69,7 @@ impl<RepoManager: DBFileStoreRepositoryManager> FileStoreService<RepoManager> {
     pub async fn read_file_data_by_repository_with_conn(
         &self,
         conn: &mut RepoManager::Conn,
-        repository: &Repository,
+        repository: &RepositoryFile,
     ) -> Result<FileStoreDataModel, LightSpeedError> {
         debug!(
             "FileStoreService - Read file data by repository [{:?}]",
@@ -79,13 +80,47 @@ impl<RepoManager: DBFileStoreRepositoryManager> FileStoreService<RepoManager> {
             .await
     }
 
-    pub async fn read_file_content(
+    pub async fn read_all_file_data_by_repository(
         &self,
         repository: &Repository,
+        offset: usize,
+        max: usize,
+        sort: &OrderBy,
+    ) -> Result<Vec<FileStoreDataModel>, LightSpeedError> {
+        self.c3p0
+            .transaction(|mut conn| async move {
+                self.read_all_file_data_by_repository_with_conn(
+                    &mut conn, repository, offset, max, sort,
+                )
+                .await
+            })
+            .await
+    }
+
+    pub async fn read_all_file_data_by_repository_with_conn(
+        &self,
+        conn: &mut RepoManager::Conn,
+        repository: &Repository,
+        offset: usize,
+        max: usize,
+        sort: &OrderBy,
+    ) -> Result<Vec<FileStoreDataModel>, LightSpeedError> {
+        debug!(
+            "FileStoreService - Read file data by repository [{:?}]",
+            repository
+        );
+        self.db_data_repo
+            .fetch_all_by_repository(conn, repository, offset, max, sort)
+            .await
+    }
+
+    pub async fn read_file_content(
+        &self,
+        repository: &RepositoryFile,
     ) -> Result<BinaryContent, LightSpeedError> {
         debug!("FileStoreService - Read file [{:?}]", repository);
         match repository {
-            Repository::DB {
+            RepositoryFile::DB {
                 file_path,
                 repository_name,
             } => {
@@ -97,7 +132,7 @@ impl<RepoManager: DBFileStoreRepositoryManager> FileStoreService<RepoManager> {
                     })
                     .await
             }
-            Repository::FS {
+            RepositoryFile::FS {
                 file_path,
                 repository_name,
             } => {
@@ -110,11 +145,11 @@ impl<RepoManager: DBFileStoreRepositoryManager> FileStoreService<RepoManager> {
     pub async fn read_file_content_with_conn(
         &self,
         conn: &mut RepoManager::Conn,
-        repository: &Repository,
+        repository: &RepositoryFile,
     ) -> Result<BinaryContent, LightSpeedError> {
         debug!("FileStoreService - Read file [{:?}]", repository);
         match repository {
-            Repository::DB {
+            RepositoryFile::DB {
                 file_path,
                 repository_name,
             } => {
@@ -122,7 +157,7 @@ impl<RepoManager: DBFileStoreRepositoryManager> FileStoreService<RepoManager> {
                     .read_file(conn, repository_name, file_path)
                     .await
             }
-            Repository::FS {
+            RepositoryFile::FS {
                 file_path,
                 repository_name,
             } => {
@@ -164,7 +199,7 @@ impl<RepoManager: DBFileStoreRepositoryManager> FileStoreService<RepoManager> {
                     .get_file_path(file_path.as_deref(), Cow::Borrowed(&filename))
                     .into_owned();
                 repo.save_file(&file_path, content).await?;
-                Repository::FS {
+                RepositoryFile::FS {
                     file_path,
                     repository_name,
                 }
@@ -179,7 +214,7 @@ impl<RepoManager: DBFileStoreRepositoryManager> FileStoreService<RepoManager> {
                 self.db_binary_repo
                     .save_file(conn, &repository_name, &file_path, content)
                     .await?;
-                Repository::DB {
+                RepositoryFile::DB {
                     file_path,
                     repository_name,
                 }
@@ -234,7 +269,7 @@ impl<RepoManager: DBFileStoreRepositoryManager> FileStoreService<RepoManager> {
         self.db_data_repo.delete_by_id(conn, id).await?;
 
         match file_data.data.repository {
-            Repository::DB {
+            RepositoryFile::DB {
                 file_path,
                 repository_name,
             } => {
@@ -242,7 +277,7 @@ impl<RepoManager: DBFileStoreRepositoryManager> FileStoreService<RepoManager> {
                     .delete_file(conn, &repository_name, &file_path)
                     .await
             }
-            Repository::FS {
+            RepositoryFile::FS {
                 file_path,
                 repository_name,
             } => {

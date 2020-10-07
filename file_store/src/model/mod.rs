@@ -16,14 +16,20 @@ pub enum BinaryContent {
 #[serde(rename_all = "camelCase")]
 pub struct FileStoreDataData {
     pub filename: String,
-    pub repository: Repository,
+    pub repository: RepositoryFile,
     pub content_type: String,
     pub created_date_epoch_seconds: i64,
 }
 
+#[derive(Debug, Clone, PartialEq, AsRefStr, Display)]
+pub enum Repository {
+    DB { repository_name: String },
+    FS { repository_name: String },
+}
+
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, AsRefStr, Display)]
 #[serde(tag = "_json_tag")]
-pub enum Repository {
+pub enum RepositoryFile {
     DB {
         file_path: String,
         repository_name: String,

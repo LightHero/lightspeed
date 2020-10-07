@@ -1,4 +1,6 @@
-use crate::model::{FileStoreDataData, FileStoreDataDataCodec, FileStoreDataModel, Repository};
+use crate::model::{
+    FileStoreDataData, FileStoreDataDataCodec, FileStoreDataModel, Repository, RepositoryFile,
+};
 use crate::repository::db::FileStoreDataRepository;
 use c3p0::postgres::*;
 use c3p0::*;
@@ -33,17 +35,17 @@ impl FileStoreDataRepository for PgFileStoreDataRepository {
     async fn fetch_one_by_repository(
         &self,
         conn: &mut Self::Conn,
-        repository: &Repository,
+        repository: &RepositoryFile,
     ) -> Result<FileStoreDataModel, LightSpeedError> {
         let sql =
             "SELECT id, version, DATA FROM LS_FILE_STORE_DATA WHERE (data -> 'repository' ->> '_json_tag') = $1 AND (data -> 'repository' ->> 'repository_name') = $2 AND (data -> 'repository' ->> 'file_path') = $3";
 
         let (db, repository_name, file_path) = match repository {
-            Repository::DB {
+            RepositoryFile::DB {
                 file_path,
                 repository_name,
             } => (repository.as_ref(), repository_name, file_path),
-            Repository::FS {
+            RepositoryFile::FS {
                 file_path,
                 repository_name,
             } => (repository.as_ref(), repository_name, file_path),
@@ -52,6 +54,37 @@ impl FileStoreDataRepository for PgFileStoreDataRepository {
         Ok(self
             .repo
             .fetch_one_with_sql(conn, sql, &[&db, repository_name, file_path])
+            .await?)
+    }
+
+    async fn fetch_all_by_repository(
+        &self,
+        conn: &mut Self::Conn,
+        repository: &Repository,
+        offset: usize,
+        max: usize,
+        sort: &OrderBy,
+    ) -> Result<Vec<FileStoreDataModel>, LightSpeedError> {
+        let sql = format!(
+            r#"SELECT id, version, DATA FROM LS_FILE_STORE_DATA
+               WHERE (data -> 'repository' ->> '_json_tag') = $1 AND (data -> 'repository' ->> 'repository_name') = $2
+                order by id {}
+                limit {}
+                offset {}
+               "#,
+            sort.to_sql(),
+            max,
+            offset
+        );
+
+        let (db, repository_name) = match repository {
+            Repository::DB { repository_name } => (repository.as_ref(), repository_name),
+            Repository::FS { repository_name } => (repository.as_ref(), repository_name),
+        };
+
+        Ok(self
+            .repo
+            .fetch_all_with_sql(conn, &sql, &[&db, repository_name])
             .await?)
     }
 
