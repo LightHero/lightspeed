@@ -1,15 +1,18 @@
+use hash::HashModule;
 use lightspeed_core::config::CoreConfig;
 use lightspeed_core::module::Module;
+use lightspeed_core::CoreModule;
 use lightspeed_logger::config::LoggerConfig;
 use lightspeed_logger::setup_logger;
-use hash::HashModule;
-use lightspeed_core::CoreModule;
 
 mod service;
 
 #[allow(dead_code)]
 async fn init() -> HashModule {
-    let conf = LoggerConfig { env_filter: String::from("debug"), stdout_output: true };
+    let conf = LoggerConfig {
+        env_filter: String::from("debug"),
+        stdout_output: true,
+    };
     if let Err(err) = setup_logger(&conf) {
         println!("Warning: {}", err)
     };

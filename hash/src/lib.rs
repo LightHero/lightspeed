@@ -1,9 +1,9 @@
+use crate::service::hash_service::HashService;
+use crate::service::validation_code_service::ValidationCodeService;
 use lightspeed_core::error::LightSpeedError;
+use lightspeed_core::CoreModule;
 use log::*;
 use std::sync::Arc;
-use crate::service::validation_code_service::ValidationCodeService;
-use crate::service::hash_service::HashService;
-use lightspeed_core::CoreModule;
 
 pub mod dto;
 pub mod service;
@@ -26,7 +26,10 @@ impl HashModule {
             core_module.jwt.clone(),
         ));
 
-        Ok(HashModule { hash_service, validation_code_service })
+        Ok(HashModule {
+            hash_service,
+            validation_code_service,
+        })
     }
 }
 

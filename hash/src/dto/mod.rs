@@ -2,7 +2,6 @@ use lightspeed_core::model::language::Language;
 use serde::{Deserialize, Serialize};
 use typescript_definitions::TypeScriptify;
 
-
 #[derive(Clone, Serialize, Deserialize, TypeScriptify)]
 pub struct ValidationCodeRequestDto<Data> {
     pub to_be_validated: Data,
