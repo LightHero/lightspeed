@@ -1220,3 +1220,149 @@ fn should_add_and_remove_roles() -> Result<(), LightSpeedError> {
         Ok(())
     })
 }
+
+#[test]
+fn should_change_username() -> Result<(), LightSpeedError> {
+    test(async {
+        // Arrange
+        let data = data(false).await;
+        let auth_module = &data.0;
+        let password = "123456789";
+        let (user, _) = create_user_with_password(&auth_module, password, true).await?;
+
+        assert!(auth_module
+            .auth_account_service
+            .login(&user.data.username, password)
+            .await
+            .is_ok());
+
+        // Act
+        let new_username = new_hyphenated_uuid();
+        let updated_user = auth_module
+            .auth_account_service
+            .change_user_data(user.id, Some(new_username.clone()), None)
+            .await
+            .unwrap();
+
+        // Assert
+
+        assert_eq!(new_username, updated_user.data.username);
+        assert_eq!(user.id, updated_user.id);
+        assert_eq!(user.data.email, updated_user.data.email);
+        assert_eq!(user.data.status, updated_user.data.status);
+        assert_eq!(
+            user.data.created_date_epoch_seconds,
+            updated_user.data.created_date_epoch_seconds
+        );
+        assert_eq!(user.data.password, updated_user.data.password);
+
+        assert!(auth_module
+            .auth_account_service
+            .login(&new_username, password)
+            .await
+            .is_ok());
+
+        assert!(auth_module
+            .auth_account_service
+            .login(&user.data.username, password)
+            .await
+            .is_err());
+
+        Ok(())
+    })
+}
+
+#[test]
+fn should_change_email() -> Result<(), LightSpeedError> {
+    test(async {
+        // Arrange
+        let data = data(false).await;
+        let auth_module = &data.0;
+        let password = "123456789";
+        let (user, _) = create_user_with_password(&auth_module, password, true).await?;
+
+        assert!(auth_module
+            .auth_account_service
+            .login(&user.data.username, password)
+            .await
+            .is_ok());
+
+        // Act
+        let new_email = format!("{}@test.com", new_hyphenated_uuid());
+        let updated_user = auth_module
+            .auth_account_service
+            .change_user_data(user.id, None, Some(new_email.clone()))
+            .await
+            .unwrap();
+
+        // Assert
+        assert_eq!(user.data.username, updated_user.data.username);
+        assert_eq!(user.id, updated_user.id);
+        assert_eq!(new_email, updated_user.data.email);
+        assert_eq!(user.data.status, updated_user.data.status);
+        assert_eq!(
+            user.data.created_date_epoch_seconds,
+            updated_user.data.created_date_epoch_seconds
+        );
+        assert_eq!(user.data.password, updated_user.data.password);
+
+        assert!(auth_module
+            .auth_account_service
+            .login(&user.data.username, password)
+            .await
+            .is_ok());
+
+        Ok(())
+    })
+}
+
+#[test]
+fn should_change_username_and_email() -> Result<(), LightSpeedError> {
+    test(async {
+        // Arrange
+        let data = data(false).await;
+        let auth_module = &data.0;
+        let password = "123456789";
+        let (user, _) = create_user_with_password(&auth_module, password, true).await?;
+
+        assert!(auth_module
+            .auth_account_service
+            .login(&user.data.username, password)
+            .await
+            .is_ok());
+
+        // Act
+        let new_username = new_hyphenated_uuid();
+        let new_email = format!("{}@test.com", new_username);
+        let updated_user = auth_module
+            .auth_account_service
+            .change_user_data(user.id, Some(new_username.clone()), Some(new_email.clone()))
+            .await
+            .unwrap();
+
+        // Assert
+        assert_eq!(new_username, updated_user.data.username);
+        assert_eq!(user.id, updated_user.id);
+        assert_eq!(new_email, updated_user.data.email);
+        assert_eq!(user.data.status, updated_user.data.status);
+        assert_eq!(
+            user.data.created_date_epoch_seconds,
+            updated_user.data.created_date_epoch_seconds
+        );
+        assert_eq!(user.data.password, updated_user.data.password);
+
+        assert!(auth_module
+            .auth_account_service
+            .login(&new_username, password)
+            .await
+            .is_ok());
+
+        assert!(auth_module
+            .auth_account_service
+            .login(&user.data.username, password)
+            .await
+            .is_err());
+
+        Ok(())
+    })
+}
