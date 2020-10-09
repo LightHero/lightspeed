@@ -1,6 +1,6 @@
 use crate::init;
 use chrono::prelude::*;
-use hash::dto::{ValidationCodeRequestDto, VerifyValidationCodeRequestDto};
+use lightspeed_hash::dto::{ValidationCodeRequestDto, VerifyValidationCodeRequestDto};
 use lightspeed_core::error::LightSpeedError;
 use lightspeed_core::model::language::Language;
 

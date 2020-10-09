@@ -32,7 +32,7 @@ impl ValidationCodeService {
         }
     }
 
-    pub fn random_numeric_code(&self) -> String {
+    pub fn random_numeric_code() -> String {
         use rand::Rng;
         let number: u32 = rand::thread_rng().gen_range(0, 1_000_000);
         format!("{:06}", number)

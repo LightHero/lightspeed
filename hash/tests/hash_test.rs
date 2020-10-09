@@ -1,4 +1,4 @@
-use hash::HashModule;
+use lightspeed_hash::HashModule;
 use lightspeed_core::config::CoreConfig;
 use lightspeed_core::module::Module;
 use lightspeed_core::CoreModule;
