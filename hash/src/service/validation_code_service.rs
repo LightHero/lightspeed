@@ -32,12 +32,6 @@ impl ValidationCodeService {
         }
     }
 
-    pub fn random_numeric_code() -> String {
-        use rand::Rng;
-        let number: u32 = rand::thread_rng().gen_range(0, 1_000_000);
-        format!("{:06}", number)
-    }
-
     pub fn generate_validation_code<Data: Serialize>(
         &self,
         request: ValidationCodeRequestDto<Data>,
@@ -91,23 +85,5 @@ impl ValidationCodeService {
         };
         let token = self.jwt_service.generate_from_token(&jwt)?;
         Ok(self.hash_service.hash(&token))
-    }
-}
-
-#[cfg(test)]
-mod test {
-
-    use super::*;
-
-    #[test]
-    fn should_generate_a_random_number_of_6_digits() {
-        let mut used = vec![];
-        for _ in 0..100 {
-            let code = ValidationCodeService::random_numeric_code();
-            println!("Generated code: {}", code);
-            assert_eq!(6, code.len());
-            assert!(!used.contains(&code));
-            used.push(code);
-        }
     }
 }
