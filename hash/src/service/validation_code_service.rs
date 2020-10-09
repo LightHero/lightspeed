@@ -93,3 +93,21 @@ impl ValidationCodeService {
         Ok(self.hash_service.hash(&token))
     }
 }
+
+#[cfg(test)]
+mod test {
+
+    use super::*;
+
+    #[test]
+    fn should_generate_a_random_number_of_6_digits() {
+        let mut used = vec![];
+        for _ in 0..100 {
+            let code = ValidationCodeService::random_numeric_code();
+            println!("Generated code: {}", code);
+            assert_eq!(6, code.len());
+            assert!(!used.contains(&code));
+            used.push(code);
+        }
+    }
+}
