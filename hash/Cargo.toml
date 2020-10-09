@@ -1,0 +1,22 @@
+[package]
+name = "hash"
+version = "0.2.0"
+authors = ["ufoscout <ufoscout@gmail.com>"]
+edition = "2018"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+async-trait = "0.1.41"
+base64 = "0.13.0"
+lightspeed_core = "0.20.0"
+log = "0.4"
+rand = "0.7.3"
+sha2 = "0.9"
+serde = { version = "1.0" , features = ["derive", "rc"] }
+serde_json = "1"
+typescript-definitions = {package = "typescript-definitions-ufo-patch", version = "0.1.11"}
+
+[dev-dependencies]
+chrono = "0.4"
+lightspeed_logger = "0.20.0"
