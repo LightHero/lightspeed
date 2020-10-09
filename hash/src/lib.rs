@@ -9,15 +9,15 @@ pub mod dto;
 pub mod service;
 
 #[derive(Clone)]
-pub struct ValidationCodeModule {
+pub struct HashModule {
     pub hash_service: Arc<HashService>,
     pub validation_code_service: Arc<ValidationCodeService>,
 }
 
-impl ValidationCodeModule {
+impl HashModule {
     pub fn new(core_module: &CoreModule) -> Result<Self, LightSpeedError> {
-        println!("Creating ValidationCodeModule");
-        info!("Creating ValidationCodeModule");
+        println!("Creating HashModule");
+        info!("Creating HashModule");
 
         let hash_service = Arc::new(HashService::new());
 
@@ -26,14 +26,14 @@ impl ValidationCodeModule {
             core_module.jwt.clone(),
         ));
 
-        Ok(ValidationCodeModule { hash_service, validation_code_service })
+        Ok(HashModule { hash_service, validation_code_service })
     }
 }
 
 #[async_trait::async_trait]
-impl lightspeed_core::module::Module for ValidationCodeModule {
+impl lightspeed_core::module::Module for HashModule {
     async fn start(&mut self) -> Result<(), LightSpeedError> {
-        info!("Starting ValidationCodeModule");
+        info!("Starting HashModule");
         Ok(())
     }
 }

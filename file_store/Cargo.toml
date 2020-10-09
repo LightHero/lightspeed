@@ -28,8 +28,8 @@ mime = { version = "0.3.16", optional = true }
 mime_guess = { version = "2.0.3", optional = true }
 
 [dev-dependencies]
-futures = "0.3"
 lightspeed_logger = { version = "0.20.0", path = "../logger" }
+futures = "0.3"
 maybe-single = "0.12"
 once_cell = "1.4"
 rand = "0.7"
