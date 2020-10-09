@@ -14,8 +14,8 @@ pub struct ValidationCodeService {
 }
 
 #[derive(Clone, Serialize)]
-struct ValidationCodeData<'a> {
-    to_be_validated: &'a str,
+struct ValidationCodeData<'a, Data: Serialize> {
+    to_be_validated: &'a Data,
     code: &'a str,
     created_ts_seconds: i64,
     expiration_ts_seconds: i64,
@@ -38,7 +38,7 @@ impl ValidationCodeService {
         format!("{:06}", number)
     }
 
-    pub fn generate_validation_code(&self, request: ValidationCodeRequestDto) -> Result<ValidationCodeDataDto, LightSpeedError> {
+    pub fn generate_validation_code<Data: Serialize>(&self, request: ValidationCodeRequestDto<Data>) -> Result<ValidationCodeDataDto<Data>, LightSpeedError> {
         info!("Generate validation code");
 
         let created_ts_seconds = current_epoch_seconds();
@@ -51,12 +51,12 @@ impl ValidationCodeService {
             to_be_validated: &request.to_be_validated,
         })?;
 
-        Ok(ValidationCodeDataDto { to_be_validated: request.to_be_validated.clone(), expiration_ts_seconds, created_ts_seconds, token_hash })
+        Ok(ValidationCodeDataDto { to_be_validated: request.to_be_validated, expiration_ts_seconds, created_ts_seconds, token_hash })
 
     }
 
-    pub fn verify_validation_code(&self, request: VerifyValidationCodeRequestDto) -> Result<VerifyValidationCodeResponseDto, LightSpeedError> {
-        debug!("Verify number {} with code {}", request.data.to_be_validated, request.code);
+    pub fn verify_validation_code<Data: Serialize>(&self, request: VerifyValidationCodeRequestDto<Data>) -> Result<VerifyValidationCodeResponseDto<Data>, LightSpeedError> {
+        debug!("Verify code {}", request.code);
         let calculated_token_hash = self.hash(ValidationCodeData {
             expiration_ts_seconds: request.data.expiration_ts_seconds,
             created_ts_seconds: request.data.created_ts_seconds,
@@ -69,7 +69,7 @@ impl ValidationCodeService {
         })
     }
 
-    fn hash(&self, data: ValidationCodeData) -> Result<String, LightSpeedError> {
+    fn hash<Data: Serialize>(&self, data: ValidationCodeData<Data>) -> Result<String, LightSpeedError> {
         let jwt = JWT { iat: data.created_ts_seconds, exp: data.expiration_ts_seconds, sub: "".to_owned(), payload: data };
         let token = self.jwt_service.generate_from_token(&jwt)?;
         Ok(self.hash_service.hash(&token))
