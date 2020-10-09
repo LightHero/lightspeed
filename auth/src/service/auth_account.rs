@@ -169,12 +169,12 @@ impl<RepoManager: AuthRepositoryManager> AuthAccountService<RepoManager> {
             .await?;
 
         let token = self
-            .generate_activation_token_witn_conn(conn, &auth_account_model.data.username)
+            .generate_activation_token_with_conn(conn, &auth_account_model.data.username)
             .await?;
         Ok((auth_account_model, token))
     }
 
-    async fn generate_activation_token_witn_conn(
+    async fn generate_activation_token_with_conn(
         &self,
         conn: &mut RepoManager::Conn,
         username: &str,
@@ -303,7 +303,7 @@ impl<RepoManager: AuthRepositoryManager> AuthAccountService<RepoManager> {
         self.token_service.delete_with_conn(conn, token).await?;
 
         let token = self
-            .generate_activation_token_witn_conn(conn, &user.data.username)
+            .generate_activation_token_with_conn(conn, &user.data.username)
             .await?;
         Ok((user, token))
     }
@@ -600,5 +600,52 @@ impl<RepoManager: AuthRepositoryManager> AuthAccountService<RepoManager> {
             account.data.roles.retain(|r| r != role);
         }
         Ok(self.auth_repo.update(conn, account).await?)
+    }
+
+    pub async fn change_user_data(
+        &self,
+        user_id: i64,
+        new_username: Option<String>,
+        new_email: Option<String>,
+    ) -> Result<AuthAccountModel, LightSpeedError> {
+        self.c3p0
+            .transaction(|mut conn| async move {
+                self.change_user_data_with_conn(&mut conn, user_id, new_username, new_email)
+                    .await
+            })
+            .await
+    }
+
+    pub async fn change_user_data_with_conn(
+        &self,
+        conn: &mut RepoManager::Conn,
+        user_id: i64,
+        new_username: Option<String>,
+        new_email: Option<String>,
+    ) -> Result<AuthAccountModel, LightSpeedError> {
+        info!(
+            "Change user data of user_id [{}]. New username: [{:?}]. New email: [{:?}]",
+            user_id, new_username, new_email
+        );
+
+        let mut user = self.auth_repo.fetch_by_id(conn, user_id).await?;
+
+        if let Some(username) = new_username {
+            info!(
+                "Change user data of user_id [{}]. Old username: [{}] New username: [{}]",
+                user_id, user.data.username, username
+            );
+            user.data.username = username;
+        }
+
+        if let Some(email) = new_email {
+            info!(
+                "Change user data of user_id [{}]. Old email: [{}] New email: [{}]",
+                user_id, user.data.email, email
+            );
+            user.data.email = email;
+        }
+
+        self.auth_repo.update(conn, user).await
     }
 }
