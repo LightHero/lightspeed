@@ -1009,10 +1009,16 @@ fn should_return_if_file_exists_by_repository() -> Result<(), LightSpeedError> {
             .await?;
 
         // Act & Assert
-        assert!(file_store.exists_by_repository(&saved.data.repository).await.unwrap());
+        assert!(file_store
+            .exists_by_repository(&saved.data.repository)
+            .await
+            .unwrap());
 
         assert_eq!(1, file_store.delete_file_by_id(saved.id).await?);
-        assert!(!file_store.exists_by_repository(&saved.data.repository).await.unwrap());
+        assert!(!file_store
+            .exists_by_repository(&saved.data.repository)
+            .await
+            .unwrap());
 
         Ok(())
     })

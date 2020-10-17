@@ -1,4 +1,6 @@
-use crate::model::{FileStoreDataData, FileStoreDataDataCodec, Repository, RepositoryFile, FileStoreDataModel};
+use crate::model::{
+    FileStoreDataData, FileStoreDataDataCodec, FileStoreDataModel, Repository, RepositoryFile,
+};
 use crate::repository::db::FileStoreDataRepository;
 use c3p0::postgres::*;
 use c3p0::*;
@@ -32,7 +34,15 @@ impl FileStoreDataRepository for PgFileStoreDataRepository {
 
         let repo_info = RepoFileInfo::new(repository);
 
-        Ok(conn.fetch_one_value(sql, &[&repo_info.repo_type, &repo_info.repository_name, &repo_info.file_path])
+        Ok(conn
+            .fetch_one_value(
+                sql,
+                &[
+                    &repo_info.repo_type,
+                    &repo_info.repository_name,
+                    &repo_info.file_path,
+                ],
+            )
             .await?)
     }
 
@@ -56,7 +66,15 @@ impl FileStoreDataRepository for PgFileStoreDataRepository {
 
         Ok(self
             .repo
-            .fetch_one_with_sql(conn, sql, &[&repo_info.repo_type, &repo_info.repository_name, &repo_info.file_path])
+            .fetch_one_with_sql(
+                conn,
+                sql,
+                &[
+                    &repo_info.repo_type,
+                    &repo_info.repository_name,
+                    &repo_info.file_path,
+                ],
+            )
             .await?)
     }
 
@@ -84,7 +102,11 @@ impl FileStoreDataRepository for PgFileStoreDataRepository {
 
         Ok(self
             .repo
-            .fetch_all_with_sql(conn, &sql, &[&repo_info.repo_type, &repo_info.repository_name])
+            .fetch_all_with_sql(
+                conn,
+                &sql,
+                &[&repo_info.repo_type, &repo_info.repository_name],
+            )
             .await?)
     }
 
@@ -111,7 +133,7 @@ struct RepoFileInfo<'a> {
     file_path: &'a str,
 }
 
-impl <'a> RepoFileInfo<'a> {
+impl<'a> RepoFileInfo<'a> {
     fn new(repo: &'a RepositoryFile) -> Self {
         match repo {
             RepositoryFile::DB {
@@ -120,7 +142,7 @@ impl <'a> RepoFileInfo<'a> {
             } => RepoFileInfo {
                 repo_type: repo.as_ref(),
                 repository_name,
-                file_path
+                file_path,
             },
             RepositoryFile::FS {
                 file_path,
@@ -128,8 +150,8 @@ impl <'a> RepoFileInfo<'a> {
             } => RepoFileInfo {
                 repo_type: repo.as_ref(),
                 repository_name,
-                file_path
-            }
+                file_path,
+            },
         }
     }
 }
@@ -139,21 +161,17 @@ struct RepoInfo<'a> {
     repository_name: &'a str,
 }
 
-impl <'a> RepoInfo<'a> {
+impl<'a> RepoInfo<'a> {
     fn new(repo: &'a Repository) -> Self {
         match repo {
-            Repository::DB {
-                repository_name,
-            } => RepoInfo {
+            Repository::DB { repository_name } => RepoInfo {
                 repo_type: repo.as_ref(),
                 repository_name,
             },
-            Repository::FS {
-                repository_name,
-            } => RepoInfo {
+            Repository::FS { repository_name } => RepoInfo {
                 repo_type: repo.as_ref(),
                 repository_name,
-            }
+            },
         }
     }
 }

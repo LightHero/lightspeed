@@ -69,7 +69,6 @@ pub trait FileStoreDataRepository: Clone + Send + Sync {
         repository: &RepositoryFile,
     ) -> Result<FileStoreDataModel, LightSpeedError>;
 
-
     async fn fetch_all_by_repository(
         &self,
         conn: &mut Self::Conn,
