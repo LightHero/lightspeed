@@ -985,3 +985,35 @@ fn should_read_all_file_data_by_repository() -> Result<(), LightSpeedError> {
         Ok(())
     })
 }
+
+#[test]
+fn should_return_if_file_exists_by_repository() -> Result<(), LightSpeedError> {
+    test(async {
+        let data = data(false).await;
+        let file_store = &data.0.file_store_service;
+
+        // Arrange
+        let random: u32 = rand::random();
+        let file_name = format!("file_{}", random);
+        let binary_content = BinaryContent::FromFs {
+            file_path: SOURCE_FILE.to_owned().into(),
+        };
+        let content_type = "application/text".to_owned();
+        let save_repository = SaveRepository::DB {
+            subfolder: Some("relative".to_owned()),
+            repository_name: "REPO_ONE".to_owned(),
+        };
+
+        let saved = file_store
+            .save_file(file_name, content_type, &binary_content, save_repository)
+            .await?;
+
+        // Act & Assert
+        assert!(file_store.exists_by_repository(&saved.data.repository).await.unwrap());
+
+        assert_eq!(1, file_store.delete_file_by_id(saved.id).await?);
+        assert!(!file_store.exists_by_repository(&saved.data.repository).await.unwrap());
+
+        Ok(())
+    })
+}
