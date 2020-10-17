@@ -28,7 +28,7 @@ impl FileStoreDataRepository for PgFileStoreDataRepository {
         repository: &RepositoryFile,
     ) -> Result<bool, LightSpeedError> {
         let sql =
-            "SELECT EXISTS (SELECT 1 FROM LS_FILE_STORE_DATA WHERE (data -> 'repository' ->> '_json_tag') = $1 AND (data -> 'repository' ->> 'repository_name') = $2 AND (data -> 'repository' ->> 'file_path') = $3";
+            "SELECT EXISTS (SELECT 1 FROM LS_FILE_STORE_DATA WHERE (data -> 'repository' ->> '_json_tag') = $1 AND (data -> 'repository' ->> 'repository_name') = $2 AND (data -> 'repository' ->> 'file_path') = $3)";
 
         let repo_info = RepoFileInfo::new(repository);
 
@@ -52,20 +52,11 @@ impl FileStoreDataRepository for PgFileStoreDataRepository {
         let sql =
             "SELECT id, version, DATA FROM LS_FILE_STORE_DATA WHERE (data -> 'repository' ->> '_json_tag') = $1 AND (data -> 'repository' ->> 'repository_name') = $2 AND (data -> 'repository' ->> 'file_path') = $3";
 
-        let (db, repository_name, file_path) = match repository {
-            RepositoryFile::DB {
-                file_path,
-                repository_name,
-            } => (repository.as_ref(), repository_name, file_path),
-            RepositoryFile::FS {
-                file_path,
-                repository_name,
-            } => (repository.as_ref(), repository_name, file_path),
-        };
+        let repo_info = RepoFileInfo::new(repository);
 
         Ok(self
             .repo
-            .fetch_one_with_sql(conn, sql, &[&db, repository_name, file_path])
+            .fetch_one_with_sql(conn, sql, &[&repo_info.repo_type, &repo_info.repository_name, &repo_info.file_path])
             .await?)
     }
 
@@ -89,14 +80,11 @@ impl FileStoreDataRepository for PgFileStoreDataRepository {
             offset
         );
 
-        let (db, repository_name) = match repository {
-            Repository::DB { repository_name } => (repository.as_ref(), repository_name),
-            Repository::FS { repository_name } => (repository.as_ref(), repository_name),
-        };
+        let repo_info = RepoInfo::new(repository);
 
         Ok(self
             .repo
-            .fetch_all_with_sql(conn, &sql, &[&db, repository_name])
+            .fetch_all_with_sql(conn, &sql, &[&repo_info.repo_type, &repo_info.repository_name])
             .await?)
     }
 
