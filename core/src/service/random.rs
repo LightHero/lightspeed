@@ -4,7 +4,6 @@ use rand::Rng;
 pub struct RandomService {}
 
 impl RandomService {
-
     #[inline]
     pub fn random_string(length: usize) -> String {
         rand::thread_rng()
@@ -17,9 +16,8 @@ impl RandomService {
     pub fn random_numeric_string(digits: u32) -> String {
         let max = (10usize).pow(digits);
         let number = rand::thread_rng().gen_range(0, max);
-        format!("{:0width$}", number, width=(digits as usize))
+        format!("{:0width$}", number, width = (digits as usize))
     }
-
 }
 
 #[cfg(test)]
@@ -50,7 +48,7 @@ pub mod test {
         for _ in 0..10000 {
             let digits = rand::thread_rng().gen_range(1, 20);
             let code = RandomService::random_numeric_string(digits);
-//            println!("Generated code: {}", code);
+            //            println!("Generated code: {}", code);
             assert_eq!(digits as usize, code.len());
             assert!(code.chars().all(char::is_numeric));
         }

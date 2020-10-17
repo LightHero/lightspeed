@@ -7,11 +7,11 @@ use lightspeed_cms::model::schema::{
     Schema, SchemaField, SchemaFieldArity, SchemaFieldType, SCHEMA_FIELD_NAME_MAX_LENGHT,
 };
 use lightspeed_core::error::{ErrorDetail, LightSpeedError};
+use lightspeed_core::service::random::RandomService;
 use lightspeed_core::service::validator::ERR_NOT_UNIQUE;
-use lightspeed_core::utils::{new_hyphenated_uuid};
+use lightspeed_core::utils::new_hyphenated_uuid;
 use maplit::*;
 use std::collections::HashMap;
-use lightspeed_core::service::random::RandomService;
 
 #[test]
 fn should_create_and_drop_content_table() -> Result<(), LightSpeedError> {

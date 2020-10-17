@@ -10,7 +10,6 @@ use c3p0::*;
 use lightspeed_core::error::{ErrorCodes, LightSpeedError};
 use lightspeed_core::utils::current_epoch_seconds;
 use log::*;
-use std::borrow::Cow;
 use std::collections::HashMap;
 
 #[derive(Clone)]
@@ -206,35 +205,22 @@ impl<RepoManager: DBFileStoreRepositoryManager> FileStoreService<RepoManager> {
             filename, content_type, repository
         );
 
-        let saved_repository = match repository {
+        let repository_file = RepositoryFile::from(&repository, &filename);
+        match repository {
             SaveRepository::FS {
-                repository_name,
-                subfolder: file_path,
+                repository_name, ..
             } => {
                 let repo = self.get_fs_repository(&repository_name)?;
-                let file_path = self
-                    .get_file_path(file_path.as_deref(), Cow::Borrowed(&filename))
-                    .into_owned();
-                repo.save_file(&file_path, content).await?;
-                RepositoryFile::FS {
-                    file_path,
-                    repository_name,
-                }
+                let file_path = repository_file.file_path();
+                repo.save_file(file_path, content).await?;
             }
             SaveRepository::DB {
-                repository_name,
-                subfolder: file_path,
+                repository_name, ..
             } => {
-                let file_path = self
-                    .get_file_path(file_path.as_deref(), Cow::Borrowed(&filename))
-                    .into_owned();
+                let file_path = repository_file.file_path();
                 self.db_binary_repo
-                    .save_file(conn, &repository_name, &file_path, content)
+                    .save_file(conn, &repository_name, file_path, content)
                     .await?;
-                RepositoryFile::DB {
-                    file_path,
-                    repository_name,
-                }
             }
         };
 
@@ -242,7 +228,7 @@ impl<RepoManager: DBFileStoreRepositoryManager> FileStoreService<RepoManager> {
             .save(
                 conn,
                 NewModel::new(FileStoreDataData {
-                    repository: saved_repository,
+                    repository: repository_file,
                     content_type,
                     filename,
                     created_date_epoch_seconds: current_epoch_seconds(),
@@ -328,16 +314,5 @@ impl<RepoManager: DBFileStoreRepositoryManager> FileStoreService<RepoManager> {
                 ),
                 code: ErrorCodes::NOT_FOUND,
             })
-    }
-
-    pub fn get_file_path<'a>(
-        &self,
-        subfolder: Option<&str>,
-        filename: Cow<'a, str>,
-    ) -> Cow<'a, str> {
-        match subfolder {
-            Some(path) => Cow::Owned(format!("{}/{}", path, filename)),
-            None => filename,
-        }
     }
 }

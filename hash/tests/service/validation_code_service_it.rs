@@ -1,8 +1,8 @@
 use crate::init;
 use chrono::prelude::*;
-use lightspeed_hash::dto::{ValidationCodeRequestDto, VerifyValidationCodeRequestDto};
 use lightspeed_core::error::LightSpeedError;
 use lightspeed_core::model::language::Language;
+use lightspeed_hash::dto::{ValidationCodeRequestDto, VerifyValidationCodeRequestDto};
 
 #[tokio::test]
 async fn should_generate_validation_code() -> Result<(), LightSpeedError> {
