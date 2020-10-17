@@ -1,6 +1,4 @@
-use crate::model::{
-    FileStoreDataData, FileStoreDataDataCodec, FileStoreDataModel, Repository, RepositoryFile,
-};
+use crate::model::{FileStoreDataData, FileStoreDataDataCodec, Repository, RepositoryFile, FileStoreDataModel};
 use crate::repository::db::FileStoreDataRepository;
 use c3p0::postgres::*;
 use c3p0::*;
@@ -23,6 +21,20 @@ impl Default for PgFileStoreDataRepository {
 #[async_trait::async_trait]
 impl FileStoreDataRepository for PgFileStoreDataRepository {
     type Conn = PgConnection;
+
+    async fn exists_by_repository(
+        &self,
+        conn: &mut Self::Conn,
+        repository: &RepositoryFile,
+    ) -> Result<bool, LightSpeedError> {
+        let sql =
+            "SELECT EXISTS (SELECT 1 FROM LS_FILE_STORE_DATA WHERE (data -> 'repository' ->> '_json_tag') = $1 AND (data -> 'repository' ->> 'repository_name') = $2 AND (data -> 'repository' ->> 'file_path') = $3";
+
+        let repo_info = RepoFileInfo::new(repository);
+
+        Ok(conn.fetch_one_value(sql, &[&repo_info.repo_type, &repo_info.repository_name, &repo_info.file_path])
+            .await?)
+    }
 
     async fn fetch_one_by_id(
         &self,
@@ -102,5 +114,58 @@ impl FileStoreDataRepository for PgFileStoreDataRepository {
         id: IdType,
     ) -> Result<u64, LightSpeedError> {
         Ok(self.repo.delete_by_id(conn, &id).await?)
+    }
+}
+
+struct RepoFileInfo<'a> {
+    repo_type: &'a str,
+    repository_name: &'a str,
+    file_path: &'a str,
+}
+
+impl <'a> RepoFileInfo<'a> {
+    fn new(repo: &'a RepositoryFile) -> Self {
+        match repo {
+            RepositoryFile::DB {
+                file_path,
+                repository_name,
+            } => RepoFileInfo {
+                repo_type: repo.as_ref(),
+                repository_name,
+                file_path
+            },
+            RepositoryFile::FS {
+                file_path,
+                repository_name,
+            } => RepoFileInfo {
+                repo_type: repo.as_ref(),
+                repository_name,
+                file_path
+            }
+        }
+    }
+}
+
+struct RepoInfo<'a> {
+    repo_type: &'a str,
+    repository_name: &'a str,
+}
+
+impl <'a> RepoInfo<'a> {
+    fn new(repo: &'a Repository) -> Self {
+        match repo {
+            Repository::DB {
+                repository_name,
+            } => RepoInfo {
+                repo_type: repo.as_ref(),
+                repository_name,
+            },
+            Repository::FS {
+                repository_name,
+            } => RepoInfo {
+                repo_type: repo.as_ref(),
+                repository_name,
+            }
+        }
     }
 }

@@ -51,6 +51,12 @@ pub trait DBFileStoreBinaryRepository: Clone + Send + Sync {
 pub trait FileStoreDataRepository: Clone + Send + Sync {
     type Conn: SqlConnection;
 
+    async fn exists_by_repository(
+        &self,
+        conn: &mut Self::Conn,
+        repository: &RepositoryFile,
+    ) -> Result<bool, LightSpeedError>;
+
     async fn fetch_one_by_id(
         &self,
         conn: &mut Self::Conn,
@@ -62,6 +68,7 @@ pub trait FileStoreDataRepository: Clone + Send + Sync {
         conn: &mut Self::Conn,
         repository: &RepositoryFile,
     ) -> Result<FileStoreDataModel, LightSpeedError>;
+
 
     async fn fetch_all_by_repository(
         &self,

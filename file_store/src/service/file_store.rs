@@ -54,6 +54,32 @@ impl<RepoManager: DBFileStoreRepositoryManager> FileStoreService<RepoManager> {
         self.db_data_repo.fetch_one_by_id(conn, id).await
     }
 
+    pub async fn exists_by_repository(
+        &self,
+        repository: &RepositoryFile,
+    ) -> Result<bool, LightSpeedError> {
+        self.c3p0
+            .transaction(|mut conn| async move {
+                self.exists_by_repository_with_conn(&mut conn, repository)
+                    .await
+            })
+            .await
+    }
+
+    pub async fn exists_by_repository_with_conn(
+        &self,
+        conn: &mut RepoManager::Conn,
+        repository: &RepositoryFile,
+    ) -> Result<bool, LightSpeedError> {
+        debug!(
+            "FileStoreService - Check if file exists by repository [{:?}]",
+            repository
+        );
+        self.db_data_repo
+            .exists_by_repository(conn, repository)
+            .await
+    }
+
     pub async fn read_file_data_by_repository(
         &self,
         repository: &RepositoryFile,
@@ -167,15 +193,6 @@ impl<RepoManager: DBFileStoreRepositoryManager> FileStoreService<RepoManager> {
         }
     }
 
-    pub async fn read_file_content_from_fs(
-        &self,
-        file_path: &str,
-        repository_name: &str,
-    ) -> Result<BinaryContent, LightSpeedError> {
-        let repo = self.get_fs_repository(repository_name)?;
-        repo.read_file(file_path).await
-    }
-
     pub async fn save_file_with_conn(
         &self,
         conn: &mut RepoManager::Conn,
@@ -285,6 +302,16 @@ impl<RepoManager: DBFileStoreRepositoryManager> FileStoreService<RepoManager> {
                 repo.delete_by_filename(&file_path).await
             }
         }
+    }
+
+    #[inline]
+    async fn read_file_content_from_fs(
+        &self,
+        file_path: &str,
+        repository_name: &str,
+    ) -> Result<BinaryContent, LightSpeedError> {
+        let repo = self.get_fs_repository(repository_name)?;
+        repo.read_file(file_path).await
     }
 
     #[inline]
