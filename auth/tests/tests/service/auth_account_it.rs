@@ -1366,3 +1366,270 @@ fn should_change_username_and_email() -> Result<(), LightSpeedError> {
         Ok(())
     })
 }
+
+#[test]
+fn should_disable_an_active_user() -> Result<(), LightSpeedError> {
+    test(async {
+        // Arrange
+        let data = data(false).await;
+        let auth_module = &data.0;
+        let password = "123456789";
+        let (user, _) = create_user_with_password(&auth_module, password, true).await?;
+
+        assert!(auth_module
+            .auth_account_service
+            .login(&user.data.username, password)
+            .await
+            .is_ok());
+
+        // Act
+        let updated_user = auth_module
+            .auth_account_service
+            .disable_by_user_id(user.id)
+            .await
+            .unwrap();
+
+        // Assert
+        assert_eq!(AuthAccountStatus::DISABLED, updated_user.data.status);
+
+        assert!(auth_module
+            .auth_account_service
+            .login(&user.data.username, password)
+            .await
+            .is_err());
+
+        let loaded_user = auth_module
+            .auth_account_service
+            .fetch_by_user_id(user.id)
+            .await
+            .unwrap();
+
+        assert_eq!(AuthAccountStatus::DISABLED, loaded_user.data.status);
+
+        Ok(())
+    })
+}
+
+#[test]
+fn should_fail_disabling_a_pending_user() -> Result<(), LightSpeedError> {
+    test(async {
+        // Arrange
+        let data = data(false).await;
+        let auth_module = &data.0;
+        let password = "123456789";
+        let (user, _) = create_user_with_password(&auth_module, password, false).await?;
+
+        assert!(auth_module
+            .auth_account_service
+            .login(&user.data.username, password)
+            .await
+            .is_err());
+
+        // Act
+        let result = auth_module
+            .auth_account_service
+            .disable_by_user_id(user.id)
+            .await;
+
+        // Assert
+        assert!(result.is_err());
+
+        Ok(())
+    })
+}
+
+#[test]
+fn should_fail_disabling_a_disabled_user() -> Result<(), LightSpeedError> {
+    test(async {
+        // Arrange
+        let data = data(false).await;
+        let auth_module = &data.0;
+        let password = "123456789";
+        let (user, _) = create_user_with_password(&auth_module, password, true).await?;
+
+        assert!(auth_module
+            .auth_account_service
+            .login(&user.data.username, password)
+            .await
+            .is_ok());
+
+        auth_module
+            .auth_account_service
+            .disable_by_user_id(user.id)
+            .await
+            .unwrap();
+
+        // Act
+        let result = auth_module
+            .auth_account_service
+            .disable_by_user_id(user.id)
+            .await;
+
+        // Assert
+        assert!(result.is_err());
+
+        Ok(())
+    })
+}
+
+#[test]
+fn should_activate_a_disabled_user() -> Result<(), LightSpeedError> {
+    test(async {
+        // Arrange
+        let data = data(false).await;
+        let auth_module = &data.0;
+        let password = "123456789";
+        let (user, _) = create_user_with_password(&auth_module, password, true).await?;
+
+        assert!(auth_module
+            .auth_account_service
+            .disable_by_user_id(user.id)
+            .await
+            .is_ok());
+
+        // Act
+        let updated_user = auth_module
+            .auth_account_service
+            .reactivate_disabled_user_by_user_id(user.id)
+            .await
+            .unwrap();
+
+        // Assert
+        assert_eq!(AuthAccountStatus::ACTIVE, updated_user.data.status);
+
+        assert!(auth_module
+            .auth_account_service
+            .login(&user.data.username, password)
+            .await
+            .is_ok());
+
+        let loaded_user = auth_module
+            .auth_account_service
+            .fetch_by_user_id(user.id)
+            .await
+            .unwrap();
+
+        assert_eq!(AuthAccountStatus::ACTIVE, loaded_user.data.status);
+
+        Ok(())
+    })
+}
+
+#[test]
+fn should_fail_reactivating_a_pending_user() -> Result<(), LightSpeedError> {
+    test(async {
+        // Arrange
+        let data = data(false).await;
+        let auth_module = &data.0;
+        let password = "123456789";
+        let (user, _) = create_user_with_password(&auth_module, password, false).await?;
+
+        assert!(auth_module
+            .auth_account_service
+            .login(&user.data.username, password)
+            .await
+            .is_err());
+
+        // Act
+        let result = auth_module
+            .auth_account_service
+            .reactivate_disabled_user_by_user_id(user.id)
+            .await;
+
+        // Assert
+        assert!(result.is_err());
+
+        Ok(())
+    })
+}
+
+#[test]
+fn should_fail_reactivating_an_active_user() -> Result<(), LightSpeedError> {
+    test(async {
+        // Arrange
+        let data = data(false).await;
+        let auth_module = &data.0;
+        let password = "123456789";
+        let (user, _) = create_user_with_password(&auth_module, password, true).await?;
+
+        assert!(auth_module
+            .auth_account_service
+            .login(&user.data.username, password)
+            .await
+            .is_ok());
+
+        // Act
+        let result = auth_module
+            .auth_account_service
+            .reactivate_disabled_user_by_user_id(user.id)
+            .await;
+
+        // Assert
+        assert!(result.is_err());
+
+        Ok(())
+    })
+}
+
+#[test]
+fn should_delete_a_user() -> Result<(), LightSpeedError> {
+    test(async {
+        // Arrange
+        let data = data(false).await;
+        let auth_module = &data.0;
+        let password = "123456789";
+        let (user, _) = create_user_with_password(&auth_module, password, true).await?;
+
+        // Act
+        let updated_user = auth_module
+            .auth_account_service
+            .delete_by_user_id(user.id)
+            .await
+            .unwrap();
+
+        // Assert
+        assert_eq!(AuthAccountStatus::ACTIVE, updated_user.data.status);
+
+        assert!(auth_module
+            .auth_account_service
+            .login(&user.data.username, password)
+            .await
+            .is_err());
+
+        assert!(auth_module
+            .auth_account_service
+            .fetch_by_user_id(user.id)
+            .await
+            .is_err());
+
+        Ok(())
+    })
+}
+
+#[test]
+fn should_fail_deleting_a_deleted_user() -> Result<(), LightSpeedError> {
+    test(async {
+        // Arrange
+        let data = data(false).await;
+        let auth_module = &data.0;
+        let password = "123456789";
+        let (user, _) = create_user_with_password(&auth_module, password, true).await?;
+
+        auth_module
+            .auth_account_service
+            .delete_by_user_id(user.id)
+            .await
+            .unwrap();
+
+        // Act
+        let result = auth_module
+            .auth_account_service
+            .delete_by_user_id(user.id)
+            .await;
+
+        // Assert
+        assert!(result.is_err());
+
+        Ok(())
+    })
+}
