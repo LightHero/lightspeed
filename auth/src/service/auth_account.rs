@@ -517,6 +517,17 @@ impl<RepoManager: AuthRepositoryManager> AuthAccountService<RepoManager> {
         Ok(user)
     }
 
+    pub async fn fetch_by_user_id(
+        &self,
+        user_id: i64,
+    ) -> Result<AuthAccountModel, LightSpeedError> {
+        self.c3p0
+            .transaction(|mut conn| async move {
+                self.fetch_by_user_id_with_conn(&mut conn, user_id).await
+            })
+            .await
+    }
+
     pub async fn fetch_by_user_id_with_conn(
         &self,
         conn: &mut RepoManager::Conn,
@@ -647,5 +658,92 @@ impl<RepoManager: AuthRepositoryManager> AuthAccountService<RepoManager> {
         }
 
         self.auth_repo.update(conn, user).await
+    }
+
+    pub async fn disable_by_user_id(
+        &self,
+        user_id: i64,
+    ) -> Result<AuthAccountModel, LightSpeedError> {
+        self.c3p0
+            .transaction(|mut conn| async move {
+                self.disable_by_user_id_with_conn(&mut conn, user_id).await
+            })
+            .await
+    }
+
+    pub async fn disable_by_user_id_with_conn(
+        &self,
+        conn: &mut RepoManager::Conn,
+        user_id: i64,
+    ) -> Result<AuthAccountModel, LightSpeedError> {
+        debug!("Disable user with user_id [{}]", user_id);
+        let mut user = self.auth_repo.fetch_by_id(conn, user_id).await?;
+
+        match &user.data.status {
+            AuthAccountStatus::ACTIVE => {}
+            _ => {
+                return Err(LightSpeedError::BadRequest {
+                    message: format!("User [{}] not in status Active", user_id),
+                    code: ErrorCodes::INACTIVE_USER,
+                })
+            }
+        };
+
+        user.data.status = AuthAccountStatus::DISABLED;
+        self.auth_repo.update(conn, user).await
+    }
+
+    pub async fn reactivate_disabled_user_by_user_id(
+        &self,
+        user_id: i64,
+    ) -> Result<AuthAccountModel, LightSpeedError> {
+        self.c3p0
+            .transaction(|mut conn| async move {
+                self.reactivate_disabled_user_by_user_id_with_conn(&mut conn, user_id).await
+            })
+            .await
+    }
+
+    pub async fn reactivate_disabled_user_by_user_id_with_conn(
+        &self,
+        conn: &mut RepoManager::Conn,
+        user_id: i64,
+    ) -> Result<AuthAccountModel, LightSpeedError> {
+        debug!("Reactivate disabled user with user_id [{}]", user_id);
+        let mut user = self.auth_repo.fetch_by_id(conn, user_id).await?;
+
+        match &user.data.status {
+            AuthAccountStatus::DISABLED => {}
+            _ => {
+                return Err(LightSpeedError::BadRequest {
+                    message: format!("User [{}] not in status Disabled", user_id),
+                    code: ErrorCodes::ACTIVE_USER,
+                })
+            }
+        };
+
+        user.data.status = AuthAccountStatus::ACTIVE;
+        self.auth_repo.update(conn, user).await
+    }
+
+    pub async fn delete_by_user_id(
+        &self,
+        user_id: i64,
+    ) -> Result<AuthAccountModel, LightSpeedError> {
+        self.c3p0
+            .transaction(|mut conn| async move {
+                self.delete_by_user_id_with_conn(&mut conn, user_id).await
+            })
+            .await
+    }
+
+    pub async fn delete_by_user_id_with_conn(
+        &self,
+        conn: &mut RepoManager::Conn,
+        user_id: i64,
+    ) -> Result<AuthAccountModel, LightSpeedError> {
+        debug!("Delete user with user_id [{}]", user_id);
+        let user = self.auth_repo.fetch_by_id(conn, user_id).await?;
+        self.auth_repo.delete(conn, user).await
     }
 }

@@ -8,6 +8,7 @@ use typescript_definitions::TypeScriptify;
 pub struct ErrorCodes {}
 
 impl ErrorCodes {
+    pub const ACTIVE_USER: &'static str = "ACTIVE_USER";
     pub const INACTIVE_USER: &'static str = "INACTIVE_USER";
     pub const INCOMPLETE_REQUEST: &'static str = "INCOMPLETE_REQUEST";
     pub const IO_ERROR: &'static str = "IO_ERROR";
