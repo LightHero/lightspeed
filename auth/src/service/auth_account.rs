@@ -699,7 +699,8 @@ impl<RepoManager: AuthRepositoryManager> AuthAccountService<RepoManager> {
     ) -> Result<AuthAccountModel, LightSpeedError> {
         self.c3p0
             .transaction(|mut conn| async move {
-                self.reactivate_disabled_user_by_user_id_with_conn(&mut conn, user_id).await
+                self.reactivate_disabled_user_by_user_id_with_conn(&mut conn, user_id)
+                    .await
             })
             .await
     }
