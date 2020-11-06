@@ -3,7 +3,7 @@ pub mod utils;
 
 use std::str::FromStr;
 use thiserror::Error;
-use tracing_subscriber::{EnvFilter, FmtSubscriber, fmt::Layer, layer::SubscriberExt};
+use tracing_subscriber::{EnvFilter, fmt::Layer, layer::SubscriberExt};
 use tracing::subscriber::set_global_default;
 use tracing_appender::non_blocking::WorkerGuard;
 
@@ -30,7 +30,8 @@ impl From<std::io::Error> for LoggerError {
 }
 
 pub fn setup_logger(logger_config: &config::LoggerConfig) -> Result<Option<WorkerGuard>, LoggerError> {
-    if logger_config.stdout_output {
+
+    if logger_config.stdout_output.stdout_enabled {
         let env_filter = EnvFilter::from_str(&logger_config.env_filter).map_err(|err| {
             LoggerError::LoggerConfigurationError {
                 message: format!(
@@ -47,7 +48,7 @@ pub fn setup_logger(logger_config: &config::LoggerConfig) -> Result<Option<Worke
         let subscriber = tracing_subscriber::registry()
             .with(env_filter)
             .with(Layer::new())
-            .with(Layer::new().with_writer(non_blocking));
+            .with(Layer::new().with_ansi(false).with_writer(non_blocking));
 
         tracing_log::LogTracer::init().map_err(|err| LoggerError::LoggerConfigurationError {
             message: format!("Cannot start the logger LogTracer. err: {}", err),
@@ -60,4 +61,6 @@ pub fn setup_logger(logger_config: &config::LoggerConfig) -> Result<Option<Worke
     }
 
     Ok(None)
+
+
 }

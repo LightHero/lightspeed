@@ -9,10 +9,7 @@ mod service;
 
 #[allow(dead_code)]
 async fn init() -> HashModule {
-    let conf = LoggerConfig {
-        env_filter: String::from("debug"),
-        stdout_output: true,
-    };
+    let conf = LoggerConfig::default();
     if let Err(err) = setup_logger(&conf) {
         println!("Warning: {}", err)
     };
