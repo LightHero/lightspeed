@@ -1,4 +1,4 @@
-use lightspeed_logger::config::{LoggerConfig, StandardOutputConfig, FileOutputConfig, Rotation};
+use lightspeed_logger::config::{FileOutputConfig, LoggerConfig, Rotation, StandardOutputConfig};
 use lightspeed_logger::setup_logger;
 
 mod inner1 {
@@ -36,17 +36,16 @@ pub struct Data {
 async fn should_setup_logger_with_env_filter() -> Result<(), std::io::Error> {
     let config = LoggerConfig {
         stdout_output: StandardOutputConfig {
-           stdout_enabled: true,
-            stdout_use_ansi_colors: true
+            stdout_enabled: true,
+            stdout_use_ansi_colors: true,
         },
         env_filter: "debug".to_owned(),
-        file_output_path: FileOutputConfig {
+        file_output: FileOutputConfig {
             file_output_directory: "../target".to_owned(),
             file_output_enabled: true,
             file_output_name_prefix: "logger.log".to_owned(),
             file_output_rotation: Rotation::Daily,
-            file_output_use_ansi_colors: false
-        }
+        },
     };
     let _guard = setup_logger(&config).unwrap();
 

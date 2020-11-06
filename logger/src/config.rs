@@ -1,6 +1,6 @@
-use structopt::StructOpt;
-use std::str::FromStr;
 use crate::LoggerError;
+use std::str::FromStr;
+use structopt::StructOpt;
 
 /// Defines the Logger configuration.
 #[derive(Debug, Clone, StructOpt)]
@@ -16,8 +16,7 @@ pub struct LoggerConfig {
     pub stdout_output: StandardOutputConfig,
 
     #[structopt(flatten)]
-    pub file_output_path: FileOutputConfig,
-
+    pub file_output: FileOutputConfig,
 }
 
 impl Default for LoggerConfig {
@@ -25,7 +24,7 @@ impl Default for LoggerConfig {
         Self {
             env_filter: "debug".to_owned(),
             stdout_output: StandardOutputConfig::default(),
-            file_output_path: FileOutputConfig::default()
+            file_output: FileOutputConfig::default(),
         }
     }
 }
@@ -36,18 +35,18 @@ pub struct StandardOutputConfig {
     /// Determines whether the Logger should print to standard output.
     /// Valid values: true, false
     #[structopt(
-    long,
-    env = "LS_LOGGER_STDOUT_OUTPUT_ENABLED",
-    parse(try_from_str),
-    default_value = "true"
+        long,
+        env = "LS_LOGGER_STDOUT_OUTPUT_ENABLED",
+        parse(try_from_str),
+        default_value = "true"
     )]
     pub stdout_enabled: bool,
 
     #[structopt(
-    long,
-    env = "LS_LOGGER_STDOUT_OUTPUT_USE_ANSI_COLORS",
-    parse(try_from_str),
-    default_value = "true"
+        long,
+        env = "LS_LOGGER_STDOUT_OUTPUT_USE_ANSI_COLORS",
+        parse(try_from_str),
+        default_value = "true"
     )]
     pub stdout_use_ansi_colors: bool,
 }
@@ -56,7 +55,7 @@ impl Default for StandardOutputConfig {
     fn default() -> Self {
         Self {
             stdout_use_ansi_colors: true,
-            stdout_enabled: true
+            stdout_enabled: true,
         }
     }
 }
@@ -67,44 +66,28 @@ pub struct FileOutputConfig {
     /// Determines whether the Logger should print to a file.
     /// Valid values: true, false
     #[structopt(
-    long,
-    env = "LS_LOGGER_FILE_OUTPUT_ENABLED",
-    parse(try_from_str),
-    default_value = "false"
+        long,
+        env = "LS_LOGGER_FILE_OUTPUT_ENABLED",
+        parse(try_from_str),
+        default_value = "false"
     )]
     pub file_output_enabled: bool,
 
     /// The log file location
-    #[structopt(
-    long,
-    env = "LS_LOGGER_FILE_OUTPUT_DIR",
-    default_value = "/tmp"
-    )]
+    #[structopt(long, env = "LS_LOGGER_FILE_OUTPUT_DIR", default_value = "/tmp")]
     pub file_output_directory: String,
 
     /// The log file name's _prefix_
     #[structopt(
-    long,
-    env = "LS_LOGGER_FILE_OUTPUT_NAME_PREFIX",
-    default_value = "output.log"
+        long,
+        env = "LS_LOGGER_FILE_OUTPUT_NAME_PREFIX",
+        default_value = "output.log"
     )]
     pub file_output_name_prefix: String,
 
     /// The log file rotation strategy
-    #[structopt(
-    long,
-    env = "LS_LOGGER_FILE_OUTPUT_ROTATION",
-    default_value = "daily"
-    )]
+    #[structopt(long, env = "LS_LOGGER_FILE_OUTPUT_ROTATION", default_value = "daily")]
     pub file_output_rotation: Rotation,
-
-    #[structopt(
-    long,
-    env = "LS_LOGGER_FILE_OUTPUT_USE_ANSI_COLORS",
-    parse(try_from_str),
-    default_value = "false"
-    )]
-    pub file_output_use_ansi_colors: bool,
 }
 
 impl Default for FileOutputConfig {
@@ -114,7 +97,6 @@ impl Default for FileOutputConfig {
             file_output_directory: "".to_owned(),
             file_output_name_prefix: "".to_owned(),
             file_output_rotation: Rotation::Daily,
-            file_output_use_ansi_colors: false
         }
     }
 }
@@ -139,6 +121,17 @@ impl FromStr for Rotation {
             _ => Err(LoggerError::LoggerConfigurationError {
                 message: format!("Could not parse rotation [{}]", val),
             }),
+        }
+    }
+}
+
+impl Rotation {
+    pub fn to_tracing_appender_rotation(&self) -> tracing_appender::rolling::Rotation {
+        match self {
+            Rotation::Minutely => tracing_appender::rolling::Rotation::MINUTELY,
+            Rotation::Hourly => tracing_appender::rolling::Rotation::HOURLY,
+            Rotation::Daily => tracing_appender::rolling::Rotation::DAILY,
+            Rotation::Never => tracing_appender::rolling::Rotation::NEVER,
         }
     }
 }
