@@ -42,7 +42,7 @@ async fn should_setup_logger_with_env_filter() -> Result<(), std::io::Error> {
         env_filter: "debug".to_owned(),
         file_output: FileOutputConfig {
             file_output_directory: "../target".to_owned(),
-            file_output_enabled: true,
+            file_output_enabled: false,
             file_output_name_prefix: "logger.log".to_owned(),
             file_output_rotation: Rotation::Daily,
         },
