@@ -16,7 +16,7 @@ fn should_setup_logger_with_env_filter() -> Result<(), std::io::Error> {
             stdout_enabled: true,
             stdout_use_ansi_colors: true,
         },
-        env_filter: "debug".to_owned(),
+        env_filter: "debug,logger_file_output_it=info".to_owned(),
         file_output: FileOutputConfig {
             file_output_directory,
             file_output_enabled: true,
@@ -30,7 +30,12 @@ fn should_setup_logger_with_env_filter() -> Result<(), std::io::Error> {
     info!("main - this is info");
     warn!("main - this is warn");
 
-    assert!(Path::new(&log_filename).exists());
+    let path = Path::new(&log_filename);
+    assert!(path.exists());
+
+    let log_content = std::fs::read_to_string(path).unwrap();
+    assert!(log_content.contains("main - this is info"));
+    assert!(!log_content.contains("main - this is debug"));
 
     Ok(())
 }
