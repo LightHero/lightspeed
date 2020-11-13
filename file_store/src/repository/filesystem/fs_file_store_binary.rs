@@ -19,16 +19,16 @@ impl FsFileStoreBinaryRepository {
         format!("{}/{}", &self.base_folder, file_path)
     }
 
-    pub async fn read_file(&self, file_path: &str) -> Result<BinaryContent, LightSpeedError> {
+    pub async fn read_file(&self, file_path: &str) -> Result<BinaryContent<'_>, LightSpeedError> {
         Ok(BinaryContent::FromFs {
             file_path: self.get_fs_file_path(file_path).into(),
         })
     }
 
-    pub async fn save_file(
+    pub async fn save_file<'a>(
         &self,
         file_path: &str,
-        content: &BinaryContent,
+        content: &'a BinaryContent<'a>,
     ) -> Result<(), LightSpeedError> {
         let destination_file_path = self.get_fs_file_path(file_path);
         let destination_path = Path::new(&destination_file_path);
@@ -62,7 +62,7 @@ impl FsFileStoreBinaryRepository {
 
         match content {
             BinaryContent::InMemory { content } => {
-                tokio::fs::write(destination_path, content)
+                tokio::fs::write(destination_path, content.as_ref())
                     .await
                     .map_err(|err| LightSpeedError::BadRequest {
                         message: format!(
@@ -112,6 +112,7 @@ mod test {
     use super::*;
     use crate::utils::read_file;
     use lightspeed_core::error::LightSpeedError;
+    use std::borrow::Cow;
 
     const SOURCE_FILE: &str = "./Cargo.toml";
 
@@ -146,7 +147,7 @@ mod test {
         let file_name = format!("file_{}", random);
 
         let binary_content = BinaryContent::InMemory {
-            content: "Hello world!".to_owned().into_bytes(),
+            content: Cow::Owned("Hello world!".to_owned().into_bytes()),
         };
 
         let tempdir = tempfile::tempdir().unwrap();

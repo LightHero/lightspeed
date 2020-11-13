@@ -142,7 +142,7 @@ impl<RepoManager: DBFileStoreRepositoryManager> FileStoreService<RepoManager> {
     pub async fn read_file_content(
         &self,
         repository: &RepositoryFile,
-    ) -> Result<BinaryContent, LightSpeedError> {
+    ) -> Result<BinaryContent<'_>, LightSpeedError> {
         debug!("FileStoreService - Read file [{:?}]", repository);
         match repository {
             RepositoryFile::DB {
@@ -171,7 +171,7 @@ impl<RepoManager: DBFileStoreRepositoryManager> FileStoreService<RepoManager> {
         &self,
         conn: &mut RepoManager::Conn,
         repository: &RepositoryFile,
-    ) -> Result<BinaryContent, LightSpeedError> {
+    ) -> Result<BinaryContent<'_>, LightSpeedError> {
         debug!("FileStoreService - Read file [{:?}]", repository);
         match repository {
             RepositoryFile::DB {
@@ -192,12 +192,12 @@ impl<RepoManager: DBFileStoreRepositoryManager> FileStoreService<RepoManager> {
         }
     }
 
-    pub async fn save_file_with_conn(
+    pub async fn save_file_with_conn<'a>(
         &self,
         conn: &mut RepoManager::Conn,
         filename: String,
         content_type: String,
-        content: &BinaryContent,
+        content: &'a BinaryContent<'a>,
         repository: SaveRepository,
     ) -> Result<FileStoreDataModel, LightSpeedError> {
         info!(
@@ -237,11 +237,11 @@ impl<RepoManager: DBFileStoreRepositoryManager> FileStoreService<RepoManager> {
             .await
     }
 
-    pub async fn save_file(
+    pub async fn save_file<'a>(
         &self,
         filename: String,
         content_type: String,
-        content: &BinaryContent,
+        content: &'a BinaryContent<'a>,
         repository: SaveRepository,
     ) -> Result<FileStoreDataModel, LightSpeedError> {
         self.c3p0
@@ -295,7 +295,7 @@ impl<RepoManager: DBFileStoreRepositoryManager> FileStoreService<RepoManager> {
         &self,
         file_path: &str,
         repository_name: &str,
-    ) -> Result<BinaryContent, LightSpeedError> {
+    ) -> Result<BinaryContent<'_>, LightSpeedError> {
         let repo = self.get_fs_repository(repository_name)?;
         repo.read_file(file_path).await
     }

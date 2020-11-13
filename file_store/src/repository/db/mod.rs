@@ -24,19 +24,19 @@ pub trait DBFileStoreRepositoryManager: Clone + Send + Sync {
 pub trait DBFileStoreBinaryRepository: Clone + Send + Sync {
     type Conn: SqlConnection;
 
-    async fn read_file(
+    async fn read_file<'a>(
         &self,
         conn: &mut Self::Conn,
         repository_name: &str,
         file_path: &str,
-    ) -> Result<BinaryContent, LightSpeedError>;
+    ) -> Result<BinaryContent<'a>, LightSpeedError>;
 
-    async fn save_file(
+    async fn save_file<'a>(
         &self,
         conn: &mut Self::Conn,
         repository_name: &str,
         file_path: &str,
-        content: &BinaryContent,
+        content: &'a BinaryContent<'a>,
     ) -> Result<u64, LightSpeedError>;
 
     async fn delete_file(

@@ -7,9 +7,9 @@ use strum_macros::{AsRefStr, Display};
 
 pub type FileStoreDataModel = Model<FileStoreDataData>;
 
-pub enum BinaryContent {
+pub enum BinaryContent<'a> {
     FromFs { file_path: PathBuf },
-    InMemory { content: Vec<u8> },
+    InMemory { content: Cow<'a, Vec<u8>> },
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
