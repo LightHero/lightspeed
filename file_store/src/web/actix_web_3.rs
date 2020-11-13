@@ -5,7 +5,7 @@ use lightspeed_core::error::LightSpeedError;
 use log::*;
 
 pub async fn into_response(
-    content: BinaryContent,
+    content: BinaryContent<'_>,
     file_name: Option<&str>,
     set_content_disposition: bool,
     req: &HttpRequest,
@@ -64,7 +64,7 @@ pub async fn into_response(
 
                     res.header(http::header::CONTENT_DISPOSITION, cd);
                 })
-                .body(content))
+                .body(content.into_owned()))
         }
     }
 }
