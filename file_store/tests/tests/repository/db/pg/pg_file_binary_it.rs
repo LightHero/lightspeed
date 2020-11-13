@@ -52,7 +52,7 @@ fn should_save_file_from_memory() -> Result<(), LightSpeedError> {
         let repo_manager = &data.0.repo_manager;
         let file_store = repo_manager.file_store_binary_repo();
         let binary_content = BinaryContent::InMemory {
-            content: Cow::Owned("Hello world!".to_owned().into_bytes()),
+            content: Cow::Borrowed("Hello world!".as_bytes()),
         };
         let repository_name = &format!("repository_{}", rand::random::<u32>());
         let file_path = &format!("file_path_{}", rand::random::<u32>());
@@ -69,7 +69,10 @@ fn should_save_file_from_memory() -> Result<(), LightSpeedError> {
                     .await
                 {
                     Ok(BinaryContent::InMemory { content }) => {
-                        assert_eq!("Hello world!", String::from_utf8(content.into_owned()).unwrap());
+                        assert_eq!(
+                            "Hello world!",
+                            String::from_utf8(content.into_owned()).unwrap()
+                        );
                     }
                     _ => assert!(false),
                 }

@@ -40,7 +40,9 @@ impl DBFileStoreBinaryRepository for PgFileStoreBinaryRepository {
                 Ok(content)
             })
             .await?;
-        Ok(BinaryContent::InMemory { content: Cow::Owned(content) })
+        Ok(BinaryContent::InMemory {
+            content: Cow::Owned(content),
+        })
     }
 
     async fn save_file<'a>(
@@ -87,7 +89,11 @@ impl DBFileStoreBinaryRepository for PgFileStoreBinaryRepository {
         Ok(conn
             .execute(
                 &sql,
-                &[&repository_name, &file_path, &binary_content.as_ref().as_ref()],
+                &[
+                    &repository_name,
+                    &file_path,
+                    &binary_content.as_ref().as_ref(),
+                ],
             )
             .await?)
     }

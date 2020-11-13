@@ -9,7 +9,7 @@ pub type FileStoreDataModel = Model<FileStoreDataData>;
 
 pub enum BinaryContent<'a> {
     FromFs { file_path: PathBuf },
-    InMemory { content: Cow<'a, Vec<u8>> },
+    InMemory { content: Cow<'a, [u8]> },
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
