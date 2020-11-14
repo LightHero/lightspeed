@@ -11,17 +11,17 @@ repository = "https://github.com/LightHero/lightspeed"
 keywords = ["schedule", "cron", "job", "periodic"]
 
 [dependencies]
-atomic = "0.5.0"
-cron = "0.6.1"
+atomic = "0.5"
+cron = "0.6"
 chrono = "0.4"
 chrono-tz = "0.5"
-futures = "0.3.5"
+futures = "0.3"
 log = "0.4"
 thiserror = "1.0"
 time = "0.1"
 tokio = { version = "0.2", features = ["sync", "time"] }
-tracing = "0.1.13"
-tracing-futures = "0.2.3"
+tracing = "0.1"
+tracing-futures = "0.2"
 
 [dev-dependencies]
 tokio = { version = "0.2", features = ["macros", "rt-threaded"] }

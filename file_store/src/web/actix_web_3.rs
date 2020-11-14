@@ -35,36 +35,38 @@ pub async fn into_response(
                 }
             };
 
-            Ok(HttpResponse::Ok()
-                .set(http::header::ContentType(ct.clone()))
-                .if_true(set_content_disposition, |res| {
-                    debug!("Set content disposition");
-                    let disposition = match ct.type_() {
-                        mime::IMAGE | mime::TEXT | mime::VIDEO => {
-                            http::header::DispositionType::Inline
-                        }
-                        _ => http::header::DispositionType::Attachment,
-                    };
-                    let mut parameters = vec![http::header::DispositionParam::Filename(
-                        String::from(filename.as_ref()),
-                    )];
-                    if !filename.is_ascii() {
-                        parameters.push(http::header::DispositionParam::FilenameExt(
-                            http::header::ExtendedValue {
-                                charset: http::header::Charset::Ext(String::from("UTF-8")),
-                                language_tag: None,
-                                value: filename.into_owned().into_bytes(),
-                            },
-                        ))
-                    }
-                    let cd = http::header::ContentDisposition {
-                        disposition,
-                        parameters,
-                    };
+            let mut res = HttpResponse::Ok();
+            res.set(http::header::ContentType(ct.clone()));
 
-                    res.header(http::header::CONTENT_DISPOSITION, cd);
-                })
-                .body(content.into_owned()))
+            if set_content_disposition {
+                debug!("Set content disposition");
+                let disposition = match ct.type_() {
+                    mime::IMAGE | mime::TEXT | mime::VIDEO => {
+                        http::header::DispositionType::Inline
+                    }
+                    _ => http::header::DispositionType::Attachment,
+                };
+                let mut parameters = vec![http::header::DispositionParam::Filename(
+                    String::from(filename.as_ref()),
+                )];
+                if !filename.is_ascii() {
+                    parameters.push(http::header::DispositionParam::FilenameExt(
+                        http::header::ExtendedValue {
+                            charset: http::header::Charset::Ext(String::from("UTF-8")),
+                            language_tag: None,
+                            value: filename.into_owned().into_bytes(),
+                        },
+                    ))
+                }
+                let cd = http::header::ContentDisposition {
+                    disposition,
+                    parameters,
+                };
+
+                res.header(http::header::CONTENT_DISPOSITION, cd);
+            };
+
+            Ok(res.body(content.into_owned()))
         }
     }
 }

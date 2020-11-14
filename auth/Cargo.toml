@@ -12,9 +12,9 @@ keywords = []
 
 [dependencies]
 lightspeed_core = { version = "0.25.2", path = "../core" }
-async-trait = "0.1.29"
-bcrypt = "0.8.0"
-c3p0 = { version = "0.60.1", features = ["postgres_migrate"] }
+async-trait = "0.1"
+bcrypt = "0.9"
+c3p0 = { version = "0.61.0", features = ["postgres_migrate"] }
 log = "0.4"
 serde = { version = "1.0" , features = ["derive", "rc"] }
 serde_json = "1"
@@ -28,6 +28,6 @@ typescript-definitions = {package = "typescript-definitions-ufo-patch", version 
 futures = "0.3"
 lightspeed_logger = { version = "0.25.2", path = "../logger" }
 maybe-single = "0.12"
-once_cell = "1.4"
+once_cell = "1.5"
 testcontainers = "0.11"
 tokio = { version = "0.2", features = ["rt-threaded"] }
