@@ -82,16 +82,16 @@ fn to_subject(subject: &str, to: &[String]) -> String {
 
 fn to_text(to: &[String], cc: &[String], bcc: &[String]) -> String {
     let mut text = String::from(SECTION_SEPARATOR);
-    text.push_str("\n");
+    text.push('\n');
     text.push_str(RECIPIENT_ALTERATION_MESSAGE);
 
     text.push_str(&format!("\nTO: {}", to.join(JOIN_SEPARATOR)));
     text.push_str(&format!("\nCC: {}", cc.join(JOIN_SEPARATOR)));
     text.push_str(&format!("\nBCC: {}", bcc.join(JOIN_SEPARATOR)));
 
-    text.push_str("\n");
+    text.push('\n');
     text.push_str(SECTION_SEPARATOR);
-    text.push_str("\n");
+    text.push('\n');
 
     text
 }

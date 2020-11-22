@@ -24,7 +24,7 @@ impl CoreModule {
 
         let jwt = Arc::new(service::jwt::JwtService::new(&config.jwt)?);
         let auth = Arc::new(service::auth::AuthService::new(InMemoryRolesProvider::new(
-            Arc::new(vec![]),
+            vec![].into(),
         )));
         Ok(CoreModule { jwt, auth })
     }

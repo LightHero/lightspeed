@@ -41,14 +41,12 @@ pub async fn into_response(
             if set_content_disposition {
                 debug!("Set content disposition");
                 let disposition = match ct.type_() {
-                    mime::IMAGE | mime::TEXT | mime::VIDEO => {
-                        http::header::DispositionType::Inline
-                    }
+                    mime::IMAGE | mime::TEXT | mime::VIDEO => http::header::DispositionType::Inline,
                     _ => http::header::DispositionType::Attachment,
                 };
-                let mut parameters = vec![http::header::DispositionParam::Filename(
-                    String::from(filename.as_ref()),
-                )];
+                let mut parameters = vec![http::header::DispositionParam::Filename(String::from(
+                    filename.as_ref(),
+                ))];
                 if !filename.is_ascii() {
                     parameters.push(http::header::DispositionParam::FilenameExt(
                         http::header::ExtendedValue {

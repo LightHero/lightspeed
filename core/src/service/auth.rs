@@ -4,6 +4,7 @@ use serde::{Deserialize, Serialize};
 use std::collections::{BTreeMap, HashMap};
 use std::sync::Arc;
 use typescript_definitions::TypeScriptify;
+use std::borrow::Cow;
 
 #[derive(Debug, Clone, Serialize, Deserialize, TypeScriptify)]
 #[serde(rename_all = "camelCase")]
@@ -65,7 +66,7 @@ impl<T: RolesProvider> AuthService<T> {
     pub fn new(roles_provider: T) -> AuthService<T> {
         AuthService {
             permission_roles_map: AuthService::<T>::roles_map_to_permissions_map(
-                roles_provider.fetch_all(),
+                roles_provider.fetch_all().as_ref(),
             ),
             roles_provider,
         }
@@ -79,12 +80,12 @@ impl<T: RolesProvider> AuthService<T> {
     }
 
     /// Creates a permission_roles_map from an array of Roles
-    fn roles_map_to_permissions_map(roles: Vec<Role>) -> BTreeMap<String, Vec<String>> {
+    fn roles_map_to_permissions_map(roles: &[Role]) -> BTreeMap<String, Vec<String>> {
         let mut result = BTreeMap::new();
         for role in roles {
-            for permission in role.permissions {
+            for permission in &role.permissions {
                 result
-                    .entry(permission)
+                    .entry(permission.to_owned())
                     .or_insert_with(Vec::new)
                     .push(role.name.clone())
             }
@@ -271,17 +272,17 @@ impl<'a> AuthContext<'a> {
 }
 
 pub trait RolesProvider: Send + Sync + Clone {
-    fn fetch_all(&self) -> Vec<Role>;
+    fn fetch_all(&self) -> Cow<[Role]>;
 }
 
 #[derive(Clone)]
 pub struct InMemoryRolesProvider {
-    all_roles: Arc<Vec<Role>>,
+    all_roles: Arc<[Role]>,
     roles_by_name: Arc<HashMap<String, Role>>,
 }
 
 impl InMemoryRolesProvider {
-    pub fn new(all_roles: Arc<Vec<Role>>) -> InMemoryRolesProvider {
+    pub fn new(all_roles: Arc<[Role]>) -> InMemoryRolesProvider {
         let mut roles_by_name = HashMap::new();
 
         for role in all_roles.iter() {
@@ -296,8 +297,8 @@ impl InMemoryRolesProvider {
 }
 
 impl RolesProvider for InMemoryRolesProvider {
-    fn fetch_all(&self) -> Vec<Role> {
-        self.all_roles.as_ref().clone()
+    fn fetch_all(&self) -> Cow<[Role]> {
+        Cow::Borrowed(self.all_roles.as_ref())
     }
 }
 
