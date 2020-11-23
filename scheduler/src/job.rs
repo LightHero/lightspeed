@@ -67,8 +67,7 @@ impl JobScheduler {
 
 pub type JobFn = dyn 'static
     + Send
-    + Fn()
-        -> Pin<Box<dyn Future<Output = Result<(), Box<dyn std::error::Error + Send + Sync>>> + Send>>;
+    + Fn() -> Pin<Box<dyn Future<Output = Result<(), Box<dyn std::error::Error + Send + Sync>>> + Send>>;
 
 pub struct Job {
     function: Mutex<Box<JobFn>>,
@@ -85,12 +84,7 @@ impl Job {
         N: Into<String>,
         F: 'static
             + Send
-            + Fn() -> Pin<
-                Box<
-                    dyn Future<Output = Result<(), Box<dyn std::error::Error + Send + Sync>>>
-                        + Send,
-                >,
-            >,
+            + Fn() -> Pin<Box<dyn Future<Output = Result<(), Box<dyn std::error::Error + Send + Sync>>> + Send>>,
     >(
         group: G,
         name: N,
@@ -163,10 +157,7 @@ impl Job {
             Ok(response) => response,
             Err(panic) => {
                 error!("A panic happened. Err: {:?}", panic);
-                Err(SchedulerError::JobExecutionPanic {
-                    cause: format!("{:?}", panic),
-                }
-                .into())
+                Err(SchedulerError::JobExecutionPanic { cause: format!("{:?}", panic) }.into())
             }
         }
     }
@@ -205,10 +196,7 @@ pub mod test {
         let tx_clone = tx.clone();
 
         let job_scheduler = Arc::new(JobScheduler::new(
-            Scheduler::Interval {
-                interval_duration: Duration::new(1, 0),
-                execute_at_startup: false,
-            },
+            Scheduler::Interval { interval_duration: Duration::new(1, 0), execute_at_startup: false },
             Some(UTC),
             Job::new("g", "n", None, move || {
                 let lock_clone = lock_clone.clone();
@@ -288,9 +276,7 @@ pub mod test {
                 let count = *lock;
                 *lock = count + 1;
                 println!("job - count {}", count);
-                Err(SchedulerError::JobLockError {
-                    message: "".to_owned(),
-                })?
+                Err(SchedulerError::JobLockError { message: "".to_owned() })?
             })
         });
 
@@ -324,9 +310,7 @@ pub mod test {
                 if count == succeed_at {
                     Ok(())
                 } else {
-                    Err(SchedulerError::JobLockError {
-                        message: "".to_owned(),
-                    })?
+                    Err(SchedulerError::JobLockError { message: "".to_owned() })?
                 }
             })
         });

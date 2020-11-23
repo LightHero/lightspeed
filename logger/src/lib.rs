@@ -17,47 +17,31 @@ pub enum LoggerError {
 
 impl From<log::SetLoggerError> for LoggerError {
     fn from(error: log::SetLoggerError) -> Self {
-        LoggerError::LoggerConfigurationError {
-            message: format!("{}", error),
-        }
+        LoggerError::LoggerConfigurationError { message: format!("{}", error) }
     }
 }
 
 impl From<std::io::Error> for LoggerError {
     fn from(error: std::io::Error) -> Self {
-        LoggerError::LoggerConfigurationError {
-            message: format!("{}", error),
-        }
+        LoggerError::LoggerConfigurationError { message: format!("{}", error) }
     }
 }
 
-pub fn setup_logger(
-    logger_config: &config::LoggerConfig,
-) -> Result<Option<WorkerGuard>, LoggerError> {
-    let env_filter = EnvFilter::from_str(&logger_config.env_filter).map_err(|err| {
-        LoggerError::LoggerConfigurationError {
-            message: format!(
-                "Cannot parse the env_filter: [{}]. err: {}",
-                logger_config.env_filter, err
-            ),
-        }
-    })?;
+pub fn setup_logger(logger_config: &config::LoggerConfig) -> Result<Option<WorkerGuard>, LoggerError> {
+    let env_filter =
+        EnvFilter::from_str(&logger_config.env_filter).map_err(|err| LoggerError::LoggerConfigurationError {
+            message: format!("Cannot parse the env_filter: [{}]. err: {}", logger_config.env_filter, err),
+        })?;
 
     let (file_subscriber, file_guard) = if logger_config.file_output.file_output_enabled {
         let file_appender = RollingFileAppender::new(
-            logger_config
-                .file_output
-                .file_output_rotation
-                .to_tracing_appender_rotation(),
+            logger_config.file_output.file_output_rotation.to_tracing_appender_rotation(),
             logger_config.file_output.file_output_directory.to_owned(),
             logger_config.file_output.file_output_name_prefix.to_owned(),
         );
 
         let (non_blocking, guard) = tracing_appender::non_blocking(file_appender);
-        (
-            Some(Layer::new().with_ansi(false).with_writer(non_blocking)),
-            Some(guard),
-        )
+        (Some(Layer::new().with_ansi(false).with_writer(non_blocking)), Some(guard))
     } else {
         (None, None)
     };
@@ -68,10 +52,7 @@ pub fn setup_logger(
         None
     };
 
-    let subscriber = tracing_subscriber::registry()
-        .with(env_filter)
-        .with(file_subscriber)
-        .with(stdout_subscriber);
+    let subscriber = tracing_subscriber::registry().with(env_filter).with(file_subscriber).with(stdout_subscriber);
     set_global_logger(subscriber)?;
 
     Ok(file_guard)

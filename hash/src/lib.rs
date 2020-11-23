@@ -21,15 +21,10 @@ impl HashModule {
 
         let hash_service = Arc::new(HashService::new());
 
-        let validation_code_service = Arc::new(ValidationCodeService::new(
-            hash_service.clone(),
-            core_module.jwt.clone(),
-        ));
+        let validation_code_service =
+            Arc::new(ValidationCodeService::new(hash_service.clone(), core_module.jwt.clone()));
 
-        Ok(HashModule {
-            hash_service,
-            validation_code_service,
-        })
+        Ok(HashModule { hash_service, validation_code_service })
     }
 }
 

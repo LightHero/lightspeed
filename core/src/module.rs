@@ -30,15 +30,8 @@ mod test {
     async fn should_start_all() {
         let output = Arc::new(Mutex::new(vec![]));
 
-        let mut mod1 = SimpleModOne {
-            output: output.clone(),
-            name: "one".to_string(),
-        };
-        let mut mod2 = SimpleModTwo {
-            output: output.clone(),
-            name: "two".to_string(),
-            fail: false,
-        };
+        let mut mod1 = SimpleModOne { output: output.clone(), name: "one".to_string() };
+        let mut mod2 = SimpleModTwo { output: output.clone(), name: "two".to_string(), fail: false };
 
         let mut modules: Vec<&mut dyn super::Module> = vec![&mut mod1, &mut mod2];
 
@@ -46,29 +39,16 @@ mod test {
 
         assert!(result.is_ok());
         assert_eq!(2, output.lock().await.len());
-        assert_eq!(
-            &"one-start".to_string(),
-            output.lock().await.get(0).unwrap()
-        );
-        assert_eq!(
-            &"two-start".to_string(),
-            output.lock().await.get(1).unwrap()
-        );
+        assert_eq!(&"one-start".to_string(), output.lock().await.get(0).unwrap());
+        assert_eq!(&"two-start".to_string(), output.lock().await.get(1).unwrap());
     }
 
     #[tokio::test]
     async fn should_fail_on_start() {
         let output = Arc::new(Mutex::new(vec![]));
 
-        let mut mod1 = SimpleModOne {
-            output: output.clone(),
-            name: "one".to_string(),
-        };
-        let mut mod2 = SimpleModTwo {
-            output: output.clone(),
-            name: "two".to_string(),
-            fail: true,
-        };
+        let mut mod1 = SimpleModOne { output: output.clone(), name: "one".to_string() };
+        let mut mod2 = SimpleModTwo { output: output.clone(), name: "two".to_string(), fail: true };
 
         let mut modules: Vec<&mut dyn super::Module> = vec![&mut mod1, &mut mod2];
 
@@ -87,10 +67,7 @@ mod test {
         }
 
         assert_eq!(1, output.lock().await.len());
-        assert_eq!(
-            &"one-start".to_string(),
-            output.lock().await.get(0).unwrap()
-        );
+        assert_eq!(&"one-start".to_string(), output.lock().await.get(0).unwrap());
     }
 
     #[derive(Clone)]
@@ -120,9 +97,7 @@ mod test {
     impl super::Module for SimpleModTwo {
         async fn start(&mut self) -> Result<(), LightSpeedError> {
             if self.fail {
-                return Err(LightSpeedError::ModuleStartError {
-                    message: "test_failure".to_owned(),
-                });
+                return Err(LightSpeedError::ModuleStartError { message: "test_failure".to_owned() });
             }
 
             let mut owned = self.name.to_owned();

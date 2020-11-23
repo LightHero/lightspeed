@@ -34,29 +34,16 @@ impl Default for LoggerConfig {
 pub struct StandardOutputConfig {
     /// Determines whether the Logger should print to standard output.
     /// Valid values: true, false
-    #[structopt(
-        long,
-        env = "LS_LOGGER_STDOUT_OUTPUT_ENABLED",
-        parse(try_from_str),
-        default_value = "true"
-    )]
+    #[structopt(long, env = "LS_LOGGER_STDOUT_OUTPUT_ENABLED", parse(try_from_str), default_value = "true")]
     pub stdout_enabled: bool,
 
-    #[structopt(
-        long,
-        env = "LS_LOGGER_STDOUT_OUTPUT_USE_ANSI_COLORS",
-        parse(try_from_str),
-        default_value = "true"
-    )]
+    #[structopt(long, env = "LS_LOGGER_STDOUT_OUTPUT_USE_ANSI_COLORS", parse(try_from_str), default_value = "true")]
     pub stdout_use_ansi_colors: bool,
 }
 
 impl Default for StandardOutputConfig {
     fn default() -> Self {
-        Self {
-            stdout_use_ansi_colors: true,
-            stdout_enabled: true,
-        }
+        Self { stdout_use_ansi_colors: true, stdout_enabled: true }
     }
 }
 
@@ -65,12 +52,7 @@ impl Default for StandardOutputConfig {
 pub struct FileOutputConfig {
     /// Determines whether the Logger should print to a file.
     /// Valid values: true, false
-    #[structopt(
-        long,
-        env = "LS_LOGGER_FILE_OUTPUT_ENABLED",
-        parse(try_from_str),
-        default_value = "false"
-    )]
+    #[structopt(long, env = "LS_LOGGER_FILE_OUTPUT_ENABLED", parse(try_from_str), default_value = "false")]
     pub file_output_enabled: bool,
 
     /// The log file location
@@ -78,11 +60,7 @@ pub struct FileOutputConfig {
     pub file_output_directory: String,
 
     /// The log file name's _prefix_
-    #[structopt(
-        long,
-        env = "LS_LOGGER_FILE_OUTPUT_NAME_PREFIX",
-        default_value = "output.log"
-    )]
+    #[structopt(long, env = "LS_LOGGER_FILE_OUTPUT_NAME_PREFIX", default_value = "output.log")]
     pub file_output_name_prefix: String,
 
     /// The log file rotation strategy
@@ -118,9 +96,7 @@ impl FromStr for Rotation {
             "hourly" => Ok(Rotation::Hourly),
             "daily" => Ok(Rotation::Daily),
             "never" => Ok(Rotation::Never),
-            _ => Err(LoggerError::LoggerConfigurationError {
-                message: format!("Could not parse rotation [{}]", val),
-            }),
+            _ => Err(LoggerError::LoggerConfigurationError { message: format!("Could not parse rotation [{}]", val) }),
         }
     }
 }

@@ -24,53 +24,31 @@ impl FullEmailClient {
     pub fn new(email_config: EmailClientConfig) -> Result<Self, LightSpeedError> {
         let security = if email_config.server_use_tls.value() {
             let tls_builder = TlsConnector::builder();
-            let tls_connector =
-                tls_builder
-                    .build()
-                    .map_err(|err| LightSpeedError::InternalServerError {
-                        message: format!(
-                            "FullEmailService.new - Cannot build TLS connector. Err: {}",
-                            err
-                        ),
-                    })?;
-            let tls_parameters =
-                ClientTlsParameters::new(email_config.server_address.to_owned(), tls_connector);
+            let tls_connector = tls_builder.build().map_err(|err| LightSpeedError::InternalServerError {
+                message: format!("FullEmailService.new - Cannot build TLS connector. Err: {}", err),
+            })?;
+            let tls_parameters = ClientTlsParameters::new(email_config.server_address.to_owned(), tls_connector);
             ClientSecurity::Wrapper(tls_parameters)
         } else {
             ClientSecurity::None
         };
 
-        let mut smtp_client = SmtpClient::new(
-            (
-                email_config.server_address.as_str(),
-                email_config.server_port,
-            ),
-            security,
-        )
-        .map_err(|err| LightSpeedError::InternalServerError {
-            message: format!(
-                "FullEmailService.new - Cannot connect to the SMTP server. Err: {}",
-                err
-            ),
-        })?;
+        let mut smtp_client =
+            SmtpClient::new((email_config.server_address.as_str(), email_config.server_port), security).map_err(
+                |err| LightSpeedError::InternalServerError {
+                    message: format!("FullEmailService.new - Cannot connect to the SMTP server. Err: {}", err),
+                },
+            )?;
 
         if !email_config.server_username.is_empty() && !email_config.server_password.is_empty() {
-            let credentials = (
-                email_config.server_username.to_owned(),
-                email_config.server_password.to_owned(),
-            )
-                .into_credentials();
+            let credentials =
+                (email_config.server_username.to_owned(), email_config.server_password.to_owned()).into_credentials();
             smtp_client = smtp_client.credentials(credentials)
         }
 
-        let transport = smtp_client
-            .connection_reuse(ConnectionReuseParameters::ReuseUnlimited)
-            .transport();
+        let transport = smtp_client.connection_reuse(ConnectionReuseParameters::ReuseUnlimited).transport();
 
-        Ok(FullEmailClient {
-            email_config,
-            client: Arc::new(Mutex::new(transport)),
-        })
+        Ok(FullEmailClient { email_config, client: Arc::new(Mutex::new(transport)) })
     }
 }
 
@@ -112,74 +90,50 @@ impl EmailClient for FullEmailClient {
 
             for attachment in email_message.attachments {
                 match &attachment {
-                    EmailAttachment::Binary {
-                        body,
-                        filename,
-                        mime_type,
-                    } => {
-                        builder = builder
-                            .attachment(body, filename, &to_mime_type(mime_type)?)
-                            .map_err(|err| LightSpeedError::BadRequest {
+                    EmailAttachment::Binary { body, filename, mime_type } => {
+                        builder = builder.attachment(body, filename, &to_mime_type(mime_type)?).map_err(|err| {
+                            LightSpeedError::BadRequest {
                                 message: format!(
                                     "Cannot attach the requested attachment [{:?}]. Err: {}",
                                     attachment, err
                                 ),
                                 code: "",
-                            })?;
+                            }
+                        })?;
                     }
-                    EmailAttachment::FromFile {
-                        path,
-                        filename,
-                        mime_type,
-                    } => {
+                    EmailAttachment::FromFile { path, filename, mime_type } => {
                         let path = Path::new(path);
                         let filename = filename.as_deref();
-                        builder = builder
-                            .attachment_from_file(path, filename, &to_mime_type(mime_type)?)
-                            .map_err(|err| LightSpeedError::BadRequest {
-                                message: format!(
-                                    "Cannot attach the requested attachment [{:?}]. Err: {}",
-                                    attachment, err
-                                ),
-                                code: "",
+                        builder =
+                            builder.attachment_from_file(path, filename, &to_mime_type(mime_type)?).map_err(|err| {
+                                LightSpeedError::BadRequest {
+                                    message: format!(
+                                        "Cannot attach the requested attachment [{:?}]. Err: {}",
+                                        attachment, err
+                                    ),
+                                    code: "",
+                                }
                             })?;
                     }
                 }
             }
 
-            let email = builder
-                .build()
-                .map_err(|err| LightSpeedError::InternalServerError {
-                    message: format!(
-                        "FullEmailService.send - Cannot build the email. Err: {}",
-                        err
-                    ),
-                })?;
+            let email = builder.build().map_err(|err| LightSpeedError::InternalServerError {
+                message: format!("FullEmailService.send - Cannot build the email. Err: {}", err),
+            })?;
 
             let mut client = client.lock();
 
-            let response =
-                client
-                    .send(email.into())
-                    .map_err(|err| LightSpeedError::InternalServerError {
-                        message: format!(
-                            "FullEmailService.send - Cannot send email to the SMTP server. Err: {}",
-                            err
-                        ),
-                    })?;
+            let response = client.send(email.into()).map_err(|err| LightSpeedError::InternalServerError {
+                message: format!("FullEmailService.send - Cannot send email to the SMTP server. Err: {}", err),
+            })?;
 
-            debug!(
-                "FullEmailService.send - Email sent. Response code: {}",
-                response.code
-            );
+            debug!("FullEmailService.send - Email sent. Response code: {}", response.code);
             Ok(())
         })
         .await
         .map_err(|err| LightSpeedError::InternalServerError {
-            message: format!(
-                "FullEmailService.send - Cannot send email to the SMTP server. Err: {}",
-                err
-            ),
+            message: format!("FullEmailService.send - Cannot send email to the SMTP server. Err: {}", err),
         })?
     }
 
@@ -195,10 +149,7 @@ impl EmailClient for FullEmailClient {
         })
     }
 
-    fn retain_emails(
-        &self,
-        _: Box<dyn FnMut(&EmailMessage) -> bool>,
-    ) -> Result<(), LightSpeedError> {
+    fn retain_emails(&self, _: Box<dyn FnMut(&EmailMessage) -> bool>) -> Result<(), LightSpeedError> {
         Err(LightSpeedError::InternalServerError {
             message: "FullEmailService.clear_emails - Cannot retain_emails".to_owned(),
         })
@@ -206,21 +157,17 @@ impl EmailClient for FullEmailClient {
 }
 
 fn parse_mailbox(address: &str) -> Result<Mailbox, LightSpeedError> {
-    address
-        .parse::<Mailbox>()
-        .map_err(|err| LightSpeedError::BadRequest {
-            message: format!("Cannot parse email address [{}]. Err: {}", address, err),
-            code: ErrorCodes::PARSE_ERROR,
-        })
+    address.parse::<Mailbox>().map_err(|err| LightSpeedError::BadRequest {
+        message: format!("Cannot parse email address [{}]. Err: {}", address, err),
+        code: ErrorCodes::PARSE_ERROR,
+    })
 }
 
 fn to_mime_type(mime_type: &str) -> Result<Mime, LightSpeedError> {
-    mime_type
-        .parse()
-        .map_err(|err| LightSpeedError::BadRequest {
-            message: format!("Cannot parse the mime type [{}]. Err: {}", mime_type, err),
-            code: "",
-        })
+    mime_type.parse().map_err(|err| LightSpeedError::BadRequest {
+        message: format!("Cannot parse the mime type [{}]. Err: {}", mime_type, err),
+        code: "",
+    })
 }
 
 #[cfg(test)]
@@ -234,14 +181,8 @@ pub mod test {
             Mailbox::new_with_name("ufo".to_owned(), "ufo@email.test".to_owned()),
             parse_mailbox("ufo <ufo@email.test>").unwrap()
         );
-        assert_eq!(
-            Mailbox::new("ufo@email.test".to_owned()),
-            parse_mailbox("<ufo@email.test>").unwrap()
-        );
-        assert_eq!(
-            Mailbox::new("ufo@email.test".to_owned()),
-            parse_mailbox("ufo@email.test").unwrap()
-        );
+        assert_eq!(Mailbox::new("ufo@email.test".to_owned()), parse_mailbox("<ufo@email.test>").unwrap());
+        assert_eq!(Mailbox::new("ufo@email.test".to_owned()), parse_mailbox("ufo@email.test").unwrap());
         assert!(parse_mailbox("ufo").is_err());
     }
 }

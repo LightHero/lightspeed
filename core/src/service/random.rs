@@ -6,10 +6,7 @@ pub struct RandomService {}
 impl RandomService {
     #[inline]
     pub fn random_string(length: usize) -> String {
-        rand::thread_rng()
-            .sample_iter(&Alphanumeric)
-            .take(length)
-            .collect::<String>()
+        rand::thread_rng().sample_iter(&Alphanumeric).take(length).collect::<String>()
     }
 
     #[inline]

@@ -29,15 +29,9 @@ impl<RepoManager: CmsRepositoryManager> CmsModule<RepoManager> {
         println!("Creating CmsModule");
         info!("Creating CmsModule");
 
-        let content_service = Arc::new(ContentService::new(
-            repo_manager.c3p0().clone(),
-            repo_manager.clone(),
-        ));
+        let content_service = Arc::new(ContentService::new(repo_manager.c3p0().clone(), repo_manager.clone()));
 
-        let schema_service = Arc::new(SchemaService::new(
-            repo_manager.c3p0().clone(),
-            repo_manager.schema_repo(),
-        ));
+        let schema_service = Arc::new(SchemaService::new(repo_manager.c3p0().clone(), repo_manager.schema_repo()));
 
         let project_service = Arc::new(ProjectService::new(
             repo_manager.c3p0().clone(),
@@ -45,15 +39,7 @@ impl<RepoManager: CmsRepositoryManager> CmsModule<RepoManager> {
             schema_service.clone(),
         ));
 
-        CmsModule {
-            cms_config,
-
-            repo_manager,
-
-            content_service,
-            project_service,
-            schema_service,
-        }
+        CmsModule { cms_config, repo_manager, content_service, project_service, schema_service }
     }
 }
 

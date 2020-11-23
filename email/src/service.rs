@@ -15,10 +15,7 @@ impl EmailService {
     }
 
     pub async fn send(&self, email_message: EmailMessage) -> Result<(), LightSpeedError> {
-        debug!(
-            "Send email message from [{:?}] to [{:?}]",
-            email_message.from, email_message.to
-        );
+        debug!("Send email message from [{:?}] to [{:?}]", email_message.from, email_message.to);
         self.client.send(email_message).await
     }
 

@@ -167,29 +167,16 @@ impl JobExecutorInternal {
 
     /// Adds a job to the JobExecutor.
     async fn add_job_with_scheduler<S: Into<Scheduler>>(&self, schedule: S, job: Job) {
-        info!(
-            "Add job to scheduler. Group [{}] - Name [{}]",
-            job.group(),
-            job.name()
-        );
+        info!("Add job to scheduler. Group [{}] - Name [{}]", job.group(), job.name());
         let mut jobs = self.jobs.write().await;
-        jobs.push(Arc::new(JobScheduler::new(
-            schedule.into(),
-            self.timezone,
-            job,
-        )));
+        jobs.push(Arc::new(JobScheduler::new(schedule.into(), self.timezone, job)));
     }
 }
 
 impl JobExecutor {
     /// Adds a job to the JobExecutor.
-    pub async fn add_job(
-        &self,
-        schedule: &dyn TryToScheduler,
-        job: Job,
-    ) -> Result<(), SchedulerError> {
-        self.add_job_with_scheduler(schedule.to_scheduler()?, job)
-            .await;
+    pub async fn add_job(&self, schedule: &dyn TryToScheduler, job: Job) -> Result<(), SchedulerError> {
+        self.add_job_with_scheduler(schedule.to_scheduler()?, job).await;
         Ok(())
     }
 
@@ -199,8 +186,7 @@ impl JobExecutor {
         schedule: &[&dyn TryToScheduler],
         job: Job,
     ) -> Result<(), SchedulerError> {
-        self.add_job_with_scheduler(schedule.to_scheduler()?, job)
-            .await;
+        self.add_job_with_scheduler(schedule.to_scheduler()?, job).await;
         Ok(())
     }
 
@@ -218,16 +204,13 @@ impl JobExecutor {
                 info!("Starting the job executor");
                 while executor.is_running() {
                     executor.run_pending_jobs().await;
-                    tokio::time::delay_for(executor.sleep_between_checks.load(Ordering::SeqCst))
-                        .await;
+                    tokio::time::delay_for(executor.sleep_between_checks.load(Ordering::SeqCst)).await;
                 }
                 info!("Job executor stopped");
             }))
         } else {
             warn!("The JobExecutor is already running.");
-            Err(SchedulerError::JobExecutionStateError {
-                message: "The JobExecutor is already running.".to_owned(),
-            })
+            Err(SchedulerError::JobExecutionStateError { message: "The JobExecutor is already running.".to_owned() })
         }
     }
 
@@ -239,28 +222,21 @@ impl JobExecutor {
             if grateful {
                 info!("Wait for all Jobs to complete");
                 while self.executor.is_running_job().await {
-                    tokio::time::delay_for(
-                        self.executor.sleep_between_checks.load(Ordering::SeqCst),
-                    )
-                    .await;
+                    tokio::time::delay_for(self.executor.sleep_between_checks.load(Ordering::SeqCst)).await;
                 }
                 info!("All Jobs completed");
             }
             Ok(())
         } else {
             warn!("The JobExecutor is not running.");
-            Err(SchedulerError::JobExecutionStateError {
-                message: "The JobExecutor is not running.".to_owned(),
-            })
+            Err(SchedulerError::JobExecutionStateError { message: "The JobExecutor is not running.".to_owned() })
         }
     }
 
     /// Sets the sleep time between checks for pending Jobs.
     /// The default is 1 second.
     pub fn set_sleep_between_checks(&self, sleep: Duration) {
-        self.executor
-            .sleep_between_checks
-            .store(sleep, Ordering::SeqCst);
+        self.executor.sleep_between_checks.store(sleep, Ordering::SeqCst);
     }
 }
 
@@ -463,10 +439,7 @@ pub mod test {
     async fn should_add_with_explicit_scheduler() {
         let executor = new_executor_with_utc_tz();
         executor
-            .add_job_with_scheduler(
-                Scheduler::Never,
-                Job::new("g", "n", None, move || Box::pin(async { Ok(()) })),
-            )
+            .add_job_with_scheduler(Scheduler::Never, Job::new("g", "n", None, move || Box::pin(async { Ok(()) })))
             .await;
     }
 
@@ -474,10 +447,7 @@ pub mod test {
     async fn should_register_a_schedule_by_vec() {
         let executor = new_executor_with_utc_tz();
         executor
-            .add_job(
-                &vec!["0 1 * * * * *"],
-                Job::new("g", "n", None, move || Box::pin(async { Ok(()) })),
-            )
+            .add_job(&vec!["0 1 * * * * *"], Job::new("g", "n", None, move || Box::pin(async { Ok(()) })))
             .await
             .unwrap();
         executor

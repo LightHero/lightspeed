@@ -9,9 +9,7 @@ pub enum SchedulerError {
     #[error("JobExecutionStateError: [{message}]")]
     JobExecutionStateError { message: String },
     #[error("JobExecutionError: [{cause}]")]
-    JobExecutionError {
-        cause: Box<dyn std::error::Error + Send + Sync>,
-    },
+    JobExecutionError { cause: Box<dyn std::error::Error + Send + Sync> },
     #[error("JobExecutionPanic: [{cause}]")]
     JobExecutionPanic { cause: String },
 }

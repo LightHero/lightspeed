@@ -12,10 +12,7 @@ fn should_setup_logger_with_env_filter() -> Result<(), std::io::Error> {
     let log_filename = format!("{}/{}", file_output_directory, file_output_name_prefix);
 
     let config = LoggerConfig {
-        stdout_output: StandardOutputConfig {
-            stdout_enabled: true,
-            stdout_use_ansi_colors: true,
-        },
+        stdout_output: StandardOutputConfig { stdout_enabled: true, stdout_use_ansi_colors: true },
         env_filter: "debug,logger_file_output_it=info".to_owned(),
         file_output: FileOutputConfig {
             file_output_directory,

@@ -26,9 +26,6 @@ mod tests {
         let mut error_details = ErrorDetails::default();
         validate_url(&mut error_details, "url", "gmail");
         assert_eq!(1, error_details.details().len());
-        assert_eq!(
-            error_details.details()["url"][0],
-            ErrorDetail::new(NOT_VALID_URL, vec![]),
-        )
+        assert_eq!(error_details.details()["url"][0], ErrorDetail::new(NOT_VALID_URL, vec![]),)
     }
 }

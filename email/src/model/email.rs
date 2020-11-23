@@ -2,16 +2,8 @@ use serde::{Deserialize, Serialize};
 
 #[derive(Clone, Serialize, Deserialize, Debug)]
 pub enum EmailAttachment {
-    Binary {
-        body: Vec<u8>,
-        filename: String,
-        mime_type: String,
-    },
-    FromFile {
-        path: String,
-        filename: Option<String>,
-        mime_type: String,
-    },
+    Binary { body: Vec<u8>, filename: String, mime_type: String },
+    FromFile { path: String, filename: Option<String>, mime_type: String },
 }
 
 #[derive(Clone, Serialize, Deserialize, Debug)]

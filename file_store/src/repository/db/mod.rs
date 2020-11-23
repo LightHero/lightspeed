@@ -1,6 +1,4 @@
-use crate::model::{
-    BinaryContent, FileStoreDataData, FileStoreDataModel, Repository, RepositoryFile,
-};
+use crate::model::{BinaryContent, FileStoreDataData, FileStoreDataModel, Repository, RepositoryFile};
 use c3p0::*;
 use lightspeed_core::error::LightSpeedError;
 
@@ -57,11 +55,7 @@ pub trait FileStoreDataRepository: Clone + Send + Sync {
         repository: &RepositoryFile,
     ) -> Result<bool, LightSpeedError>;
 
-    async fn fetch_one_by_id(
-        &self,
-        conn: &mut Self::Conn,
-        id: IdType,
-    ) -> Result<FileStoreDataModel, LightSpeedError>;
+    async fn fetch_one_by_id(&self, conn: &mut Self::Conn, id: IdType) -> Result<FileStoreDataModel, LightSpeedError>;
 
     async fn fetch_one_by_repository(
         &self,
@@ -84,6 +78,5 @@ pub trait FileStoreDataRepository: Clone + Send + Sync {
         model: NewModel<FileStoreDataData>,
     ) -> Result<FileStoreDataModel, LightSpeedError>;
 
-    async fn delete_by_id(&self, conn: &mut Self::Conn, id: IdType)
-        -> Result<u64, LightSpeedError>;
+    async fn delete_by_id(&self, conn: &mut Self::Conn, id: IdType) -> Result<u64, LightSpeedError>;
 }

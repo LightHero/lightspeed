@@ -20,14 +20,9 @@ impl EmailClientModule {
         println!("Creating EmailClientModule");
         info!("Creating EmailClientModule");
 
-        let email_service = Arc::new(EmailService::new(repository::email::new(
-            email_config.clone(),
-        )?));
+        let email_service = Arc::new(EmailService::new(repository::email::new(email_config.clone())?));
 
-        Ok(EmailClientModule {
-            email_config,
-            email_service,
-        })
+        Ok(EmailClientModule { email_config, email_service })
     }
 }
 

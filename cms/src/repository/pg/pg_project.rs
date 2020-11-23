@@ -20,9 +20,7 @@ impl Deref for PgProjectRepository {
 
 impl Default for PgProjectRepository {
     fn default() -> Self {
-        PgProjectRepository {
-            repo: C3p0JsonBuilder::new("LS_CMS_PROJECT").build(),
-        }
+        PgProjectRepository { repo: C3p0JsonBuilder::new("LS_CMS_PROJECT").build() }
     }
 }
 
@@ -30,19 +28,11 @@ impl Default for PgProjectRepository {
 impl ProjectRepository for PgProjectRepository {
     type Conn = PgConnection;
 
-    async fn fetch_by_id(
-        &self,
-        conn: &mut Self::Conn,
-        id: i64,
-    ) -> Result<Model<ProjectData>, LightSpeedError> {
+    async fn fetch_by_id(&self, conn: &mut Self::Conn, id: i64) -> Result<Model<ProjectData>, LightSpeedError> {
         Ok(self.repo.fetch_one_by_id(conn, &id).await?)
     }
 
-    async fn exists_by_name(
-        &self,
-        conn: &mut Self::Conn,
-        name: &str,
-    ) -> Result<bool, LightSpeedError> {
+    async fn exists_by_name(&self, conn: &mut Self::Conn, name: &str) -> Result<bool, LightSpeedError> {
         let sql = r#"
             select count(*) from LS_CMS_PROJECT
             where LS_CMS_PROJECT.DATA ->> 'name' = $1

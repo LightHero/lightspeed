@@ -24,25 +24,13 @@ impl Auth {
         creation_ts_seconds: i64,
         expiration_ts_seconds: i64,
     ) -> Self {
-        Self {
-            id,
-            username: username.into(),
-            roles,
-            creation_ts_seconds,
-            expiration_ts_seconds,
-        }
+        Self { id, username: username.into(), roles, creation_ts_seconds, expiration_ts_seconds }
     }
 }
 
 impl Default for Auth {
     fn default() -> Self {
-        Self {
-            id: -1,
-            username: "".to_owned(),
-            roles: vec![],
-            creation_ts_seconds: 0,
-            expiration_ts_seconds: 0,
-        }
+        Self { id: -1, username: "".to_owned(), roles: vec![], creation_ts_seconds: 0, expiration_ts_seconds: 0 }
     }
 }
 
@@ -65,18 +53,13 @@ pub struct AuthService<T: RolesProvider> {
 impl<T: RolesProvider> AuthService<T> {
     pub fn new(roles_provider: T) -> AuthService<T> {
         AuthService {
-            permission_roles_map: AuthService::<T>::roles_map_to_permissions_map(
-                roles_provider.fetch_all().as_ref(),
-            ),
+            permission_roles_map: AuthService::<T>::roles_map_to_permissions_map(roles_provider.fetch_all().as_ref()),
             roles_provider,
         }
     }
 
     pub fn auth(&self, auth: Auth) -> AuthContext {
-        AuthContext {
-            auth,
-            permission_roles_map: &self.permission_roles_map,
-        }
+        AuthContext { auth, permission_roles_map: &self.permission_roles_map }
     }
 
     /// Creates a permission_roles_map from an array of Roles
@@ -84,10 +67,7 @@ impl<T: RolesProvider> AuthService<T> {
         let mut result = BTreeMap::new();
         for role in roles {
             for permission in &role.permissions {
-                result
-                    .entry(permission.to_owned())
-                    .or_insert_with(Vec::new)
-                    .push(role.name.clone())
+                result.entry(permission.to_owned()).or_insert_with(Vec::new).push(role.name.clone())
             }
         }
         result
@@ -101,9 +81,7 @@ pub struct AuthContext<'a> {
 
 impl<'a> AuthContext<'a> {
     pub fn is_authenticated(&self) -> Result<&AuthContext, LightSpeedError> {
-        if self.auth.username.is_empty()
-            || self.auth.expiration_ts_seconds < current_epoch_seconds()
-        {
+        if self.auth.username.is_empty() || self.auth.expiration_ts_seconds < current_epoch_seconds() {
             return Err(LightSpeedError::UnauthenticatedError {});
         };
         Ok(&self)
@@ -113,10 +91,7 @@ impl<'a> AuthContext<'a> {
         self.is_authenticated()?;
         if !self.has_role_bool(&role) {
             return Err(LightSpeedError::ForbiddenError {
-                message: format!(
-                    "User [{}] does not have the required role [{}]",
-                    self.auth.id, role
-                ),
+                message: format!("User [{}] does not have the required role [{}]", self.auth.id, role),
             });
         };
         Ok(&self)
@@ -139,10 +114,7 @@ impl<'a> AuthContext<'a> {
         for role in roles {
             if !self.has_role_bool(*role) {
                 return Err(LightSpeedError::ForbiddenError {
-                    message: format!(
-                        "User [{}] does not have the required role [{}]",
-                        self.auth.id, role
-                    ),
+                    message: format!("User [{}] does not have the required role [{}]", self.auth.id, role),
                 });
             };
         }
@@ -154,19 +126,13 @@ impl<'a> AuthContext<'a> {
 
         if !self.has_permission_bool(&permission) {
             return Err(LightSpeedError::ForbiddenError {
-                message: format!(
-                    "User [{}] does not have the required permission [{}]",
-                    self.auth.id, permission
-                ),
+                message: format!("User [{}] does not have the required permission [{}]", self.auth.id, permission),
             });
         };
         Ok(&self)
     }
 
-    pub fn has_any_permission(
-        &self,
-        permissions: &[&str],
-    ) -> Result<&AuthContext, LightSpeedError> {
+    pub fn has_any_permission(&self, permissions: &[&str]) -> Result<&AuthContext, LightSpeedError> {
         self.is_authenticated()?;
 
         for permission in permissions {
@@ -175,25 +141,16 @@ impl<'a> AuthContext<'a> {
             };
         }
         Err(LightSpeedError::ForbiddenError {
-            message: format!(
-                "User [{}] does not have the required permission",
-                self.auth.id
-            ),
+            message: format!("User [{}] does not have the required permission", self.auth.id),
         })
     }
 
-    pub fn has_all_permissions(
-        &self,
-        permissions: &[&str],
-    ) -> Result<&AuthContext, LightSpeedError> {
+    pub fn has_all_permissions(&self, permissions: &[&str]) -> Result<&AuthContext, LightSpeedError> {
         self.is_authenticated()?;
         for permission in permissions {
             if !self.has_permission_bool(*permission) {
                 return Err(LightSpeedError::ForbiddenError {
-                    message: format!(
-                        "User [{}] does not have the required permission [{}]",
-                        self.auth.id, permission
-                    ),
+                    message: format!("User [{}] does not have the required permission [{}]", self.auth.id, permission),
                 });
             };
         }
@@ -215,11 +172,7 @@ impl<'a> AuthContext<'a> {
         }
     }
 
-    pub fn is_owner_or_has_role<T: Owned>(
-        &self,
-        obj: &T,
-        role: &str,
-    ) -> Result<&AuthContext, LightSpeedError> {
+    pub fn is_owner_or_has_role<T: Owned>(&self, obj: &T, role: &str) -> Result<&AuthContext, LightSpeedError> {
         if (self.auth.id == obj.get_owner_id()) || self.has_role_bool(role) {
             Ok(&self)
         } else {
@@ -289,10 +242,7 @@ impl InMemoryRolesProvider {
             roles_by_name.insert(role.name.clone(), role.clone());
         }
 
-        InMemoryRolesProvider {
-            all_roles,
-            roles_by_name: Arc::new(roles_by_name),
-        }
+        InMemoryRolesProvider { all_roles, roles_by_name: Arc::new(roles_by_name) }
     }
 }
 
@@ -428,10 +378,7 @@ mod test {
             expiration_ts_seconds: current_epoch_seconds() + 100,
         };
         let auth = auth_service.auth(user);
-        assert!(auth
-            .has_role("USER")
-            .and_then(|auth| auth.has_role("USER"))
-            .is_ok());
+        assert!(auth.has_role("USER").and_then(|auth| auth.has_role("USER")).is_ok());
     }
 
     #[test]
@@ -486,11 +433,7 @@ mod test {
         let user = Auth {
             id: 0,
             username: "name".to_string(),
-            roles: vec![
-                "ADMIN".to_string(),
-                "USER".to_string(),
-                "FRIEND".to_string(),
-            ],
+            roles: vec!["ADMIN".to_string(), "USER".to_string(), "FRIEND".to_string()],
             creation_ts_seconds: 0,
             expiration_ts_seconds: current_epoch_seconds() + 100,
         };
@@ -515,10 +458,7 @@ mod test {
 
     #[test]
     fn should_be_not_authenticated_even_if_has_permission() {
-        let roles = vec![Role {
-            name: "ADMIN".to_string(),
-            permissions: vec!["delete".to_string()],
-        }];
+        let roles = vec![Role { name: "ADMIN".to_string(), permissions: vec!["delete".to_string()] }];
         let provider = super::InMemoryRolesProvider::new(roles.clone().into());
         let auth_service = super::AuthService::new(provider);
         let user = Auth {
@@ -535,14 +475,8 @@ mod test {
     #[test]
     fn should_have_permission() {
         let roles = vec![
-            Role {
-                name: "ADMIN".to_string(),
-                permissions: vec!["delete".to_string()],
-            },
-            Role {
-                name: "OWNER".to_string(),
-                permissions: vec!["create".to_string()],
-            },
+            Role { name: "ADMIN".to_string(), permissions: vec!["delete".to_string()] },
+            Role { name: "OWNER".to_string(), permissions: vec!["create".to_string()] },
         ];
         let provider = super::InMemoryRolesProvider::new(roles.clone().into());
         let auth_service = super::AuthService::new(provider);
@@ -560,14 +494,8 @@ mod test {
     #[test]
     fn should_have_permission_2() {
         let roles = vec![
-            Role {
-                name: "ADMIN".to_string(),
-                permissions: vec!["delete".to_string()],
-            },
-            Role {
-                name: "OWNER".to_string(),
-                permissions: vec!["delete".to_string()],
-            },
+            Role { name: "ADMIN".to_string(), permissions: vec!["delete".to_string()] },
+            Role { name: "OWNER".to_string(), permissions: vec!["delete".to_string()] },
         ];
         let provider = super::InMemoryRolesProvider::new(roles.clone().into());
         let auth_service = super::AuthService::new(provider);
@@ -585,14 +513,8 @@ mod test {
     #[test]
     fn should_not_have_permission() {
         let roles = vec![
-            Role {
-                name: "ADMIN".to_string(),
-                permissions: vec!["delete".to_string()],
-            },
-            Role {
-                name: "OWNER".to_string(),
-                permissions: vec!["delete".to_string()],
-            },
+            Role { name: "ADMIN".to_string(), permissions: vec!["delete".to_string()] },
+            Role { name: "OWNER".to_string(), permissions: vec!["delete".to_string()] },
         ];
         let provider = super::InMemoryRolesProvider::new(roles.clone().into());
         let auth_service = super::AuthService::new(provider);
@@ -610,14 +532,8 @@ mod test {
     #[test]
     fn should_have_any_permission() {
         let roles = vec![
-            Role {
-                name: "ADMIN".to_string(),
-                permissions: vec!["superDelete".to_string()],
-            },
-            Role {
-                name: "OWNER".to_string(),
-                permissions: vec!["delete".to_string()],
-            },
+            Role { name: "ADMIN".to_string(), permissions: vec!["superDelete".to_string()] },
+            Role { name: "OWNER".to_string(), permissions: vec!["delete".to_string()] },
         ];
         let provider = super::InMemoryRolesProvider::new(roles.clone().into());
         let auth_service = super::AuthService::new(provider);
@@ -629,22 +545,14 @@ mod test {
             expiration_ts_seconds: current_epoch_seconds() + 100,
         };
         let auth_context = auth_service.auth(user);
-        assert!(auth_context
-            .has_any_permission(&["delete", "superDelete"])
-            .is_ok());
+        assert!(auth_context.has_any_permission(&["delete", "superDelete"]).is_ok());
     }
 
     #[test]
     fn should_not_have_any_permission() {
         let roles = vec![
-            Role {
-                name: "ADMIN".to_string(),
-                permissions: vec!["delete".to_string(), "superDelete".to_string()],
-            },
-            Role {
-                name: "OWNER".to_string(),
-                permissions: vec!["delete".to_string()],
-            },
+            Role { name: "ADMIN".to_string(), permissions: vec!["delete".to_string(), "superDelete".to_string()] },
+            Role { name: "OWNER".to_string(), permissions: vec!["delete".to_string()] },
         ];
         let provider = super::InMemoryRolesProvider::new(roles.clone().into());
         let auth_service = super::AuthService::new(provider);
@@ -656,26 +564,15 @@ mod test {
             expiration_ts_seconds: current_epoch_seconds() + 100,
         };
         let auth_context = auth_service.auth(user);
-        assert!(auth_context
-            .has_any_permission(&["delete", "superAdmin"])
-            .is_err());
+        assert!(auth_context.has_any_permission(&["delete", "superAdmin"]).is_err());
     }
 
     #[test]
     fn should_have_all_permissions() {
         let roles = vec![
-            Role {
-                name: "ADMIN".to_string(),
-                permissions: vec!["superDelete".to_string()],
-            },
-            Role {
-                name: "OWNER".to_string(),
-                permissions: vec!["delete".to_string()],
-            },
-            Role {
-                name: "USER".to_string(),
-                permissions: vec!["delete".to_string()],
-            },
+            Role { name: "ADMIN".to_string(), permissions: vec!["superDelete".to_string()] },
+            Role { name: "OWNER".to_string(), permissions: vec!["delete".to_string()] },
+            Role { name: "USER".to_string(), permissions: vec!["delete".to_string()] },
         ];
         let provider = super::InMemoryRolesProvider::new(roles.clone().into());
         let auth_service = super::AuthService::new(provider);
@@ -687,22 +584,14 @@ mod test {
             expiration_ts_seconds: current_epoch_seconds() + 100,
         };
         let auth_context = auth_service.auth(user);
-        assert!(auth_context
-            .has_all_permissions(&["delete", "superDelete"])
-            .is_ok());
+        assert!(auth_context.has_all_permissions(&["delete", "superDelete"]).is_ok());
     }
 
     #[test]
     fn should_not_have_all_permissions() {
         let roles = vec![
-            Role {
-                name: "ADMIN".to_string(),
-                permissions: vec!["superDelete".to_string()],
-            },
-            Role {
-                name: "OWNER".to_string(),
-                permissions: vec!["delete".to_string()],
-            },
+            Role { name: "ADMIN".to_string(), permissions: vec!["superDelete".to_string()] },
+            Role { name: "OWNER".to_string(), permissions: vec!["delete".to_string()] },
         ];
         let provider = super::InMemoryRolesProvider::new(roles.clone().into());
         let auth_service = super::AuthService::new(provider);
@@ -714,9 +603,7 @@ mod test {
             expiration_ts_seconds: current_epoch_seconds() + 100,
         };
         let auth_context = auth_service.auth(user);
-        assert!(auth_context
-            .has_all_permissions(&["delete", "superDelete"])
-            .is_err());
+        assert!(auth_context.has_all_permissions(&["delete", "superDelete"]).is_err());
     }
 
     #[test]
@@ -753,10 +640,7 @@ mod test {
 
     #[test]
     fn should_be_allowed_if_not_the_owner_but_has_role() {
-        let roles = vec![Role {
-            name: "ROLE_1".to_string(),
-            permissions: vec!["access_1".to_string()],
-        }];
+        let roles = vec![Role { name: "ROLE_1".to_string(), permissions: vec!["access_1".to_string()] }];
         let provider = super::InMemoryRolesProvider::new(roles.clone().into());
         let auth_service = super::AuthService::new(provider);
         let user = Auth {
@@ -767,17 +651,12 @@ mod test {
             expiration_ts_seconds: current_epoch_seconds() + 100,
         };
         let auth_context = auth_service.auth(user);
-        assert!(auth_context
-            .is_owner_or_has_role(&Ownable { owner_id: 1 }, "ROLE_1")
-            .is_ok());
+        assert!(auth_context.is_owner_or_has_role(&Ownable { owner_id: 1 }, "ROLE_1").is_ok());
     }
 
     #[test]
     fn should_be_allowed_if_the_owner_but_not_has_role() {
-        let roles = vec![Role {
-            name: "ROLE_1".to_string(),
-            permissions: vec!["access_1".to_string()],
-        }];
+        let roles = vec![Role { name: "ROLE_1".to_string(), permissions: vec!["access_1".to_string()] }];
         let provider = super::InMemoryRolesProvider::new(roles.clone().into());
         let auth_service = super::AuthService::new(provider);
         let user = Auth {
@@ -788,17 +667,12 @@ mod test {
             expiration_ts_seconds: current_epoch_seconds() + 100,
         };
         let auth_context = auth_service.auth(user);
-        assert!(auth_context
-            .is_owner_or_has_role(&Ownable { owner_id: 0 }, "ROLE_2")
-            .is_ok());
+        assert!(auth_context.is_owner_or_has_role(&Ownable { owner_id: 0 }, "ROLE_2").is_ok());
     }
 
     #[test]
     fn should_not_be_allowed_if_not_the_owner_and_not_has_role() {
-        let roles = vec![Role {
-            name: "ROLE_1".to_string(),
-            permissions: vec!["access_1".to_string()],
-        }];
+        let roles = vec![Role { name: "ROLE_1".to_string(), permissions: vec!["access_1".to_string()] }];
         let provider = super::InMemoryRolesProvider::new(roles.clone().into());
         let auth_service = super::AuthService::new(provider);
         let user = Auth {
@@ -809,17 +683,12 @@ mod test {
             expiration_ts_seconds: current_epoch_seconds() + 100,
         };
         let auth_context = auth_service.auth(user);
-        assert!(auth_context
-            .is_owner_or_has_role(&Ownable { owner_id: 1 }, "ROLE_2")
-            .is_err());
+        assert!(auth_context.is_owner_or_has_role(&Ownable { owner_id: 1 }, "ROLE_2").is_err());
     }
 
     #[test]
     fn should_be_allowed_if_not_the_owner_but_has_permission() {
-        let roles = vec![Role {
-            name: "ROLE_1".to_string(),
-            permissions: vec!["access_1".to_string()],
-        }];
+        let roles = vec![Role { name: "ROLE_1".to_string(), permissions: vec!["access_1".to_string()] }];
         let provider = super::InMemoryRolesProvider::new(roles.clone().into());
         let auth_service = super::AuthService::new(provider);
         let user = Auth {
@@ -830,17 +699,12 @@ mod test {
             expiration_ts_seconds: current_epoch_seconds() + 100,
         };
         let auth_context = auth_service.auth(user);
-        assert!(auth_context
-            .is_owner_or_has_permission(&Ownable { owner_id: 1 }, "access_1")
-            .is_ok());
+        assert!(auth_context.is_owner_or_has_permission(&Ownable { owner_id: 1 }, "access_1").is_ok());
     }
 
     #[test]
     fn should_be_allowed_if_the_owner_but_not_has_permission() {
-        let roles = vec![Role {
-            name: "ROLE_1".to_string(),
-            permissions: vec!["access_1".to_string()],
-        }];
+        let roles = vec![Role { name: "ROLE_1".to_string(), permissions: vec!["access_1".to_string()] }];
         let provider = super::InMemoryRolesProvider::new(roles.clone().into());
         let auth_service = super::AuthService::new(provider);
         let user = Auth {
@@ -851,17 +715,12 @@ mod test {
             expiration_ts_seconds: current_epoch_seconds() + 100,
         };
         let auth_context = auth_service.auth(user);
-        assert!(auth_context
-            .is_owner_or_has_permission(&Ownable { owner_id: 0 }, "access_2")
-            .is_ok());
+        assert!(auth_context.is_owner_or_has_permission(&Ownable { owner_id: 0 }, "access_2").is_ok());
     }
 
     #[test]
     fn should_not_be_allowed_if_not_the_owner_and_not_has_permission() {
-        let roles = vec![Role {
-            name: "ROLE_1".to_string(),
-            permissions: vec!["access_1".to_string()],
-        }];
+        let roles = vec![Role { name: "ROLE_1".to_string(), permissions: vec!["access_1".to_string()] }];
         let provider = super::InMemoryRolesProvider::new(roles.clone().into());
         let auth_service = super::AuthService::new(provider);
         let user = Auth {
@@ -872,17 +731,12 @@ mod test {
             expiration_ts_seconds: current_epoch_seconds() + 100,
         };
         let auth_context = auth_service.auth(user);
-        assert!(auth_context
-            .is_owner_or_has_permission(&Ownable { owner_id: 1 }, "access_2")
-            .is_err());
+        assert!(auth_context.is_owner_or_has_permission(&Ownable { owner_id: 1 }, "access_2").is_err());
     }
 
     #[test]
     fn should_return_true_if_all_matches() -> Result<(), LightSpeedError> {
-        let roles = vec![Role {
-            name: "ROLE_1".to_string(),
-            permissions: vec!["access_1".to_string()],
-        }];
+        let roles = vec![Role { name: "ROLE_1".to_string(), permissions: vec!["access_1".to_string()] }];
         let provider = super::InMemoryRolesProvider::new(roles.clone().into());
         let auth_service = super::AuthService::new(provider);
         let user = Auth {
@@ -894,15 +748,9 @@ mod test {
         };
         let auth_context = auth_service.auth(user);
 
-        assert!(auth_context
-            .has_role("ROLE_1")?
-            .has_any_role(&vec!["ROLE_1", "ROLE_3"])
-            .is_ok());
+        assert!(auth_context.has_role("ROLE_1")?.has_any_role(&vec!["ROLE_1", "ROLE_3"]).is_ok());
 
-        assert!(auth_context
-            .has_role("ROLE_3")
-            .and_then(|auth| auth.has_any_role(&vec!["ROLE_1", "ROLE_3"]))
-            .is_err());
+        assert!(auth_context.has_role("ROLE_3").and_then(|auth| auth.has_any_role(&vec!["ROLE_1", "ROLE_3"])).is_err());
 
         assert!(auth_context
             .has_role("ROLE_1")
@@ -913,10 +761,7 @@ mod test {
 
     #[test]
     fn should_return_true_if_any_matches() -> Result<(), LightSpeedError> {
-        let roles = vec![Role {
-            name: "ROLE_1".to_string(),
-            permissions: vec!["access_1".to_string()],
-        }];
+        let roles = vec![Role { name: "ROLE_1".to_string(), permissions: vec!["access_1".to_string()] }];
         let provider = super::InMemoryRolesProvider::new(roles.clone().into());
         let auth_service = super::AuthService::new(provider);
         let user = Auth {
@@ -930,9 +775,7 @@ mod test {
 
         assert!(auth_context
             .has_role("ROLE_1")
-            .or_else(|_err| auth_context
-                .has_any_role(&vec!["ROLE_1", "ROLE_3"])?
-                .has_role("ROLE_1"))
+            .or_else(|_err| auth_context.has_any_role(&vec!["ROLE_1", "ROLE_3"])?.has_role("ROLE_1"))
             .is_ok());
 
         assert!(auth_context

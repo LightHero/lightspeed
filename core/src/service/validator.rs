@@ -43,9 +43,7 @@ impl<V0: Validable, V1: Validable, V2: Validable> Validable for (&V0, &V1, &V2) 
     }
 }
 
-impl<V0: Validable, V1: Validable, V2: Validable, V3: Validable> Validable
-    for (&V0, &V1, &V2, &V3)
-{
+impl<V0: Validable, V1: Validable, V2: Validable, V3: Validable> Validable for (&V0, &V1, &V2, &V3) {
     #[inline]
     fn validate(&self, error_details: &mut ErrorDetails) -> Result<(), LightSpeedError> {
         self.0.validate(error_details)?;
@@ -68,8 +66,8 @@ impl<V0: Validable, V1: Validable, V2: Validable, V3: Validable, V4: Validable> 
     }
 }
 
-impl<V0: Validable, V1: Validable, V2: Validable, V3: Validable, V4: Validable, V5: Validable>
-    Validable for (&V0, &V1, &V2, &V3, &V4, &V5)
+impl<V0: Validable, V1: Validable, V2: Validable, V3: Validable, V4: Validable, V5: Validable> Validable
+    for (&V0, &V1, &V2, &V3, &V4, &V5)
 {
     #[inline]
     fn validate(&self, error_details: &mut ErrorDetails) -> Result<(), LightSpeedError> {
@@ -82,15 +80,8 @@ impl<V0: Validable, V1: Validable, V2: Validable, V3: Validable, V4: Validable, 
     }
 }
 
-impl<
-        V0: Validable,
-        V1: Validable,
-        V2: Validable,
-        V3: Validable,
-        V4: Validable,
-        V5: Validable,
-        V6: Validable,
-    > Validable for (&V0, &V1, &V2, &V3, &V4, &V5, &V6)
+impl<V0: Validable, V1: Validable, V2: Validable, V3: Validable, V4: Validable, V5: Validable, V6: Validable> Validable
+    for (&V0, &V1, &V2, &V3, &V4, &V5, &V6)
 {
     #[inline]
     fn validate(&self, error_details: &mut ErrorDetails) -> Result<(), LightSpeedError> {
@@ -253,9 +244,8 @@ pub mod test {
 
     #[test]
     pub fn validator_should_return_validable_internal_error() {
-        let result = Validator::validate(&|_error_details: &mut ErrorDetails| {
-            Err(LightSpeedError::UnauthenticatedError)
-        });
+        let result =
+            Validator::validate(&|_error_details: &mut ErrorDetails| Err(LightSpeedError::UnauthenticatedError));
 
         assert!(result.is_err());
         match result {
@@ -266,9 +256,7 @@ pub mod test {
 
     #[test]
     pub fn validator_should_accept_validable() {
-        let validable = Tester {
-            error_details: ErrorDetails::default(),
-        };
+        let validable = Tester { error_details: ErrorDetails::default() };
         let result = Validator::validate(&validable);
         assert!(result.is_ok());
     }
@@ -292,14 +280,10 @@ pub mod test {
 
     #[test]
     pub fn validator_should_accept_validables() {
-        let mut validable_1 = Tester {
-            error_details: ErrorDetails::default(),
-        };
+        let mut validable_1 = Tester { error_details: ErrorDetails::default() };
         validable_1.error_details.add_detail("1", "11");
 
-        let mut validable_2 = Tester {
-            error_details: ErrorDetails::default(),
-        };
+        let mut validable_2 = Tester { error_details: ErrorDetails::default() };
         validable_2.error_details.add_detail("1", "111");
         validable_2.error_details.add_detail("2", "22");
 
@@ -308,11 +292,7 @@ pub mod test {
             Ok(())
         };
 
-        let result = Validator::new()
-            .on(&validable_1)
-            .on(&validable_2)
-            .on(&validable_3)
-            .do_validate();
+        let result = Validator::new().on(&validable_1).on(&validable_2).on(&validable_3).do_validate();
 
         assert!(result.is_err());
         match result {
@@ -340,8 +320,7 @@ pub mod test {
     pub fn validator_should_accept_pair_with_closures() {
         let validable1 = Tester::new();
 
-        let result =
-            Validator::validate(&(&validable1, &|_error_details: &mut ErrorDetails| Ok(())));
+        let result = Validator::validate(&(&validable1, &|_error_details: &mut ErrorDetails| Ok(())));
 
         assert!(result.is_ok());
     }
@@ -370,13 +349,7 @@ pub mod test {
         error_details.add_detail("2", "2");
         let validable5 = Tester { error_details };
 
-        let result = Validator::validate(&(
-            &validable1,
-            &validable2,
-            &validable3,
-            &validable4,
-            &validable5,
-        ));
+        let result = Validator::validate(&(&validable1, &validable2, &validable3, &validable4, &validable5));
 
         assert!(result.is_err());
         match result {
@@ -394,9 +367,7 @@ pub mod test {
 
     impl<'a> Tester<'a> {
         fn new() -> Self {
-            Self {
-                error_details: ErrorDetails::default(),
-            }
+            Self { error_details: ErrorDetails::default() }
         }
     }
 

@@ -1,6 +1,5 @@
 use crate::dto::{
-    ValidationCodeDataDto, ValidationCodeRequestDto, VerifyValidationCodeRequestDto,
-    VerifyValidationCodeResponseDto,
+    ValidationCodeDataDto, ValidationCodeRequestDto, VerifyValidationCodeRequestDto, VerifyValidationCodeResponseDto,
 };
 use crate::service::hash_service::HashService;
 use lightspeed_core::error::LightSpeedError;
@@ -26,10 +25,7 @@ struct ValidationCodeData<'a, Data: Serialize> {
 
 impl ValidationCodeService {
     pub fn new(hash_service: Arc<HashService>, jwt_service: Arc<JwtService>) -> Self {
-        Self {
-            jwt_service,
-            hash_service,
-        }
+        Self { jwt_service, hash_service }
     }
 
     pub fn generate_validation_code<Data: Serialize>(
@@ -73,16 +69,9 @@ impl ValidationCodeService {
         })
     }
 
-    fn hash<Data: Serialize>(
-        &self,
-        data: ValidationCodeData<Data>,
-    ) -> Result<String, LightSpeedError> {
-        let jwt = JWT {
-            iat: data.created_ts_seconds,
-            exp: data.expiration_ts_seconds,
-            sub: "".to_owned(),
-            payload: data,
-        };
+    fn hash<Data: Serialize>(&self, data: ValidationCodeData<Data>) -> Result<String, LightSpeedError> {
+        let jwt =
+            JWT { iat: data.created_ts_seconds, exp: data.expiration_ts_seconds, sub: "".to_owned(), payload: data };
         let token = self.jwt_service.generate_from_token(&jwt)?;
         Ok(self.hash_service.hash(&token))
     }

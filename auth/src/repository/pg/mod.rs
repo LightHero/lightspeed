@@ -37,22 +37,14 @@ impl AuthRepositoryManager for PgAuthRepositoryManager {
 
         let migrate = C3p0MigrateBuilder::new(self.c3p0().clone())
             .with_table_name(migrate_table_name)
-            .with_migrations(from_embed(&MIGRATIONS).map_err(|err| {
-                LightSpeedError::ModuleStartError {
-                    message: format!(
-                        "PgAuthRepositoryManager - failed to read db migrations: {}",
-                        err
-                    ),
-                }
+            .with_migrations(from_embed(&MIGRATIONS).map_err(|err| LightSpeedError::ModuleStartError {
+                message: format!("PgAuthRepositoryManager - failed to read db migrations: {}", err),
             })?)
             .build();
 
-        migrate
-            .migrate()
-            .await
-            .map_err(|err| LightSpeedError::ModuleStartError {
-                message: format!("PgAuthRepositoryManager - db migration failed: {}", err),
-            })
+        migrate.migrate().await.map_err(|err| LightSpeedError::ModuleStartError {
+            message: format!("PgAuthRepositoryManager - db migration failed: {}", err),
+        })
     }
 
     fn auth_account_repo(&self) -> Self::AuthAccountRepo {

@@ -1,6 +1,4 @@
-use crate::model::schema::{
-    LocalizableOptions, Schema, SchemaField, SchemaFieldArity, SchemaFieldType,
-};
+use crate::model::schema::{LocalizableOptions, Schema, SchemaField, SchemaFieldArity, SchemaFieldType};
 use c3p0::Model;
 use lightspeed_core::error::ErrorDetails;
 use lightspeed_core::service::validator::order::{validate_ge, validate_le};
@@ -22,9 +20,7 @@ const NOT_VALID_SLUG: &str = "NOT_VALID_SLUG";
 
 pub fn slug_regex() -> &'static Regex {
     static REGEX: OnceCell<Regex> = OnceCell::new();
-    REGEX.get_or_init(|| {
-        Regex::new(SLUG_VALIDATION_REGEX).expect("slug validation regex should be valid")
-    })
+    REGEX.get_or_init(|| Regex::new(SLUG_VALIDATION_REGEX).expect("slug validation regex should be valid"))
 }
 
 pub type ContentModel = Model<ContentData>;
@@ -45,18 +41,10 @@ pub struct Content {
 #[derive(Clone, Serialize, Deserialize)]
 #[serde(tag = "tag")]
 pub enum ContentFieldValue {
-    Number {
-        value: ContentFieldValueArity<Option<u64>>,
-    },
-    Slug {
-        value: ContentFieldValueArity<Option<String>>,
-    },
-    String {
-        value: ContentFieldValueArity<Option<String>>,
-    },
-    Boolean {
-        value: ContentFieldValueArity<Option<bool>>,
-    },
+    Number { value: ContentFieldValueArity<Option<u64>> },
+    Slug { value: ContentFieldValueArity<Option<String>> },
+    String { value: ContentFieldValueArity<Option<String>> },
+    Boolean { value: ContentFieldValueArity<Option<bool>> },
 }
 
 #[derive(Clone, Serialize, Deserialize)]
@@ -79,12 +67,7 @@ impl Content {
                 let mut scoped_err = error_details.with_scope(scoped_name.clone());
 
                 if let Some(schema_field) = schema_fields.remove(content_field_name) {
-                    validate_content_field(
-                        content_field_name,
-                        content_field_value,
-                        schema_field,
-                        &mut scoped_err,
-                    );
+                    validate_content_field(content_field_name, content_field_value, schema_field, &mut scoped_err);
                 } else {
                     error_details.add_detail(scoped_name, ERR_UNKNOWN_FIELD);
                 }
@@ -119,10 +102,7 @@ fn validate_content_field(
 
     let full_field_name = "value";
     match &schema_field.field_type {
-        SchemaFieldType::Boolean {
-            arity: schema_arity,
-            default: _default,
-        } => match content_field_value {
+        SchemaFieldType::Boolean { arity: schema_arity, default: _default } => match content_field_value {
             ContentFieldValue::Boolean { value: arity } => {
                 validate_arity(
                     schema_field.required,
@@ -137,12 +117,7 @@ fn validate_content_field(
             }
             _ => error_details.add_detail(full_field_name, MUST_BE_OF_TYPE_BOOLEAN),
         },
-        SchemaFieldType::Number {
-            min,
-            max,
-            arity: schema_arity,
-            default: _default,
-        } => match content_field_value {
+        SchemaFieldType::Number { min, max, arity: schema_arity, default: _default } => match content_field_value {
             ContentFieldValue::Number { value: arity } => {
                 validate_arity(
                     schema_field.required,
@@ -151,14 +126,7 @@ fn validate_content_field(
                     error_details,
                     full_field_name,
                     |field_name, value, error_details| {
-                        validate_number(
-                            schema_field.required,
-                            field_name,
-                            value,
-                            min,
-                            max,
-                            error_details,
-                        )
+                        validate_number(schema_field.required, field_name, value, min, max, error_details)
                     },
                 );
             }
@@ -179,33 +147,30 @@ fn validate_content_field(
             }
             _ => error_details.add_detail(full_field_name, MUST_BE_OF_TYPE_SLUG),
         },
-        SchemaFieldType::String {
-            min_length,
-            max_length,
-            arity: schema_arity,
-            default: _default,
-        } => match content_field_value {
-            ContentFieldValue::String { value: arity } => {
-                validate_arity(
-                    schema_field.required,
-                    schema_arity,
-                    arity,
-                    error_details,
-                    full_field_name,
-                    |field_name, value, error_details| {
-                        validate_string(
-                            schema_field.required,
-                            field_name,
-                            value,
-                            min_length,
-                            max_length,
-                            error_details,
-                        )
-                    },
-                );
+        SchemaFieldType::String { min_length, max_length, arity: schema_arity, default: _default } => {
+            match content_field_value {
+                ContentFieldValue::String { value: arity } => {
+                    validate_arity(
+                        schema_field.required,
+                        schema_arity,
+                        arity,
+                        error_details,
+                        full_field_name,
+                        |field_name, value, error_details| {
+                            validate_string(
+                                schema_field.required,
+                                field_name,
+                                value,
+                                min_length,
+                                max_length,
+                                error_details,
+                            )
+                        },
+                    );
+                }
+                _ => error_details.add_detail(full_field_name, MUST_BE_OF_TYPE_STRING),
             }
-            _ => error_details.add_detail(full_field_name, MUST_BE_OF_TYPE_STRING),
-        },
+        }
     }
 }
 
@@ -219,9 +184,7 @@ fn validate_arity<T, F: Fn(&str, &Option<T>, &mut ErrorDetails)>(
 ) {
     match schema_arity {
         SchemaFieldArity::Single | SchemaFieldArity::Unique => match arity {
-            ContentFieldValueArity::Single { value } => {
-                value_validation(full_field_name, value, error_details)
-            }
+            ContentFieldValueArity::Single { value } => value_validation(full_field_name, value, error_details),
             _ => error_details.add_detail(full_field_name, SHOULD_HAVE_SINGLE_VALUE_ARITY),
         },
         SchemaFieldArity::Localizable { options } => match arity {
@@ -231,21 +194,15 @@ fn validate_arity<T, F: Fn(&str, &Option<T>, &mut ErrorDetails)>(
                         if required {
                             languages.iter().for_each(|language| {
                                 if !values.contains_key(language) {
-                                    error_details.add_detail(
-                                        format!("{}[{}]", full_field_name, language),
-                                        ERR_VALUE_REQUIRED,
-                                    )
+                                    error_details
+                                        .add_detail(format!("{}[{}]", full_field_name, language), ERR_VALUE_REQUIRED)
                                 }
                             })
                         }
                     }
                 }
                 values.iter().for_each(|(key, value)| {
-                    value_validation(
-                        &format!("{}[{}]", full_field_name, key),
-                        value,
-                        error_details,
-                    )
+                    value_validation(&format!("{}[{}]", full_field_name, key), value, error_details)
                 })
             }
             _ => error_details.add_detail(full_field_name, SHOULD_HAVE_LOCALIZABLE_ARITY),
@@ -309,12 +266,7 @@ fn validate_string<S: Into<String> + Clone>(
 ) {
     if let Some(value) = value {
         if let Some(min_length) = min_length {
-            validate_ge(
-                error_details,
-                full_field_name.clone(),
-                *min_length,
-                value.len(),
-            )
+            validate_ge(error_details, full_field_name.clone(), *min_length, value.len())
         }
         if let Some(max_length) = max_length {
             validate_le(error_details, full_field_name, *max_length, value.len())
@@ -329,9 +281,7 @@ mod test {
     use super::*;
     use crate::model::schema::{SchemaField, SchemaFieldArity, SchemaFieldType};
     use lightspeed_core::error::{ErrorDetail, LightSpeedError};
-    use lightspeed_core::service::validator::order::{
-        MUST_BE_GREATER_OR_EQUAL, MUST_BE_LESS_OR_EQUAL,
-    };
+    use lightspeed_core::service::validator::order::{MUST_BE_GREATER_OR_EQUAL, MUST_BE_LESS_OR_EQUAL};
     use lightspeed_core::service::validator::Validator;
     use maplit::*;
 
@@ -397,17 +347,9 @@ mod test {
 
     #[test]
     fn empty_schema_should_validate_empty_content() {
-        let schema = Schema {
-            created_ms: 0,
-            updated_ms: 0,
-            fields: vec![],
-        };
+        let schema = Schema { created_ms: 0, updated_ms: 0, fields: vec![] };
 
-        let content = Content {
-            updated_ms: 0,
-            created_ms: 0,
-            fields: HashMap::new(),
-        };
+        let content = Content { updated_ms: 0, created_ms: 0, fields: HashMap::new() };
 
         let result = validate_content(&schema, &content);
         assert!(result.is_ok());
@@ -422,10 +364,7 @@ mod test {
                 name: "one".to_owned(),
                 required: true,
                 description: "".to_owned(),
-                field_type: SchemaFieldType::Boolean {
-                    default: None,
-                    arity: SchemaFieldArity::Single,
-                },
+                field_type: SchemaFieldType::Boolean { default: None, arity: SchemaFieldArity::Single },
             }],
         };
         let content = Content {
@@ -448,10 +387,7 @@ mod test {
         match result {
             Err(LightSpeedError::ValidationError { details }) => {
                 println!("details: {:#?}", details);
-                assert_eq!(
-                    details.details["fields[two]"],
-                    vec![ErrorDetail::new(ERR_UNKNOWN_FIELD, vec![])]
-                )
+                assert_eq!(details.details["fields[two]"], vec![ErrorDetail::new(ERR_UNKNOWN_FIELD, vec![])])
             }
             _ => assert!(false),
         };
@@ -467,37 +403,25 @@ mod test {
                     name: "one".to_owned(),
                     required: true,
                     description: "".to_owned(),
-                    field_type: SchemaFieldType::Boolean {
-                        default: None,
-                        arity: SchemaFieldArity::Single,
-                    },
+                    field_type: SchemaFieldType::Boolean { default: None, arity: SchemaFieldArity::Single },
                 },
                 SchemaField {
                     name: "two".to_owned(),
                     required: true,
                     description: "".to_owned(),
-                    field_type: SchemaFieldType::Boolean {
-                        default: None,
-                        arity: SchemaFieldArity::Single,
-                    },
+                    field_type: SchemaFieldType::Boolean { default: None, arity: SchemaFieldArity::Single },
                 },
                 SchemaField {
                     name: "three".to_owned(),
                     required: false,
                     description: "".to_owned(),
-                    field_type: SchemaFieldType::Boolean {
-                        default: None,
-                        arity: SchemaFieldArity::Single,
-                    },
+                    field_type: SchemaFieldType::Boolean { default: None, arity: SchemaFieldArity::Single },
                 },
                 SchemaField {
                     name: "four".to_owned(),
                     required: true,
                     description: "".to_owned(),
-                    field_type: SchemaFieldType::Boolean {
-                        default: None,
-                        arity: SchemaFieldArity::Single,
-                    },
+                    field_type: SchemaFieldType::Boolean { default: None, arity: SchemaFieldArity::Single },
                 },
             ],
         };
@@ -516,10 +440,7 @@ mod test {
         match result {
             Err(LightSpeedError::ValidationError { details }) => assert_eq!(
                 details.details["fields"],
-                vec![ErrorDetail::new(
-                    ERR_VALUE_REQUIRED,
-                    vec!["four".to_owned(), "one".to_owned()]
-                )]
+                vec![ErrorDetail::new(ERR_VALUE_REQUIRED, vec!["four".to_owned(), "one".to_owned()])]
             ),
             _ => assert!(false),
         };
@@ -534,10 +455,7 @@ mod test {
                 name: "one".to_owned(),
                 required: true,
                 description: "".to_owned(),
-                field_type: SchemaFieldType::Boolean {
-                    default: None,
-                    arity: SchemaFieldArity::Single,
-                },
+                field_type: SchemaFieldType::Boolean { default: None, arity: SchemaFieldArity::Single },
             }],
         };
         let content = Content {
@@ -593,10 +511,9 @@ mod test {
         let result = validate_content(&schema, &content);
         assert!(result.is_err());
         match result {
-            Err(LightSpeedError::ValidationError { details }) => assert_eq!(
-                details.details["fields[one].value"],
-                vec![ErrorDetail::new(MUST_BE_OF_TYPE_STRING, vec![])]
-            ),
+            Err(LightSpeedError::ValidationError { details }) => {
+                assert_eq!(details.details["fields[one].value"], vec![ErrorDetail::new(MUST_BE_OF_TYPE_STRING, vec![])])
+            }
             _ => assert!(false),
         };
     }
@@ -627,10 +544,9 @@ mod test {
         let result = validate_content(&schema, &content);
         assert!(result.is_err());
         match result {
-            Err(LightSpeedError::ValidationError { details }) => assert_eq!(
-                details.details["fields[one].value"],
-                vec![ErrorDetail::new(MUST_BE_OF_TYPE_SLUG, vec![])]
-            ),
+            Err(LightSpeedError::ValidationError { details }) => {
+                assert_eq!(details.details["fields[one].value"], vec![ErrorDetail::new(MUST_BE_OF_TYPE_SLUG, vec![])])
+            }
             _ => assert!(false),
         };
     }
@@ -666,10 +582,9 @@ mod test {
         let result = validate_content(&schema, &content);
         assert!(result.is_err());
         match result {
-            Err(LightSpeedError::ValidationError { details }) => assert_eq!(
-                details.details["fields[one].value"],
-                vec![ErrorDetail::new(MUST_BE_OF_TYPE_NUMBER, vec![])]
-            ),
+            Err(LightSpeedError::ValidationError { details }) => {
+                assert_eq!(details.details["fields[one].value"], vec![ErrorDetail::new(MUST_BE_OF_TYPE_NUMBER, vec![])])
+            }
             _ => assert!(false),
         };
     }
@@ -707,10 +622,7 @@ mod test {
         match result {
             Err(LightSpeedError::ValidationError { details }) => assert_eq!(
                 details.details["fields[one].value"],
-                vec![ErrorDetail::new(
-                    MUST_BE_GREATER_OR_EQUAL,
-                    vec!["100".to_owned()]
-                )]
+                vec![ErrorDetail::new(MUST_BE_GREATER_OR_EQUAL, vec!["100".to_owned()])]
             ),
             _ => assert!(false),
         };
@@ -749,10 +661,7 @@ mod test {
         match result {
             Err(LightSpeedError::ValidationError { details }) => assert_eq!(
                 details.details["fields[one].value"],
-                vec![ErrorDetail::new(
-                    MUST_BE_LESS_OR_EQUAL,
-                    vec!["1000".to_owned()]
-                )]
+                vec![ErrorDetail::new(MUST_BE_LESS_OR_EQUAL, vec!["1000".to_owned()])]
             ),
             _ => assert!(false),
         };
@@ -791,10 +700,7 @@ mod test {
         match result {
             Err(LightSpeedError::ValidationError { details }) => assert_eq!(
                 details.details["fields[one].value"],
-                vec![ErrorDetail::new(
-                    MUST_BE_GREATER_OR_EQUAL,
-                    vec!["1000".to_owned()]
-                )]
+                vec![ErrorDetail::new(MUST_BE_GREATER_OR_EQUAL, vec!["1000".to_owned()])]
             ),
             _ => assert!(false),
         };
@@ -833,10 +739,7 @@ mod test {
         match result {
             Err(LightSpeedError::ValidationError { details }) => assert_eq!(
                 details.details["fields[one].value"],
-                vec![ErrorDetail::new(
-                    MUST_BE_LESS_OR_EQUAL,
-                    vec!["10".to_owned()]
-                )]
+                vec![ErrorDetail::new(MUST_BE_LESS_OR_EQUAL, vec!["10".to_owned()])]
             ),
             _ => assert!(false),
         };
@@ -852,19 +755,13 @@ mod test {
                     name: "one".to_owned(),
                     required: true,
                     description: "".to_owned(),
-                    field_type: SchemaFieldType::Boolean {
-                        default: None,
-                        arity: SchemaFieldArity::Single,
-                    },
+                    field_type: SchemaFieldType::Boolean { default: None, arity: SchemaFieldArity::Single },
                 },
                 SchemaField {
                     name: "two".to_owned(),
                     required: false,
                     description: "".to_owned(),
-                    field_type: SchemaFieldType::Boolean {
-                        default: None,
-                        arity: SchemaFieldArity::Single,
-                    },
+                    field_type: SchemaFieldType::Boolean { default: None, arity: SchemaFieldArity::Single },
                 },
             ],
         };
@@ -886,10 +783,9 @@ mod test {
         let result = validate_content(&schema, &content);
         assert!(result.is_err());
         match result {
-            Err(LightSpeedError::ValidationError { details }) => assert_eq!(
-                details.details["fields[one].value"],
-                vec![ErrorDetail::new(ERR_VALUE_REQUIRED, vec![])]
-            ),
+            Err(LightSpeedError::ValidationError { details }) => {
+                assert_eq!(details.details["fields[one].value"], vec![ErrorDetail::new(ERR_VALUE_REQUIRED, vec![])])
+            }
             _ => assert!(false),
         };
     }
@@ -903,10 +799,7 @@ mod test {
                 name: "one".to_owned(),
                 required: false,
                 description: "".to_owned(),
-                field_type: SchemaFieldType::Boolean {
-                    default: None,
-                    arity: SchemaFieldArity::Unique,
-                },
+                field_type: SchemaFieldType::Boolean { default: None, arity: SchemaFieldArity::Unique },
             }],
         };
         let content = Content {
@@ -1070,10 +963,9 @@ mod test {
         assert!(result.is_err());
         println!("{:?}", result);
         match result {
-            Err(LightSpeedError::ValidationError { details }) => assert_eq!(
-                details.details["fields[slug].value"],
-                vec![ErrorDetail::new(NOT_VALID_SLUG, vec![])]
-            ),
+            Err(LightSpeedError::ValidationError { details }) => {
+                assert_eq!(details.details["fields[slug].value"], vec![ErrorDetail::new(NOT_VALID_SLUG, vec![])])
+            }
             _ => assert!(false),
         };
     }

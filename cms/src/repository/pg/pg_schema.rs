@@ -20,9 +20,7 @@ impl Deref for PgSchemaRepository {
 
 impl Default for PgSchemaRepository {
     fn default() -> Self {
-        PgSchemaRepository {
-            repo: C3p0JsonBuilder::new("LS_CMS_SCHEMA").build(),
-        }
+        PgSchemaRepository { repo: C3p0JsonBuilder::new("LS_CMS_SCHEMA").build() }
     }
 }
 
@@ -30,11 +28,7 @@ impl Default for PgSchemaRepository {
 impl SchemaRepository for PgSchemaRepository {
     type Conn = PgConnection;
 
-    async fn fetch_by_id(
-        &self,
-        conn: &mut Self::Conn,
-        id: i64,
-    ) -> Result<Model<SchemaData>, LightSpeedError> {
+    async fn fetch_by_id(&self, conn: &mut Self::Conn, id: i64) -> Result<Model<SchemaData>, LightSpeedError> {
         Ok(self.repo.fetch_one_by_id(conn, &id).await?)
     }
 
@@ -80,11 +74,7 @@ impl SchemaRepository for PgSchemaRepository {
         Ok(self.repo.delete(conn, model).await?)
     }
 
-    async fn delete_by_project_id(
-        &self,
-        conn: &mut Self::Conn,
-        project_id: i64,
-    ) -> Result<u64, LightSpeedError> {
+    async fn delete_by_project_id(&self, conn: &mut Self::Conn, project_id: i64) -> Result<u64, LightSpeedError> {
         let sql = r#"
             delete from LS_CMS_SCHEMA
             where (DATA ->> 'project_id')::bigint = $1

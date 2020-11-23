@@ -37,25 +37,14 @@ impl DBFileStoreRepositoryManager for PgFileStoreRepositoryManager {
 
         let migrate = C3p0MigrateBuilder::new(self.c3p0().clone())
             .with_table_name(migrate_table_name)
-            .with_migrations(from_embed(&MIGRATIONS).map_err(|err| {
-                LightSpeedError::ModuleStartError {
-                    message: format!(
-                        "PgFileStoreRepositoryManager - failed to read db migrations: {}",
-                        err
-                    ),
-                }
+            .with_migrations(from_embed(&MIGRATIONS).map_err(|err| LightSpeedError::ModuleStartError {
+                message: format!("PgFileStoreRepositoryManager - failed to read db migrations: {}", err),
             })?)
             .build();
 
-        migrate
-            .migrate()
-            .await
-            .map_err(|err| LightSpeedError::ModuleStartError {
-                message: format!(
-                    "PgFileStoreRepositoryManager - db migration failed: {}",
-                    err
-                ),
-            })
+        migrate.migrate().await.map_err(|err| LightSpeedError::ModuleStartError {
+            message: format!("PgFileStoreRepositoryManager - db migration failed: {}", err),
+        })
     }
 
     fn file_store_binary_repo(&self) -> Self::FileStoreBinaryRepo {

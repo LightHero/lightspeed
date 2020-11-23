@@ -13,15 +13,10 @@ pub async fn into_response(
     match content {
         BinaryContent::FromFs { file_path } => {
             debug!("Create HttpResponse from FS content");
-            Ok(NamedFile::open(&file_path)?
-                .disable_content_disposition()
-                .into_response(&req)?)
+            Ok(NamedFile::open(&file_path)?.disable_content_disposition().into_response(&req)?)
         }
         BinaryContent::InMemory { content } => {
-            debug!(
-                "Create HttpResponse from Memory content of {} bytes",
-                content.len()
-            );
+            debug!("Create HttpResponse from Memory content of {} bytes", content.len());
             let path = std::path::Path::new(file_name.unwrap_or(""));
             let ct = mime_guess::from_path(&path).first_or_octet_stream();
 
@@ -44,22 +39,15 @@ pub async fn into_response(
                     mime::IMAGE | mime::TEXT | mime::VIDEO => http::header::DispositionType::Inline,
                     _ => http::header::DispositionType::Attachment,
                 };
-                let mut parameters = vec![http::header::DispositionParam::Filename(String::from(
-                    filename.as_ref(),
-                ))];
+                let mut parameters = vec![http::header::DispositionParam::Filename(String::from(filename.as_ref()))];
                 if !filename.is_ascii() {
-                    parameters.push(http::header::DispositionParam::FilenameExt(
-                        http::header::ExtendedValue {
-                            charset: http::header::Charset::Ext(String::from("UTF-8")),
-                            language_tag: None,
-                            value: filename.into_owned().into_bytes(),
-                        },
-                    ))
+                    parameters.push(http::header::DispositionParam::FilenameExt(http::header::ExtendedValue {
+                        charset: http::header::Charset::Ext(String::from("UTF-8")),
+                        language_tag: None,
+                        value: filename.into_owned().into_bytes(),
+                    }))
                 }
-                let cd = http::header::ContentDisposition {
-                    disposition,
-                    parameters,
-                };
+                let cd = http::header::ContentDisposition { disposition, parameters };
 
                 res.header(http::header::CONTENT_DISPOSITION, cd);
             };

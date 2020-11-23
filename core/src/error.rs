@@ -76,37 +76,25 @@ pub struct ErrorDetail {
 
 impl ErrorDetail {
     pub fn new<S: Into<String>>(error: S, params: Vec<String>) -> Self {
-        ErrorDetail {
-            error: error.into(),
-            params,
-        }
+        ErrorDetail { error: error.into(), params }
     }
 }
 
 impl From<String> for ErrorDetail {
     fn from(error: String) -> Self {
-        ErrorDetail {
-            error,
-            params: vec![],
-        }
+        ErrorDetail { error, params: vec![] }
     }
 }
 
 impl From<&str> for ErrorDetail {
     fn from(error: &str) -> Self {
-        ErrorDetail {
-            error: error.to_string(),
-            params: vec![],
-        }
+        ErrorDetail { error: error.to_string(), params: vec![] }
     }
 }
 
 impl From<(&str, Vec<String>)> for ErrorDetail {
     fn from(error: (&str, Vec<String>)) -> Self {
-        ErrorDetail {
-            error: error.0.to_string(),
-            params: error.1,
-        }
+        ErrorDetail { error: error.0.to_string(), params: error.1 }
     }
 }
 
@@ -119,19 +107,11 @@ pub struct WebErrorDetails<'a> {
 
 impl<'a> WebErrorDetails<'a> {
     pub fn from_message(code: u16, message: &'a Option<String>) -> Self {
-        WebErrorDetails {
-            code,
-            message,
-            details: None,
-        }
+        WebErrorDetails { code, message, details: None }
     }
 
     pub fn from_error_details(code: u16, error_details: &'a RootErrorDetails) -> Self {
-        WebErrorDetails {
-            code,
-            message: &error_details.message,
-            details: Some(&error_details.details),
-        }
+        WebErrorDetails { code, message: &error_details.message, details: Some(&error_details.details) }
     }
 }
 
@@ -149,9 +129,7 @@ impl PartialEq<ErrorDetail> for String {
 
 impl From<C3p0Error> for LightSpeedError {
     fn from(err: C3p0Error) -> Self {
-        LightSpeedError::RepositoryError {
-            message: format!("{}", err),
-        }
+        LightSpeedError::RepositoryError { message: format!("{}", err) }
     }
 }
 
@@ -199,10 +177,7 @@ pub struct RootErrorDetails {
 
 impl Default for RootErrorDetails {
     fn default() -> Self {
-        RootErrorDetails {
-            message: None,
-            details: HashMap::new(),
-        }
+        RootErrorDetails { message: None, details: HashMap::new() }
     }
 }
 
@@ -225,10 +200,7 @@ impl RootErrorDetails {
     }
 
     fn with_scope(&mut self, scope: String) -> ScopedErrorDetails<'_> {
-        ScopedErrorDetails {
-            scope,
-            details: self,
-        }
+        ScopedErrorDetails { scope, details: self }
     }
 }
 
@@ -239,19 +211,13 @@ impl<'a> ScopedErrorDetails<'a> {
     }
 
     fn with_scope(&mut self, scope: String) -> ScopedErrorDetails<'_> {
-        ScopedErrorDetails {
-            scope: format!("{}.{}", self.scope, scope),
-            details: self.details,
-        }
+        ScopedErrorDetails { scope: format!("{}.{}", self.scope, scope), details: self.details }
     }
 }
 
 impl From<serde_json::Error> for LightSpeedError {
     fn from(err: serde_json::Error) -> Self {
-        LightSpeedError::BadRequest {
-            message: format!("{}", err),
-            code: ErrorCodes::JSON_PARSE_ERROR,
-        }
+        LightSpeedError::BadRequest { message: format!("{}", err), code: ErrorCodes::JSON_PARSE_ERROR }
     }
 }
 
@@ -270,10 +236,7 @@ pub mod test {
         err.add_detail("baby", "asta la vista");
 
         assert_eq!(2, err.details().len());
-        assert_eq!(
-            vec!["world_1".to_owned(), "world_2".to_owned()],
-            err.details()["hello"]
-        );
+        assert_eq!(vec!["world_1".to_owned(), "world_2".to_owned()], err.details()["hello"]);
         assert_eq!(vec!["asta la vista".to_owned()], err.details()["baby"]);
     }
 
@@ -306,26 +269,11 @@ pub mod test {
 
         println!("{:?}", root.details());
 
-        assert_eq!(
-            ErrorDetail::new("world_1", vec![]),
-            root.details()["root"][0]
-        );
-        assert_eq!(
-            ErrorDetail::new("child one.A", vec![]),
-            root.details()["one.A"][0]
-        );
-        assert_eq!(
-            ErrorDetail::new("child one.B", vec![]),
-            root.details()["one.B"][0]
-        );
-        assert_eq!(
-            ErrorDetail::new("child one.inner.A", vec![]),
-            root.details()["one.inner.A"][0]
-        );
-        assert_eq!(
-            ErrorDetail::new("child two.A", vec![]),
-            root.details()["two.A"][0]
-        );
+        assert_eq!(ErrorDetail::new("world_1", vec![]), root.details()["root"][0]);
+        assert_eq!(ErrorDetail::new("child one.A", vec![]), root.details()["one.A"][0]);
+        assert_eq!(ErrorDetail::new("child one.B", vec![]), root.details()["one.B"][0]);
+        assert_eq!(ErrorDetail::new("child one.inner.A", vec![]), root.details()["one.inner.A"][0]);
+        assert_eq!(ErrorDetail::new("child two.A", vec![]), root.details()["two.A"][0]);
     }
 
     fn use_validator(_error_details: &mut ErrorDetails, _field_name: &str, _err: &str) {}

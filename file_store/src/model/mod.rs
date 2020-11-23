@@ -30,16 +30,12 @@ pub enum Repository {
 impl From<&RepositoryFile> for Repository {
     fn from(repo: &RepositoryFile) -> Self {
         match repo {
-            RepositoryFile::DB {
-                repository_name, ..
-            } => Repository::DB {
-                repository_name: repository_name.to_owned(),
-            },
-            RepositoryFile::FS {
-                repository_name, ..
-            } => Repository::FS {
-                repository_name: repository_name.to_owned(),
-            },
+            RepositoryFile::DB { repository_name, .. } => {
+                Repository::DB { repository_name: repository_name.to_owned() }
+            }
+            RepositoryFile::FS { repository_name, .. } => {
+                Repository::FS { repository_name: repository_name.to_owned() }
+            }
         }
     }
 }
@@ -47,16 +43,12 @@ impl From<&RepositoryFile> for Repository {
 impl From<&SaveRepository> for Repository {
     fn from(repo: &SaveRepository) -> Self {
         match repo {
-            SaveRepository::DB {
-                repository_name, ..
-            } => Repository::DB {
-                repository_name: repository_name.to_owned(),
-            },
-            SaveRepository::FS {
-                repository_name, ..
-            } => Repository::FS {
-                repository_name: repository_name.to_owned(),
-            },
+            SaveRepository::DB { repository_name, .. } => {
+                Repository::DB { repository_name: repository_name.to_owned() }
+            }
+            SaveRepository::FS { repository_name, .. } => {
+                Repository::FS { repository_name: repository_name.to_owned() }
+            }
         }
     }
 }
@@ -64,30 +56,18 @@ impl From<&SaveRepository> for Repository {
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, AsRefStr, Display)]
 #[serde(tag = "_json_tag")]
 pub enum RepositoryFile {
-    DB {
-        file_path: String,
-        repository_name: String,
-    },
-    FS {
-        file_path: String,
-        repository_name: String,
-    },
+    DB { file_path: String, repository_name: String },
+    FS { file_path: String, repository_name: String },
 }
 
 impl RepositoryFile {
     pub fn from(repo: &SaveRepository, file_name: &str) -> Self {
         match repo {
-            SaveRepository::DB {
-                repository_name,
-                subfolder,
-            } => RepositoryFile::DB {
+            SaveRepository::DB { repository_name, subfolder } => RepositoryFile::DB {
                 repository_name: repository_name.to_owned(),
                 file_path: to_file_path(subfolder.as_deref(), file_name),
             },
-            SaveRepository::FS {
-                repository_name,
-                subfolder,
-            } => RepositoryFile::FS {
+            SaveRepository::FS { repository_name, subfolder } => RepositoryFile::FS {
                 repository_name: repository_name.to_owned(),
                 file_path: to_file_path(subfolder.as_deref(), file_name),
             },
@@ -104,14 +84,8 @@ impl RepositoryFile {
 
 #[derive(Debug, Clone)]
 pub enum SaveRepository {
-    DB {
-        subfolder: Option<String>,
-        repository_name: String,
-    },
-    FS {
-        subfolder: Option<String>,
-        repository_name: String,
-    },
+    DB { subfolder: Option<String>, repository_name: String },
+    FS { subfolder: Option<String>, repository_name: String },
 }
 
 pub fn to_file_path(subfolder: Option<&str>, filename: &str) -> String {
@@ -140,8 +114,7 @@ impl JsonCodec<FileStoreDataData> for FileStoreDataDataCodec {
     }
 
     fn to_value(&self, data: &FileStoreDataData) -> Result<Value, C3p0Error> {
-        serde_json::to_value(FileStoreDataVersioning::V1(Cow::Borrowed(data)))
-            .map_err(C3p0Error::from)
+        serde_json::to_value(FileStoreDataVersioning::V1(Cow::Borrowed(data))).map_err(C3p0Error::from)
     }
 }
 
@@ -177,20 +150,14 @@ mod test {
     fn should_convert_save_repository_to_repository() {
         let main_repository_name = new_hyphenated_uuid();
 
-        match Repository::from(&SaveRepository::DB {
-            repository_name: main_repository_name.clone(),
-            subfolder: None,
-        }) {
+        match Repository::from(&SaveRepository::DB { repository_name: main_repository_name.clone(), subfolder: None }) {
             Repository::DB { repository_name } => {
                 assert_eq!(main_repository_name, repository_name);
             }
             _ => assert!(false),
         };
 
-        match Repository::from(&SaveRepository::FS {
-            repository_name: main_repository_name.clone(),
-            subfolder: None,
-        }) {
+        match Repository::from(&SaveRepository::FS { repository_name: main_repository_name.clone(), subfolder: None }) {
             Repository::FS { repository_name } => {
                 assert_eq!(main_repository_name, repository_name);
             }
@@ -205,16 +172,10 @@ mod test {
         let main_file_name = new_hyphenated_uuid();
 
         match RepositoryFile::from(
-            &SaveRepository::DB {
-                repository_name: main_repository_name.clone(),
-                subfolder: None,
-            },
+            &SaveRepository::DB { repository_name: main_repository_name.clone(), subfolder: None },
             &main_file_name,
         ) {
-            RepositoryFile::DB {
-                repository_name,
-                file_path,
-            } => {
+            RepositoryFile::DB { repository_name, file_path } => {
                 assert_eq!(main_repository_name, repository_name);
                 assert_eq!(to_file_path(None, &main_file_name), file_path);
             }
@@ -222,16 +183,10 @@ mod test {
         };
 
         match RepositoryFile::from(
-            &SaveRepository::FS {
-                repository_name: main_repository_name.clone(),
-                subfolder: None,
-            },
+            &SaveRepository::FS { repository_name: main_repository_name.clone(), subfolder: None },
             &main_file_name,
         ) {
-            RepositoryFile::FS {
-                repository_name,
-                file_path,
-            } => {
+            RepositoryFile::FS { repository_name, file_path } => {
                 assert_eq!(main_repository_name, repository_name);
                 assert_eq!(to_file_path(None, &main_file_name), file_path);
             }
@@ -245,15 +200,9 @@ mod test {
             },
             &main_file_name,
         ) {
-            RepositoryFile::DB {
-                repository_name,
-                file_path,
-            } => {
+            RepositoryFile::DB { repository_name, file_path } => {
                 assert_eq!(main_repository_name, repository_name);
-                assert_eq!(
-                    to_file_path(Some(&main_subfolder), &main_file_name),
-                    file_path
-                );
+                assert_eq!(to_file_path(Some(&main_subfolder), &main_file_name), file_path);
             }
             _ => assert!(false),
         };
@@ -265,15 +214,9 @@ mod test {
             },
             &main_file_name,
         ) {
-            RepositoryFile::FS {
-                repository_name,
-                file_path,
-            } => {
+            RepositoryFile::FS { repository_name, file_path } => {
                 assert_eq!(main_repository_name, repository_name);
-                assert_eq!(
-                    to_file_path(Some(&main_subfolder), &main_file_name),
-                    file_path
-                );
+                assert_eq!(to_file_path(Some(&main_subfolder), &main_file_name), file_path);
             }
             _ => assert!(false),
         };

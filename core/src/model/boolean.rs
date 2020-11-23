@@ -39,9 +39,7 @@ impl FromStr for Boolean {
         match val.to_lowercase().as_ref() {
             "true" => Ok(Boolean::True),
             "false" => Ok(Boolean::False),
-            _ => Err(LightSpeedError::ConfigurationError {
-                message: format!("Could not parse boolean [{}]", val),
-            }),
+            _ => Err(LightSpeedError::ConfigurationError { message: format!("Could not parse boolean [{}]", val) }),
         }
     }
 }

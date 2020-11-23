@@ -41,10 +41,7 @@ impl EmailClient for InMemoryEmailClient {
         Ok(())
     }
 
-    fn retain_emails(
-        &self,
-        mut retain: Box<dyn FnMut(&EmailMessage) -> bool>,
-    ) -> Result<(), LightSpeedError> {
+    fn retain_emails(&self, mut retain: Box<dyn FnMut(&EmailMessage) -> bool>) -> Result<(), LightSpeedError> {
         let mut lock = self.emails.lock();
         lock.retain(|email| retain(email));
         Ok(())
