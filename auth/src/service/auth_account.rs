@@ -557,6 +557,36 @@ impl<RepoManager: AuthRepositoryManager> AuthAccountService<RepoManager> {
         self.auth_repo.fetch_by_username(conn, username).await
     }
 
+    pub async fn fetch_all_by_status(
+        &self,
+        status: AuthAccountStatus,
+        offset: u32,
+        max: u32,
+    ) -> Result<Vec<AuthAccountModel>, LightSpeedError> {
+        self.c3p0
+            .transaction(|mut conn| async move {
+                self.fetch_all_by_status_with_conn(&mut conn, status, offset, max)
+                    .await
+            })
+            .await
+    }
+
+    pub async fn fetch_all_by_status_with_conn(
+        &self,
+        conn: &mut RepoManager::Conn,
+        status: AuthAccountStatus,
+        offset: u32,
+        max: u32,
+    ) -> Result<Vec<AuthAccountModel>, LightSpeedError> {
+        debug!(
+            "Fetch all with status [{}], offset {}, max {}",
+            status, offset, max
+        );
+        self.auth_repo
+            .fetch_all_by_status(conn, status, offset, max)
+            .await
+    }
+
     pub async fn add_roles(
         &self,
         user_id: i64,

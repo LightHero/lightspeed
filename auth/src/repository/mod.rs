@@ -1,4 +1,4 @@
-use crate::model::auth_account::{AuthAccountData, AuthAccountModel};
+use crate::model::auth_account::{AuthAccountData, AuthAccountModel, AuthAccountStatus};
 use crate::model::token::{TokenData, TokenModel};
 use c3p0::*;
 use lightspeed_core::error::LightSpeedError;
@@ -21,6 +21,14 @@ pub trait AuthRepositoryManager: Clone + Send + Sync {
 #[async_trait::async_trait]
 pub trait AuthAccountRepository: Clone + Send + Sync {
     type Conn: SqlConnection;
+
+    async fn fetch_all_by_status(
+        &self,
+        conn: &mut Self::Conn,
+        status: AuthAccountStatus,
+        offset: u32,
+        max: u32,
+    ) -> Result<Vec<AuthAccountModel>, LightSpeedError>;
 
     async fn fetch_by_id(
         &self,

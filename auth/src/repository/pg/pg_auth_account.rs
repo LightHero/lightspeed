@@ -1,4 +1,6 @@
-use crate::model::auth_account::{AuthAccountData, AuthAccountDataCodec, AuthAccountModel};
+use crate::model::auth_account::{
+    AuthAccountData, AuthAccountDataCodec, AuthAccountModel, AuthAccountStatus,
+};
 use crate::repository::AuthAccountRepository;
 use c3p0::postgres::*;
 use c3p0::*;
@@ -21,6 +23,24 @@ impl Default for PgAuthAccountRepository {
 #[async_trait::async_trait]
 impl AuthAccountRepository for PgAuthAccountRepository {
     type Conn = PgConnection;
+
+    async fn fetch_all_by_status(
+        &self,
+        conn: &mut Self::Conn,
+        status: AuthAccountStatus,
+        offset: u32,
+        max: u32,
+    ) -> Result<Vec<AuthAccountModel>, LightSpeedError> {
+        let sql = r#"
+            select id, version, data from LS_AUTH_ACCOUNT
+            where DATA ->> 'status' = $1
+            offset $2 limit $3
+        "#;
+        Ok(self
+            .repo
+            .fetch_all_with_sql(conn, sql, &[&status.as_ref(), &offset, &max])
+            .await?)
+    }
 
     async fn fetch_by_id(
         &self,
