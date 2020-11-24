@@ -106,6 +106,10 @@ impl AuthAccountRepository for PgAuthAccountRepository {
     ) -> Result<Model<AuthAccountData>, LightSpeedError> {
         Ok(self.repo.delete(conn, model).await?)
     }
+
+    async fn delete_by_id(&self, conn: &mut Self::Conn, user_id: i64) -> Result<u64, LightSpeedError> {
+        Ok(self.repo.delete_by_id(conn, &user_id).await?)
+    }
 }
 
 impl Deref for PgAuthAccountRepository {

@@ -64,6 +64,8 @@ pub trait AuthAccountRepository: Clone + Send + Sync {
 
     async fn delete(&self, conn: &mut Self::Conn, model: AuthAccountModel)
         -> Result<AuthAccountModel, LightSpeedError>;
+
+    async fn delete_by_id(&self, conn: &mut Self::Conn, user_id: i64) -> Result<u64, LightSpeedError>;
 }
 
 #[async_trait::async_trait]

@@ -610,7 +610,7 @@ impl<RepoManager: AuthRepositoryManager> AuthAccountService<RepoManager> {
         self.auth_repo.update(conn, user).await
     }
 
-    pub async fn delete_by_user_id(&self, user_id: i64) -> Result<AuthAccountModel, LightSpeedError> {
+    pub async fn delete_by_user_id(&self, user_id: i64) -> Result<u64, LightSpeedError> {
         self.c3p0
             .transaction(|mut conn| async move { self.delete_by_user_id_with_conn(&mut conn, user_id).await })
             .await
@@ -620,9 +620,8 @@ impl<RepoManager: AuthRepositoryManager> AuthAccountService<RepoManager> {
         &self,
         conn: &mut RepoManager::Conn,
         user_id: i64,
-    ) -> Result<AuthAccountModel, LightSpeedError> {
+    ) -> Result<u64, LightSpeedError> {
         debug!("Delete user with user_id [{}]", user_id);
-        let user = self.auth_repo.fetch_by_id(conn, user_id).await?;
-        self.auth_repo.delete(conn, user).await
+        self.auth_repo.delete_by_id(conn, user_id).await
     }
 }

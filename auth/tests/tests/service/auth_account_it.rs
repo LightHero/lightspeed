@@ -1303,10 +1303,10 @@ fn should_delete_a_user() -> Result<(), LightSpeedError> {
         let (user, _) = create_user_with_password(&auth_module, password, true).await?;
 
         // Act
-        let updated_user = auth_module.auth_account_service.delete_by_user_id(user.id).await.unwrap();
+        let deleted_user_count = auth_module.auth_account_service.delete_by_user_id(user.id).await.unwrap();
 
         // Assert
-        assert_eq!(AuthAccountStatus::ACTIVE, updated_user.data.status);
+        assert_eq!(1, deleted_user_count);
 
         assert!(auth_module.auth_account_service.login(&user.data.username, password).await.is_err());
 
@@ -1317,7 +1317,7 @@ fn should_delete_a_user() -> Result<(), LightSpeedError> {
 }
 
 #[test]
-fn should_fail_deleting_a_deleted_user() -> Result<(), LightSpeedError> {
+fn should_not_fail_deleting_a_deleted_user() -> Result<(), LightSpeedError> {
     test(async {
         // Arrange
         let data = data(false).await;
@@ -1328,10 +1328,10 @@ fn should_fail_deleting_a_deleted_user() -> Result<(), LightSpeedError> {
         auth_module.auth_account_service.delete_by_user_id(user.id).await.unwrap();
 
         // Act
-        let result = auth_module.auth_account_service.delete_by_user_id(user.id).await;
+        let result = auth_module.auth_account_service.delete_by_user_id(user.id).await.unwrap();
 
         // Assert
-        assert!(result.is_err());
+        assert_eq!(0, result);
 
         Ok(())
     })
@@ -1426,7 +1426,7 @@ fn should_return_users_by_status_with_offset_and_limit() -> Result<(), LightSpee
 
         // Assert
         assert_eq!(all_users[1].id, offset_one_users[0].id);
-        assert_eq!(all_users.len() - 1, limit_two_users.len());
+        assert_eq!(all_users.len() - 1, offset_one_users.len());
         assert_eq!(all_users[1].id, limit_two_users[0].id);
         assert_eq!(2, limit_two_users.len());
 
