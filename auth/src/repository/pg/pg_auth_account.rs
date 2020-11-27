@@ -26,16 +26,16 @@ impl AuthAccountRepository for PgAuthAccountRepository {
         &self,
         conn: &mut Self::Conn,
         status: AuthAccountStatus,
-        offset: u32,
-        max: u32,
+        start_user_id: i64,
+        limit: u32,
     ) -> Result<Vec<AuthAccountModel>, LightSpeedError> {
         let sql = r#"
             select id, version, data from LS_AUTH_ACCOUNT
-            where DATA ->> 'status' = $1
+            where id >= $1 and DATA ->> 'status' = $2
             order by id asc
-            offset $2 limit $3
+            limit $3
         "#;
-        Ok(self.repo.fetch_all_with_sql(conn, sql, &[&status.as_ref(), &(offset as i64), &(max as i64)]).await?)
+        Ok(self.repo.fetch_all_with_sql(conn, sql, &[&start_user_id, &status.as_ref(), &(limit as i64)]).await?)
     }
 
     async fn fetch_by_id(

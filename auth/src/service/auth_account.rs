@@ -446,13 +446,13 @@ impl<RepoManager: AuthRepositoryManager> AuthAccountService<RepoManager> {
     pub async fn fetch_all_by_status(
         &self,
         status: AuthAccountStatus,
-        offset: u32,
-        max: u32,
+        start_user_id: i64,
+        limit: u32,
     ) -> Result<Vec<AuthAccountModel>, LightSpeedError> {
         self.c3p0
-            .transaction(
-                |mut conn| async move { self.fetch_all_by_status_with_conn(&mut conn, status, offset, max).await },
-            )
+            .transaction(|mut conn| async move {
+                self.fetch_all_by_status_with_conn(&mut conn, status, start_user_id, limit).await
+            })
             .await
     }
 
@@ -460,11 +460,11 @@ impl<RepoManager: AuthRepositoryManager> AuthAccountService<RepoManager> {
         &self,
         conn: &mut RepoManager::Conn,
         status: AuthAccountStatus,
-        offset: u32,
-        max: u32,
+        start_user_id: i64,
+        limit: u32,
     ) -> Result<Vec<AuthAccountModel>, LightSpeedError> {
-        debug!("Fetch all with status [{}], offset {}, max {}", status, offset, max);
-        self.auth_repo.fetch_all_by_status(conn, status, offset, max).await
+        debug!("Fetch all with status [{}], start_user_id {}, limit {}", status, start_user_id, limit);
+        self.auth_repo.fetch_all_by_status(conn, status, start_user_id, limit).await
     }
 
     pub async fn add_roles(&self, user_id: i64, roles: &[String]) -> Result<AuthAccountModel, LightSpeedError> {

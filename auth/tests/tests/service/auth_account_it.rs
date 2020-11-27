@@ -1404,25 +1404,28 @@ fn should_return_users_by_status_with_offset_and_limit() -> Result<(), LightSpee
         let data = data(true).await;
         let auth_module = &data.0;
 
-        create_user(&auth_module, true).await?;
-        create_user(&auth_module, true).await?;
-        create_user(&auth_module, true).await?;
+        let (user_1, _) = create_user(&auth_module, true).await?;
+        let (user_2, _) = create_user(&auth_module, true).await?;
+        let (_user_3, _) = create_user(&auth_module, true).await?;
 
         // Act
         let all_users = auth_module
             .auth_account_service
-            .fetch_all_by_status(AuthAccountStatus::ACTIVE, 0, u32::max_value())
+            .fetch_all_by_status(AuthAccountStatus::ACTIVE, user_1.id, u32::max_value())
             .await
             .unwrap();
 
         let offset_one_users = auth_module
             .auth_account_service
-            .fetch_all_by_status(AuthAccountStatus::ACTIVE, 1, u32::max_value())
+            .fetch_all_by_status(AuthAccountStatus::ACTIVE, user_2.id, u32::max_value())
             .await
             .unwrap();
 
-        let limit_two_users =
-            auth_module.auth_account_service.fetch_all_by_status(AuthAccountStatus::ACTIVE, 1, 2).await.unwrap();
+        let limit_two_users = auth_module
+            .auth_account_service
+            .fetch_all_by_status(AuthAccountStatus::ACTIVE, user_2.id, 2)
+            .await
+            .unwrap();
 
         // Assert
         assert_eq!(all_users[1].id, offset_one_users[0].id);

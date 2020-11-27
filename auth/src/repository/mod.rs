@@ -26,8 +26,8 @@ pub trait AuthAccountRepository: Clone + Send + Sync {
         &self,
         conn: &mut Self::Conn,
         status: AuthAccountStatus,
-        offset: u32,
-        max: u32,
+        start_user_id: i64,
+        limit: u32,
     ) -> Result<Vec<AuthAccountModel>, LightSpeedError>;
 
     async fn fetch_by_id(&self, conn: &mut Self::Conn, user_id: i64) -> Result<AuthAccountModel, LightSpeedError>;
