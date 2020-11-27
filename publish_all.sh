@@ -15,6 +15,12 @@ declare -a publish_list=(
     "hash"
 )
 
+echo 'Attempt ''cargo test'' before publishing'
+cargo test
+
+echo 'Attempt ''cargo test --all-features'' before publishing'
+cargo test --all-features
+
 for i in "${publish_list[@]}"
 do
     LINE_SEPARATOR='--------------------------------------------------------'
