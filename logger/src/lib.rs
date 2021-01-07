@@ -29,18 +29,15 @@ impl From<std::io::Error> for LoggerError {
 
 /// Configure a simple global logger that prints to stdout
 pub fn setup_stdout_logger(logger_filter: &str, use_ansi: bool) -> Result<(), LoggerError> {
-    let env_filter =
-        EnvFilter::from_str(logger_filter).map_err(|err| LoggerError::LoggerConfigurationError {
-            message: format!("Cannot parse the env_filter: [{}]. err: {}", logger_filter, err),
-        })?;
+    let env_filter = EnvFilter::from_str(logger_filter).map_err(|err| LoggerError::LoggerConfigurationError {
+        message: format!("Cannot parse the env_filter: [{}]. err: {}", logger_filter, err),
+    })?;
 
-    tracing_subscriber::FmtSubscriber::builder()
-        .with_ansi(use_ansi)
-        .with_env_filter(env_filter)
-        .try_init()
-        .map_err(|err| LoggerError::LoggerConfigurationError {
+    tracing_subscriber::FmtSubscriber::builder().with_ansi(use_ansi).with_env_filter(env_filter).try_init().map_err(
+        |err| LoggerError::LoggerConfigurationError {
             message: format!("Cannot start the stdout logger. err: {}", err),
-        })
+        },
+    )
 }
 
 /// Configure the global logger
