@@ -27,7 +27,6 @@ strum_macros = "0.20"
 typescript-definitions = {package = "typescript-definitions-ufo-patch", version = "0.1.11"}
 
 [dev-dependencies]
-futures = "0.3"
 lightspeed_logger = { version = "0.28.0", path = "../logger" }
 maybe-single = "0.12"
 once_cell = "1.5"
