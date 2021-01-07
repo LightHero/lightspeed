@@ -6,13 +6,13 @@ pub struct RandomService {}
 impl RandomService {
     #[inline]
     pub fn random_string(length: usize) -> String {
-        rand::thread_rng().sample_iter(&Alphanumeric).take(length).collect::<String>()
+        rand::thread_rng().sample_iter(&Alphanumeric).take(length).map(char::from).collect::<String>()
     }
 
     #[inline]
     pub fn random_numeric_string(digits: u32) -> String {
         let max = (10usize).pow(digits);
-        let number = rand::thread_rng().gen_range(0, max);
+        let number = rand::thread_rng().gen_range(0..max);
         format!("{:0width$}", number, width = (digits as usize))
     }
 }
@@ -43,7 +43,7 @@ pub mod test {
     #[test]
     fn should_generate_a_random_number_of_fixed_digits() {
         for _ in 0..10000 {
-            let digits = rand::thread_rng().gen_range(1, 20);
+            let digits = rand::thread_rng().gen_range(1..20);
             let code = RandomService::random_numeric_string(digits);
             //            println!("Generated code: {}", code);
             assert_eq!(digits as usize, code.len());

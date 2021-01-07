@@ -16,7 +16,7 @@ c3p0_common = { version = "0.61.0" }
 chrono = "0.4"
 jsonwebtoken = "7.1"
 log = "0.4"
-rand = "0.7"
+rand = "0.8"
 serde = { version = "1.0" , features = ["derive", "rc"] }
 serde_json = "1.0"
 structopt = "0.3"
