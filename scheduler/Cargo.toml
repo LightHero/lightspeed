@@ -19,9 +19,9 @@ futures = "0.3"
 log = "0.4"
 thiserror = "1.0"
 time = "0.1"
-tokio = { version = "0.2", features = ["sync", "time"] }
+tokio = { version = "1", features = ["sync", "time"] }
 tracing = "0.1"
 tracing-futures = "0.2"
 
 [dev-dependencies]
-tokio = { version = "0.2", features = ["macros", "rt-threaded"] }
+tokio = { version = "1", features = ["macros", "rt-multi-thread"] }

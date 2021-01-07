@@ -12,7 +12,7 @@ keywords = []
 
 [dependencies]
 async-trait = "0.1"
-c3p0_common = { version = "0.61.0" }
+c3p0_common = { version = "0.62.0" }
 chrono = "0.4"
 jsonwebtoken = "7.1"
 log = "0.4"

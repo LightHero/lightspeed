@@ -20,10 +20,10 @@ log = "0.4"
 parking_lot = "0.11"
 serde = { version = "1.0" , features = ["derive", "rc"] }
 structopt = "0.3"
-tokio = { version = "0.2" , features = ["blocking"] }
+tokio = "1"
 
 [dev-dependencies]
 testcontainers = "0.11"
-tokio = { version = "0.2" , features = ["full"] }
+tokio = { version = "1" , features = ["full"] }
 
 lightspeed_logger = { version = "0.28.0", path = "../logger" }

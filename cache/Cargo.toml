@@ -15,11 +15,11 @@ keywords = []
 [dependencies]
 chrono = "0.4"
 dashmap = { version = "3.7", optional = true }
-tokio = { version = "0.2", features = ["sync"] }
+tokio = { version = "1", features = ["sync"] }
 
 [dev-dependencies]
 thiserror = "1.0"
-tokio = { version = "0.2", features = ["macros", "rt-core"] }
+tokio = { version = "1", features = ["macros", "rt"] }
 
 [features]
 default = []
