@@ -15,7 +15,7 @@ atomic = "0.5"
 cron = "0.7.0"
 chrono = "0.4"
 chrono-tz = "0.5"
-futures = "0.3"
+futures-util = { version = "0.3", default-features = false, features = ["std"] }
 log = "0.4"
 thiserror = "1.0"
 time = "0.1"

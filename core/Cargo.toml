@@ -34,11 +34,8 @@ actix_web_3_ext = {package = "actix-web", version = "3.2", optional = true }
 warp_external = {package = "warp", version = "0.2", optional = true }
 
 [dev-dependencies]
-# Could be removed. See https://github.com/actix/actix-web/issues/1669
-actix-rt = "1.1.1"
-
 lightspeed_logger = { version = "0.28.0", path = "../logger" }
-tokio = { version = "0.2.0", features = ["full"] }
+tokio = { version = "1", features = ["macros", "rt"] }
 
 [features]
 default = []
