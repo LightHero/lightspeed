@@ -25,3 +25,8 @@ pub async fn request_with_span<Fut: std::future::Future<Output = Result<T, E>>, 
     .instrument(span)
     .await
 }
+
+#[inline]
+pub async fn with_span<Fut: std::future::Future>(span: Span, fut: Fut) -> Fut::Output {
+    fut.instrument(span).await
+}
