@@ -11,6 +11,7 @@ use typescript_definitions::TypeScriptify;
 pub struct Auth {
     pub id: i64,
     pub username: String,
+    pub session_id: String,
     pub roles: Vec<String>,
     pub creation_ts_seconds: i64,
     pub expiration_ts_seconds: i64,
@@ -24,13 +25,21 @@ impl Auth {
         creation_ts_seconds: i64,
         expiration_ts_seconds: i64,
     ) -> Self {
-        Self { id, username: username.into(), roles, creation_ts_seconds, expiration_ts_seconds }
+        let session_id = format!("{}_{}", id, creation_ts_seconds);
+        Self { id, username: username.into(), session_id, roles, creation_ts_seconds, expiration_ts_seconds }
     }
 }
 
 impl Default for Auth {
     fn default() -> Self {
-        Self { id: -1, username: "".to_owned(), roles: vec![], creation_ts_seconds: 0, expiration_ts_seconds: 0 }
+        Self {
+            id: -1,
+            username: "".to_owned(),
+            session_id: "".to_owned(),
+            roles: vec![],
+            creation_ts_seconds: 0,
+            expiration_ts_seconds: 0,
+        }
     }
 }
 
@@ -269,12 +278,20 @@ mod test {
     fn call_me_with_send_and_sync<T: Send + Sync>(_: T) {}
 
     #[test]
+    fn new_auth_should_generate_session_id() {
+        let auth = Auth::new(321, "name".to_string(), vec![], 124560, current_epoch_seconds() + 100);
+
+        assert_eq!("321_124560", &auth.session_id);
+    }
+
+    #[test]
     fn should_be_authenticated() {
         let provider = super::InMemoryRolesProvider::new(vec![].into());
         let auth_service = super::AuthService::new(provider);
         let user = Auth {
             id: 0,
             username: "name".to_string(),
+            session_id: "".to_string(),
             roles: vec![],
             creation_ts_seconds: 0,
             expiration_ts_seconds: current_epoch_seconds() + 100,
@@ -290,6 +307,7 @@ mod test {
         let user = Auth {
             id: 0,
             username: "".to_string(),
+            session_id: "".to_string(),
             roles: vec![],
             creation_ts_seconds: 0,
             expiration_ts_seconds: current_epoch_seconds() + 100,
@@ -309,6 +327,7 @@ mod test {
         let user = Auth {
             id: 10,
             username: "name".to_string(),
+            session_id: "".to_string(),
             roles: vec![],
             creation_ts_seconds: 0,
             expiration_ts_seconds: current_epoch_seconds() - 1,
@@ -328,6 +347,7 @@ mod test {
         let user = Auth {
             id: 0,
             username: "".to_string(),
+            session_id: "".to_string(),
             roles: vec!["ADMIN".to_string()],
             creation_ts_seconds: 0,
             expiration_ts_seconds: current_epoch_seconds() + 100,
@@ -343,6 +363,7 @@ mod test {
         let user = Auth {
             id: 0,
             username: "name".to_string(),
+            session_id: "".to_string(),
             roles: vec!["ADMIN".to_string()],
             creation_ts_seconds: 0,
             expiration_ts_seconds: current_epoch_seconds() + 100,
@@ -358,6 +379,7 @@ mod test {
         let user = Auth {
             id: 0,
             username: "name".to_string(),
+            session_id: "".to_string(),
             roles: vec!["ADMIN".to_string(), "USER".to_string()],
             creation_ts_seconds: 0,
             expiration_ts_seconds: current_epoch_seconds() + 100,
@@ -373,6 +395,7 @@ mod test {
         let user = Auth {
             id: 0,
             username: "name".to_string(),
+            session_id: "".to_string(),
             roles: vec!["ADMIN".to_string(), "USER".to_string()],
             creation_ts_seconds: 0,
             expiration_ts_seconds: current_epoch_seconds() + 100,
@@ -388,6 +411,7 @@ mod test {
         let user = Auth {
             id: 0,
             username: "name".to_string(),
+            session_id: "".to_string(),
             roles: vec!["ADMIN".to_string()],
             creation_ts_seconds: 0,
             expiration_ts_seconds: current_epoch_seconds() + 100,
@@ -403,6 +427,7 @@ mod test {
         let user = Auth {
             id: 0,
             username: "name".to_string(),
+            session_id: "".to_string(),
             roles: vec!["ADMIN".to_string(), "USER".to_string()],
             creation_ts_seconds: 0,
             expiration_ts_seconds: current_epoch_seconds() + 100,
@@ -418,6 +443,7 @@ mod test {
         let user = Auth {
             id: 0,
             username: "name".to_string(),
+            session_id: "".to_string(),
             roles: vec!["ADMIN".to_string(), "OWNER".to_string()],
             creation_ts_seconds: 0,
             expiration_ts_seconds: current_epoch_seconds() + 100,
@@ -433,6 +459,7 @@ mod test {
         let user = Auth {
             id: 0,
             username: "name".to_string(),
+            session_id: "".to_string(),
             roles: vec!["ADMIN".to_string(), "USER".to_string(), "FRIEND".to_string()],
             creation_ts_seconds: 0,
             expiration_ts_seconds: current_epoch_seconds() + 100,
@@ -448,6 +475,7 @@ mod test {
         let user = Auth {
             id: 0,
             username: "name".to_string(),
+            session_id: "".to_string(),
             roles: vec!["ADMIN".to_string(), "USER".to_string()],
             creation_ts_seconds: 0,
             expiration_ts_seconds: current_epoch_seconds() + 100,
@@ -464,6 +492,7 @@ mod test {
         let user = Auth {
             id: 0,
             username: "".to_string(),
+            session_id: "".to_string(),
             roles: vec!["ADMIN".to_string()],
             creation_ts_seconds: 0,
             expiration_ts_seconds: current_epoch_seconds() + 100,
@@ -483,6 +512,7 @@ mod test {
         let user = Auth {
             id: 0,
             username: "name".to_string(),
+            session_id: "".to_string(),
             roles: vec!["ADMIN".to_string()],
             creation_ts_seconds: 0,
             expiration_ts_seconds: current_epoch_seconds() + 100,
@@ -502,6 +532,7 @@ mod test {
         let user = Auth {
             id: 0,
             username: "name".to_string(),
+            session_id: "".to_string(),
             roles: vec!["ADMIN".to_string(), "OWNER".to_string()],
             creation_ts_seconds: 0,
             expiration_ts_seconds: current_epoch_seconds() + 100,
@@ -521,6 +552,7 @@ mod test {
         let user = Auth {
             id: 0,
             username: "name".to_string(),
+            session_id: "".to_string(),
             roles: vec!["USER".to_string()],
             creation_ts_seconds: 0,
             expiration_ts_seconds: current_epoch_seconds() + 100,
@@ -540,6 +572,7 @@ mod test {
         let user = Auth {
             id: 0,
             username: "name".to_string(),
+            session_id: "".to_string(),
             roles: vec!["USER".to_string(), "ADMIN".to_string()],
             creation_ts_seconds: 0,
             expiration_ts_seconds: current_epoch_seconds() + 100,
@@ -559,6 +592,7 @@ mod test {
         let user = Auth {
             id: 0,
             username: "name".to_string(),
+            session_id: "".to_string(),
             roles: vec!["USER".to_string()],
             creation_ts_seconds: 0,
             expiration_ts_seconds: current_epoch_seconds() + 100,
@@ -579,6 +613,7 @@ mod test {
         let user = Auth {
             id: 0,
             username: "name".to_string(),
+            session_id: "".to_string(),
             roles: vec!["USER".to_string(), "ADMIN".to_string()],
             creation_ts_seconds: 0,
             expiration_ts_seconds: current_epoch_seconds() + 100,
@@ -598,6 +633,7 @@ mod test {
         let user = Auth {
             id: 0,
             username: "name".to_string(),
+            session_id: "".to_string(),
             roles: vec!["USER".to_string(), "ADMIN".to_string()],
             creation_ts_seconds: 0,
             expiration_ts_seconds: current_epoch_seconds() + 100,
@@ -614,6 +650,7 @@ mod test {
         let user = Auth {
             id: 0,
             username: "name".to_string(),
+            session_id: "".to_string(),
             roles: vec!["USER".to_string(), "ADMIN".to_string()],
             creation_ts_seconds: 0,
             expiration_ts_seconds: current_epoch_seconds() + 100,
@@ -630,6 +667,7 @@ mod test {
         let user = Auth {
             id: 0,
             username: "name".to_string(),
+            session_id: "".to_string(),
             roles: vec!["USER".to_string(), "ADMIN".to_string()],
             creation_ts_seconds: 0,
             expiration_ts_seconds: current_epoch_seconds() + 100,
@@ -646,6 +684,7 @@ mod test {
         let user = Auth {
             id: 0,
             username: "name".to_string(),
+            session_id: "".to_string(),
             roles: vec!["ROLE_1".to_string()],
             creation_ts_seconds: 0,
             expiration_ts_seconds: current_epoch_seconds() + 100,
@@ -662,6 +701,7 @@ mod test {
         let user = Auth {
             id: 0,
             username: "name".to_string(),
+            session_id: "".to_string(),
             roles: vec!["ROLE_1".to_string()],
             creation_ts_seconds: 0,
             expiration_ts_seconds: current_epoch_seconds() + 100,
@@ -678,6 +718,7 @@ mod test {
         let user = Auth {
             id: 0,
             username: "name".to_string(),
+            session_id: "".to_string(),
             roles: vec!["ROLE_1".to_string()],
             creation_ts_seconds: 0,
             expiration_ts_seconds: current_epoch_seconds() + 100,
@@ -694,6 +735,7 @@ mod test {
         let user = Auth {
             id: 0,
             username: "name".to_string(),
+            session_id: "".to_string(),
             roles: vec!["ROLE_1".to_string()],
             creation_ts_seconds: 0,
             expiration_ts_seconds: current_epoch_seconds() + 100,
@@ -710,6 +752,7 @@ mod test {
         let user = Auth {
             id: 0,
             username: "name".to_string(),
+            session_id: "".to_string(),
             roles: vec!["ROLE_1".to_string()],
             creation_ts_seconds: 0,
             expiration_ts_seconds: current_epoch_seconds() + 100,
@@ -726,6 +769,7 @@ mod test {
         let user = Auth {
             id: 0,
             username: "name".to_string(),
+            session_id: "".to_string(),
             roles: vec!["ROLE_1".to_string()],
             creation_ts_seconds: 0,
             expiration_ts_seconds: current_epoch_seconds() + 100,
@@ -742,6 +786,7 @@ mod test {
         let user = Auth {
             id: 0,
             username: "name".to_string(),
+            session_id: "".to_string(),
             roles: vec!["ROLE_1".to_string(), "ROLE_2".to_string()],
             creation_ts_seconds: 0,
             expiration_ts_seconds: current_epoch_seconds() + 100,
@@ -767,6 +812,7 @@ mod test {
         let user = Auth {
             id: 0,
             username: "name".to_string(),
+            session_id: "".to_string(),
             roles: vec!["ROLE_1".to_string(), "ROLE_2".to_string()],
             creation_ts_seconds: 0,
             expiration_ts_seconds: current_epoch_seconds() + 100,
