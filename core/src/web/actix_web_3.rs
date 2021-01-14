@@ -128,6 +128,7 @@ mod test {
             payload: Auth {
                 username: "Amelia".to_owned(),
                 id: 100,
+                session_id: "a_0".to_owned(),
                 roles: vec![],
                 creation_ts_seconds: 0,
                 expiration_ts_seconds: i64::MAX,
@@ -158,6 +159,7 @@ mod test {
         let auth = Auth {
             username: "Amelia".to_owned(),
             id: 100,
+            session_id: "a_0".to_owned(),
             roles: vec![],
             creation_ts_seconds: 0,
             expiration_ts_seconds: i64::MAX,
@@ -184,6 +186,7 @@ mod test {
         let auth = Auth {
             username: "Amelia".to_owned(),
             id: 100,
+            session_id: "a_0".to_owned(),
             roles: vec![],
             creation_ts_seconds: 0,
             expiration_ts_seconds: i64::MAX,
