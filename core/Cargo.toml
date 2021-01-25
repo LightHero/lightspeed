@@ -31,7 +31,7 @@ validator = "0.12"
 typescript-definitions = {package = "typescript-definitions-ufo-patch", version = "0.1.11"}
 
 actix_web_3_ext = {package = "actix-web", version = "3.2", optional = true }
-warp_external = {package = "warp", version = "0.2", optional = true }
+warp_external = {package = "warp", version = "0.3", optional = true }
 
 [dev-dependencies]
 lightspeed_logger = { version = "0.30.0", path = "../logger" }
