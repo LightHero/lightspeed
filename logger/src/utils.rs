@@ -10,7 +10,7 @@ pub async fn request_with_span<Fut: std::future::Future<Output = Result<T, E>>, 
     let req_id = req_id.as_str();
     let span = tracing::error_span!("req", req_id);
 
-    async move {
+    with_span(span, async move {
         debug!("Start request [{}]", req_id);
         fut.await
             .map_err(|err| {
@@ -21,7 +21,11 @@ pub async fn request_with_span<Fut: std::future::Future<Output = Result<T, E>>, 
                 debug!("Request completed successfully");
                 res
             })
-    }
-    .instrument(span)
+    })
     .await
+}
+
+#[inline]
+pub async fn with_span<Fut: std::future::Future>(span: Span, fut: Fut) -> Fut::Output {
+    fut.instrument(span).await
 }

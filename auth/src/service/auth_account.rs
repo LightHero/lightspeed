@@ -66,13 +66,13 @@ impl<RepoManager: AuthRepositoryManager> AuthAccountService<RepoManager> {
                 let expiration_ts_seconds =
                     creation_ts_seconds + (self.auth_config.auth_session_max_validity_minutes * 60);
 
-                return Ok(Auth {
-                    username: user.data.username,
-                    id: user.id,
-                    roles: user.data.roles,
+                return Ok(Auth::new(
+                    user.id,
+                    user.data.username,
+                    user.data.roles,
                     creation_ts_seconds,
                     expiration_ts_seconds,
-                });
+                ));
             }
         };
 
