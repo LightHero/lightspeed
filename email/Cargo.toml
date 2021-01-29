@@ -13,7 +13,7 @@ keywords = []
 [dependencies]
 lightspeed_core = { version = "0.30.0", path = "../core" }
 async-trait = "0.1"
-lettre = "0.9"
+lettre = { version = "0.9" , features = ["smtp-transport"] }
 lettre_email = "0.9"
 native-tls = "0.2"
 log = "0.4"
@@ -27,3 +27,6 @@ testcontainers = "0.11"
 tokio = { version = "0.2" , features = ["full"] }
 
 lightspeed_logger = { version = "0.30.0", path = "../logger" }
+
+[features]
+vendored = ["native-tls/vendored"]
