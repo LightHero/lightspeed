@@ -63,6 +63,7 @@ async fn should_start_the_mailserver() {
 //         server_username: "ufoscout@gmail.com".to_owned(),
 //         server_password: "".to_owned(),
 //         server_use_tls: Boolean::True,
+//         forward_all_emails_to_fixed_recipients: None,
 //     };
 //
 //     let email_service = new(config).unwrap();
