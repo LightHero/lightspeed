@@ -13,6 +13,7 @@ declare -a publish_list=(
     "email"
     "file_store"
     "hash"
+    "lightspeed"
 )
 
 echo 'Attempt ''cargo test'' before publishing'
