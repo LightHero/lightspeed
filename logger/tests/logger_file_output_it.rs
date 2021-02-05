@@ -3,6 +3,8 @@ use lightspeed_logger::setup_logger;
 use log::{debug, warn};
 use std::path::Path;
 use tracing::info;
+use std::thread::sleep;
+use std::time::Duration;
 
 #[test]
 fn should_setup_logger_with_env_filter() -> Result<(), std::io::Error> {
@@ -29,6 +31,8 @@ fn should_setup_logger_with_env_filter() -> Result<(), std::io::Error> {
 
     let path = Path::new(&log_filename);
     assert!(path.exists());
+
+    sleep(Duration::from_millis(250));
 
     let log_content = std::fs::read_to_string(path).unwrap();
     assert!(log_content.contains("main - this is info"));
