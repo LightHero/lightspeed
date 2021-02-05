@@ -2,9 +2,9 @@ use lightspeed_logger::config::{FileOutputConfig, LoggerConfig, Rotation, Standa
 use lightspeed_logger::setup_logger;
 use log::{debug, warn};
 use std::path::Path;
-use tracing::info;
 use std::thread::sleep;
 use std::time::Duration;
+use tracing::info;
 
 #[test]
 fn should_setup_logger_with_env_filter() -> Result<(), std::io::Error> {

@@ -6,6 +6,7 @@ pub mod email;
 pub mod ip;
 pub mod must_match;
 pub mod order;
+pub mod ownership;
 pub mod urls;
 
 pub const ERR_NOT_UNIQUE: &str = "NOT_UNIQUE";
