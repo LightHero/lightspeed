@@ -1,3 +1,5 @@
+pub use c3p0 as c3p0;
+
 #[cfg(feature = "auth")]
 pub use lightspeed_auth as auth;
 
