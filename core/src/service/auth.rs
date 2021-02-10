@@ -1,5 +1,6 @@
 use crate::error::LightSpeedError;
 use crate::utils::current_epoch_seconds;
+use c3p0_common::Model;
 use serde::{Deserialize, Serialize};
 use std::borrow::Cow;
 use std::collections::{BTreeMap, HashMap};
@@ -51,6 +52,18 @@ pub struct Role {
 
 pub trait Owned {
     fn get_owner_id(&self) -> i64;
+}
+
+impl Owned for i64 {
+    fn get_owner_id(&self) -> i64 {
+        *self
+    }
+}
+
+impl<T: Owned + Clone + serde::ser::Serialize + Send> Owned for Model<T> {
+    fn get_owner_id(&self) -> i64 {
+        self.data.get_owner_id()
+    }
 }
 
 #[derive(Clone)]
