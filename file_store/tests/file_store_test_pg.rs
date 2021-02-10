@@ -1,7 +1,7 @@
 use c3p0::postgres::deadpool;
 use c3p0::postgres::tokio_postgres::NoTls;
 use c3p0::postgres::*;
-use maybe_single::*;
+use maybe_single::nio::*;
 use testcontainers::*;
 
 use lightspeed_core::module::Module;
