@@ -2,8 +2,9 @@ use rand::distributions::Alphanumeric;
 use rand::{thread_rng, Rng};
 use tracing::*;
 use tracing_futures::Instrument;
+use std::fmt::Debug;
 
-pub async fn request_with_span<Fut: std::future::Future<Output = Result<T, E>>, T, E: std::fmt::Display>(
+pub async fn request_with_span<Fut: std::future::Future<Output = Result<T, E>>, T, E: Debug>(
     fut: Fut,
 ) -> Result<T, E> {
     let req_id: String = thread_rng().sample_iter(&Alphanumeric).take(10).map(char::from).collect();
@@ -14,7 +15,7 @@ pub async fn request_with_span<Fut: std::future::Future<Output = Result<T, E>>, 
         debug!("Start request [{}]", req_id);
         fut.await
             .map_err(|err| {
-                error!("Request error: {}", err);
+                error!("Request error: {:?}", err);
                 err
             })
             .map(|res| {

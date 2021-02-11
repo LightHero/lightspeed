@@ -29,16 +29,16 @@ validator = "0.12"
 #typescript-definitions = "0.1.10"
 typescript-definitions = {package = "typescript-definitions-ufo-patch", version = "0.1.11"}
 
-actix_web_3_ext = {package = "actix-web", version = "3.3", optional = true }
-warp_external = {package = "warp", version = "0.3", optional = true }
+actix_web_4_ext = {package = "actix-web", version = "4.0.0-beta.3", optional = true }
+warp_03_ext = {package = "warp", version = "0.3", optional = true }
 
 [dev-dependencies]
-
+actix-rt = "2.0.2"
 lightspeed_logger = { version = "0.32.1", path = "../logger" }
 tokio = { version = "1", features = ["macros", "rt", "sync"] }
 
 [features]
 default = []
 
-actix_web_3 = ["actix_web_3_ext"]
-warp = ["warp_external"]
+actix_web_4 = ["actix_web_4_ext"]
+warp_03 = ["warp_03_ext"]

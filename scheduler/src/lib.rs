@@ -145,7 +145,7 @@ impl JobExecutorInternal {
                             }
                             Err(err) => {
                                 error!(
-                                    "Execution of Job [{}/{}] completed with errors in {}. Err: {}",
+                                    "Execution of Job [{}/{}] completed with errors in {}. Err: {:?}",
                                     group, name, duration_fmt, err
                                 );
                             }

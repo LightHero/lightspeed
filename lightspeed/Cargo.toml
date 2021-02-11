@@ -38,5 +38,5 @@ hash = ["lightspeed_hash"]
 logger = ["lightspeed_logger"]
 scheduler = ["lightspeed_scheduler"]
 
-actix_web_3 = ["lightspeed_core/actix_web_3_ext", "lightspeed_file_store/actix_web_3"]
-warp = ["lightspeed_core/warp_external"]
+actix_web_4 = ["lightspeed_core/actix_web_4", "lightspeed_file_store/actix_web_4"]
+warp_03 = ["lightspeed_core/warp_03"]
