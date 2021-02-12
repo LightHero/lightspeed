@@ -26,3 +26,13 @@ impl WithIdAndVersion for ModelWithOwner {
         self.version
     }
 }
+
+impl <T: Owned + WithIdAndVersion> From<&T> for ModelWithOwner {
+    fn from(model: &T) -> Self {
+        ModelWithOwner {
+            id: model.get_id(),
+            version: model.get_version(),
+            user_id: model.get_owner_id()
+        }
+    }
+}
