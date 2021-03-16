@@ -129,7 +129,7 @@ impl PartialEq<ErrorDetail> for String {
 
 impl From<C3p0Error> for LightSpeedError {
     fn from(err: C3p0Error) -> Self {
-        LightSpeedError::RepositoryError { message: format!("{}", err) }
+        LightSpeedError::RepositoryError { message: format!("{:?}", err) }
     }
 }
 
@@ -217,7 +217,7 @@ impl<'a> ScopedErrorDetails<'a> {
 
 impl From<serde_json::Error> for LightSpeedError {
     fn from(err: serde_json::Error) -> Self {
-        LightSpeedError::BadRequest { message: format!("{}", err), code: ErrorCodes::JSON_PARSE_ERROR }
+        LightSpeedError::BadRequest { message: format!("{:?}", err), code: ErrorCodes::JSON_PARSE_ERROR }
     }
 }
 

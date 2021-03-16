@@ -25,7 +25,7 @@ impl<T: RolesProvider> WebAuthService<T> {
         if let Some(header) = req.headers().get(JWT_TOKEN_HEADER) {
             return header
                 .to_str()
-                .map_err(|err| LightSpeedError::ParseAuthHeaderError { message: format!("{}", err) })
+                .map_err(|err| LightSpeedError::ParseAuthHeaderError { message: format!("{:?}", err) })
                 .and_then(|header| {
                     trace!("Token found in request: [{}]", header);
                     if header.len() > JWT_TOKEN_HEADER_SUFFIX_LEN {

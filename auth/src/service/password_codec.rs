@@ -15,12 +15,12 @@ impl PasswordCodecService {
 
     pub fn verify_match(&self, plain_password: &str, hash: &str) -> Result<bool, LightSpeedError> {
         verify(plain_password, hash)
-            .map_err(|err| LightSpeedError::PasswordEncryptionError { message: format!("{}", err) })
+            .map_err(|err| LightSpeedError::PasswordEncryptionError { message: format!("{:?}", err) })
     }
 
     pub fn hash_password(&self, plain_password: &str) -> Result<String, LightSpeedError> {
         hash(plain_password, self.hash_cost)
-            .map_err(|err| LightSpeedError::PasswordEncryptionError { message: format!("{}", err) })
+            .map_err(|err| LightSpeedError::PasswordEncryptionError { message: format!("{:?}", err) })
     }
 }
 

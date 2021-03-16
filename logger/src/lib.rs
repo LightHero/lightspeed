@@ -30,12 +30,12 @@ impl From<std::io::Error> for LoggerError {
 /// Configure a simple global logger that prints to stdout
 pub fn setup_stdout_logger(logger_filter: &str, use_ansi: bool) -> Result<(), LoggerError> {
     let env_filter = EnvFilter::from_str(logger_filter).map_err(|err| LoggerError::LoggerConfigurationError {
-        message: format!("Cannot parse the env_filter: [{}]. err: {}", logger_filter, err),
+        message: format!("Cannot parse the env_filter: [{}]. err: {:?}", logger_filter, err),
     })?;
 
     tracing_subscriber::FmtSubscriber::builder().with_ansi(use_ansi).with_env_filter(env_filter).try_init().map_err(
         |err| LoggerError::LoggerConfigurationError {
-            message: format!("Cannot start the stdout logger. err: {}", err),
+            message: format!("Cannot start the stdout logger. err: {:?}", err),
         },
     )
 }
@@ -44,7 +44,7 @@ pub fn setup_stdout_logger(logger_filter: &str, use_ansi: bool) -> Result<(), Lo
 pub fn setup_logger(logger_config: &config::LoggerConfig) -> Result<Option<WorkerGuard>, LoggerError> {
     let env_filter =
         EnvFilter::from_str(&logger_config.env_filter).map_err(|err| LoggerError::LoggerConfigurationError {
-            message: format!("Cannot parse the env_filter: [{}]. err: {}", logger_config.env_filter, err),
+            message: format!("Cannot parse the env_filter: [{}]. err: {:?}", logger_config.env_filter, err),
         })?;
 
     let (file_subscriber, file_guard) = if logger_config.file_output.file_output_enabled {
@@ -77,9 +77,9 @@ where
     S: Subscriber + Send + Sync + 'static,
 {
     tracing_log::LogTracer::init().map_err(|err| LoggerError::LoggerConfigurationError {
-        message: format!("Cannot start the logger LogTracer. err: {}", err),
+        message: format!("Cannot start the logger LogTracer. err: {:?}", err),
     })?;
     set_global_default(subscriber).map_err(|err| LoggerError::LoggerConfigurationError {
-        message: format!("Cannot start the logger. err: {}", err),
+        message: format!("Cannot start the logger. err: {:?}", err),
     })
 }

@@ -25,7 +25,7 @@ impl FullEmailClient {
         let security = if email_config.server_use_tls.value() {
             let tls_builder = TlsConnector::builder();
             let tls_connector = tls_builder.build().map_err(|err| LightSpeedError::InternalServerError {
-                message: format!("FullEmailService.new - Cannot build TLS connector. Err: {}", err),
+                message: format!("FullEmailService.new - Cannot build TLS connector. Err: {:?}", err),
             })?;
             let tls_parameters = ClientTlsParameters::new(email_config.server_address.to_owned(), tls_connector);
             ClientSecurity::Wrapper(tls_parameters)
@@ -36,7 +36,7 @@ impl FullEmailClient {
         let mut smtp_client =
             SmtpClient::new((email_config.server_address.as_str(), email_config.server_port), security).map_err(
                 |err| LightSpeedError::InternalServerError {
-                    message: format!("FullEmailService.new - Cannot connect to the SMTP server. Err: {}", err),
+                    message: format!("FullEmailService.new - Cannot connect to the SMTP server. Err: {:?}", err),
                 },
             )?;
 
@@ -119,13 +119,13 @@ impl EmailClient for FullEmailClient {
             }
 
             let email = builder.build().map_err(|err| LightSpeedError::InternalServerError {
-                message: format!("FullEmailService.send - Cannot build the email. Err: {}", err),
+                message: format!("FullEmailService.send - Cannot build the email. Err: {:?}", err),
             })?;
 
             let mut client = client.lock();
 
             let response = client.send(email.into()).map_err(|err| LightSpeedError::InternalServerError {
-                message: format!("FullEmailService.send - Cannot send email to the SMTP server. Err: {}", err),
+                message: format!("FullEmailService.send - Cannot send email to the SMTP server. Err: {:?}", err),
             })?;
 
             debug!("FullEmailService.send - Email sent. Response code: {}", response.code);
@@ -133,7 +133,7 @@ impl EmailClient for FullEmailClient {
         })
         .await
         .map_err(|err| LightSpeedError::InternalServerError {
-            message: format!("FullEmailService.send - Cannot send email to the SMTP server. Err: {}", err),
+            message: format!("FullEmailService.send - Cannot send email to the SMTP server. Err: {:?}", err),
         })?
     }
 
@@ -158,14 +158,14 @@ impl EmailClient for FullEmailClient {
 
 fn parse_mailbox(address: &str) -> Result<Mailbox, LightSpeedError> {
     address.parse::<Mailbox>().map_err(|err| LightSpeedError::BadRequest {
-        message: format!("Cannot parse email address [{}]. Err: {}", address, err),
+        message: format!("Cannot parse email address [{}]. Err: {:?}", address, err),
         code: ErrorCodes::PARSE_ERROR,
     })
 }
 
 fn to_mime_type(mime_type: &str) -> Result<Mime, LightSpeedError> {
     mime_type.parse().map_err(|err| LightSpeedError::BadRequest {
-        message: format!("Cannot parse the mime type [{}]. Err: {}", mime_type, err),
+        message: format!("Cannot parse the mime type [{}]. Err: {:?}", mime_type, err),
         code: "",
     })
 }

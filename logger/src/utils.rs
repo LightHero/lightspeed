@@ -14,7 +14,7 @@ pub async fn request_with_span<Fut: std::future::Future<Output = Result<T, E>>, 
         debug!("Start request [{}]", req_id);
         fut.await
             .map_err(|err| {
-                error!("Request error: {}", err);
+                error!("Request error: {:?}", err);
                 err
             })
             .map(|res| {
