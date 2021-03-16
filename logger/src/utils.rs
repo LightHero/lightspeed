@@ -3,7 +3,7 @@ use rand::{thread_rng, Rng};
 use tracing::*;
 use tracing_futures::Instrument;
 
-pub async fn request_with_span<Fut: std::future::Future<Output = Result<T, E>>, T, E: std::fmt::Display>(
+pub async fn request_with_span<Fut: std::future::Future<Output = Result<T, E>>, T, E: std::fmt::Debug>(
     fut: Fut,
 ) -> Result<T, E> {
     let req_id: String = thread_rng().sample_iter(&Alphanumeric).take(10).map(char::from).collect();
