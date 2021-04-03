@@ -23,17 +23,17 @@ structopt = "0.3"
 strum = { version = "0.20" , features = ["derive"] }
 thiserror = "1.0"
 uuid = { version = "0.8", features = ["v4"] }
-validator = "0.12"
+validator = "0.13"
 
 # See
 #typescript-definitions = "0.1.10"
 typescript-definitions = {package = "typescript-definitions-ufo-patch", version = "0.1.11"}
 
-actix_web_4_ext = {package = "actix-web", version = "4.0.0-beta.4", optional = true }
+actix_web_4_ext = {package = "actix-web", version = "4.0.0-beta.5", optional = true }
 warp_03_ext = {package = "warp", version = "0.3", optional = true }
 
 [dev-dependencies]
-actix-rt = "2.1"
+actix-rt = "2"
 lightspeed_logger = { version = "0.33.5", path = "../logger" }
 tokio = { version = "1", features = ["macros", "rt", "sync"] }
 
