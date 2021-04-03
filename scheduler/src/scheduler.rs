@@ -125,7 +125,7 @@ impl TryToScheduler for &[&dyn TryToScheduler] {
 impl<'a> TryToScheduler for &'a str {
     fn to_scheduler(&self) -> Result<Scheduler, SchedulerError> {
         Ok(Scheduler::Cron(self.parse().map_err(|err| SchedulerError::ScheduleDefinitionError {
-            message: format!("Cannot create schedule for [{}]. Err: {}", self, err),
+            message: format!("Cannot create schedule for [{}]. Err: {:?}", self, err),
         })?))
     }
 }

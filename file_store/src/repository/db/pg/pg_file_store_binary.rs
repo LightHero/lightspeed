@@ -50,7 +50,7 @@ impl DBFileStoreBinaryRepository for PgFileStoreBinaryRepository {
             BinaryContent::FromFs { file_path } => {
                 let mut file = File::open(file_path).await.map_err(|err| LightSpeedError::BadRequest {
                     message: format!(
-                        "PgFileStoreBinaryRepository - Cannot open file [{}]. Err: {}",
+                        "PgFileStoreBinaryRepository - Cannot open file [{}]. Err: {:?}",
                         file_path.display(),
                         err
                     ),
@@ -59,7 +59,7 @@ impl DBFileStoreBinaryRepository for PgFileStoreBinaryRepository {
                 let mut contents = vec![];
                 file.read_to_end(&mut contents).await.map_err(|err| LightSpeedError::BadRequest {
                     message: format!(
-                        "PgFileStoreBinaryRepository - Cannot read file [{}]. Err: {}",
+                        "PgFileStoreBinaryRepository - Cannot read file [{}]. Err: {:?}",
                         file_path.display(),
                         err
                     ),

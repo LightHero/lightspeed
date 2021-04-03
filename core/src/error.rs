@@ -215,7 +215,7 @@ impl<'a> ScopedErrorDetails<'a> {
 
 impl From<serde_json::Error> for LightSpeedError {
     fn from(err: serde_json::Error) -> Self {
-        LightSpeedError::BadRequest { message: format!("{}", err), code: ErrorCodes::JSON_PARSE_ERROR }
+        LightSpeedError::BadRequest { message: format!("{:?}", err), code: ErrorCodes::JSON_PARSE_ERROR }
     }
 }
 

@@ -39,7 +39,7 @@ impl FsFileStoreBinaryRepository {
             Some(parent_path) => {
                 tokio::fs::create_dir_all(parent_path).await.map_err(|err| LightSpeedError::BadRequest {
                     message: format!(
-                        "FsFileStoreDataRepository - Create directory structure for file [{}]. Err: {}",
+                        "FsFileStoreDataRepository - Create directory structure for file [{}]. Err: {:?}",
                         destination_file_path, err
                     ),
                     code: ErrorCodes::IO_ERROR,
@@ -56,7 +56,7 @@ impl FsFileStoreBinaryRepository {
                 tokio::fs::write(destination_path, content.as_ref()).await.map_err(|err| {
                     LightSpeedError::BadRequest {
                         message: format!(
-                            "FsFileStoreDataRepository - Cannot write data to [{}]. Err: {}",
+                            "FsFileStoreDataRepository - Cannot write data to [{}]. Err: {:?}",
                             destination_file_path, err
                         ),
                         code: ErrorCodes::IO_ERROR,
@@ -67,7 +67,7 @@ impl FsFileStoreBinaryRepository {
             BinaryContent::FromFs { file_path } => {
                 tokio::fs::copy(file_path, destination_path).await.map_err(|err| LightSpeedError::BadRequest {
                     message: format!(
-                        "FsFileStoreDataRepository - Cannot copy file from [{:?}] to [{}]. Err: {}",
+                        "FsFileStoreDataRepository - Cannot copy file from [{:?}] to [{}]. Err: {:?}",
                         file_path, destination_file_path, err
                     ),
                     code: ErrorCodes::IO_ERROR,
@@ -81,7 +81,7 @@ impl FsFileStoreBinaryRepository {
         let to = self.get_fs_file_path(file_name);
         if std::path::Path::new(&to).exists() {
             tokio::fs::remove_file(&to).await.map_err(|err| LightSpeedError::BadRequest {
-                message: format!("FsFileStoreDataRepository - Cannot delete file [{}]. Err: {}", to, err),
+                message: format!("FsFileStoreDataRepository - Cannot delete file [{}]. Err: {:?}", to, err),
                 code: ErrorCodes::IO_ERROR,
             })?;
             Ok(1)
