@@ -28,14 +28,9 @@ impl<RepoManager: AuthRepositoryManager> AuthModule<RepoManager> {
         println!("Creating AuthModule");
         info!("Creating AuthModule");
 
-        let password_codec = Arc::new(PasswordCodecService::new(
-            auth_config.bcrypt_password_hash_cost,
-        ));
+        let password_codec = Arc::new(PasswordCodecService::new(auth_config.bcrypt_password_hash_cost));
 
-        let token_service = Arc::new(service::token::TokenService::new(
-            auth_config.clone(),
-            repo_manager.token_repo(),
-        ));
+        let token_service = Arc::new(service::token::TokenService::new(auth_config.clone(), repo_manager.token_repo()));
 
         let auth_account_service = Arc::new(AuthAccountService::new(
             repo_manager.c3p0().clone(),
@@ -45,20 +40,12 @@ impl<RepoManager: AuthRepositoryManager> AuthModule<RepoManager> {
             repo_manager.auth_account_repo(),
         ));
 
-        AuthModule {
-            auth_config,
-            repo_manager,
-            password_codec,
-            auth_account_service,
-            token_service,
-        }
+        AuthModule { auth_config, repo_manager, password_codec, auth_account_service, token_service }
     }
 }
 
 #[async_trait::async_trait]
-impl<RepoManager: AuthRepositoryManager> lightspeed_core::module::Module
-    for AuthModule<RepoManager>
-{
+impl<RepoManager: AuthRepositoryManager> lightspeed_core::module::Module for AuthModule<RepoManager> {
     async fn start(&mut self) -> Result<(), LightSpeedError> {
         info!("Starting AuthModule");
         self.repo_manager.start().await?;

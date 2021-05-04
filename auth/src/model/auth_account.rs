@@ -2,6 +2,7 @@ use c3p0::{C3p0Error, JsonCodec, Model};
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use std::borrow::Cow;
+use strum_macros::{AsRefStr, Display};
 use typescript_definitions::TypeScriptify;
 
 pub type AuthAccountModel = Model<AuthAccountData>;
@@ -17,7 +18,7 @@ pub struct AuthAccountData {
     pub status: AuthAccountStatus,
 }
 
-#[derive(Debug, PartialEq, Clone, Serialize, Deserialize, TypeScriptify)]
+#[derive(Debug, PartialEq, Clone, Serialize, Deserialize, AsRefStr, Display, TypeScriptify)]
 #[allow(non_camel_case_types)]
 pub enum AuthAccountStatus {
     ACTIVE,
@@ -44,7 +45,6 @@ impl JsonCodec<AuthAccountData> for AuthAccountDataCodec {
     }
 
     fn to_value(&self, data: &AuthAccountData) -> Result<Value, C3p0Error> {
-        serde_json::to_value(AuthAccountDataVersioning::V1(Cow::Borrowed(data)))
-            .map_err(C3p0Error::from)
+        serde_json::to_value(AuthAccountDataVersioning::V1(Cow::Borrowed(data))).map_err(C3p0Error::from)
     }
 }

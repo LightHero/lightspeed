@@ -12,7 +12,15 @@ declare -a publish_list=(
     "cms"
     "email"
     "file_store"
+    "hash"
+    "lightspeed"
 )
+
+echo 'Attempt ''cargo test'' before publishing'
+cargo test
+
+echo 'Attempt ''cargo test --all-features'' before publishing'
+cargo test --all-features
 
 for i in "${publish_list[@]}"
 do

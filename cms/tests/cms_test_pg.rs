@@ -1,7 +1,7 @@
 use c3p0::postgres::deadpool;
 use c3p0::postgres::tokio_postgres::*;
 use c3p0::postgres::*;
-use maybe_single::*;
+use maybe_single::nio::*;
 use testcontainers::*;
 
 use lightspeed_cms::config::CmsConfig;
@@ -15,17 +15,12 @@ mod tests;
 
 pub type RepoManager = PgCmsRepositoryManager;
 
-pub type MaybeType = (
-    CmsModule<RepoManager>,
-    Container<'static, clients::Cli, images::postgres::Postgres>,
-);
+pub type MaybeType = (CmsModule<RepoManager>, Container<'static, clients::Cli, images::postgres::Postgres>);
 
 async fn init() -> MaybeType {
     static DOCKER: OnceCell<clients::Cli> = OnceCell::new();
 
-    let node = DOCKER
-        .get_or_init(|| clients::Cli::default())
-        .run(images::postgres::Postgres::default());
+    let node = DOCKER.get_or_init(|| clients::Cli::default()).run(images::postgres::Postgres::default());
 
     let mut config = deadpool::postgres::Config::default();
     config.user = Some("postgres".to_owned());
@@ -53,19 +48,13 @@ async fn init() -> MaybeType {
 
 pub async fn data(serial: bool) -> Data<'static, MaybeType> {
     static DATA: OnceCell<MaybeSingleAsync<MaybeType>> = OnceCell::new();
-    DATA.get_or_init(|| MaybeSingleAsync::new(|| Box::pin(init())))
-        .data(serial)
-        .await
+    DATA.get_or_init(|| MaybeSingleAsync::new(|| Box::pin(init()))).data(serial).await
 }
 
 pub fn test<F: std::future::Future>(f: F) -> F::Output {
     static RT: OnceCell<tokio::runtime::Runtime> = OnceCell::new();
     RT.get_or_init(|| {
-        tokio::runtime::Builder::new()
-            .threaded_scheduler()
-            .enable_all()
-            .build()
-            .expect("Should create a tokio runtime")
+        tokio::runtime::Builder::new().threaded_scheduler().enable_all().build().expect("Should create a tokio runtime")
     })
     .handle()
     .enter(|| futures::executor::block_on(f))

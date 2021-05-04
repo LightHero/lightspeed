@@ -14,10 +14,7 @@ pub trait EmailClient: Send + Sync {
     async fn send(&self, email_message: EmailMessage) -> Result<(), LightSpeedError>;
     fn get_emails(&self) -> Result<Vec<EmailMessage>, LightSpeedError>;
     fn clear_emails(&self) -> Result<(), LightSpeedError>;
-    fn retain_emails(
-        &self,
-        retain: Box<dyn FnMut(&EmailMessage) -> bool>,
-    ) -> Result<(), LightSpeedError>;
+    fn retain_emails(&self, retain: Box<dyn FnMut(&EmailMessage) -> bool>) -> Result<(), LightSpeedError>;
 }
 
 pub fn new(email_config: EmailClientConfig) -> Result<Arc<dyn EmailClient>, LightSpeedError> {
@@ -28,10 +25,7 @@ pub fn new(email_config: EmailClientConfig) -> Result<Arc<dyn EmailClient>, Ligh
     };
 
     if let Some(recipients) = email_config.forward_all_emails_to_fixed_recipients {
-        warn!(
-            "All emails will be sent to the fixed recipients: {}",
-            recipients.join("; ")
-        );
+        warn!("All emails will be sent to the fixed recipients: {}", recipients.join("; "));
         if recipients.is_empty() {
             Err(LightSpeedError::ConfigurationError {
                 message: "Cannot build the email client. Based on the current config all emails should be sent to fixed recipients, but the recipient list is empty".to_owned()
@@ -59,9 +53,7 @@ impl FromStr for EmailClientType {
             "full" => Ok(EmailClientType::Full),
             "in_memory" => Ok(EmailClientType::InMemory),
             "no_ops" => Ok(EmailClientType::NoOps),
-            _ => Err(LightSpeedError::ConfigurationError {
-                message: format!("Unknown Email client_type [{}]", s),
-            }),
+            _ => Err(LightSpeedError::ConfigurationError { message: format!("Unknown Email client_type [{}]", s) }),
         }
     }
 }

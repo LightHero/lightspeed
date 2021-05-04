@@ -11,6 +11,7 @@ pub mod model;
 pub mod repository;
 pub mod service;
 pub mod utils;
+pub mod web;
 
 #[derive(Clone)]
 pub struct FileStoreModule<RepoManager: DBFileStoreRepositoryManager> {
@@ -21,10 +22,7 @@ pub struct FileStoreModule<RepoManager: DBFileStoreRepositoryManager> {
 }
 
 impl<RepoManager: DBFileStoreRepositoryManager> FileStoreModule<RepoManager> {
-    pub fn new(
-        repo_manager: RepoManager,
-        config: FileStoreConfig,
-    ) -> Result<Self, LightSpeedError> {
+    pub fn new(repo_manager: RepoManager, config: FileStoreConfig) -> Result<Self, LightSpeedError> {
         println!("Creating FileStoreModule");
         info!("Creating FileStoreModule");
         /*
@@ -33,23 +31,14 @@ impl<RepoManager: DBFileStoreRepositoryManager> FileStoreModule<RepoManager> {
 
 
         */
-        let file_store_service = Arc::new(FileStoreService::new(
-            &repo_manager,
-            config.fs_repo_base_folders.clone(),
-        ));
+        let file_store_service = Arc::new(FileStoreService::new(&repo_manager, config.fs_repo_base_folders.clone()));
 
-        Ok(FileStoreModule {
-            config,
-            repo_manager,
-            file_store_service,
-        })
+        Ok(FileStoreModule { config, repo_manager, file_store_service })
     }
 }
 
 #[async_trait::async_trait]
-impl<RepoManager: DBFileStoreRepositoryManager> lightspeed_core::module::Module
-    for FileStoreModule<RepoManager>
-{
+impl<RepoManager: DBFileStoreRepositoryManager> lightspeed_core::module::Module for FileStoreModule<RepoManager> {
     async fn start(&mut self) -> Result<(), LightSpeedError> {
         info!("Starting FileStoreModule");
         self.repo_manager.start().await?;

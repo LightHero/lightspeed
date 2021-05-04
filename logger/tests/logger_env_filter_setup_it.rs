@@ -1,18 +1,15 @@
-use lightspeed_logger::config::LoggerConfig;
+use lightspeed_logger::config::{FileOutputConfig, LoggerConfig, Rotation, StandardOutputConfig};
 use lightspeed_logger::setup_logger;
-use log::{debug, warn};
-use tracing::{info, span, Level};
 
 mod inner1 {
-    use super::*;
     pub async fn log_smt() {
         let yaks = 2;
-        let span = span!(Level::WARN, "shaving_yaks", yaks);
+        let span = tracing::span!(tracing::Level::WARN, "shaving_yaks", yaks);
         let _enter = span.enter();
 
-        debug!("inner1 - this is debug");
-        info!("inner1 - this is info");
-        warn!("inner1 - this is warn. Yaks {}", yaks);
+        log::debug!("inner1 - this is debug");
+        tracing::info!("inner1 - this is info");
+        log::warn!("inner1 - this is warn. Yaks {}", yaks);
     }
 }
 
@@ -21,9 +18,9 @@ mod inner2 {
 
     #[tracing::instrument(skip(data), fields(id=data.id, show=true))]
     pub async fn log_smt(yak: u32, data: Data) {
-        debug!("inner2 - id: {} - this is debug", data.id);
-        info!("inner2 - id: {} - this is info", data.id);
-        warn!("inner2 - id: {} - this is warn. Yak {}", data.id, yak);
+        log::debug!("inner2 - id: {} - this is debug", data.id);
+        tracing::info!("inner2 - id: {} - this is info", data.id);
+        log::warn!("inner2 - id: {} - this is warn. Yak {}", data.id, yak);
 
         // info!(excitement = "yay!", "hello! I'm gonna shave a yak.");
 
@@ -38,14 +35,20 @@ pub struct Data {
 #[tokio::test]
 async fn should_setup_logger_with_env_filter() -> Result<(), std::io::Error> {
     let config = LoggerConfig {
-        stdout_output: true,
+        stdout_output: StandardOutputConfig { stdout_enabled: true, stdout_use_ansi_colors: true },
         env_filter: "debug".to_owned(),
+        file_output: FileOutputConfig {
+            file_output_directory: "../target".to_owned(),
+            file_output_enabled: false,
+            file_output_name_prefix: "logger.log".to_owned(),
+            file_output_rotation: Rotation::Daily,
+        },
     };
-    setup_logger(&config).unwrap();
+    let _guard = setup_logger(&config).unwrap();
 
-    debug!("main - this is debug");
-    info!("main - this is info");
-    warn!("main - this is warn");
+    log::debug!("main - this is debug");
+    tracing::info!("main - this is info");
+    log::warn!("main - this is warn");
     inner1::log_smt().await;
     inner2::log_smt(3, Data { id: 789 }).await;
 

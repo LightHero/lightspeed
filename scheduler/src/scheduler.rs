@@ -9,10 +9,7 @@ pub enum Scheduler {
 
     /// Set to execute exactly `duration` away from the previous execution.
     /// If
-    Interval {
-        interval_duration: Duration,
-        execute_at_startup: bool,
-    },
+    Interval { interval_duration: Duration, execute_at_startup: bool },
 
     /// Multi shceduler: the execution is trigger where at least one of the schedulers in matched
     Multi(Vec<Scheduler>),
@@ -31,18 +28,13 @@ impl Scheduler {
         match *self {
             Scheduler::Cron(ref cs) => {
                 if let Some(tz) = timezone {
-                    cs.after(&after.with_timezone(&tz))
-                        .next()
-                        .map(|date| date.with_timezone(&Utc))
+                    cs.after(&after.with_timezone(&tz)).next().map(|date| date.with_timezone(&Utc))
                 } else {
                     cs.after(&after).next()
                 }
             }
 
-            Scheduler::Interval {
-                ref interval_duration,
-                ref mut execute_at_startup,
-            } => {
+            Scheduler::Interval { ref interval_duration, ref mut execute_at_startup } => {
                 if *execute_at_startup {
                     *execute_at_startup = false;
                     Some(*after)
@@ -132,10 +124,8 @@ impl TryToScheduler for &[&dyn TryToScheduler] {
 
 impl<'a> TryToScheduler for &'a str {
     fn to_scheduler(&self) -> Result<Scheduler, SchedulerError> {
-        Ok(Scheduler::Cron(self.parse().map_err(|err| {
-            SchedulerError::ScheduleDefinitionError {
-                message: format!("Cannot create schedule for [{}]. Err: {}", self, err),
-            }
+        Ok(Scheduler::Cron(self.parse().map_err(|err| SchedulerError::ScheduleDefinitionError {
+            message: format!("Cannot create schedule for [{}]. Err: {:?}", self, err),
         })?))
     }
 }
@@ -148,19 +138,13 @@ impl TryToScheduler for String {
 
 impl TryToScheduler for Duration {
     fn to_scheduler(&self) -> Result<Scheduler, SchedulerError> {
-        Ok(Scheduler::Interval {
-            interval_duration: *self,
-            execute_at_startup: false,
-        })
+        Ok(Scheduler::Interval { interval_duration: *self, execute_at_startup: false })
     }
 }
 
 impl TryToScheduler for (Duration, bool) {
     fn to_scheduler(&self) -> Result<Scheduler, SchedulerError> {
-        Ok(Scheduler::Interval {
-            interval_duration: self.0,
-            execute_at_startup: self.1,
-        })
+        Ok(Scheduler::Interval { interval_duration: self.0, execute_at_startup: self.1 })
     }
 }
 

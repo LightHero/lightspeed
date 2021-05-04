@@ -30,11 +30,7 @@ fn should_delete_token() -> Result<(), LightSpeedError> {
             let saved_token = token_repo.save(conn, token).await?;
 
             assert!(token_repo.exists_by_id(conn, &saved_token.id).await?);
-            assert!(auth_module
-                .token_service
-                .delete_with_conn(conn, saved_token.clone())
-                .await
-                .is_ok());
+            assert!(auth_module.token_service.delete_with_conn(conn, saved_token.clone()).await.is_ok());
             assert!(!token_repo.exists_by_id(conn, &saved_token.id).await?);
 
             Ok(())
@@ -62,8 +58,7 @@ fn should_generate_token() -> Result<(), LightSpeedError> {
                 .await?;
             let after = current_epoch_seconds();
 
-            let expiration_seconds =
-                &auth_module.auth_config.activation_token_validity_minutes * 60;
+            let expiration_seconds = &auth_module.auth_config.activation_token_validity_minutes * 60;
 
             assert_eq!(username, token.data.username);
 
@@ -74,21 +69,9 @@ fn should_generate_token() -> Result<(), LightSpeedError> {
             assert!((before + expiration_seconds) <= token.data.expire_at_epoch_seconds);
             assert!((after + expiration_seconds) >= token.data.expire_at_epoch_seconds);
 
-            assert!(auth_module
-                .token_service
-                .fetch_by_token_with_conn(conn, &token.data.token, true)
-                .await
-                .is_ok());
-            assert!(auth_module
-                .token_service
-                .delete_with_conn(conn, token.clone())
-                .await
-                .is_ok());
-            assert!(auth_module
-                .token_service
-                .fetch_by_token_with_conn(conn, &token.data.token, true)
-                .await
-                .is_err());
+            assert!(auth_module.token_service.fetch_by_token_with_conn(conn, &token.data.token, true).await.is_ok());
+            assert!(auth_module.token_service.delete_with_conn(conn, token.clone()).await.is_ok());
+            assert!(auth_module.token_service.fetch_by_token_with_conn(conn, &token.data.token, true).await.is_err());
             Ok(())
         })
         .await
@@ -146,20 +129,8 @@ fn should_return_all_tokens_by_username() -> Result<(), LightSpeedError> {
         c3p0.transaction(|mut conn| async move {
             let conn = &mut conn;
 
-            assert_eq!(
-                0,
-                token_service
-                    .fetch_all_by_username_with_conn(conn, &username_1)
-                    .await?
-                    .len()
-            );
-            assert_eq!(
-                0,
-                token_service
-                    .fetch_all_by_username_with_conn(conn, &username_2)
-                    .await?
-                    .len()
-            );
+            assert_eq!(0, token_service.fetch_all_by_username_with_conn(conn, &username_1).await?.len());
+            assert_eq!(0, token_service.fetch_all_by_username_with_conn(conn, &username_2).await?.len());
 
             let token_1 = token_repo
                 .save(
@@ -176,13 +147,7 @@ fn should_return_all_tokens_by_username() -> Result<(), LightSpeedError> {
                 )
                 .await?;
 
-            assert_eq!(
-                1,
-                token_service
-                    .fetch_all_by_username_with_conn(conn, &username_1)
-                    .await?
-                    .len()
-            );
+            assert_eq!(1, token_service.fetch_all_by_username_with_conn(conn, &username_1).await?.len());
 
             let token_2 = token_repo
                 .save(
@@ -199,25 +164,13 @@ fn should_return_all_tokens_by_username() -> Result<(), LightSpeedError> {
                 )
                 .await?;
 
-            assert_eq!(
-                0,
-                token_service
-                    .fetch_all_by_username_with_conn(conn, &username_2)
-                    .await?
-                    .len()
-            );
+            assert_eq!(0, token_service.fetch_all_by_username_with_conn(conn, &username_2).await?.len());
 
-            let user_1_tokens = token_service
-                .fetch_all_by_username_with_conn(conn, &username_1)
-                .await?;
+            let user_1_tokens = token_service.fetch_all_by_username_with_conn(conn, &username_1).await?;
             assert_eq!(2, user_1_tokens.len());
 
-            assert!(user_1_tokens
-                .iter()
-                .any(|token| token.data.username == username_1 && token_1.id == token.id));
-            assert!(user_1_tokens
-                .iter()
-                .any(|token| token.data.username == username_1 && token_2.id == token.id));
+            assert!(user_1_tokens.iter().any(|token| token.data.username == username_1 && token_1.id == token.id));
+            assert!(user_1_tokens.iter().any(|token| token.data.username == username_1 && token_2.id == token.id));
 
             Ok(())
         })

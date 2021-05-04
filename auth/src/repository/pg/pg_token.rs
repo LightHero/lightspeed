@@ -20,9 +20,7 @@ impl Deref for PgTokenRepository {
 
 impl Default for PgTokenRepository {
     fn default() -> Self {
-        PgTokenRepository {
-            repo: C3p0JsonBuilder::new("LS_AUTH_TOKEN").build_with_codec(TokenDataCodec {}),
-        }
+        PgTokenRepository { repo: C3p0JsonBuilder::new("LS_AUTH_TOKEN").build_with_codec(TokenDataCodec {}) }
     }
 }
 
@@ -30,20 +28,13 @@ impl Default for PgTokenRepository {
 impl TokenRepository for PgTokenRepository {
     type Conn = PgConnection;
 
-    async fn fetch_by_token(
-        &self,
-        conn: &mut PgConnection,
-        token_string: &str,
-    ) -> Result<TokenModel, LightSpeedError> {
+    async fn fetch_by_token(&self, conn: &mut PgConnection, token_string: &str) -> Result<TokenModel, LightSpeedError> {
         let sql = r#"
             select id, version, data from LS_AUTH_TOKEN
             where data ->> 'token' = $1
             limit 1
         "#;
-        Ok(self
-            .repo
-            .fetch_one_with_sql(conn, sql, &[&token_string])
-            .await?)
+        Ok(self.repo.fetch_one_with_sql(conn, sql, &[&token_string]).await?)
     }
 
     async fn fetch_by_username(
@@ -55,10 +46,7 @@ impl TokenRepository for PgTokenRepository {
             select id, version, data from LS_AUTH_TOKEN
             where data ->> 'username' = $1
         "#;
-        Ok(self
-            .repo
-            .fetch_all_with_sql(conn, sql, &[&username])
-            .await?)
+        Ok(self.repo.fetch_all_with_sql(conn, sql, &[&username]).await?)
     }
 
     async fn save(

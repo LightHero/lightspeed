@@ -4,21 +4,13 @@ use structopt::StructOpt;
 #[structopt(rename_all = "kebab-case")]
 pub struct AuthConfig {
     /// Determines the activation token validity minutes
-    #[structopt(
-        long,
-        env = "LS_AUTH_ACTIVATION_TOKEN_VALIDITY_MINUTES",
-        default_value = "120"
-    )]
+    #[structopt(long, env = "LS_AUTH_ACTIVATION_TOKEN_VALIDITY_MINUTES", default_value = "120")]
     pub activation_token_validity_minutes: i64,
 
     /// Determines the maximum session validity minutes.
     /// Once the session expires it is not possible to refresh it
     /// and the user needs to reenter his credentials.
-    #[structopt(
-        long,
-        env = "LS_AUTH_SESSION_MAX_VALIDITY_MINUTES",
-        default_value = "240"
-    )]
+    #[structopt(long, env = "LS_AUTH_SESSION_MAX_VALIDITY_MINUTES", default_value = "240")]
     pub auth_session_max_validity_minutes: i64,
 
     #[structopt(long, env = "LS_AUTH_PASSWORD_HASH_COST", default_value = "10")]

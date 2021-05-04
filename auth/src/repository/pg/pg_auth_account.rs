@@ -1,4 +1,4 @@
-use crate::model::auth_account::{AuthAccountData, AuthAccountDataCodec, AuthAccountModel};
+use crate::model::auth_account::{AuthAccountData, AuthAccountDataCodec, AuthAccountModel, AuthAccountStatus};
 use crate::repository::AuthAccountRepository;
 use c3p0::postgres::*;
 use c3p0::*;
@@ -22,6 +22,22 @@ impl Default for PgAuthAccountRepository {
 impl AuthAccountRepository for PgAuthAccountRepository {
     type Conn = PgConnection;
 
+    async fn fetch_all_by_status(
+        &self,
+        conn: &mut Self::Conn,
+        status: AuthAccountStatus,
+        start_user_id: i64,
+        limit: u32,
+    ) -> Result<Vec<AuthAccountModel>, LightSpeedError> {
+        let sql = r#"
+            select id, version, data from LS_AUTH_ACCOUNT
+            where id >= $1 and DATA ->> 'status' = $2
+            order by id asc
+            limit $3
+        "#;
+        Ok(self.repo.fetch_all_with_sql(conn, sql, &[&start_user_id, &status.as_ref(), &(limit as i64)]).await?)
+    }
+
     async fn fetch_by_id(
         &self,
         conn: &mut Self::Conn,
@@ -35,12 +51,10 @@ impl AuthAccountRepository for PgAuthAccountRepository {
         conn: &mut PgConnection,
         username: &str,
     ) -> Result<AuthAccountModel, LightSpeedError> {
-        self.fetch_by_username_optional(conn, username)
-            .await?
-            .ok_or_else(|| LightSpeedError::BadRequest {
-                message: format!("No user found with username [{}]", username),
-                code: ErrorCodes::NOT_FOUND,
-            })
+        self.fetch_by_username_optional(conn, username).await?.ok_or_else(|| LightSpeedError::BadRequest {
+            message: format!("No user found with username [{}]", username),
+            code: ErrorCodes::NOT_FOUND,
+        })
     }
 
     async fn fetch_by_username_optional(
@@ -53,10 +67,7 @@ impl AuthAccountRepository for PgAuthAccountRepository {
             where DATA ->> 'username' = $1
             limit 1
         "#;
-        Ok(self
-            .repo
-            .fetch_one_optional_with_sql(conn, sql, &[&username])
-            .await?)
+        Ok(self.repo.fetch_one_optional_with_sql(conn, sql, &[&username]).await?)
     }
 
     async fn fetch_by_email_optional(
@@ -69,10 +80,7 @@ impl AuthAccountRepository for PgAuthAccountRepository {
             where DATA ->> 'email' = $1
             limit 1
         "#;
-        Ok(self
-            .repo
-            .fetch_one_optional_with_sql(conn, sql, &[&email])
-            .await?)
+        Ok(self.repo.fetch_one_optional_with_sql(conn, sql, &[&email]).await?)
     }
 
     async fn save(
@@ -97,6 +105,10 @@ impl AuthAccountRepository for PgAuthAccountRepository {
         model: Model<AuthAccountData>,
     ) -> Result<Model<AuthAccountData>, LightSpeedError> {
         Ok(self.repo.delete(conn, model).await?)
+    }
+
+    async fn delete_by_id(&self, conn: &mut Self::Conn, user_id: i64) -> Result<u64, LightSpeedError> {
+        Ok(self.repo.delete_by_id(conn, &user_id).await?)
     }
 }
 

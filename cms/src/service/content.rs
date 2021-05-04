@@ -20,11 +20,7 @@ pub struct ContentService<RepoManager: CmsRepositoryManager> {
 
 impl<RepoManager: CmsRepositoryManager> ContentService<RepoManager> {
     pub fn new(c3p0: RepoManager::C3P0, repo_factory: RepoManager) -> Self {
-        ContentService {
-            c3p0,
-            repo_factory,
-            content_repos: Cache::new(u32::max_value()),
-        }
+        ContentService { c3p0, repo_factory, content_repos: Cache::new(u32::max_value()) }
     }
 
     pub async fn create_content_table(&self, schema: &SchemaModel) -> Result<(), LightSpeedError> {
@@ -37,8 +33,7 @@ impl<RepoManager: CmsRepositoryManager> ContentService<RepoManager> {
                 for field in &schema.data.schema.fields {
                     if let SchemaFieldArity::Unique = field.field_type.get_arity() {
                         let index_name = self.unique_index_name(schema_id, &field.name);
-                        repo.create_unique_constraint(&mut conn, &index_name, &field.name)
-                            .await?;
+                        repo.create_unique_constraint(&mut conn, &index_name, &field.name).await?;
                     }
                 }
                 Ok(())
@@ -72,52 +67,43 @@ impl<RepoManager: CmsRepositoryManager> ContentService<RepoManager> {
         self.c3p0
             .transaction(|mut conn| async move {
                 let conn = &mut conn;
-                let repo = self
-                    .get_content_repo_by_schema_id(create_content_dto.schema_id)
-                    .await;
+                let repo = self.get_content_repo_by_schema_id(create_content_dto.schema_id).await;
 
                 let mut validator = Validator::new();
 
-                create_content_dto
-                    .content
-                    .validate(&schema, validator.error_details());
+                create_content_dto.content.validate(&schema, validator.error_details());
 
                 for field in &schema.fields {
                     if let SchemaFieldArity::Unique = field.field_type.get_arity() {
-                        if let Some(content_field) =
-                            create_content_dto.content.fields.get(&field.name)
-                        {
+                        if let Some(content_field) = create_content_dto.content.fields.get(&field.name) {
                             let field_value = match content_field {
-                                ContentFieldValue::Slug { value }
-                                | ContentFieldValue::String { value } => match value {
-                                    ContentFieldValueArity::Single {
-                                        value: Some(field_value),
-                                    } => Some(field_value.to_string()),
-                                    _ => None,
-                                },
+                                ContentFieldValue::Slug { value } | ContentFieldValue::String { value } => {
+                                    match value {
+                                        ContentFieldValueArity::Single { value: Some(field_value) } => {
+                                            Some(field_value.to_string())
+                                        }
+                                        _ => None,
+                                    }
+                                }
                                 ContentFieldValue::Boolean { value } => match value {
-                                    ContentFieldValueArity::Single {
-                                        value: Some(field_value),
-                                    } => Some(field_value.to_string()),
+                                    ContentFieldValueArity::Single { value: Some(field_value) } => {
+                                        Some(field_value.to_string())
+                                    }
                                     _ => None,
                                 },
                                 ContentFieldValue::Number { value } => match value {
-                                    ContentFieldValueArity::Single {
-                                        value: Some(field_value),
-                                    } => Some(field_value.to_string()),
+                                    ContentFieldValueArity::Single { value: Some(field_value) } => {
+                                        Some(field_value.to_string())
+                                    }
                                     _ => None,
                                 },
                             };
 
                             if let Some(value) = field_value {
-                                let count = repo
-                                    .count_all_by_field_value(conn, &field.name, &value)
-                                    .await?;
+                                let count = repo.count_all_by_field_value(conn, &field.name, &value).await?;
                                 if count > 0 {
                                     let scoped_name = format!("fields[{}]", &field.name);
-                                    validator
-                                        .error_details()
-                                        .add_detail(scoped_name, ERR_NOT_UNIQUE);
+                                    validator.error_details().add_detail(scoped_name, ERR_NOT_UNIQUE);
                                 }
                             }
                         }
@@ -131,15 +117,10 @@ impl<RepoManager: CmsRepositoryManager> ContentService<RepoManager> {
             .await
     }
 
-    pub async fn delete_content(
-        &self,
-        content_model: ContentModel,
-    ) -> Result<ContentModel, LightSpeedError> {
+    pub async fn delete_content(&self, content_model: ContentModel) -> Result<ContentModel, LightSpeedError> {
         self.c3p0
             .transaction(|mut conn| async move {
-                let repo = self
-                    .get_content_repo_by_schema_id(content_model.data.schema_id)
-                    .await;
+                let repo = self.get_content_repo_by_schema_id(content_model.data.schema_id).await;
                 repo.delete(&mut conn, content_model).await
             })
             .await
@@ -148,8 +129,7 @@ impl<RepoManager: CmsRepositoryManager> ContentService<RepoManager> {
     async fn get_content_repo_by_schema_id(&self, schema_id: i64) -> Arc<RepoManager::ContentRepo> {
         self.content_repos
             .get_or_insert_with(schema_id, || async {
-                self.repo_factory
-                    .content_repo(&self.content_table_name(schema_id))
+                self.repo_factory.content_repo(&self.content_table_name(schema_id))
             })
             .await
     }
@@ -159,10 +139,7 @@ impl<RepoManager: CmsRepositoryManager> ContentService<RepoManager> {
     }
 
     fn unique_index_name(&self, schema_id: i64, field_name: &str) -> String {
-        format!(
-            "{}{}_UNIQUE_{}",
-            CMS_CONTENT_TABLE_PREFIX, schema_id, field_name
-        )
+        format!("{}{}_UNIQUE_{}", CMS_CONTENT_TABLE_PREFIX, schema_id, field_name)
     }
 }
 

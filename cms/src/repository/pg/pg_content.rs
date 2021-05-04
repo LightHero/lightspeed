@@ -12,9 +12,7 @@ pub struct PgContentRepository {
 
 impl PgContentRepository {
     pub fn new(table_name: &str) -> Self {
-        Self {
-            repo: C3p0JsonBuilder::new(table_name).build(),
-        }
+        Self { repo: C3p0JsonBuilder::new(table_name).build() }
     }
 }
 
@@ -48,11 +46,17 @@ impl ContentRepository for PgContentRepository {
         field_name: &str,
         field_value: &str,
     ) -> Result<u64, LightSpeedError> {
-        Ok(conn.fetch_one_value(&format!(
+        Ok(conn
+            .fetch_one_value(
+                &format!(
             "SELECT COUNT(*) FROM {} WHERE  (DATA -> 'content' -> 'fields' -> '{}' -> 'value' ->> 'value') = $1 ",
             self.repo.queries().qualified_table_name,
             field_name
-        ), &[&field_value]).await.map(|val: i64| val as u64)?)
+        ),
+                &[&field_value],
+            )
+            .await
+            .map(|val: i64| val as u64)?)
     }
 
     async fn create_unique_constraint(
@@ -61,29 +65,21 @@ impl ContentRepository for PgContentRepository {
         index_name: &str,
         field_name: &str,
     ) -> Result<(), LightSpeedError> {
-        Ok(conn.batch_execute(&format!(
-            "CREATE UNIQUE INDEX {} ON {}( (DATA -> 'content' -> 'fields' -> '{}' -> 'value' ->> 'value') )",
-            index_name,
-            self.repo.queries().qualified_table_name,
-            field_name
-        )).await?)
-    }
-
-    async fn drop_unique_constraint(
-        &self,
-        conn: &mut Self::Conn,
-        index_name: &str,
-    ) -> Result<(), LightSpeedError> {
         Ok(conn
-            .batch_execute(&format!("DROP INDEX {} IF EXISTS", index_name))
+            .batch_execute(&format!(
+                "CREATE UNIQUE INDEX {} ON {}( (DATA -> 'content' -> 'fields' -> '{}' -> 'value' ->> 'value') )",
+                index_name,
+                self.repo.queries().qualified_table_name,
+                field_name
+            ))
             .await?)
     }
 
-    async fn fetch_by_id(
-        &self,
-        conn: &mut Self::Conn,
-        id: i64,
-    ) -> Result<Model<ContentData>, LightSpeedError> {
+    async fn drop_unique_constraint(&self, conn: &mut Self::Conn, index_name: &str) -> Result<(), LightSpeedError> {
+        Ok(conn.batch_execute(&format!("DROP INDEX {} IF EXISTS", index_name)).await?)
+    }
+
+    async fn fetch_by_id(&self, conn: &mut Self::Conn, id: i64) -> Result<Model<ContentData>, LightSpeedError> {
         Ok(self.repo.fetch_one_by_id(conn, &id).await?)
     }
 

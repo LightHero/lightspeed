@@ -28,9 +28,6 @@ mod tests {
         let mut error_details = ErrorDetails::default();
         validate_email(&mut error_details, "email", "ufoscout_gmail.com");
         assert_eq!(1, error_details.details().len());
-        assert_eq!(
-            ErrorDetail::new(NOT_VALID_EMAIL, vec![]),
-            error_details.details()["email"][0]
-        )
+        assert_eq!(ErrorDetail::new(NOT_VALID_EMAIL, vec![]), error_details.details()["email"][0])
     }
 }

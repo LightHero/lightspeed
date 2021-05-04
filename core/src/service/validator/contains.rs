@@ -14,10 +14,7 @@ pub fn validate_contains<S: Into<String>, T: Contains>(
     needle: &str,
 ) {
     if !validator::validate_contains(val, needle) {
-        error_details.add_detail(
-            field_name.into(),
-            ErrorDetail::new(MUST_CONTAIN, vec![needle.to_string()]),
-        )
+        error_details.add_detail(field_name.into(), ErrorDetail::new(MUST_CONTAIN, vec![needle.to_string()]))
     }
 }
 
@@ -39,9 +36,6 @@ mod tests {
         let mut error_details = ErrorDetails::default();
         validate_contains(&mut error_details, "name", "ufoscout", "alien");
         assert_eq!(1, error_details.details().len());
-        assert_eq!(
-            ErrorDetail::new(MUST_CONTAIN, vec!["alien".to_string()]),
-            error_details.details()["name"][0]
-        )
+        assert_eq!(ErrorDetail::new(MUST_CONTAIN, vec!["alien".to_string()]), error_details.details()["name"][0])
     }
 }

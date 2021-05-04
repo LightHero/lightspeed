@@ -14,10 +14,7 @@ pub fn validate_must_be_equals<A: Into<String>, B: Into<String>, T: Eq>(
     if !validator::validate_must_match(a_value, b_value) {
         let a_name = a_name.into();
         let b_name = b_name.into();
-        error_details.add_detail(
-            a_name.clone(),
-            ErrorDetail::new(NOT_EQUALS, vec![a_name, b_name]),
-        )
+        error_details.add_detail(a_name.clone(), ErrorDetail::new(NOT_EQUALS, vec![a_name, b_name]))
     }
 }
 

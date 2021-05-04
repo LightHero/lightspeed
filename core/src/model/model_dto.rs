@@ -19,10 +19,6 @@ where
     DATA: Clone + serde::ser::Serialize + serde::de::DeserializeOwned + Send,
 {
     fn from(model: Model<DATA>) -> Self {
-        Self {
-            id: model.id,
-            version: model.version,
-            data: model.data,
-        }
+        Self { id: model.id, version: model.version, data: model.data }
     }
 }

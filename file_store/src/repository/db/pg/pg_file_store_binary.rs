@@ -13,9 +13,7 @@ pub struct PgFileStoreBinaryRepository {
 
 impl Default for PgFileStoreBinaryRepository {
     fn default() -> Self {
-        PgFileStoreBinaryRepository {
-            table_name: "LS_FILE_STORE_BINARY",
-        }
+        PgFileStoreBinaryRepository { table_name: "LS_FILE_STORE_BINARY" }
     }
 }
 
@@ -23,16 +21,13 @@ impl Default for PgFileStoreBinaryRepository {
 impl DBFileStoreBinaryRepository for PgFileStoreBinaryRepository {
     type Conn = PgConnection;
 
-    async fn read_file(
+    async fn read_file<'a>(
         &self,
         conn: &mut Self::Conn,
         repository_name: &str,
         file_path: &str,
-    ) -> Result<BinaryContent, LightSpeedError> {
-        let sql = &format!(
-            "SELECT DATA FROM {} WHERE repository = $1 AND filepath = $2",
-            self.table_name
-        );
+    ) -> Result<BinaryContent<'a>, LightSpeedError> {
+        let sql = &format!("SELECT DATA FROM {} WHERE repository = $1 AND filepath = $2", self.table_name);
 
         let content = conn
             .fetch_one(&sql, &[&repository_name, &file_path], |row| {
@@ -40,54 +35,43 @@ impl DBFileStoreBinaryRepository for PgFileStoreBinaryRepository {
                 Ok(content)
             })
             .await?;
-        Ok(BinaryContent::InMemory { content })
+        Ok(BinaryContent::InMemory { content: Cow::Owned(content) })
     }
 
-    async fn save_file(
+    async fn save_file<'a>(
         &self,
         conn: &mut Self::Conn,
         repository_name: &str,
         file_path: &str,
-        content: &BinaryContent,
+        content: &'a BinaryContent<'a>,
     ) -> Result<u64, LightSpeedError> {
         let binary_content = match content {
             BinaryContent::InMemory { content } => Cow::Borrowed(content),
             BinaryContent::FromFs { file_path } => {
-                let mut file =
-                    File::open(file_path)
-                        .await
-                        .map_err(|err| LightSpeedError::BadRequest {
-                            message: format!(
-                                "PgFileStoreBinaryRepository - Cannot open file [{}]. Err: {}",
-                                file_path, err
-                            ),
-                            code: ErrorCodes::IO_ERROR,
-                        })?;
-                let mut contents = vec![];
-                file.read_to_end(&mut contents).await.map_err(|err| {
-                    LightSpeedError::BadRequest {
-                        message: format!(
-                            "PgFileStoreBinaryRepository - Cannot read file [{}]. Err: {}",
-                            file_path, err
-                        ),
-                        code: ErrorCodes::IO_ERROR,
-                    }
+                let mut file = File::open(file_path).await.map_err(|err| LightSpeedError::BadRequest {
+                    message: format!(
+                        "PgFileStoreBinaryRepository - Cannot open file [{}]. Err: {:?}",
+                        file_path.display(),
+                        err
+                    ),
+                    code: ErrorCodes::IO_ERROR,
                 })?;
-                Cow::Owned(contents)
+                let mut contents = vec![];
+                file.read_to_end(&mut contents).await.map_err(|err| LightSpeedError::BadRequest {
+                    message: format!(
+                        "PgFileStoreBinaryRepository - Cannot read file [{}]. Err: {:?}",
+                        file_path.display(),
+                        err
+                    ),
+                    code: ErrorCodes::IO_ERROR,
+                })?;
+                Cow::Owned(Cow::Owned(contents))
             }
         };
 
-        let sql = &format!(
-            "INSERT INTO {} (repository, filepath, data) VALUES ($1, $2, $3)",
-            self.table_name
-        );
+        let sql = &format!("INSERT INTO {} (repository, filepath, data) VALUES ($1, $2, $3)", self.table_name);
 
-        Ok(conn
-            .execute(
-                &sql,
-                &[&repository_name, &file_path, binary_content.as_ref()],
-            )
-            .await?)
+        Ok(conn.execute(&sql, &[&repository_name, &file_path, &binary_content.as_ref().as_ref()]).await?)
     }
 
     async fn delete_file(
@@ -96,10 +80,7 @@ impl DBFileStoreBinaryRepository for PgFileStoreBinaryRepository {
         repository_name: &str,
         file_path: &str,
     ) -> Result<u64, LightSpeedError> {
-        let sql = &format!(
-            "DELETE FROM {} WHERE repository = $1 AND filepath = $2",
-            self.table_name
-        );
+        let sql = &format!("DELETE FROM {} WHERE repository = $1 AND filepath = $2", self.table_name);
         Ok(conn.execute(&sql, &[&repository_name, &file_path]).await?)
     }
 }

@@ -23,11 +23,7 @@ pub struct EmailClientConfig {
     #[structopt(long, env = "LS_EMAIL_SERVER_USE_TLS", default_value = "false")]
     pub server_use_tls: Boolean,
 
-    #[structopt(
-        long,
-        env = "LS_EMAIL_FORWARD_ALL_EMAILS_TO_FIXED_RECIPIENTS",
-        value_delimiter = ";"
-    )]
+    #[structopt(long, env = "LS_EMAIL_FORWARD_ALL_EMAILS_TO_FIXED_RECIPIENTS", value_delimiter = ";")]
     pub forward_all_emails_to_fixed_recipients: Option<Vec<String>>,
 }
 

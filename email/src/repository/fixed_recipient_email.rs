@@ -15,10 +15,7 @@ pub struct FixedRecipientEmailClient {
 
 impl FixedRecipientEmailClient {
     pub fn new(fixed_to_recipients: Vec<String>, client: Arc<dyn EmailClient>) -> Self {
-        Self {
-            fixed_to_recipients,
-            client,
-        }
+        Self { fixed_to_recipients, client }
     }
 }
 
@@ -27,10 +24,7 @@ impl EmailClient for FixedRecipientEmailClient {
     async fn send(&self, mut email_message: EmailMessage) -> Result<(), LightSpeedError> {
         warn!("FixedRecipientEmailClient - Received an email. The email recipients will be substituted by the configured one(s)");
 
-        email_message.subject = Some(to_subject(
-            &email_message.subject.unwrap_or_default(),
-            &email_message.to,
-        ));
+        email_message.subject = Some(to_subject(&email_message.subject.unwrap_or_default(), &email_message.to));
 
         let original_data_info = to_text(&email_message.to, &email_message.cc, &email_message.bcc);
         if let Some(text) = email_message.text {
@@ -38,10 +32,7 @@ impl EmailClient for FixedRecipientEmailClient {
         }
 
         if let Some(html) = email_message.html {
-            email_message.html = Some(format!(
-                "<pre>\n{}\n</pre>\n</br>\n{}",
-                original_data_info, html
-            ));
+            email_message.html = Some(format!("<pre>\n{}\n</pre>\n</br>\n{}", original_data_info, html));
         }
 
         if let (None, None) = (&email_message.text, &email_message.html) {
@@ -63,10 +54,7 @@ impl EmailClient for FixedRecipientEmailClient {
         self.client.clear_emails()
     }
 
-    fn retain_emails(
-        &self,
-        retain: Box<dyn FnMut(&EmailMessage) -> bool>,
-    ) -> Result<(), LightSpeedError> {
+    fn retain_emails(&self, retain: Box<dyn FnMut(&EmailMessage) -> bool>) -> Result<(), LightSpeedError> {
         self.retain_emails(retain)
     }
 }
@@ -82,16 +70,16 @@ fn to_subject(subject: &str, to: &[String]) -> String {
 
 fn to_text(to: &[String], cc: &[String], bcc: &[String]) -> String {
     let mut text = String::from(SECTION_SEPARATOR);
-    text.push_str("\n");
+    text.push('\n');
     text.push_str(RECIPIENT_ALTERATION_MESSAGE);
 
     text.push_str(&format!("\nTO: {}", to.join(JOIN_SEPARATOR)));
     text.push_str(&format!("\nCC: {}", cc.join(JOIN_SEPARATOR)));
     text.push_str(&format!("\nBCC: {}", bcc.join(JOIN_SEPARATOR)));
 
-    text.push_str("\n");
+    text.push('\n');
     text.push_str(SECTION_SEPARATOR);
-    text.push_str("\n");
+    text.push('\n');
 
     text
 }
@@ -136,32 +124,21 @@ BCC: bcc@email.com
         let info_1 = to_subject(&subject, &to);
 
         // Assert
-        assert_eq!(
-            format!("[TO: to@email.com; two@email.com] {}", subject),
-            info_1
-        );
+        assert_eq!(format!("[TO: to@email.com; two@email.com] {}", subject), info_1);
     }
 
     #[tokio::test]
     async fn should_replace_recipients() {
         // Arrange
         let mut original_email = EmailMessage::new();
-        original_email.to = vec![
-            format!("{}@email.com", new_hyphenated_uuid()),
-            "to_two@email.com".to_owned(),
-        ];
-        original_email.cc = vec![
-            format!("{}@email.com", new_hyphenated_uuid()),
-            "cc_two@email.com".to_owned(),
-        ];
+        original_email.to = vec![format!("{}@email.com", new_hyphenated_uuid()), "to_two@email.com".to_owned()];
+        original_email.cc = vec![format!("{}@email.com", new_hyphenated_uuid()), "cc_two@email.com".to_owned()];
         original_email.bcc = vec![format!("{}@email.com", new_hyphenated_uuid())];
 
         let fixed_recipients = vec![format!("{}@email.com", new_hyphenated_uuid())];
 
-        let email_service = FixedRecipientEmailClient::new(
-            fixed_recipients.clone(),
-            Arc::new(InMemoryEmailClient::new()),
-        );
+        let email_service =
+            FixedRecipientEmailClient::new(fixed_recipients.clone(), Arc::new(InMemoryEmailClient::new()));
 
         // Act
         email_service.send(original_email.clone()).await.unwrap();
@@ -180,14 +157,8 @@ BCC: bcc@email.com
     async fn should_add_original_recipients_info_to_the_email_text_if_present() {
         // Arrange
         let mut original_email = EmailMessage::new();
-        original_email.to = vec![
-            format!("{}@email.com", new_hyphenated_uuid()),
-            "to_two@email.com".to_owned(),
-        ];
-        original_email.cc = vec![
-            format!("{}@email.com", new_hyphenated_uuid()),
-            "cc_two@email.com".to_owned(),
-        ];
+        original_email.to = vec![format!("{}@email.com", new_hyphenated_uuid()), "to_two@email.com".to_owned()];
+        original_email.cc = vec![format!("{}@email.com", new_hyphenated_uuid()), "cc_two@email.com".to_owned()];
         original_email.bcc = vec![format!("{}@email.com", new_hyphenated_uuid())];
 
         let text = new_hyphenated_uuid();
@@ -195,10 +166,8 @@ BCC: bcc@email.com
 
         let fixed_recipients = vec![format!("{}@email.com", new_hyphenated_uuid())];
 
-        let email_service = FixedRecipientEmailClient::new(
-            fixed_recipients.clone(),
-            Arc::new(InMemoryEmailClient::new()),
-        );
+        let email_service =
+            FixedRecipientEmailClient::new(fixed_recipients.clone(), Arc::new(InMemoryEmailClient::new()));
 
         // Act
         email_service.send(original_email.clone()).await.unwrap();
@@ -209,11 +178,7 @@ BCC: bcc@email.com
         let received_email = &emails[0];
 
         assert_eq!(
-            Some(format!(
-                "{}\n{}",
-                to_text(&original_email.to, &original_email.cc, &original_email.bcc),
-                text
-            )),
+            Some(format!("{}\n{}", to_text(&original_email.to, &original_email.cc, &original_email.bcc), text)),
             received_email.text
         );
     }
@@ -222,14 +187,8 @@ BCC: bcc@email.com
     async fn should_add_original_recipients_info_to_the_email_html_if_present() {
         // Arrange
         let mut original_email = EmailMessage::new();
-        original_email.to = vec![
-            format!("{}@email.com", new_hyphenated_uuid()),
-            "to_two@email.com".to_owned(),
-        ];
-        original_email.cc = vec![
-            format!("{}@email.com", new_hyphenated_uuid()),
-            "cc_two@email.com".to_owned(),
-        ];
+        original_email.to = vec![format!("{}@email.com", new_hyphenated_uuid()), "to_two@email.com".to_owned()];
+        original_email.cc = vec![format!("{}@email.com", new_hyphenated_uuid()), "cc_two@email.com".to_owned()];
         original_email.bcc = vec![format!("{}@email.com", new_hyphenated_uuid())];
 
         let text = new_hyphenated_uuid();
@@ -237,10 +196,8 @@ BCC: bcc@email.com
 
         let fixed_recipients = vec![format!("{}@email.com", new_hyphenated_uuid())];
 
-        let email_service = FixedRecipientEmailClient::new(
-            fixed_recipients.clone(),
-            Arc::new(InMemoryEmailClient::new()),
-        );
+        let email_service =
+            FixedRecipientEmailClient::new(fixed_recipients.clone(), Arc::new(InMemoryEmailClient::new()));
 
         // Act
         email_service.send(original_email.clone()).await.unwrap();
@@ -265,22 +222,14 @@ BCC: bcc@email.com
     async fn should_add_original_recipients_info_to_the_email_text_if_no_text_or_html_is_present() {
         // Arrange
         let mut original_email = EmailMessage::new();
-        original_email.to = vec![
-            format!("{}@email.com", new_hyphenated_uuid()),
-            "to_two@email.com".to_owned(),
-        ];
-        original_email.cc = vec![
-            format!("{}@email.com", new_hyphenated_uuid()),
-            "cc_two@email.com".to_owned(),
-        ];
+        original_email.to = vec![format!("{}@email.com", new_hyphenated_uuid()), "to_two@email.com".to_owned()];
+        original_email.cc = vec![format!("{}@email.com", new_hyphenated_uuid()), "cc_two@email.com".to_owned()];
         original_email.bcc = vec![format!("{}@email.com", new_hyphenated_uuid())];
 
         let fixed_recipients = vec![format!("{}@email.com", new_hyphenated_uuid())];
 
-        let email_service = FixedRecipientEmailClient::new(
-            fixed_recipients.clone(),
-            Arc::new(InMemoryEmailClient::new()),
-        );
+        let email_service =
+            FixedRecipientEmailClient::new(fixed_recipients.clone(), Arc::new(InMemoryEmailClient::new()));
 
         // Act
         email_service.send(original_email.clone()).await.unwrap();
@@ -290,14 +239,7 @@ BCC: bcc@email.com
         assert_eq!(1, emails.len());
         let received_email = &emails[0];
 
-        assert_eq!(
-            Some(to_text(
-                &original_email.to,
-                &original_email.cc,
-                &original_email.bcc
-            )),
-            received_email.text
-        );
+        assert_eq!(Some(to_text(&original_email.to, &original_email.cc, &original_email.bcc)), received_email.text);
         assert_eq!(None, received_email.html);
     }
 
@@ -305,24 +247,16 @@ BCC: bcc@email.com
     async fn should_add_original_to_info_to_the_email_subject_if_present() {
         // Arrange
         let mut original_email = EmailMessage::new();
-        original_email.to = vec![
-            format!("{}@email.com", new_hyphenated_uuid()),
-            "to_two@email.com".to_owned(),
-        ];
-        original_email.cc = vec![
-            format!("{}@email.com", new_hyphenated_uuid()),
-            "cc_two@email.com".to_owned(),
-        ];
+        original_email.to = vec![format!("{}@email.com", new_hyphenated_uuid()), "to_two@email.com".to_owned()];
+        original_email.cc = vec![format!("{}@email.com", new_hyphenated_uuid()), "cc_two@email.com".to_owned()];
         original_email.bcc = vec![];
 
         let subject = new_hyphenated_uuid();
         original_email.subject = Some(subject.clone());
 
         let fixed_recipients = vec![format!("{}@email.com", new_hyphenated_uuid())];
-        let email_service = FixedRecipientEmailClient::new(
-            fixed_recipients.clone(),
-            Arc::new(InMemoryEmailClient::new()),
-        );
+        let email_service =
+            FixedRecipientEmailClient::new(fixed_recipients.clone(), Arc::new(InMemoryEmailClient::new()));
 
         // Act
         email_service.send(original_email.clone()).await.unwrap();
@@ -332,31 +266,20 @@ BCC: bcc@email.com
         assert_eq!(1, emails.len());
         let received_email = &emails[0];
 
-        assert_eq!(
-            Some(to_subject(&subject, &original_email.to)),
-            received_email.subject
-        );
+        assert_eq!(Some(to_subject(&subject, &original_email.to)), received_email.subject);
     }
 
     #[tokio::test]
     async fn should_add_original_to_info_to_the_email_subject_even_if_not_present() {
         // Arrange
         let mut original_email = EmailMessage::new();
-        original_email.to = vec![
-            format!("{}@email.com", new_hyphenated_uuid()),
-            "to_two@email.com".to_owned(),
-        ];
-        original_email.cc = vec![
-            format!("{}@email.com", new_hyphenated_uuid()),
-            "cc_two@email.com".to_owned(),
-        ];
+        original_email.to = vec![format!("{}@email.com", new_hyphenated_uuid()), "to_two@email.com".to_owned()];
+        original_email.cc = vec![format!("{}@email.com", new_hyphenated_uuid()), "cc_two@email.com".to_owned()];
         original_email.bcc = vec![];
 
         let fixed_recipients = vec![format!("{}@email.com", new_hyphenated_uuid())];
-        let email_service = FixedRecipientEmailClient::new(
-            fixed_recipients.clone(),
-            Arc::new(InMemoryEmailClient::new()),
-        );
+        let email_service =
+            FixedRecipientEmailClient::new(fixed_recipients.clone(), Arc::new(InMemoryEmailClient::new()));
 
         // Act
         email_service.send(original_email.clone()).await.unwrap();
@@ -366,9 +289,6 @@ BCC: bcc@email.com
         assert_eq!(1, emails.len());
         let received_email = &emails[0];
 
-        assert_eq!(
-            Some(to_subject("", &original_email.to)),
-            received_email.subject
-        );
+        assert_eq!(Some(to_subject("", &original_email.to)), received_email.subject);
     }
 }

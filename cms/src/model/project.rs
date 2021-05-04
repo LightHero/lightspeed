@@ -28,9 +28,7 @@ pub mod test {
 
     #[test]
     pub fn validation_should_fail_if_name_too_short() {
-        let project_data = ProjectData {
-            name: "".to_owned(),
-        };
+        let project_data = ProjectData { name: "".to_owned() };
 
         // Act
         let result = Validator::validate(&project_data);
@@ -40,10 +38,7 @@ pub mod test {
                 assert_eq!(details.details.len(), 1);
                 assert_eq!(
                     details.details.get("name"),
-                    Some(&vec![ErrorDetail::new(
-                        MUST_BE_GREATER_OR_EQUAL,
-                        vec!["3".to_owned()]
-                    )])
+                    Some(&vec![ErrorDetail::new(MUST_BE_GREATER_OR_EQUAL, vec!["3".to_owned()])])
                 );
             }
             _ => assert!(false),
@@ -52,9 +47,7 @@ pub mod test {
 
     #[test]
     pub fn should_validate() {
-        let project_data = ProjectData {
-            name: "good name".to_owned(),
-        };
+        let project_data = ProjectData { name: "good name".to_owned() };
 
         // Act
         let result = Validator::validate(&project_data);

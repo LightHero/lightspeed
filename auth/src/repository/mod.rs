@@ -1,4 +1,4 @@
-use crate::model::auth_account::{AuthAccountData, AuthAccountModel};
+use crate::model::auth_account::{AuthAccountData, AuthAccountModel, AuthAccountStatus};
 use crate::model::token::{TokenData, TokenModel};
 use c3p0::*;
 use lightspeed_core::error::LightSpeedError;
@@ -22,11 +22,15 @@ pub trait AuthRepositoryManager: Clone + Send + Sync {
 pub trait AuthAccountRepository: Clone + Send + Sync {
     type Conn: SqlConnection;
 
-    async fn fetch_by_id(
+    async fn fetch_all_by_status(
         &self,
         conn: &mut Self::Conn,
-        user_id: i64,
-    ) -> Result<AuthAccountModel, LightSpeedError>;
+        status: AuthAccountStatus,
+        start_user_id: i64,
+        limit: u32,
+    ) -> Result<Vec<AuthAccountModel>, LightSpeedError>;
+
+    async fn fetch_by_id(&self, conn: &mut Self::Conn, user_id: i64) -> Result<AuthAccountModel, LightSpeedError>;
 
     async fn fetch_by_username(
         &self,
@@ -58,22 +62,17 @@ pub trait AuthAccountRepository: Clone + Send + Sync {
         model: Model<AuthAccountData>,
     ) -> Result<AuthAccountModel, LightSpeedError>;
 
-    async fn delete(
-        &self,
-        conn: &mut Self::Conn,
-        model: AuthAccountModel,
-    ) -> Result<AuthAccountModel, LightSpeedError>;
+    async fn delete(&self, conn: &mut Self::Conn, model: AuthAccountModel)
+        -> Result<AuthAccountModel, LightSpeedError>;
+
+    async fn delete_by_id(&self, conn: &mut Self::Conn, user_id: i64) -> Result<u64, LightSpeedError>;
 }
 
 #[async_trait::async_trait]
 pub trait TokenRepository: Clone + Send + Sync {
     type Conn: SqlConnection;
 
-    async fn fetch_by_token(
-        &self,
-        conn: &mut Self::Conn,
-        token_string: &str,
-    ) -> Result<TokenModel, LightSpeedError>;
+    async fn fetch_by_token(&self, conn: &mut Self::Conn, token_string: &str) -> Result<TokenModel, LightSpeedError>;
 
     async fn fetch_by_username(
         &self,
@@ -81,15 +80,7 @@ pub trait TokenRepository: Clone + Send + Sync {
         username: &str,
     ) -> Result<Vec<TokenModel>, LightSpeedError>;
 
-    async fn save(
-        &self,
-        conn: &mut Self::Conn,
-        model: NewModel<TokenData>,
-    ) -> Result<TokenModel, LightSpeedError>;
+    async fn save(&self, conn: &mut Self::Conn, model: NewModel<TokenData>) -> Result<TokenModel, LightSpeedError>;
 
-    async fn delete(
-        &self,
-        conn: &mut Self::Conn,
-        model: TokenModel,
-    ) -> Result<TokenModel, LightSpeedError>;
+    async fn delete(&self, conn: &mut Self::Conn, model: TokenModel) -> Result<TokenModel, LightSpeedError>;
 }

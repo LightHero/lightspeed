@@ -1,0 +1,42 @@
+[package]
+name = "lightspeed"
+license = "MIT"
+version = "0.33.5"
+authors = ["Francesco Cina <ufoscout@gmail.com>"]
+description = "LightSpeed"
+edition = "2018"
+readme = "README.md"
+homepage = "https://github.com/LightHero/lightspeed"
+repository = "https://github.com/LightHero/lightspeed"
+keywords = []
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+c3p0 = { version = "0.61.0", features = ["postgres_migrate"] }
+lightspeed_auth = { version = "0.33.5", path = "../auth", optional = true}
+lightspeed_cache = { version = "0.33.5", path = "../cache", optional = true}
+lightspeed_cms = { version = "0.33.5", path = "../cms", optional = true}
+lightspeed_core = { version = "0.33.5", path = "../core", optional = true}
+lightspeed_email = { version = "0.33.5", path = "../email", optional = true}
+lightspeed_file_store = { version = "0.33.5", path = "../file_store", optional = true}
+lightspeed_hash = { version = "0.33.5", path = "../hash", optional = true}
+lightspeed_logger = { version = "0.33.5", path = "../logger", optional = true}
+lightspeed_scheduler = { version = "0.33.5", path = "../scheduler", optional = true}
+
+[features]
+default = ["core"]
+
+auth = ["lightspeed_auth"]
+cache = ["lightspeed_cache"]
+cms = ["lightspeed_cms"]
+core = ["lightspeed_core"]
+email = ["lightspeed_email"]
+email_vendored = ["email", "lightspeed_email/vendored"]
+file_store = ["lightspeed_file_store"]
+hash = ["lightspeed_hash"]
+logger = ["lightspeed_logger"]
+scheduler = ["lightspeed_scheduler"]
+
+actix_web_3 = ["lightspeed_core/actix_web_3_ext", "lightspeed_file_store/actix_web_3"]
+warp = ["lightspeed_core/warp_external"]

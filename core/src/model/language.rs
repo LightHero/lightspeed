@@ -4,19 +4,7 @@ use std::str::FromStr;
 use strum_macros::{AsRefStr, Display, EnumIter};
 use typescript_definitions::TypeScriptify;
 
-#[derive(
-    Clone,
-    Debug,
-    Display,
-    EnumIter,
-    AsRefStr,
-    Serialize,
-    Deserialize,
-    PartialEq,
-    Eq,
-    Hash,
-    TypeScriptify,
-)]
+#[derive(Clone, Debug, Display, EnumIter, AsRefStr, Serialize, Deserialize, PartialEq, Eq, Hash, TypeScriptify)]
 #[allow(non_camel_case_types)]
 pub enum Language {
     DE,
@@ -36,9 +24,9 @@ impl FromStr for Language {
             "es" => Ok(Language::ES),
             "fr" => Ok(Language::FR),
             "it" => Ok(Language::IT),
-            _ => Err(LightSpeedError::ConfigurationError {
-                message: format!("Could not parse language [{}]", language),
-            }),
+            _ => {
+                Err(LightSpeedError::ConfigurationError { message: format!("Could not parse language [{}]", language) })
+            }
         }
     }
 }

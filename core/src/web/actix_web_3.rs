@@ -18,22 +18,14 @@ pub struct WebAuthService<T: RolesProvider> {
 
 impl<T: RolesProvider> WebAuthService<T> {
     pub fn new(auth_service: Arc<AuthService<T>>, jwt_service: Arc<JwtService>) -> Self {
-        Self {
-            auth_service,
-            jwt_service,
-        }
+        Self { auth_service, jwt_service }
     }
 
-    pub fn token_string_from_request<'a>(
-        &self,
-        req: &'a HttpRequest,
-    ) -> Result<&'a str, LightSpeedError> {
+    pub fn token_string_from_request<'a>(&self, req: &'a HttpRequest) -> Result<&'a str, LightSpeedError> {
         if let Some(header) = req.headers().get(JWT_TOKEN_HEADER) {
             return header
                 .to_str()
-                .map_err(|err| LightSpeedError::ParseAuthHeaderError {
-                    message: format!("{}", err),
-                })
+                .map_err(|err| LightSpeedError::ParseAuthHeaderError { message: format!("{:?}", err) })
                 .and_then(|header| {
                     trace!("Token found in request: [{}]", header);
                     if header.len() > JWT_TOKEN_HEADER_SUFFIX_LEN {
@@ -53,8 +45,7 @@ impl<T: RolesProvider> WebAuthService<T> {
     }
 
     pub fn auth_from_request(&self, req: &HttpRequest) -> Result<AuthContext, LightSpeedError> {
-        self.token_string_from_request(req)
-            .and_then(|token| self.auth_from_token_string(token))
+        self.token_string_from_request(req).and_then(|token| self.auth_from_token_string(token))
     }
 
     pub fn auth_from_token_string(&self, token: &str) -> Result<AuthContext, LightSpeedError> {
@@ -74,44 +65,32 @@ impl ResponseError for LightSpeedError {
             | LightSpeedError::ParseAuthHeaderError { .. }
             | LightSpeedError::UnauthenticatedError => HttpResponse::Unauthorized().finish(),
             LightSpeedError::ForbiddenError { .. } => HttpResponse::Forbidden().finish(),
-            LightSpeedError::InternalServerError { .. } => {
-                HttpResponse::InternalServerError().finish()
-            }
+            LightSpeedError::InternalServerError { .. } => HttpResponse::InternalServerError().finish(),
             LightSpeedError::ValidationError { details } => {
                 let http_code = http::StatusCode::UNPROCESSABLE_ENTITY;
-                HttpResponseBuilder::new(http_code).json(WebErrorDetails::from_error_details(
-                    http_code.as_u16(),
-                    details,
-                ))
+                HttpResponseBuilder::new(http_code)
+                    .json(WebErrorDetails::from_error_details(http_code.as_u16(), details))
             }
             LightSpeedError::BadRequest { code, .. } => {
                 let http_code = http::StatusCode::BAD_REQUEST;
-                HttpResponseBuilder::new(http_code).json(WebErrorDetails::from_message(
-                    http_code.as_u16(),
-                    &Some((*code).to_string()),
-                ))
+                HttpResponseBuilder::new(http_code)
+                    .json(WebErrorDetails::from_message(http_code.as_u16(), &Some((*code).to_string())))
             }
             LightSpeedError::RequestConflict { code, .. } => {
                 let http_code = http::StatusCode::CONFLICT;
-                HttpResponseBuilder::new(http_code).json(WebErrorDetails::from_message(
-                    http_code.as_u16(),
-                    &Some((*code).to_string()),
-                ))
+                HttpResponseBuilder::new(http_code)
+                    .json(WebErrorDetails::from_message(http_code.as_u16(), &Some((*code).to_string())))
             }
             LightSpeedError::ServiceUnavailable { code, .. } => {
                 let http_code = http::StatusCode::CONFLICT;
-                HttpResponseBuilder::new(http_code).json(WebErrorDetails::from_message(
-                    http_code.as_u16(),
-                    &Some((*code).to_string()),
-                ))
+                HttpResponseBuilder::new(http_code)
+                    .json(WebErrorDetails::from_message(http_code.as_u16(), &Some((*code).to_string())))
             }
             LightSpeedError::ModuleBuilderError { .. }
             | LightSpeedError::ModuleStartError { .. }
             | LightSpeedError::ConfigurationError { .. }
             | LightSpeedError::PasswordEncryptionError { .. }
-            | LightSpeedError::RepositoryError { .. } => {
-                HttpResponse::InternalServerError().finish()
-            }
+            | LightSpeedError::RepositoryError { .. } => HttpResponse::InternalServerError().finish(),
         }
     }
 }
@@ -149,6 +128,7 @@ mod test {
             payload: Auth {
                 username: "Amelia".to_owned(),
                 id: 100,
+                session_id: "a_0".to_owned(),
                 roles: vec![],
                 creation_ts_seconds: 0,
                 expiration_ts_seconds: i64::MAX,
@@ -157,19 +137,13 @@ mod test {
             iat: 0,
             sub: "".to_owned(),
         };
-        let token = new_service()
-            .jwt_service
-            .generate_from_token(&token)
-            .unwrap();
+        let token = new_service().jwt_service.generate_from_token(&token).unwrap();
 
         let mut srv = init_service(App::new().service(web::resource("/auth").to(username))).await;
 
         let request = TestRequest::get()
             .uri("/auth")
-            .header(
-                JWT_TOKEN_HEADER,
-                format!("{}{}", JWT_TOKEN_HEADER_SUFFIX, token),
-            )
+            .header(JWT_TOKEN_HEADER, format!("{}{}", JWT_TOKEN_HEADER_SUFFIX, token))
             .to_request();
 
         // Act
@@ -185,6 +159,7 @@ mod test {
         let auth = Auth {
             username: "Amelia".to_owned(),
             id: 100,
+            session_id: "a_0".to_owned(),
             roles: vec![],
             creation_ts_seconds: 0,
             expiration_ts_seconds: i64::MAX,
@@ -195,10 +170,7 @@ mod test {
 
         let request = TestRequest::get()
             .uri("/auth")
-            .header(
-                JWT_TOKEN_HEADER,
-                format!("{}{}", JWT_TOKEN_HEADER_SUFFIX, token),
-            )
+            .header(JWT_TOKEN_HEADER, format!("{}{}", JWT_TOKEN_HEADER_SUFFIX, token))
             .to_request();
 
         // Act
@@ -214,6 +186,7 @@ mod test {
         let auth = Auth {
             username: "Amelia".to_owned(),
             id: 100,
+            session_id: "a_0".to_owned(),
             roles: vec![],
             creation_ts_seconds: 0,
             expiration_ts_seconds: i64::MAX,
@@ -224,10 +197,7 @@ mod test {
 
         let request = TestRequest::get()
             .uri("/auth")
-            .header(
-                JWT_TOKEN_HEADER,
-                format!("{}{}", JWT_TOKEN_HEADER_SUFFIX, token),
-            )
+            .header(JWT_TOKEN_HEADER, format!("{}{}", JWT_TOKEN_HEADER_SUFFIX, token))
             .to_request();
 
         // Act
@@ -253,11 +223,7 @@ mod test {
     fn new_service() -> WebAuthService<InMemoryRolesProvider> {
         WebAuthService {
             auth_service: Arc::new(AuthService::new(InMemoryRolesProvider::new(
-                vec![Role {
-                    name: "admin".to_owned(),
-                    permissions: vec![],
-                }]
-                .into(),
+                vec![Role { name: "admin".to_owned(), permissions: vec![] }].into(),
             ))),
             jwt_service: Arc::new(
                 JwtService::new(&JwtConfig {

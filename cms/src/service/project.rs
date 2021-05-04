@@ -21,27 +21,15 @@ impl<RepoManager: CmsRepositoryManager> ProjectService<RepoManager> {
         project_repo: RepoManager::ProjectRepo,
         schema_service: Arc<SchemaService<RepoManager>>,
     ) -> Self {
-        ProjectService {
-            c3p0,
-            project_repo,
-            schema_service,
-        }
+        ProjectService { c3p0, project_repo, schema_service }
     }
 
-    pub async fn create_project(
-        &self,
-        create_project_dto: CreateProjectDto,
-    ) -> Result<ProjectModel, LightSpeedError> {
+    pub async fn create_project(&self, create_project_dto: CreateProjectDto) -> Result<ProjectModel, LightSpeedError> {
         self.c3p0
             .transaction(|mut conn| async move {
-                let name_already_exists = self
-                    .project_repo
-                    .exists_by_name(&mut conn, &create_project_dto.name)
-                    .await?;
+                let name_already_exists = self.project_repo.exists_by_name(&mut conn, &create_project_dto.name).await?;
 
-                let data = ProjectData {
-                    name: create_project_dto.name,
-                };
+                let data = ProjectData { name: create_project_dto.name };
                 Validator::validate(&(&data, &|error_details: &mut ErrorDetails| {
                     if name_already_exists {
                         error_details.add_detail("name", ERR_NOT_UNIQUE);
@@ -53,16 +41,11 @@ impl<RepoManager: CmsRepositoryManager> ProjectService<RepoManager> {
             .await
     }
 
-    pub async fn delete(
-        &self,
-        project_model: ProjectModel,
-    ) -> Result<ProjectModel, LightSpeedError> {
+    pub async fn delete(&self, project_model: ProjectModel) -> Result<ProjectModel, LightSpeedError> {
         self.c3p0
             .transaction(|mut conn| async move {
                 let conn = &mut conn;
-                self.schema_service
-                    .delete_by_project_id(conn, project_model.id)
-                    .await?;
+                self.schema_service.delete_by_project_id(conn, project_model.id).await?;
                 self.project_repo.delete(conn, project_model).await
             })
             .await

@@ -15,10 +15,7 @@ pub struct TokenService<RepoManager: AuthRepositoryManager> {
 
 impl<RepoManager: AuthRepositoryManager> TokenService<RepoManager> {
     pub fn new(auth_config: AuthConfig, token_repo: RepoManager::TokenRepo) -> Self {
-        TokenService {
-            auth_config,
-            token_repo,
-        }
+        TokenService { auth_config, token_repo }
     }
 
     pub async fn generate_and_save_token_with_conn<S: Into<String>>(
@@ -28,10 +25,7 @@ impl<RepoManager: AuthRepositoryManager> TokenService<RepoManager> {
         token_type: TokenType,
     ) -> Result<TokenModel, LightSpeedError> {
         let username = username.into();
-        info!(
-            "Generate and save token of type [{:?}] for username [{}]",
-            token_type, username
-        );
+        info!("Generate and save token of type [{:?}] for username [{}]", token_type, username);
 
         let issued_at = current_epoch_seconds();
         let expire_at_epoch = issued_at + (self.auth_config.activation_token_validity_minutes * 60);
@@ -74,10 +68,7 @@ impl<RepoManager: AuthRepositoryManager> TokenService<RepoManager> {
         conn: &mut RepoManager::Conn,
         token_model: TokenModel,
     ) -> Result<TokenModel, LightSpeedError> {
-        debug!(
-            "Delete token_model with id [{}] and token [{}]",
-            token_model.id, token_model.data.token
-        );
+        debug!("Delete token_model with id [{}] and token [{}]", token_model.id, token_model.data.token);
         self.token_repo.delete(conn, token_model).await
     }
 }

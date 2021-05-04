@@ -15,8 +15,7 @@ const NOT_VALID_FIELD_NAME: &str = "NOT_VALID_FIELD_NAME";
 pub fn field_name_regex() -> &'static Regex {
     static REGEX: OnceCell<Regex> = OnceCell::new();
     REGEX.get_or_init(|| {
-        Regex::new(SCHAME_FIELD_NAME_VALIDATION_REGEX)
-            .expect("field name validation regex should be valid")
+        Regex::new(SCHAME_FIELD_NAME_VALIDATION_REGEX).expect("field name validation regex should be valid")
     })
 }
 
@@ -70,12 +69,7 @@ pub struct SchemaField {
 impl Validable for SchemaField {
     fn validate(&self, error_details: &mut ErrorDetails) -> Result<(), LightSpeedError> {
         validate_ge(error_details, "name", 1, self.name.len());
-        validate_le(
-            error_details,
-            "name",
-            SCHEMA_FIELD_NAME_MAX_LENGHT,
-            self.name.len(),
-        );
+        validate_le(error_details, "name", SCHEMA_FIELD_NAME_MAX_LENGHT, self.name.len());
 
         if !field_name_regex().is_match(&self.name) {
             error_details.add_detail("name", NOT_VALID_FIELD_NAME);
@@ -87,23 +81,10 @@ impl Validable for SchemaField {
 
 #[derive(Clone, Serialize, Deserialize)]
 pub enum SchemaFieldType {
-    Boolean {
-        default: Option<bool>,
-        arity: SchemaFieldArity,
-    },
-    Number {
-        min: Option<u64>,
-        max: Option<u64>,
-        default: Option<u64>,
-        arity: SchemaFieldArity,
-    },
+    Boolean { default: Option<bool>, arity: SchemaFieldArity },
+    Number { min: Option<u64>, max: Option<u64>, default: Option<u64>, arity: SchemaFieldArity },
     Slug,
-    String {
-        min_length: Option<usize>,
-        max_length: Option<usize>,
-        default: Option<String>,
-        arity: SchemaFieldArity,
-    },
+    String { min_length: Option<usize>, max_length: Option<usize>, default: Option<String>, arity: SchemaFieldArity },
 }
 
 impl SchemaFieldType {
@@ -148,19 +129,13 @@ mod test {
                     SchemaField {
                         name: "label1".to_owned(),
                         description: "".to_owned(),
-                        field_type: SchemaFieldType::Boolean {
-                            arity: SchemaFieldArity::Single,
-                            default: None,
-                        },
+                        field_type: SchemaFieldType::Boolean { arity: SchemaFieldArity::Single, default: None },
                         required: false,
                     },
                     SchemaField {
                         name: "label2".to_owned(),
                         description: "".to_owned(),
-                        field_type: SchemaFieldType::Boolean {
-                            arity: SchemaFieldArity::Single,
-                            default: None,
-                        },
+                        field_type: SchemaFieldType::Boolean { arity: SchemaFieldArity::Single, default: None },
                         required: false,
                     },
                     SchemaField {
@@ -181,10 +156,7 @@ mod test {
                 assert_eq!(details.details.len(), 2);
                 assert_eq!(
                     details.details.get("name"),
-                    Some(&vec![ErrorDetail::new(
-                        MUST_BE_GREATER_OR_EQUAL,
-                        vec!["3".to_owned()]
-                    )])
+                    Some(&vec![ErrorDetail::new(MUST_BE_GREATER_OR_EQUAL, vec!["3".to_owned()])])
                 );
                 assert_eq!(
                     details.details.get("schema.fields[2].name"),
@@ -204,19 +176,13 @@ mod test {
                 SchemaField {
                     name: "label1".to_owned(),
                     description: "".to_owned(),
-                    field_type: SchemaFieldType::Boolean {
-                        arity: SchemaFieldArity::Single,
-                        default: None,
-                    },
+                    field_type: SchemaFieldType::Boolean { arity: SchemaFieldArity::Single, default: None },
                     required: false,
                 },
                 SchemaField {
                     name: "".to_owned(),
                     description: "".to_owned(),
-                    field_type: SchemaFieldType::Boolean {
-                        arity: SchemaFieldArity::Unique,
-                        default: None,
-                    },
+                    field_type: SchemaFieldType::Boolean { arity: SchemaFieldArity::Unique, default: None },
                     required: false,
                 },
             ],

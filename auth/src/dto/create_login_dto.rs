@@ -22,18 +22,8 @@ pub struct CreateLoginDto {
 
 impl Validable for CreateLoginDto {
     fn validate(&self, error_details: &mut ErrorDetails) -> Result<(), LightSpeedError> {
-        validate_must_be_equals(
-            error_details,
-            "password",
-            &self.password,
-            "password_confirm",
-            &self.password_confirm,
-        );
-        validate_is_true(
-            error_details,
-            "accept_privacy_policy",
-            self.accept_privacy_policy,
-        );
+        validate_must_be_equals(error_details, "password", &self.password, "password_confirm", &self.password_confirm);
+        validate_is_true(error_details, "accept_privacy_policy", self.accept_privacy_policy);
         validate_email(error_details, "email", &self.email);
         Ok(())
     }

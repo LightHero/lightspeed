@@ -1,4 +1,4 @@
-use crate::model::{BinaryContent, FileStoreDataData, FileStoreDataModel};
+use crate::model::{BinaryContent, FileStoreDataData, FileStoreDataModel, Repository, RepositoryFile};
 use c3p0::*;
 use lightspeed_core::error::LightSpeedError;
 
@@ -22,19 +22,19 @@ pub trait DBFileStoreRepositoryManager: Clone + Send + Sync {
 pub trait DBFileStoreBinaryRepository: Clone + Send + Sync {
     type Conn: SqlConnection;
 
-    async fn read_file(
+    async fn read_file<'a>(
         &self,
         conn: &mut Self::Conn,
         repository_name: &str,
         file_path: &str,
-    ) -> Result<BinaryContent, LightSpeedError>;
+    ) -> Result<BinaryContent<'a>, LightSpeedError>;
 
-    async fn save_file(
+    async fn save_file<'a>(
         &self,
         conn: &mut Self::Conn,
         repository_name: &str,
         file_path: &str,
-        content: &BinaryContent,
+        content: &'a BinaryContent<'a>,
     ) -> Result<u64, LightSpeedError>;
 
     async fn delete_file(
@@ -49,11 +49,28 @@ pub trait DBFileStoreBinaryRepository: Clone + Send + Sync {
 pub trait FileStoreDataRepository: Clone + Send + Sync {
     type Conn: SqlConnection;
 
-    async fn fetch_one_by_id(
+    async fn exists_by_repository(
         &self,
         conn: &mut Self::Conn,
-        id: IdType,
+        repository: &RepositoryFile,
+    ) -> Result<bool, LightSpeedError>;
+
+    async fn fetch_one_by_id(&self, conn: &mut Self::Conn, id: IdType) -> Result<FileStoreDataModel, LightSpeedError>;
+
+    async fn fetch_one_by_repository(
+        &self,
+        conn: &mut Self::Conn,
+        repository: &RepositoryFile,
     ) -> Result<FileStoreDataModel, LightSpeedError>;
+
+    async fn fetch_all_by_repository(
+        &self,
+        conn: &mut Self::Conn,
+        repository: &Repository,
+        offset: usize,
+        max: usize,
+        sort: &OrderBy,
+    ) -> Result<Vec<FileStoreDataModel>, LightSpeedError>;
 
     async fn save(
         &self,
@@ -61,6 +78,5 @@ pub trait FileStoreDataRepository: Clone + Send + Sync {
         model: NewModel<FileStoreDataData>,
     ) -> Result<FileStoreDataModel, LightSpeedError>;
 
-    async fn delete_by_id(&self, conn: &mut Self::Conn, id: IdType)
-        -> Result<u64, LightSpeedError>;
+    async fn delete_by_id(&self, conn: &mut Self::Conn, id: IdType) -> Result<u64, LightSpeedError>;
 }
