@@ -3,11 +3,11 @@ use crate::model::email::{EmailAttachment, EmailMessage};
 use crate::repository::email::EmailClient;
 use lightspeed_core::error::{ErrorCodes, LightSpeedError};
 use log::*;
-use std::path::Path;
 use std::sync::Arc;
 use lettre::{Message, SmtpTransport, Transport};
 use lettre::transport::smtp::authentication::Credentials;
-use lettre::message::Mailbox;
+use lettre::message::{Mailbox, MultiPart, SinglePart, Attachment};
+use lettre::message::header::ContentType;
 
 /// A EmailClient implementation that forwards the email to the expected recipients
 #[derive(Clone)]
@@ -68,54 +68,43 @@ impl EmailClient for FullEmailClient {
                 builder = builder.bcc(parse_mailbox(&bcc)?)
             }
 
-            let ENABLE_ATTACHMENTS = 0;
-            /*
+            let mut multipart = MultiPart::mixed().build();
+
             for attachment in email_message.attachments {
-                match &attachment {
+                match attachment {
                     EmailAttachment::Binary { body, filename, mime_type } => {
-                        builder = builder.attachment(body, filename, &to_mime_type(mime_type)?).map_err(|err| {
+                        multipart = multipart.singlepart(Attachment::new(filename)
+                            .body(body, to_content_type(&mime_type)?));
+                    }
+                    EmailAttachment::FromFile { path, filename, mime_type } => {
+                        let body = std::fs::read(&path).map_err(|err| {
                             LightSpeedError::BadRequest {
                                 message: format!(
-                                    "Cannot attach the requested attachment [{:?}]. Err: {}",
-                                    attachment, err
+                                    "Cannot attach the requested attachment from file [{}]. Err: {:?}",
+                                    path, err
                                 ),
                                 code: "",
                             }
                         })?;
-                    }
-                    EmailAttachment::FromFile { path, filename, mime_type } => {
-                        let path = Path::new(path);
-                        let filename = filename.as_deref();
-                        builder =
-                            builder.attachment_from_file(path, filename, &to_mime_type(mime_type)?).map_err(|err| {
-                                LightSpeedError::BadRequest {
-                                    message: format!(
-                                        "Cannot attach the requested attachment [{:?}]. Err: {}",
-                                        attachment, err
-                                    ),
-                                    code: "",
-                                }
-                            })?;
+                        let filename = filename.as_deref().unwrap_or("");
+                        multipart = multipart.singlepart(Attachment::new(filename.to_owned())
+                            .body(body, to_content_type(&mime_type)?));
                     }
                 }
             }
 
-             */
-
-            let ENABLE_TEXT = 0;
-            /*
             if let Some(html) = email_message.html {
                 if let Some(text) = email_message.text {
-                    builder = builder.alternative(html, text)
+                    multipart = multipart.multipart(MultiPart::alternative_plain_html(text, html));
                 } else {
-                    builder = builder.html(html);
+                    multipart = multipart.singlepart(SinglePart::html(html));
                 }
             } else if let Some(text) = email_message.text {
-                builder = builder.text(text)
-            }
-             */
+                multipart = multipart.singlepart(SinglePart::plain(text));
+            };
 
-            let email = builder.body("".to_owned()).map_err(|err| LightSpeedError::InternalServerError {
+
+            let email = builder.multipart(multipart).map_err(|err| LightSpeedError::InternalServerError {
                 message: format!("FullEmailService.send - Cannot build the email. Err: {:?}", err),
             })?;
 
@@ -157,15 +146,14 @@ fn parse_mailbox(address: &str) -> Result<Mailbox, LightSpeedError> {
         code: ErrorCodes::PARSE_ERROR,
     })
 }
-/*
-fn to_mime_type(mime_type: &str) -> Result<Mime, LightSpeedError> {
-    mime_type.parse().map_err(|err| LightSpeedError::BadRequest {
+
+fn to_content_type(mime_type: &str) -> Result<ContentType, LightSpeedError> {
+    ContentType::parse(mime_type).map_err(|err| LightSpeedError::BadRequest {
         message: format!("Cannot parse the mime type [{}]. Err: {:?}", mime_type, err),
         code: "",
     })
 }
 
- */
 
 #[cfg(test)]
 pub mod test {

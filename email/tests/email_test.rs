@@ -52,11 +52,10 @@ async fn should_start_the_mailserver() {
     assert!(email_service.send(message.clone()).await.is_ok());
     assert!(email_service.send(message.clone()).await.is_ok());
 }
-
+/*
 #[tokio::test]
 async fn full_client_should_use_gmail() {
     // Arrange
-
     let config = EmailClientConfig {
         server_port: 465,
         server_address: "smtp.gmail.com".to_owned(),
@@ -73,6 +72,7 @@ async fn full_client_should_use_gmail() {
     message.from = Some("UFOSCOUT <ufoscout@gmail.com>".to_owned());
     message.to.push("FRANCESCO <ufoscout@gmail.com>".to_owned());
     message.subject = Some("EMAIL FROM RUST!!".to_owned());
+    message.html = Some("HTML body".to_owned());
     message.attachments.push(EmailAttachment::FromFile {
         mime_type: "plain/text".to_owned(),
         path: "./Cargo.toml".to_owned(),
@@ -83,3 +83,4 @@ async fn full_client_should_use_gmail() {
     email_service.send(message.clone()).await.unwrap();
 
 }
+*/
