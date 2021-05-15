@@ -46,6 +46,7 @@ async fn should_start_the_mailserver() {
     });
 
     // Act
+    email_service.send(message.clone()).await.unwrap();
     assert!(email_service.send(message.clone()).await.is_ok());
     // should reuse the client
     assert!(email_service.send(message.clone()).await.is_ok());
