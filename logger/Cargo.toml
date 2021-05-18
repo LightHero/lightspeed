@@ -23,4 +23,4 @@ structopt = "0.3"
 
 [dev-dependencies]
 tempfile = "3"
-tokio = { version = "0.2", features = ["macros", "rt-threaded"] }
+tokio = { version = "1", features = ["macros", "rt-multi-thread"] }

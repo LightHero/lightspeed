@@ -3,8 +3,7 @@ use crate::service::auth::{Auth, AuthContext, AuthService, RolesProvider};
 use crate::service::jwt::JwtService;
 use log::*;
 use std::sync::Arc;
-use warp_external::reply::Response;
-use warp_external::{header, http, path, reply, Filter, Rejection, Reply};
+use warp_03_ext::{header, http, path, reply, Filter, Rejection, Reply, method};
 
 pub const JWT_TOKEN_HEADER: &str = "Authorization";
 pub const JWT_TOKEN_HEADER_SUFFIX: &str = "Bearer ";
@@ -23,7 +22,7 @@ pub struct ReqInfo {
 }
 
 pub fn req_info() -> impl Filter<Extract = (ReqInfo,), Error = Rejection> + Clone {
-    warp_external::method().and(path::full()).and(header::optional::<String>(JWT_TOKEN_HEADER)).map(
+    method().and(path::full()).and(header::optional::<String>(JWT_TOKEN_HEADER)).map(
         |method: http::Method, path: path::FullPath, auth_header: Option<String>| ReqInfo { method, path, auth_header },
     )
 }
@@ -55,7 +54,7 @@ impl<T: RolesProvider> WebAuthService<T> {
 }
 
 impl Reply for LightSpeedError {
-    fn into_response(self) -> Response {
+    fn into_response(self) -> reply::Response {
         match self {
             LightSpeedError::InvalidTokenError { .. }
             | LightSpeedError::ExpiredTokenError { .. }
@@ -92,7 +91,7 @@ impl Reply for LightSpeedError {
             | LightSpeedError::ModuleStartError { .. }
             | LightSpeedError::ConfigurationError { .. }
             | LightSpeedError::PasswordEncryptionError { .. }
-            | LightSpeedError::RepositoryError { .. } => http::StatusCode::INTERNAL_SERVER_ERROR.into_response(),
+            | LightSpeedError::C3p0Error { .. } => http::StatusCode::INTERNAL_SERVER_ERROR.into_response(),
         }
     }
 }

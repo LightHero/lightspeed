@@ -2,7 +2,7 @@ use c3p0::{C3p0Error, JsonCodec, Model};
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use std::borrow::Cow;
-use strum_macros::{AsRefStr, Display};
+use strum::{AsRefStr, Display};
 use typescript_definitions::TypeScriptify;
 
 pub type AuthAccountModel = Model<AuthAccountData>;

@@ -1,7 +1,7 @@
 use crate::error::LightSpeedError;
 use serde::{Deserialize, Serialize};
 use std::str::FromStr;
-use strum_macros::{AsRefStr, Display, EnumIter};
+use strum::{AsRefStr, Display, EnumIter};
 use typescript_definitions::TypeScriptify;
 
 #[derive(Clone, Debug, Display, EnumIter, AsRefStr, Serialize, Deserialize, PartialEq, Eq, Hash, TypeScriptify)]

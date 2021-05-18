@@ -13,7 +13,7 @@ keywords = []
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-c3p0 = { version = "0.61.0", features = ["postgres_migrate"] }
+c3p0 = { version = "0.62.0", features = ["postgres_migrate"] }
 lightspeed_auth = { version = "0.34.0", path = "../auth", optional = true}
 lightspeed_cache = { version = "0.34.0", path = "../cache", optional = true}
 lightspeed_cms = { version = "0.34.0", path = "../cms", optional = true}
@@ -37,5 +37,5 @@ hash = ["lightspeed_hash"]
 logger = ["lightspeed_logger"]
 scheduler = ["lightspeed_scheduler"]
 
-actix_web_3 = ["lightspeed_core/actix_web_3_ext", "lightspeed_file_store/actix_web_3"]
-warp = ["lightspeed_core/warp_external"]
+actix_web_4 = ["lightspeed_core/actix_web_4", "lightspeed_file_store/actix_web_4"]
+warp_03 = ["lightspeed_core/warp_03"]

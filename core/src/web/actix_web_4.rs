@@ -1,8 +1,8 @@
 use crate::error::{LightSpeedError, WebErrorDetails};
 use crate::service::auth::{Auth, AuthContext, AuthService, RolesProvider};
 use crate::service::jwt::JwtService;
-use actix_web_3_ext::dev::HttpResponseBuilder;
-use actix_web_3_ext::{http, HttpRequest, HttpResponse, ResponseError};
+use actix_web_4_ext::dev::HttpResponseBuilder;
+use actix_web_4_ext::{http, HttpRequest, HttpResponse, ResponseError};
 use log::*;
 use std::sync::Arc;
 
@@ -69,28 +69,28 @@ impl ResponseError for LightSpeedError {
             LightSpeedError::ValidationError { details } => {
                 let http_code = http::StatusCode::UNPROCESSABLE_ENTITY;
                 HttpResponseBuilder::new(http_code)
-                    .json(WebErrorDetails::from_error_details(http_code.as_u16(), details))
+                    .json(&WebErrorDetails::from_error_details(http_code.as_u16(), details))
             }
             LightSpeedError::BadRequest { code, .. } => {
                 let http_code = http::StatusCode::BAD_REQUEST;
                 HttpResponseBuilder::new(http_code)
-                    .json(WebErrorDetails::from_message(http_code.as_u16(), &Some((*code).to_string())))
+                    .json(&WebErrorDetails::from_message(http_code.as_u16(), &Some((*code).to_string())))
             }
             LightSpeedError::RequestConflict { code, .. } => {
                 let http_code = http::StatusCode::CONFLICT;
                 HttpResponseBuilder::new(http_code)
-                    .json(WebErrorDetails::from_message(http_code.as_u16(), &Some((*code).to_string())))
+                    .json(&WebErrorDetails::from_message(http_code.as_u16(), &Some((*code).to_string())))
             }
             LightSpeedError::ServiceUnavailable { code, .. } => {
                 let http_code = http::StatusCode::CONFLICT;
                 HttpResponseBuilder::new(http_code)
-                    .json(WebErrorDetails::from_message(http_code.as_u16(), &Some((*code).to_string())))
+                    .json(&WebErrorDetails::from_message(http_code.as_u16(), &Some((*code).to_string())))
             }
             LightSpeedError::ModuleBuilderError { .. }
             | LightSpeedError::ModuleStartError { .. }
             | LightSpeedError::ConfigurationError { .. }
             | LightSpeedError::PasswordEncryptionError { .. }
-            | LightSpeedError::RepositoryError { .. } => HttpResponse::InternalServerError().finish(),
+            | LightSpeedError::C3p0Error { .. } => HttpResponse::InternalServerError().finish(),
         }
     }
 }
@@ -102,15 +102,15 @@ mod test {
     use crate::config::JwtConfig;
     use crate::service::auth::{InMemoryRolesProvider, Role};
     use crate::service::jwt::JWT;
-    use actix_web_3_ext::dev::Service;
-    use actix_web_3_ext::test::{init_service, TestRequest};
-    use actix_web_3_ext::{http::StatusCode, web, App};
+    use actix_web_4_ext::dev::Service;
+    use actix_web_4_ext::test::{init_service, TestRequest};
+    use actix_web_4_ext::{http::StatusCode, web, App};
     use jsonwebtoken::Algorithm;
 
-    #[actix_web_3_ext::rt::test]
+    #[actix_web_4_ext::rt::test]
     async fn access_protected_url_should_return_unauthorized_if_no_token() {
         // Arrange
-        let mut srv = init_service(App::new().service(web::resource("/auth").to(username))).await;
+        let srv = init_service(App::new().service(web::resource("/auth").to(username))).await;
 
         let request = TestRequest::get().uri("/auth").to_request();
 
@@ -121,7 +121,7 @@ mod test {
         assert_eq!(resp.status(), StatusCode::UNAUTHORIZED);
     }
 
-    #[actix_web_3_ext::rt::test]
+    #[actix_web_4_ext::rt::test]
     async fn access_protected_url_should_return_unauthorized_if_expired_token() {
         // Arrange
         let token = JWT {
@@ -139,11 +139,11 @@ mod test {
         };
         let token = new_service().jwt_service.generate_from_token(&token).unwrap();
 
-        let mut srv = init_service(App::new().service(web::resource("/auth").to(username))).await;
+        let srv = init_service(App::new().service(web::resource("/auth").to(username))).await;
 
         let request = TestRequest::get()
             .uri("/auth")
-            .header(JWT_TOKEN_HEADER, format!("{}{}", JWT_TOKEN_HEADER_SUFFIX, token))
+            .append_header((JWT_TOKEN_HEADER, format!("{}{}", JWT_TOKEN_HEADER_SUFFIX, token)))
             .to_request();
 
         // Act
@@ -153,7 +153,7 @@ mod test {
         assert_eq!(resp.status(), StatusCode::UNAUTHORIZED);
     }
 
-    #[actix_web_3_ext::rt::test]
+    #[actix_web_4_ext::rt::test]
     async fn access_protected_url_should_return_ok_if_valid_token() {
         // Arrange
         let auth = Auth {
@@ -166,11 +166,11 @@ mod test {
         };
         let token = new_service().token_from_auth(&auth).unwrap();
 
-        let mut srv = init_service(App::new().service(web::resource("/auth").to(username))).await;
+        let srv = init_service(App::new().service(web::resource("/auth").to(username))).await;
 
         let request = TestRequest::get()
             .uri("/auth")
-            .header(JWT_TOKEN_HEADER, format!("{}{}", JWT_TOKEN_HEADER_SUFFIX, token))
+            .append_header((JWT_TOKEN_HEADER, format!("{}{}", JWT_TOKEN_HEADER_SUFFIX, token)))
             .to_request();
 
         // Act
@@ -180,7 +180,7 @@ mod test {
         assert_eq!(resp.status(), StatusCode::OK);
     }
 
-    #[actix_web_3_ext::rt::test]
+    #[actix_web_4_ext::rt::test]
     async fn access_admin_url_should_return_forbidden_if_not_admin_role() {
         // Arrange
         let auth = Auth {
@@ -193,11 +193,11 @@ mod test {
         };
         let token = new_service().token_from_auth(&auth).unwrap();
 
-        let mut srv = init_service(App::new().service(web::resource("/auth").to(admin))).await;
+        let srv = init_service(App::new().service(web::resource("/auth").to(admin))).await;
 
         let request = TestRequest::get()
             .uri("/auth")
-            .header(JWT_TOKEN_HEADER, format!("{}{}", JWT_TOKEN_HEADER_SUFFIX, token))
+            .append_header((JWT_TOKEN_HEADER, format!("{}{}", JWT_TOKEN_HEADER_SUFFIX, token)))
             .to_request();
 
         // Act
@@ -207,14 +207,14 @@ mod test {
         assert_eq!(resp.status(), StatusCode::FORBIDDEN);
     }
 
-    async fn admin(req: HttpRequest) -> actix_web_3_ext::Result<String> {
+    async fn admin(req: HttpRequest) -> actix_web_4_ext::Result<String> {
         let auth_service = new_service();
         let auth_context = auth_service.auth_from_request(&req)?;
         auth_context.has_role("admin")?;
         Ok(auth_context.auth.username.clone())
     }
 
-    async fn username(req: HttpRequest) -> actix_web_3_ext::Result<String> {
+    async fn username(req: HttpRequest) -> actix_web_4_ext::Result<String> {
         let auth_service = new_service();
         let auth_context = auth_service.auth_from_request(&req)?;
         Ok(auth_context.auth.username)

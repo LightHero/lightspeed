@@ -52,8 +52,12 @@ pub enum LightSpeedError {
     #[error("InternalServerError [{message}]")]
     InternalServerError { message: String },
 
-    #[error("RepositoryError [{message}]")]
-    RepositoryError { message: String },
+    #[error("C3p0Error")]
+    C3p0Error {
+        #[from]
+        #[source]
+        source: C3p0Error
+    },
 
     #[error("ValidationError [{details:?}]")]
     ValidationError { details: RootErrorDetails },
@@ -124,12 +128,6 @@ impl PartialEq<ErrorDetail> for &str {
 impl PartialEq<ErrorDetail> for String {
     fn eq(&self, other: &ErrorDetail) -> bool {
         other.params.is_empty() && other.error.eq(self)
-    }
-}
-
-impl From<C3p0Error> for LightSpeedError {
-    fn from(err: C3p0Error) -> Self {
-        LightSpeedError::RepositoryError { message: format!("{:?}", err) }
     }
 }
 

@@ -58,8 +58,7 @@ pub async fn data(serial: bool) -> Data<'static, MaybeType> {
 pub fn test<F: std::future::Future>(f: F) -> F::Output {
     static RT: OnceCell<tokio::runtime::Runtime> = OnceCell::new();
     RT.get_or_init(|| {
-        tokio::runtime::Builder::new().threaded_scheduler().enable_all().build().expect("Should create a tokio runtime")
+        tokio::runtime::Builder::new_multi_thread().enable_all().build().expect("Should create a tokio runtime")
     })
-    .handle()
-    .enter(|| futures::executor::block_on(f))
+    .block_on(f)
 }
