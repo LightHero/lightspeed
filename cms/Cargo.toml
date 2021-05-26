@@ -24,7 +24,7 @@ structopt = "0.3"
 
 [dev-dependencies]
 lightspeed_logger = { version = "0.34.0", path = "../logger" }
-maybe-single = { version = "0.14.0", features =["tokio_1"] }
+maybe-single = { version = "0.15.0", features =["async"] }
 maplit = "1"
 testcontainers = "0.12"
 tokio = { version = "1", features = ["rt-multi-thread"] }
