@@ -116,7 +116,7 @@ impl EmailClient for FullEmailClient {
                 message: format!("FullEmailService.send - Cannot send email to the SMTP server. Err: {:?}", err),
             })?;
 
-            debug!("FullEmailService.send - Email sent. Response code: {}", response.code);
+            debug!("FullEmailService.send - Email sent. Response code: {}", response.code());
             Ok(())
         })
         .await
