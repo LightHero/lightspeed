@@ -76,6 +76,11 @@ impl ResponseError for LightSpeedError {
                 HttpResponseBuilder::new(http_code)
                     .json(WebErrorDetails::from_message(http_code.as_u16(), &Some((*code).to_string())))
             }
+            LightSpeedError::RepositoryError { .. } => {
+                let http_code = http::StatusCode::BAD_REQUEST;
+                HttpResponseBuilder::new(http_code)
+                    .json(WebErrorDetails::from_message(http_code.as_u16(), &None))
+            }
             LightSpeedError::RequestConflict { code, .. } => {
                 let http_code = http::StatusCode::CONFLICT;
                 HttpResponseBuilder::new(http_code)
@@ -89,8 +94,7 @@ impl ResponseError for LightSpeedError {
             LightSpeedError::ModuleBuilderError { .. }
             | LightSpeedError::ModuleStartError { .. }
             | LightSpeedError::ConfigurationError { .. }
-            | LightSpeedError::PasswordEncryptionError { .. }
-            | LightSpeedError::RepositoryError { .. } => HttpResponse::InternalServerError().finish(),
+            | LightSpeedError::PasswordEncryptionError { .. } => HttpResponse::InternalServerError().finish(),
         }
     }
 }

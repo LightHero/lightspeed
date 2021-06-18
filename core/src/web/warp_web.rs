@@ -76,6 +76,12 @@ impl Reply for LightSpeedError {
                     reply::json(&WebErrorDetails::from_message(http_code.as_u16(), &Some(code.to_string())));
                 reply::with_status(error_details, http_code).into_response()
             }
+            LightSpeedError::RepositoryError { .. } => {
+                let http_code = http::StatusCode::BAD_REQUEST;
+                let error_details =
+                    reply::json(&WebErrorDetails::from_message(http_code.as_u16(), &None));
+                reply::with_status(error_details, http_code).into_response()
+            }
             LightSpeedError::RequestConflict { code, .. } => {
                 let http_code = http::StatusCode::CONFLICT;
                 let error_details =
@@ -91,8 +97,7 @@ impl Reply for LightSpeedError {
             LightSpeedError::ModuleBuilderError { .. }
             | LightSpeedError::ModuleStartError { .. }
             | LightSpeedError::ConfigurationError { .. }
-            | LightSpeedError::PasswordEncryptionError { .. }
-            | LightSpeedError::RepositoryError { .. } => http::StatusCode::INTERNAL_SERVER_ERROR.into_response(),
+            | LightSpeedError::PasswordEncryptionError { .. } => http::StatusCode::INTERNAL_SERVER_ERROR.into_response(),
         }
     }
 }
