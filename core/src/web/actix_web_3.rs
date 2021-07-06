@@ -78,8 +78,7 @@ impl ResponseError for LightSpeedError {
             }
             LightSpeedError::RepositoryError { .. } => {
                 let http_code = http::StatusCode::BAD_REQUEST;
-                HttpResponseBuilder::new(http_code)
-                    .json(WebErrorDetails::from_message(http_code.as_u16(), &None))
+                HttpResponseBuilder::new(http_code).json(WebErrorDetails::from_message(http_code.as_u16(), &None))
             }
             LightSpeedError::RequestConflict { code, .. } => {
                 let http_code = http::StatusCode::CONFLICT;
