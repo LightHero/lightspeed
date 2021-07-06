@@ -9,6 +9,7 @@ use lettre::transport::smtp::authentication::Credentials;
 use lettre::message::{Mailbox, MultiPart, SinglePart, Attachment};
 use lettre::message::header::ContentType;
 use std::path::Path;
+use std::time::Duration;
 
 /// A EmailClient implementation that forwards the email to the expected recipients
 #[derive(Clone)]
@@ -30,7 +31,9 @@ impl FullEmailClient {
             SmtpTransport::builder_dangerous(&email_config.server_address)
         };
 
-        smtp_transport_builder = smtp_transport_builder.port(email_config.server_port);
+        smtp_transport_builder = smtp_transport_builder
+            .port(email_config.server_port)
+            .timeout(Some(Duration::from_secs(email_config.client_timeout_seconds)));
 
         if !email_config.server_username.is_empty() && !email_config.server_password.is_empty() {
             let credentials = Credentials::new(email_config.server_username.to_owned(), email_config.server_password.to_owned());

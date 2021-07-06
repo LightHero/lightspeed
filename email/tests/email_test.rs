@@ -26,6 +26,7 @@ async fn should_start_the_mailserver() {
         server_port,
         server_address: "127.0.0.1".to_owned(),
         client_type: EmailClientType::Full,
+        client_timeout_seconds: 60,
         server_username: "".to_owned(),
         server_password: "".to_owned(),
         server_use_tls: Boolean::False,
