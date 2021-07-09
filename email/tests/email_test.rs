@@ -23,13 +23,13 @@ async fn should_start_the_mailserver() {
     println!("using port: {}", server_port);
 
     let config = EmailClientConfig {
-        server_port,
-        server_address: "127.0.0.1".to_owned(),
-        client_type: EmailClientType::Full,
-        client_timeout_seconds: 60,
-        server_username: "".to_owned(),
-        server_password: "".to_owned(),
-        server_use_tls: Boolean::False,
+        email_server_port: server_port,
+        email_server_address: "127.0.0.1".to_owned(),
+        email_client_type: EmailClientType::Full,
+        email_client_timeout_seconds: 60,
+        email_server_username: "".to_owned(),
+        email_server_password: "".to_owned(),
+        email_server_use_tls: Boolean::False,
         forward_all_emails_to_fixed_recipients: None,
     };
 
