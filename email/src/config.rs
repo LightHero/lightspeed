@@ -6,22 +6,25 @@ use structopt::StructOpt;
 #[structopt(rename_all = "kebab-case")]
 pub struct EmailClientConfig {
     #[structopt(long, env = "LS_EMAIL_CLIENT_TYPE", default_value = "full")]
-    pub client_type: EmailClientType,
+    pub email_client_type: EmailClientType,
+
+    #[structopt(long, env = "LS_EMAIL_CLIENT_TIMEOUT_SECONDS", default_value = "60")]
+    pub email_client_timeout_seconds: u64,
 
     #[structopt(long, env = "LS_EMAIL_SERVER_PORT", default_value = "1025")]
-    pub server_port: u16,
+    pub email_server_port: u16,
 
     #[structopt(long, env = "LS_EMAIL_SERVER_ADDRESS", default_value = "127.0.0.1")]
-    pub server_address: String,
+    pub email_server_address: String,
 
     #[structopt(long, env = "LS_EMAIL_SERVER_USERNAME", default_value = "")]
-    pub server_username: String,
+    pub email_server_username: String,
 
     #[structopt(long, env = "LS_EMAIL_SERVER_PASSWORD", default_value = "")]
-    pub server_password: String,
+    pub email_server_password: String,
 
     #[structopt(long, env = "LS_EMAIL_SERVER_USE_TLS", default_value = "false")]
-    pub server_use_tls: Boolean,
+    pub email_server_use_tls: Boolean,
 
     #[structopt(long, env = "LS_EMAIL_FORWARD_ALL_EMAILS_TO_FIXED_RECIPIENTS", value_delimiter = ";")]
     pub forward_all_emails_to_fixed_recipients: Option<Vec<String>>,

@@ -1,14 +1,15 @@
 use crate::config::EmailClientConfig;
 use crate::model::email::{EmailAttachment, EmailMessage};
 use crate::repository::email::EmailClient;
+use lettre::message::header::ContentType;
+use lettre::message::{Attachment, Mailbox, MultiPart, SinglePart};
+use lettre::transport::smtp::authentication::Credentials;
+use lettre::{Message, SmtpTransport, Transport};
 use lightspeed_core::error::{ErrorCodes, LightSpeedError};
 use log::*;
-use std::sync::Arc;
-use lettre::{Message, SmtpTransport, Transport};
-use lettre::transport::smtp::authentication::Credentials;
-use lettre::message::{Mailbox, MultiPart, SinglePart, Attachment};
-use lettre::message::header::ContentType;
 use std::path::Path;
+use std::sync::Arc;
+use std::time::Duration;
 
 /// A EmailClient implementation that forwards the email to the expected recipients
 #[derive(Clone)]
@@ -19,21 +20,24 @@ pub struct FullEmailClient {
 
 impl FullEmailClient {
     pub fn new(email_config: EmailClientConfig) -> Result<Self, LightSpeedError> {
-
-        let mut smtp_transport_builder = if email_config.server_use_tls.value() {
-            SmtpTransport::relay(&email_config.server_address).map_err(
-                |err| LightSpeedError::InternalServerError {
-                    message: format!("FullEmailService.new - Cannot build SmtpTransport with TLS to the server [{}]. Err: {:?}", email_config.server_address, err),
-                },
-            )?
+        let mut smtp_transport_builder = if email_config.email_server_use_tls.value() {
+            SmtpTransport::relay(&email_config.email_server_address).map_err(|err| LightSpeedError::InternalServerError {
+                message: format!(
+                    "FullEmailService.new - Cannot build SmtpTransport with TLS to the server [{}]. Err: {:?}",
+                    email_config.email_server_address, err
+                ),
+            })?
         } else {
-            SmtpTransport::builder_dangerous(&email_config.server_address)
+            SmtpTransport::builder_dangerous(&email_config.email_server_address)
         };
 
-        smtp_transport_builder = smtp_transport_builder.port(email_config.server_port);
+        smtp_transport_builder = smtp_transport_builder
+            .port(email_config.email_server_port)
+            .timeout(Some(Duration::from_secs(email_config.email_client_timeout_seconds)));
 
-        if !email_config.server_username.is_empty() && !email_config.server_password.is_empty() {
-            let credentials = Credentials::new(email_config.server_username.to_owned(), email_config.server_password.to_owned());
+        if !email_config.email_server_username.is_empty() && !email_config.email_server_password.is_empty() {
+            let credentials =
+                Credentials::new(email_config.email_server_username.to_owned(), email_config.email_server_password.to_owned());
             smtp_transport_builder = smtp_transport_builder.credentials(credentials);
         }
 
@@ -84,26 +88,23 @@ impl EmailClient for FullEmailClient {
             for attachment in email_message.attachments {
                 match attachment {
                     EmailAttachment::Binary { body, filename, mime_type } => {
-                        multipart = multipart.singlepart(Attachment::new(filename)
-                            .body(body, to_content_type(&mime_type)?));
+                        multipart =
+                            multipart.singlepart(Attachment::new(filename).body(body, to_content_type(&mime_type)?));
                     }
                     EmailAttachment::FromFile { path, filename, mime_type } => {
-
-                        let filename = filename.as_deref().unwrap_or_else(||
+                        let filename = filename.as_deref().unwrap_or_else(|| {
                             Path::new(&path).file_name().and_then(|os_str| os_str.to_str()).unwrap_or("")
-                        );
+                        });
 
-                        let body = std::fs::read(&path).map_err(|err| {
-                            LightSpeedError::BadRequest {
-                                message: format!(
-                                    "Cannot attach the requested attachment from file [{}]. Err: {:?}",
-                                    path, err
-                                ),
-                                code: "",
-                            }
+                        let body = std::fs::read(&path).map_err(|err| LightSpeedError::BadRequest {
+                            message: format!(
+                                "Cannot attach the requested attachment from file [{}]. Err: {:?}",
+                                path, err
+                            ),
+                            code: "",
                         })?;
-                        multipart = multipart.singlepart(Attachment::new(filename.to_owned())
-                            .body(body, to_content_type(&mime_type)?));
+                        multipart = multipart
+                            .singlepart(Attachment::new(filename.to_owned()).body(body, to_content_type(&mime_type)?));
                     }
                 }
             }
@@ -116,7 +117,7 @@ impl EmailClient for FullEmailClient {
                 message: format!("FullEmailService.send - Cannot send email to the SMTP server. Err: {:?}", err),
             })?;
 
-            debug!("FullEmailService.send - Email sent. Response code: {}", response.code);
+            debug!("FullEmailService.send - Email sent. Response code: {}", response.code());
             Ok(())
         })
         .await
@@ -157,7 +158,6 @@ fn to_content_type(mime_type: &str) -> Result<ContentType, LightSpeedError> {
         code: "",
     })
 }
-
 
 #[cfg(test)]
 pub mod test {

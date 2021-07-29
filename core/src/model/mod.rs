@@ -15,13 +15,13 @@ pub struct ModelWithOwner<D> {
     pub data: D,
 }
 
-impl <D> Owned for ModelWithOwner<D> {
+impl<D> Owned for ModelWithOwner<D> {
     fn get_owner_id(&self) -> i64 {
         self.user_id
     }
 }
 
-impl <D> WithIdAndVersion for ModelWithOwner<D> {
+impl<D> WithIdAndVersion for ModelWithOwner<D> {
     fn get_id(&self) -> i64 {
         self.id
     }
@@ -31,24 +31,14 @@ impl <D> WithIdAndVersion for ModelWithOwner<D> {
     }
 }
 
-impl <T: Owned + WithIdAndVersion, D> From<(&T, D)> for ModelWithOwner<D> {
+impl<T: Owned + WithIdAndVersion, D> From<(&T, D)> for ModelWithOwner<D> {
     fn from((model, data): (&T, D)) -> Self {
-        ModelWithOwner {
-            id: model.get_id(),
-            version: model.get_version(),
-            user_id: model.get_owner_id(),
-            data,
-        }
+        ModelWithOwner { id: model.get_id(), version: model.get_version(), user_id: model.get_owner_id(), data }
     }
 }
 
-impl <T: Owned + WithIdAndVersion> From<&T> for ModelWithOwner<()> {
+impl<T: Owned + WithIdAndVersion> From<&T> for ModelWithOwner<()> {
     fn from(model: &T) -> Self {
-        ModelWithOwner {
-            id: model.get_id(),
-            version: model.get_version(),
-            user_id: model.get_owner_id(),
-            data: (),
-        }
+        ModelWithOwner { id: model.get_id(), version: model.get_version(), user_id: model.get_owner_id(), data: () }
     }
 }

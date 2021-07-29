@@ -1,7 +1,7 @@
 [package]
 name = "lightspeed_core"
 license = "MIT"
-version = "0.34.0"
+version = "0.34.4"
 authors = ["Francesco Cina <ufoscout@gmail.com>"]
 description = "LightSpeed"
 edition = "2018"
@@ -34,7 +34,7 @@ warp_03_ext = {package = "warp", version = "0.3", optional = true }
 
 [dev-dependencies]
 actix-rt = "2"
-lightspeed_logger = { version = "0.34.0", path = "../logger" }
+lightspeed_logger = { version = "0.34.4", path = "../logger" }
 tokio = { version = "1", features = ["macros", "rt", "sync"] }
 
 [features]

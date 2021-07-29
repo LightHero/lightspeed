@@ -18,7 +18,7 @@ pub trait EmailClient: Send + Sync {
 }
 
 pub fn new(email_config: EmailClientConfig) -> Result<Arc<dyn EmailClient>, LightSpeedError> {
-    let client: Arc<dyn EmailClient> = match &email_config.client_type {
+    let client: Arc<dyn EmailClient> = match &email_config.email_client_type {
         EmailClientType::Full => Arc::new(FullEmailClient::new(email_config.clone())?),
         EmailClientType::InMemory => Arc::new(InMemoryEmailClient::new()),
         EmailClientType::NoOps => Arc::new(NoOpsEmailClient::new()),
@@ -67,7 +67,7 @@ mod test {
     async fn should_build_fixed_recipient_client() {
         // Arrange
         let mut config = EmailClientConfig::build();
-        config.client_type = EmailClientType::InMemory;
+        config.email_client_type = EmailClientType::InMemory;
         config.forward_all_emails_to_fixed_recipients = Some(vec!["to@me.com".to_owned()]);
 
         let mut email = EmailMessage::new();
@@ -89,7 +89,7 @@ mod test {
     async fn should_build_in_memory_client() {
         // Arrange
         let mut config = EmailClientConfig::build();
-        config.client_type = EmailClientType::InMemory;
+        config.email_client_type = EmailClientType::InMemory;
 
         let mut email = EmailMessage::new();
         email.to.push("original_to@mail.com".to_owned());
@@ -110,7 +110,7 @@ mod test {
     fn should_fail_if_fixed_recipient_empty() {
         // Arrange
         let mut config = EmailClientConfig::build();
-        config.client_type = EmailClientType::InMemory;
+        config.email_client_type = EmailClientType::InMemory;
         config.forward_all_emails_to_fixed_recipients = Some(vec![]);
 
         let mut email = EmailMessage::new();
