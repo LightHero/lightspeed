@@ -75,7 +75,7 @@ impl Reply for LightSpeedError {
                     reply::json(&WebErrorDetails::from_message(http_code.as_u16(), &Some(code.to_string())));
                 reply::with_status(error_details, http_code).into_response()
             }
-            LightSpeedError::RepositoryError { .. } => {
+            LightSpeedError::C3p0Error { .. } => {
                 let http_code = http::StatusCode::BAD_REQUEST;
                 let error_details = reply::json(&WebErrorDetails::from_message(http_code.as_u16(), &None));
                 reply::with_status(error_details, http_code).into_response()

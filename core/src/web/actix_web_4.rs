@@ -1,7 +1,7 @@
 use crate::error::{LightSpeedError, WebErrorDetails};
 use crate::service::auth::{Auth, AuthContext, AuthService, RolesProvider};
 use crate::service::jwt::JwtService;
-use actix_web_4_ext::dev::HttpResponseBuilder;
+use actix_web_4_ext::HttpResponseBuilder;
 use actix_web_4_ext::{http, HttpRequest, HttpResponse, ResponseError};
 use log::*;
 use std::sync::Arc;
@@ -76,7 +76,7 @@ impl ResponseError for LightSpeedError {
                 HttpResponseBuilder::new(http_code)
                     .json(&WebErrorDetails::from_message(http_code.as_u16(), &Some((*code).to_string())))
             }
-            LightSpeedError::RepositoryError { .. } => {
+            LightSpeedError::C3p0Error { .. } => {
                 let http_code = http::StatusCode::BAD_REQUEST;
                 HttpResponseBuilder::new(http_code).json(WebErrorDetails::from_message(http_code.as_u16(), &None))
             }

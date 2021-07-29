@@ -13,13 +13,13 @@ keywords = []
 [dependencies]
 lightspeed_core = { version = "0.34.4", path = "../core" }
 async-trait = "0.1"
-bcrypt = "0.9"
-c3p0 = { version = "0.62.0", features = ["postgres_migrate"] }
+bcrypt = "0.10"
+c3p0 = { version = "0.63.0", features = ["postgres_migrate"] }
 log = "0.4"
 serde = { version = "1.0" , features = ["derive", "rc"] }
 serde_json = "1"
 structopt = "0.3"
-strum = { version = "0.20" , features = ["derive"] }
+strum = { version = "0.21" , features = ["derive"] }
 
 # See
 #typescript-definitions = "0.1.10"
