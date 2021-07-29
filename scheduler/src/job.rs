@@ -2,10 +2,11 @@ use crate::error::SchedulerError;
 use crate::scheduler::Scheduler;
 use chrono::{DateTime, Utc};
 use chrono_tz::Tz;
-use futures::future::FutureExt;
 use log::*;
+use futures_util::FutureExt;
 use std::panic::AssertUnwindSafe;
-use tokio::macros::support::{Future, Pin};
+use std::future::Future;
+use std::pin::Pin;
 use tokio::sync::{Mutex, RwLock};
 
 pub struct JobScheduler {
@@ -192,7 +193,7 @@ pub mod test {
     async fn should_be_running() {
         let lock = Arc::new(Mutex::new(true));
         let lock_clone = lock.clone();
-        let (mut tx, mut rx) = channel(10000);
+        let (tx, mut rx) = channel(10000);
         let tx_clone = tx.clone();
 
         let job_scheduler = Arc::new(JobScheduler::new(
@@ -200,7 +201,7 @@ pub mod test {
             Some(UTC),
             Job::new("g", "n", None, move || {
                 let lock_clone = lock_clone.clone();
-                let mut tx_clone = tx_clone.clone();
+                let tx_clone = tx_clone.clone();
                 Box::pin(async move {
                     println!("job - started");
                     tx_clone.send("").await.unwrap();

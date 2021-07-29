@@ -39,7 +39,7 @@ impl Scheduler {
                     *execute_at_startup = false;
                     Some(*after)
                 } else {
-                    let ch_duration = match time::Duration::from_std(*interval_duration) {
+                    let ch_duration = match chrono::Duration::from_std(*interval_duration) {
                         Ok(value) => value,
                         Err(_) => {
                             return None;

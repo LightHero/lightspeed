@@ -53,6 +53,7 @@ async fn should_start_the_mailserver() {
     assert!(email_service.send(message.clone()).await.is_ok());
     assert!(email_service.send(message.clone()).await.is_ok());
 }
+
 /*
 #[tokio::test]
 async fn full_client_should_use_gmail() {

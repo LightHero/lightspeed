@@ -13,7 +13,7 @@ pub async fn into_response(
     match content {
         BinaryContent::FromFs { file_path } => {
             debug!("Create HttpResponse from FS content");
-            Ok(NamedFile::open(&file_path)?.disable_content_disposition().into_response(&req)?)
+            Ok(NamedFile::open(&file_path)?.disable_content_disposition().into_response(&req))
         }
         BinaryContent::InMemory { content } => {
             debug!("Create HttpResponse from Memory content of {} bytes", content.len());
@@ -31,7 +31,7 @@ pub async fn into_response(
             };
 
             let mut res = HttpResponse::Ok();
-            res.set(http::header::ContentType(ct.clone()));
+            res.content_type(http::header::ContentType(ct.clone()));
 
             if set_content_disposition {
                 debug!("Set content disposition");
@@ -49,7 +49,7 @@ pub async fn into_response(
                 }
                 let cd = http::header::ContentDisposition { disposition, parameters };
 
-                res.header(http::header::CONTENT_DISPOSITION, cd);
+                res.append_header((http::header::CONTENT_DISPOSITION, cd));
             };
 
             Ok(res.body(content.into_owned()))
