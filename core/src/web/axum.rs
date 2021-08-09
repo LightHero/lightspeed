@@ -1,58 +1,89 @@
-use crate::error::{LightSpeedError, WebErrorDetails};
+use crate::error::{LightSpeedError, WebErrorDetails, RootErrorDetails};
 use crate::service::auth::{Auth, AuthContext, AuthService, RolesProvider};
 use crate::service::jwt::JwtService;
-use actix_web_4_ext::HttpResponseBuilder;
-use actix_web_4_ext::{http, HttpRequest, HttpResponse, ResponseError};
 use log::*;
 use std::sync::Arc;
 use crate::web::{JWT_TOKEN_HEADER, JWT_TOKEN_HEADER_SUFFIX_LEN, Headers};
-use actix_web_4_ext::http::HeaderValue;
+use axum_ext::response::IntoResponse;
+use axum_ext::http::Response;
+use axum_ext::body::Body;
+use axum_ext::prelude::Request;
+use http::{HeaderValue, StatusCode};
 
-impl Headers for HttpRequest {
-    fn get(&self, header_name: &str) -> Option<&HeaderValue> {
-        self.headers().get(header_name)
-    }
-}
+impl IntoResponse for LightSpeedError {
 
-impl ResponseError for LightSpeedError {
-    fn error_response(&self) -> HttpResponse {
+    fn into_response(self) -> Response<Body> {
         match self {
             LightSpeedError::InvalidTokenError { .. }
             | LightSpeedError::ExpiredTokenError { .. }
             | LightSpeedError::GenerateTokenError { .. }
             | LightSpeedError::MissingAuthTokenError { .. }
             | LightSpeedError::ParseAuthHeaderError { .. }
-            | LightSpeedError::UnauthenticatedError => HttpResponse::Unauthorized().finish(),
-            LightSpeedError::ForbiddenError { .. } => HttpResponse::Forbidden().finish(),
+            | LightSpeedError::UnauthenticatedError => {
+                response_with_code(StatusCode::UNAUTHORIZED)
+            },
+            LightSpeedError::ForbiddenError { .. } => {
+                response_with_code(StatusCode::FORBIDDEN)
+            },
             LightSpeedError::ValidationError { details } => {
-                let http_code = http::StatusCode::UNPROCESSABLE_ENTITY;
-                HttpResponseBuilder::new(http_code)
-                    .json(&WebErrorDetails::from_error_details(http_code.as_u16(), details))
+                response_with_error_details(StatusCode::UNPROCESSABLE_ENTITY, &details)
             }
             LightSpeedError::BadRequest { code, .. } => {
-                let http_code = http::StatusCode::BAD_REQUEST;
-                HttpResponseBuilder::new(http_code)
-                    .json(&WebErrorDetails::from_message(http_code.as_u16(), &Some((*code).to_string())))
+                response_with_message(StatusCode::BAD_REQUEST, &Some((code).to_string()))
             }
             LightSpeedError::C3p0Error { .. } => {
-                let http_code = http::StatusCode::BAD_REQUEST;
-                HttpResponseBuilder::new(http_code).json(WebErrorDetails::from_message(http_code.as_u16(), &None))
+                response_with_message(StatusCode::BAD_REQUEST, &None)
             }
             LightSpeedError::RequestConflict { code, .. } |
             LightSpeedError::ServiceUnavailable { code, .. } => {
-                let http_code = http::StatusCode::CONFLICT;
-                HttpResponseBuilder::new(http_code)
-                    .json(&WebErrorDetails::from_message(http_code.as_u16(), &Some((*code).to_string())))
+                response_with_message(StatusCode::CONFLICT, &Some((code).to_string()))
             }
             LightSpeedError::InternalServerError { .. }
             | LightSpeedError::ModuleBuilderError { .. }
             | LightSpeedError::ModuleStartError { .. }
             | LightSpeedError::ConfigurationError { .. }
-            | LightSpeedError::PasswordEncryptionError { .. } => HttpResponse::InternalServerError().finish(),
+            | LightSpeedError::PasswordEncryptionError { .. } => {
+                response_with_code(http::StatusCode::INTERNAL_SERVER_ERROR)
+            },
         }
     }
 }
 
+#[inline]
+fn response_with_code(http_code: StatusCode) -> Response<Body> {
+    let mut res = Response::new(Body::empty());
+    *res.status_mut() = http::StatusCode::INTERNAL_SERVER_ERROR;
+    res
+}
+
+#[inline]
+fn response_with_message(http_code: StatusCode, message: &Option<String>) -> Response<Body> {
+    response(http_code, &WebErrorDetails::from_message(http_code.as_u16(), message))
+}
+
+#[inline]
+fn response_with_error_details(http_code: StatusCode, details: &RootErrorDetails) -> Response<Body> {
+    response(http_code, &WebErrorDetails::from_error_details(http_code.as_u16(), details))
+}
+
+#[inline]
+fn response(http_code: StatusCode, details: &WebErrorDetails<'_>) -> Response<Body> {
+    match serde_json::to_vec(details) {
+        Ok(body) => {
+            let mut res = Response::new(Body::from(body));
+            *res.status_mut() = http_code;
+            res
+        }
+        Err(err) => {
+            error!("response_with_message - cannot serialize body. Err: {:?}", err);
+            let mut res = Response::new(Body::empty());
+            *res.status_mut() = http::StatusCode::INTERNAL_SERVER_ERROR;
+            res
+        }
+    }
+}
+
+/*
 #[cfg(test)]
 mod test {
 
@@ -64,7 +95,7 @@ mod test {
     use actix_web_4_ext::test::{init_service, TestRequest};
     use actix_web_4_ext::{http::StatusCode, web, App};
     use jsonwebtoken::Algorithm;
-    use crate::web::{JWT_TOKEN_HEADER_SUFFIX, WebAuthService};
+    use crate::web::JWT_TOKEN_HEADER_SUFFIX;
 
     #[actix_web_4_ext::rt::test]
     async fn access_protected_url_should_return_unauthorized_if_no_token() {
@@ -190,8 +221,9 @@ mod test {
                     signature_algorithm: Algorithm::HS256,
                     token_validity_minutes: 10,
                 })
-                .unwrap(),
+                    .unwrap(),
             ),
         }
     }
 }
+*/
