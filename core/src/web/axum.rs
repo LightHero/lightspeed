@@ -52,7 +52,7 @@ impl IntoResponse for LightSpeedError {
 #[inline]
 fn response_with_code(http_code: StatusCode) -> Response<Body> {
     let mut res = Response::new(Body::empty());
-    *res.status_mut() = http::StatusCode::INTERNAL_SERVER_ERROR;
+    *res.status_mut() = http_code;
     res
 }
 
