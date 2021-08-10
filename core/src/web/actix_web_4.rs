@@ -28,17 +28,17 @@ impl ResponseError for LightSpeedError {
             LightSpeedError::BadRequest { code, .. } => {
                 let http_code = http::StatusCode::BAD_REQUEST;
                 HttpResponseBuilder::new(http_code)
-                    .json(&WebErrorDetails::from_message(http_code.as_u16(), &Some((*code).to_string())))
+                    .json(&WebErrorDetails::from_message(http_code.as_u16(), Some((*code).into())))
             }
             LightSpeedError::C3p0Error { .. } => {
                 let http_code = http::StatusCode::BAD_REQUEST;
-                HttpResponseBuilder::new(http_code).json(WebErrorDetails::from_message(http_code.as_u16(), &None))
+                HttpResponseBuilder::new(http_code).json(WebErrorDetails::from_message(http_code.as_u16(), None))
             }
             LightSpeedError::RequestConflict { code, .. } |
             LightSpeedError::ServiceUnavailable { code, .. } => {
                 let http_code = http::StatusCode::CONFLICT;
                 HttpResponseBuilder::new(http_code)
-                    .json(&WebErrorDetails::from_message(http_code.as_u16(), &Some((*code).to_string())))
+                    .json(&WebErrorDetails::from_message(http_code.as_u16(), Some((*code).into())))
             }
             LightSpeedError::InternalServerError { .. }
             | LightSpeedError::ModuleBuilderError { .. }
@@ -57,11 +57,12 @@ mod test {
     use crate::service::auth::{InMemoryRolesProvider, Role, Auth, AuthService};
     use crate::service::jwt::{JWT, JwtService};
     use actix_web_4_ext::dev::Service;
-    use actix_web_4_ext::test::{init_service, TestRequest};
-    use actix_web_4_ext::{http::StatusCode, web, App};
+    use actix_web_4_ext::test::{init_service, TestRequest, read_body_json};
+    use actix_web_4_ext::{http::{header, StatusCode}, web, App};
     use jsonwebtoken::Algorithm;
     use crate::web::{JWT_TOKEN_HEADER_SUFFIX, WebAuthService, JWT_TOKEN_HEADER};
     use std::sync::Arc;
+    use crate::error::RootErrorDetails;
 
     #[actix_web_4_ext::rt::test]
     async fn access_protected_url_should_return_unauthorized_if_no_token() {
@@ -163,6 +164,24 @@ mod test {
         assert_eq!(resp.status(), StatusCode::FORBIDDEN);
     }
 
+    #[actix_web_4_ext::rt::test]
+    async fn should_return_json_web_error() {
+        // Arrange
+        let srv = init_service(App::new().service(web::resource("/err").to(web_error))).await;
+
+        let request = TestRequest::get().uri("/err").to_request();
+
+        // Act
+        let resp = srv.call(request).await.unwrap();
+
+        // Assert
+        assert_eq!(resp.status(), StatusCode::UNPROCESSABLE_ENTITY);
+        assert_eq!("application/json", resp.headers().get(header::CONTENT_TYPE).unwrap().to_str().unwrap());
+
+        let body: WebErrorDetails = read_body_json(resp).await;
+        assert_eq!("error", body.message.unwrap());
+    }
+
     async fn admin(req: HttpRequest) -> actix_web_4_ext::Result<String> {
         let auth_service = new_service();
         let auth_context = auth_service.auth_from_request(&req)?;
@@ -174,6 +193,15 @@ mod test {
         let auth_service = new_service();
         let auth_context = auth_service.auth_from_request(&req)?;
         Ok(auth_context.auth.username)
+    }
+
+    async fn web_error() -> Result<String, LightSpeedError> {
+        Err(LightSpeedError::ValidationError {
+            details: RootErrorDetails {
+                details: Default::default(),
+                message: Some("error".to_owned())
+            }
+        })
     }
 
     fn new_service() -> WebAuthService<InMemoryRolesProvider> {

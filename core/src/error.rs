@@ -1,9 +1,10 @@
 use c3p0_common::error::C3p0Error;
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 use std::collections::hash_map::Entry;
 use std::collections::HashMap;
 use thiserror::Error;
 use typescript_definitions::TypeScriptify;
+use std::borrow::Cow;
 
 pub struct ErrorCodes {}
 
@@ -72,7 +73,7 @@ pub enum LightSpeedError {
     ServiceUnavailable { message: String, code: &'static str },
 }
 
-#[derive(Default, Debug, Clone, PartialEq, Serialize, TypeScriptify)]
+#[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize, TypeScriptify)]
 pub struct ErrorDetail {
     error: String,
     params: Vec<String>,
@@ -102,20 +103,20 @@ impl From<(&str, Vec<String>)> for ErrorDetail {
     }
 }
 
-#[derive(Serialize, TypeScriptify)]
+#[derive(Serialize, Deserialize, TypeScriptify)]
 pub struct WebErrorDetails<'a> {
     pub code: u16,
-    pub message: &'a Option<String>,
-    pub details: Option<&'a HashMap<String, Vec<ErrorDetail>>>,
+    pub message: Option<Cow<'a, str>>,
+    pub details: Option<Cow<'a, HashMap<String, Vec<ErrorDetail>>>>,
 }
 
 impl<'a> WebErrorDetails<'a> {
-    pub fn from_message(code: u16, message: &'a Option<String>) -> Self {
+    pub fn from_message(code: u16, message: Option<Cow<'a, str>>) -> Self {
         WebErrorDetails { code, message, details: None }
     }
 
     pub fn from_error_details(code: u16, error_details: &'a RootErrorDetails) -> Self {
-        WebErrorDetails { code, message: &error_details.message, details: Some(&error_details.details) }
+        WebErrorDetails { code, message: error_details.message.as_ref().map(|val| val.into()), details: Some(Cow::Borrowed(&error_details.details)) }
     }
 }
 

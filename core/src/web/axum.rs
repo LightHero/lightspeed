@@ -1,7 +1,7 @@
 use crate::error::{LightSpeedError, WebErrorDetails, RootErrorDetails};
 use log::*;
 use axum_ext::response::IntoResponse;
-use axum_ext::http::{Response, StatusCode};
+use axum_ext::http::{header, Response, StatusCode, HeaderValue};
 use axum_ext::body::Body;
 
 impl IntoResponse for LightSpeedError {
@@ -52,7 +52,7 @@ fn response_with_code(http_code: StatusCode) -> Response<Body> {
 
 #[inline]
 fn response_with_message(http_code: StatusCode, message: &Option<String>) -> Response<Body> {
-    response(http_code, &WebErrorDetails::from_message(http_code.as_u16(), message))
+    response(http_code, &WebErrorDetails::from_message(http_code.as_u16(), message.as_ref().map(|val| val.into())))
 }
 
 #[inline]
@@ -66,6 +66,7 @@ fn response(http_code: StatusCode, details: &WebErrorDetails<'_>) -> Response<Bo
         Ok(body) => {
             let mut res = Response::new(Body::from(body));
             *res.status_mut() = http_code;
+            res.headers_mut().insert(header::CONTENT_TYPE, HeaderValue::from_static("application/json"));
             res
         }
         Err(err) => {
@@ -87,7 +88,7 @@ mod test {
     use crate::service::jwt::{JWT, JwtService};
     use jsonwebtoken::Algorithm;
     use crate::web::{JWT_TOKEN_HEADER_SUFFIX, WebAuthService, JWT_TOKEN_HEADER};
-    use axum_ext::http::HeaderMap;
+    use axum_ext::http::{header, HeaderMap};
     use axum_ext::prelude::*;
     use tower::ServiceExt;
     use std::sync::Arc; // for `app.oneshot()`
@@ -202,6 +203,31 @@ mod test {
         assert_eq!(resp.status(), StatusCode::FORBIDDEN);
     }
 
+    #[tokio::test]
+    async fn should_return_json_web_error() {
+        // Arrange
+        let app = route("/err", get(web_error));
+
+        // Act
+        let resp = app
+            .oneshot(Request::builder()
+                .method(http::Method::GET)
+                .uri("/err")
+                .body(Body::empty()).unwrap())
+            .await
+            .unwrap();
+
+        // Assert
+        assert_eq!(resp.status(), StatusCode::UNPROCESSABLE_ENTITY);
+
+        assert_eq!("application/json", resp.headers().get(header::CONTENT_TYPE).unwrap().to_str().unwrap());
+
+        let body = hyper::body::to_bytes(resp.into_body()).await.unwrap();
+        let body: WebErrorDetails = serde_json::from_slice(&body).unwrap();
+
+        assert_eq!("error", body.message.unwrap());
+    }
+
     async fn admin(req: HeaderMap) -> Result<String, LightSpeedError> {
         let auth_service = new_service();
         let auth_context = auth_service.auth_from_request(&req)?;
@@ -213,6 +239,15 @@ mod test {
         let auth_service = new_service();
         let auth_context = auth_service.auth_from_request(&req)?;
         Ok(auth_context.auth.username)
+    }
+
+    async fn web_error() -> Result<String, LightSpeedError> {
+        Err(LightSpeedError::ValidationError {
+            details: RootErrorDetails {
+                details: Default::default(),
+                message: Some("error".to_owned())
+            }
+        })
     }
 
     fn new_service() -> WebAuthService<InMemoryRolesProvider> {
