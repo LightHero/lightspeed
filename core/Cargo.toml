@@ -41,6 +41,6 @@ tokio = { version = "1", features = ["macros", "rt", "sync"] }
 [features]
 default = []
 
-axum = ["axum_ext", "http", "web"]
-actix_web_4 = ["actix_web_4_ext", "http", "web"]
-web = []
+axum = ["axum_ext", "web"]
+actix_web_4 = ["actix_web_4_ext", "web"]
+web = ["http"]
