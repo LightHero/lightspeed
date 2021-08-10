@@ -37,6 +37,7 @@ http = {version = "0.2", optional = true }
 actix-rt = "2"
 lightspeed_logger = { version = "0.40.0", path = "../logger" }
 tokio = { version = "1", features = ["macros", "rt", "sync"] }
+tower = "0.4"
 
 [features]
 default = []

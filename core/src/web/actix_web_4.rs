@@ -1,11 +1,7 @@
 use crate::error::{LightSpeedError, WebErrorDetails};
-use crate::service::auth::{Auth, AuthContext, AuthService, RolesProvider};
-use crate::service::jwt::JwtService;
 use actix_web_4_ext::HttpResponseBuilder;
 use actix_web_4_ext::{http, HttpRequest, HttpResponse, ResponseError};
-use log::*;
-use std::sync::Arc;
-use crate::web::{JWT_TOKEN_HEADER, JWT_TOKEN_HEADER_SUFFIX_LEN, Headers};
+use crate::web::{Headers};
 use actix_web_4_ext::http::HeaderValue;
 
 impl Headers for HttpRequest {
@@ -58,13 +54,14 @@ mod test {
 
     use super::*;
     use crate::config::JwtConfig;
-    use crate::service::auth::{InMemoryRolesProvider, Role};
-    use crate::service::jwt::JWT;
+    use crate::service::auth::{InMemoryRolesProvider, Role, Auth, AuthService};
+    use crate::service::jwt::{JWT, JwtService};
     use actix_web_4_ext::dev::Service;
     use actix_web_4_ext::test::{init_service, TestRequest};
     use actix_web_4_ext::{http::StatusCode, web, App};
     use jsonwebtoken::Algorithm;
-    use crate::web::{JWT_TOKEN_HEADER_SUFFIX, WebAuthService};
+    use crate::web::{JWT_TOKEN_HEADER_SUFFIX, WebAuthService, JWT_TOKEN_HEADER};
+    use std::sync::Arc;
 
     #[actix_web_4_ext::rt::test]
     async fn access_protected_url_should_return_unauthorized_if_no_token() {

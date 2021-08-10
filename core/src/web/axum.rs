@@ -1,13 +1,8 @@
 use crate::error::{LightSpeedError, WebErrorDetails, RootErrorDetails};
-use crate::service::auth::{Auth, AuthContext, AuthService, RolesProvider};
-use crate::service::jwt::JwtService;
 use log::*;
-use std::sync::Arc;
-use crate::web::{JWT_TOKEN_HEADER, JWT_TOKEN_HEADER_SUFFIX_LEN, Headers};
 use axum_ext::response::IntoResponse;
-use axum_ext::http::{HeaderValue, Response, StatusCode};
+use axum_ext::http::{Response, StatusCode};
 use axum_ext::body::Body;
-use axum_ext::prelude::Request;
 
 impl IntoResponse for LightSpeedError {
 
@@ -82,35 +77,40 @@ fn response(http_code: StatusCode, details: &WebErrorDetails<'_>) -> Response<Bo
     }
 }
 
-/*
+
 #[cfg(test)]
 mod test {
 
     use super::*;
     use crate::config::JwtConfig;
-    use crate::service::auth::{InMemoryRolesProvider, Role};
-    use crate::service::jwt::JWT;
-    use actix_web_4_ext::dev::Service;
-    use actix_web_4_ext::test::{init_service, TestRequest};
-    use actix_web_4_ext::{http::StatusCode, web, App};
+    use crate::service::auth::{InMemoryRolesProvider, Role, Auth, AuthService};
+    use crate::service::jwt::{JWT, JwtService};
     use jsonwebtoken::Algorithm;
-    use crate::web::JWT_TOKEN_HEADER_SUFFIX;
+    use crate::web::{JWT_TOKEN_HEADER_SUFFIX, WebAuthService, JWT_TOKEN_HEADER};
+    use axum_ext::http::HeaderMap;
+    use axum_ext::prelude::*;
+    use tower::ServiceExt;
+    use std::sync::Arc; // for `app.oneshot()`
 
-    #[actix_web_4_ext::rt::test]
+    #[tokio::test]
     async fn access_protected_url_should_return_unauthorized_if_no_token() {
         // Arrange
-        let srv = init_service(App::new().service(web::resource("/auth").to(username))).await;
-
-        let request = TestRequest::get().uri("/auth").to_request();
+        let app = route("/auth", get(username));
 
         // Act
-        let resp = srv.call(request).await.unwrap();
+        let resp = app
+            .oneshot(Request::builder()
+                .method(http::Method::GET)
+                .uri("/auth")
+                .body(Body::empty()).unwrap())
+            .await
+            .unwrap();
 
         // Assert
         assert_eq!(resp.status(), StatusCode::UNAUTHORIZED);
     }
 
-    #[actix_web_4_ext::rt::test]
+    #[tokio::test]
     async fn access_protected_url_should_return_unauthorized_if_expired_token() {
         // Arrange
         let token = JWT {
@@ -128,21 +128,23 @@ mod test {
         };
         let token = new_service().jwt_service.generate_from_token(&token).unwrap();
 
-        let srv = init_service(App::new().service(web::resource("/auth").to(username))).await;
-
-        let request = TestRequest::get()
-            .uri("/auth")
-            .append_header((JWT_TOKEN_HEADER, format!("{}{}", JWT_TOKEN_HEADER_SUFFIX, token)))
-            .to_request();
+        let app = route("/auth", get(username));
 
         // Act
-        let resp = srv.call(request).await.unwrap();
+        let resp = app
+            .oneshot(Request::builder()
+                .method(http::Method::GET)
+                .uri("/auth")
+                .header(JWT_TOKEN_HEADER, format!("{}{}", JWT_TOKEN_HEADER_SUFFIX, token))
+                .body(Body::empty()).unwrap())
+            .await
+            .unwrap();
 
         // Assert
         assert_eq!(resp.status(), StatusCode::UNAUTHORIZED);
     }
 
-    #[actix_web_4_ext::rt::test]
+    #[tokio::test]
     async fn access_protected_url_should_return_ok_if_valid_token() {
         // Arrange
         let auth = Auth {
@@ -155,21 +157,23 @@ mod test {
         };
         let token = new_service().token_from_auth(&auth).unwrap();
 
-        let srv = init_service(App::new().service(web::resource("/auth").to(username))).await;
-
-        let request = TestRequest::get()
-            .uri("/auth")
-            .append_header((JWT_TOKEN_HEADER, format!("{}{}", JWT_TOKEN_HEADER_SUFFIX, token)))
-            .to_request();
+        let app = route("/auth", get(username));
 
         // Act
-        let resp = srv.call(request).await.unwrap();
+        let resp = app
+            .oneshot(Request::builder()
+                .method(http::Method::GET)
+                .uri("/auth")
+                .header(JWT_TOKEN_HEADER, format!("{}{}", JWT_TOKEN_HEADER_SUFFIX, token))
+                .body(Body::empty()).unwrap())
+            .await
+            .unwrap();
 
         // Assert
         assert_eq!(resp.status(), StatusCode::OK);
     }
 
-    #[actix_web_4_ext::rt::test]
+    #[tokio::test]
     async fn access_admin_url_should_return_forbidden_if_not_admin_role() {
         // Arrange
         let auth = Auth {
@@ -182,28 +186,30 @@ mod test {
         };
         let token = new_service().token_from_auth(&auth).unwrap();
 
-        let srv = init_service(App::new().service(web::resource("/auth").to(admin))).await;
-
-        let request = TestRequest::get()
-            .uri("/auth")
-            .append_header((JWT_TOKEN_HEADER, format!("{}{}", JWT_TOKEN_HEADER_SUFFIX, token)))
-            .to_request();
+        let app = route("/auth", get(admin));
 
         // Act
-        let resp = srv.call(request).await.unwrap();
+        let resp = app
+            .oneshot(Request::builder()
+                .method(http::Method::GET)
+                .uri("/auth")
+                .header(JWT_TOKEN_HEADER, format!("{}{}", JWT_TOKEN_HEADER_SUFFIX, token))
+                .body(Body::empty()).unwrap())
+            .await
+            .unwrap();
 
         // Assert
         assert_eq!(resp.status(), StatusCode::FORBIDDEN);
     }
 
-    async fn admin(req: HttpRequest) -> actix_web_4_ext::Result<String> {
+    async fn admin(req: HeaderMap) -> Result<String, LightSpeedError> {
         let auth_service = new_service();
         let auth_context = auth_service.auth_from_request(&req)?;
         auth_context.has_role("admin")?;
         Ok(auth_context.auth.username.clone())
     }
 
-    async fn username(req: HttpRequest) -> actix_web_4_ext::Result<String> {
+    async fn username(req: Request<Body>) -> Result<String, LightSpeedError> {
         let auth_service = new_service();
         let auth_context = auth_service.auth_from_request(&req)?;
         Ok(auth_context.auth.username)
@@ -225,4 +231,3 @@ mod test {
         }
     }
 }
-*/
