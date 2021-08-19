@@ -7,6 +7,7 @@ use strum::{AsRefStr, Display};
 
 pub type FileStoreDataModel = Model<FileStoreDataData>;
 
+#[derive(Clone)]
 pub enum BinaryContent<'a> {
     FromFs { file_path: PathBuf },
     InMemory { content: Cow<'a, [u8]> },

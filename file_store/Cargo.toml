@@ -26,7 +26,10 @@ actix-web = { version = "4.0.0-beta.8", optional = true }
 mime = { version = "0.3", optional = true }
 mime_guess = { version = "2.0", optional = true }
 
+axum_ext = {package = "axum", version = "0.1", optional = true }
+
 [dev-dependencies]
+actix-rt = "2"
 lightspeed_logger = { version = "0.40.0", path = "../logger" }
 maybe-single = { version = "0.15.0", features =["async"] }
 once_cell = "1.5"
@@ -39,3 +42,4 @@ tokio = { version = "1", features = ["macros", "rt-multi-thread"] }
 default = []
 
 actix_web_4 = ["actix-files", "actix-web", "lightspeed_core/actix_web_4", "mime", "mime_guess"]
+axum = ["axum_ext", "lightspeed_core/axum"]
