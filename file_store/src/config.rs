@@ -1,8 +1,7 @@
 use std::error::Error;
-use structopt::StructOpt;
+use clap::Clap;
 
-// See: https://github.com/TeXitoi/structopt/blob/master/examples/keyvalue.rs
-fn parse_key_val<T, U>(s: &str) -> Result<(T, U), Box<dyn Error>>
+fn parse_key_val<T, U>(s: &str) -> Result<(T, U), String>
 where
     T: std::str::FromStr,
     T::Err: Error + 'static,
@@ -10,21 +9,21 @@ where
     U::Err: Error + 'static,
 {
     let pos = s.find('=').ok_or_else(|| format!("invalid KEY=value: no `=` found in `{}`", s))?;
-    Ok((s[..pos].parse()?, s[pos + 1..].parse()?))
+    Ok((s[..pos].parse().map_err(|err| format!("{:?}", err))?, s[pos + 1..].parse().map_err(|err| format!("{:?}", err))?))
 }
 
-#[derive(Debug, Clone, StructOpt)]
-#[structopt(rename_all = "kebab-case")]
+#[derive(Debug, Clone, Clap)]
+#[clap(rename_all = "kebab-case")]
+#[clap(setting = clap::AppSettings::AllowExternalSubcommands)]
 pub struct FileStoreConfig {
     /// The base folder used in case of 'FS' FileStoreType.
-    #[structopt(long, env = "LS_FILE_STORE_FS_REP_BASE_FOLDERS", parse(try_from_str = parse_key_val))]
+    #[clap(long, env = "LS_FILE_STORE_FS_REP_BASE_FOLDERS", parse(try_from_str = parse_key_val))]
     pub fs_repo_base_folders: Vec<(String, String)>,
 }
 
 impl FileStoreConfig {
     pub fn build() -> Self {
-        let app = Self::clap().setting(structopt::clap::AppSettings::AllowExternalSubcommands);
-        Self::from_clap(&app.get_matches())
+        Self::parse()
     }
 }
 

@@ -1,21 +1,22 @@
 use crate::LoggerError;
 use std::str::FromStr;
-use structopt::StructOpt;
+use clap::Clap;
 
 /// Defines the Logger configuration.
-#[derive(Debug, Clone, StructOpt)]
-#[structopt(rename_all = "kebab-case")]
+#[derive(Debug, Clone, Clap)]
+#[clap(rename_all = "kebab-case")]
+#[clap(setting = clap::AppSettings::AllowExternalSubcommands)]
 pub struct LoggerConfig {
     /// Sets the logger [`EnvFilter`].
     /// Valid values: trace, debug, info, warn, error
     /// Example of a valid filter: "warn,my_crate=info,my_crate::my_mod=debug,[my_span]=trace"
-    #[structopt(long, env = "LS_LOGGER_LEVEL", default_value = "debug")]
+    #[clap(long, env = "LS_LOGGER_LEVEL", default_value = "debug")]
     pub env_filter: String,
 
-    #[structopt(flatten)]
+    #[clap(flatten)]
     pub stdout_output: StandardOutputConfig,
 
-    #[structopt(flatten)]
+    #[clap(flatten)]
     pub file_output: FileOutputConfig,
 }
 
@@ -29,15 +30,15 @@ impl Default for LoggerConfig {
     }
 }
 
-#[derive(Debug, Clone, StructOpt)]
-#[structopt(rename_all = "kebab-case")]
+#[derive(Debug, Clone, Clap)]
+#[clap(rename_all = "kebab-case")]
 pub struct StandardOutputConfig {
     /// Determines whether the Logger should print to standard output.
     /// Valid values: true, false
-    #[structopt(long, env = "LS_LOGGER_STDOUT_OUTPUT_ENABLED", parse(try_from_str), default_value = "true")]
+    #[clap(long, env = "LS_LOGGER_STDOUT_OUTPUT_ENABLED", parse(try_from_str), default_value = "true")]
     pub stdout_enabled: bool,
 
-    #[structopt(long, env = "LS_LOGGER_STDOUT_OUTPUT_USE_ANSI_COLORS", parse(try_from_str), default_value = "true")]
+    #[clap(long, env = "LS_LOGGER_STDOUT_OUTPUT_USE_ANSI_COLORS", parse(try_from_str), default_value = "true")]
     pub stdout_use_ansi_colors: bool,
 }
 
@@ -47,24 +48,24 @@ impl Default for StandardOutputConfig {
     }
 }
 
-#[derive(Debug, Clone, StructOpt)]
-#[structopt(rename_all = "kebab-case")]
+#[derive(Debug, Clone, Clap)]
+#[clap(rename_all = "kebab-case")]
 pub struct FileOutputConfig {
     /// Determines whether the Logger should print to a file.
     /// Valid values: true, false
-    #[structopt(long, env = "LS_LOGGER_FILE_OUTPUT_ENABLED", parse(try_from_str), default_value = "false")]
+    #[clap(long, env = "LS_LOGGER_FILE_OUTPUT_ENABLED", parse(try_from_str), default_value = "false")]
     pub file_output_enabled: bool,
 
     /// The log file location
-    #[structopt(long, env = "LS_LOGGER_FILE_OUTPUT_DIR", default_value = "/tmp")]
+    #[clap(long, env = "LS_LOGGER_FILE_OUTPUT_DIR", default_value = "/tmp")]
     pub file_output_directory: String,
 
     /// The log file name's _prefix_
-    #[structopt(long, env = "LS_LOGGER_FILE_OUTPUT_NAME_PREFIX", default_value = "output.log")]
+    #[clap(long, env = "LS_LOGGER_FILE_OUTPUT_NAME_PREFIX", default_value = "output.log")]
     pub file_output_name_prefix: String,
 
     /// The log file rotation strategy
-    #[structopt(long, env = "LS_LOGGER_FILE_OUTPUT_ROTATION", default_value = "daily")]
+    #[clap(long, env = "LS_LOGGER_FILE_OUTPUT_ROTATION", default_value = "daily")]
     pub file_output_rotation: Rotation,
 }
 
@@ -114,8 +115,7 @@ impl Rotation {
 
 impl LoggerConfig {
     pub fn build() -> Self {
-        let app = Self::clap().setting(structopt::clap::AppSettings::AllowExternalSubcommands);
-        Self::from_clap(&app.get_matches())
+        Self::parse()
     }
 }
 
