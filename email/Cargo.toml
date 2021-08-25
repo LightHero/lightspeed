@@ -13,16 +13,16 @@ keywords = []
 [dependencies]
 lightspeed_core = { version = "0.40.0", path = "../core" }
 async-trait = "0.1"
-lettre = { version = "0.10.0-rc.3", default-features = false , features = ["smtp-transport", "builder", "hostname", "r2d2", "rustls-tls"]}
+lettre = { version = "0.10.0-rc.3", default-features = false, features = ["smtp-transport", "builder", "hostname", "r2d2", "rustls-tls"] }
 log = "0.4"
 parking_lot = "0.11"
-serde = { version = "1.0" , features = ["derive", "rc"] }
+serde = { version = "1.0", features = ["derive", "rc"] }
 structopt = "0.3"
 tokio = "1"
 
 [dev-dependencies]
 testcontainers = "0.12"
-tokio = { version = "1" , features = ["macros", "rt"] }
+tokio = { version = "1", features = ["macros", "rt"] }
 
 lightspeed_logger = { version = "0.40.0", path = "../logger" }
 

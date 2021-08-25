@@ -14,15 +14,15 @@ keywords = []
 
 [dependencies]
 c3p0 = { version = "0.63.0", features = ["postgres_migrate"] }
-lightspeed_auth = { version = "0.40.0", path = "../auth", optional = true}
-lightspeed_cache = { version = "0.40.0", path = "../cache", optional = true}
-lightspeed_cms = { version = "0.40.0", path = "../cms", optional = true}
-lightspeed_core = { version = "0.40.0", path = "../core", optional = true}
-lightspeed_email = { version = "0.40.0", path = "../email", optional = true}
-lightspeed_file_store = { version = "0.40.0", path = "../file_store", optional = true}
-lightspeed_hash = { version = "0.40.0", path = "../hash", optional = true}
-lightspeed_logger = { version = "0.40.0", path = "../logger", optional = true}
-lightspeed_scheduler = { version = "0.40.0", path = "../scheduler", optional = true}
+lightspeed_auth = { version = "0.40.0", path = "../auth", optional = true }
+lightspeed_cache = { version = "0.40.0", path = "../cache", optional = true }
+lightspeed_cms = { version = "0.40.0", path = "../cms", optional = true }
+lightspeed_core = { version = "0.40.0", path = "../core", optional = true }
+lightspeed_email = { version = "0.40.0", path = "../email", optional = true }
+lightspeed_file_store = { version = "0.40.0", path = "../file_store", optional = true }
+lightspeed_hash = { version = "0.40.0", path = "../hash", optional = true }
+lightspeed_logger = { version = "0.40.0", path = "../logger", optional = true }
+lightspeed_scheduler = { version = "0.40.0", path = "../scheduler", optional = true }
 
 [features]
 default = ["core"]
@@ -37,5 +37,5 @@ hash = ["lightspeed_hash"]
 logger = ["lightspeed_logger"]
 scheduler = ["lightspeed_scheduler"]
 
-axum = ["lightspeed_core/axum"]
+axum = ["lightspeed_core/axum", "lightspeed_file_store/axum"]
 actix_web_4 = ["lightspeed_core/actix_web_4", "lightspeed_file_store/actix_web_4"]

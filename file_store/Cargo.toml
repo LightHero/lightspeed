@@ -15,11 +15,11 @@ lightspeed_core = { version = "0.40.0", path = "../core" }
 async-trait = "0.1"
 c3p0 = { version = "0.63.0", features = ["postgres_migrate"] }
 log = "0.4"
-serde = { version = "1.0" , features = ["derive", "rc"] }
+serde = { version = "1.0", features = ["derive", "rc"] }
 serde_json = "1"
 structopt = "0.3"
-strum = { version = "0.21" , features = ["derive"] }
-tokio = { version = "1" , features = ["fs", "io-util"] }
+strum = { version = "0.21", features = ["derive"] }
+tokio = { version = "1", features = ["fs", "io-util"] }
 
 actix-files = { version = "0.6.0-beta.6", optional = true }
 actix-web = { version = "4.0.0-beta.8", optional = true }
