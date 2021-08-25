@@ -1,11 +1,10 @@
-use crate::error::{LightSpeedError, WebErrorDetails, RootErrorDetails};
-use log::*;
-use axum_ext::response::IntoResponse;
-use axum_ext::http::{header, Response, StatusCode, HeaderValue};
+use crate::error::{LightSpeedError, RootErrorDetails, WebErrorDetails};
 use axum_ext::body::{Body, HttpBody};
+use axum_ext::http::{header, HeaderValue, Response, StatusCode};
+use axum_ext::response::IntoResponse;
+use log::*;
 
 impl IntoResponse for LightSpeedError {
-
     type Body = Body;
     type BodyError = <Self::Body as HttpBody>::Error;
 
@@ -16,23 +15,16 @@ impl IntoResponse for LightSpeedError {
             | LightSpeedError::GenerateTokenError { .. }
             | LightSpeedError::MissingAuthTokenError { .. }
             | LightSpeedError::ParseAuthHeaderError { .. }
-            | LightSpeedError::UnauthenticatedError => {
-                response_with_code(StatusCode::UNAUTHORIZED)
-            },
-            LightSpeedError::ForbiddenError { .. } => {
-                response_with_code(StatusCode::FORBIDDEN)
-            },
+            | LightSpeedError::UnauthenticatedError => response_with_code(StatusCode::UNAUTHORIZED),
+            LightSpeedError::ForbiddenError { .. } => response_with_code(StatusCode::FORBIDDEN),
             LightSpeedError::ValidationError { details } => {
                 response_with_error_details(StatusCode::UNPROCESSABLE_ENTITY, &details)
             }
             LightSpeedError::BadRequest { code, .. } => {
                 response_with_message(StatusCode::BAD_REQUEST, &Some((code).to_string()))
             }
-            LightSpeedError::C3p0Error { .. } => {
-                response_with_message(StatusCode::BAD_REQUEST, &None)
-            }
-            LightSpeedError::RequestConflict { code, .. } |
-            LightSpeedError::ServiceUnavailable { code, .. } => {
+            LightSpeedError::C3p0Error { .. } => response_with_message(StatusCode::BAD_REQUEST, &None),
+            LightSpeedError::RequestConflict { code, .. } | LightSpeedError::ServiceUnavailable { code, .. } => {
                 response_with_message(StatusCode::CONFLICT, &Some((code).to_string()))
             }
             LightSpeedError::InternalServerError { .. }
@@ -41,7 +33,7 @@ impl IntoResponse for LightSpeedError {
             | LightSpeedError::ConfigurationError { .. }
             | LightSpeedError::PasswordEncryptionError { .. } => {
                 response_with_code(http::StatusCode::INTERNAL_SERVER_ERROR)
-            },
+            }
         }
     }
 }
@@ -81,21 +73,20 @@ fn response(http_code: StatusCode, details: &WebErrorDetails<'_>) -> Response<Bo
     }
 }
 
-
 #[cfg(test)]
 mod test {
 
     use super::*;
     use crate::config::JwtConfig;
-    use crate::service::auth::{InMemoryRolesProvider, Role, Auth, AuthService};
-    use crate::service::jwt::{JWT, JwtService};
-    use jsonwebtoken::Algorithm;
-    use crate::web::{JWT_TOKEN_HEADER_SUFFIX, WebAuthService, JWT_TOKEN_HEADER};
-    use axum_ext::http::{header, HeaderMap, Request};
-    use tower::ServiceExt; // for `app.oneshot()`
-    use std::sync::Arc;
-    use axum_ext::Router;
+    use crate::service::auth::{Auth, AuthService, InMemoryRolesProvider, Role};
+    use crate::service::jwt::{JwtService, JWT};
+    use crate::web::{WebAuthService, JWT_TOKEN_HEADER, JWT_TOKEN_HEADER_SUFFIX};
     use axum_ext::handler::get;
+    use axum_ext::http::{header, HeaderMap, Request};
+    use axum_ext::Router;
+    use jsonwebtoken::Algorithm;
+    use std::sync::Arc;
+    use tower::ServiceExt; // for `app.oneshot()`
 
     #[tokio::test]
     async fn access_protected_url_should_return_unauthorized_if_no_token() {
@@ -104,10 +95,7 @@ mod test {
 
         // Act
         let resp = app
-            .oneshot(Request::builder()
-                .method(http::Method::GET)
-                .uri("/auth")
-                .body(Body::empty()).unwrap())
+            .oneshot(Request::builder().method(http::Method::GET).uri("/auth").body(Body::empty()).unwrap())
             .await
             .unwrap();
 
@@ -137,11 +125,14 @@ mod test {
 
         // Act
         let resp = app
-            .oneshot(Request::builder()
-                .method(http::Method::GET)
-                .uri("/auth")
-                .header(JWT_TOKEN_HEADER, format!("{}{}", JWT_TOKEN_HEADER_SUFFIX, token))
-                .body(Body::empty()).unwrap())
+            .oneshot(
+                Request::builder()
+                    .method(http::Method::GET)
+                    .uri("/auth")
+                    .header(JWT_TOKEN_HEADER, format!("{}{}", JWT_TOKEN_HEADER_SUFFIX, token))
+                    .body(Body::empty())
+                    .unwrap(),
+            )
             .await
             .unwrap();
 
@@ -166,11 +157,14 @@ mod test {
 
         // Act
         let resp = app
-            .oneshot(Request::builder()
-                .method(http::Method::GET)
-                .uri("/auth")
-                .header(JWT_TOKEN_HEADER, format!("{}{}", JWT_TOKEN_HEADER_SUFFIX, token))
-                .body(Body::empty()).unwrap())
+            .oneshot(
+                Request::builder()
+                    .method(http::Method::GET)
+                    .uri("/auth")
+                    .header(JWT_TOKEN_HEADER, format!("{}{}", JWT_TOKEN_HEADER_SUFFIX, token))
+                    .body(Body::empty())
+                    .unwrap(),
+            )
             .await
             .unwrap();
 
@@ -195,11 +189,14 @@ mod test {
 
         // Act
         let resp = app
-            .oneshot(Request::builder()
-                .method(http::Method::GET)
-                .uri("/auth")
-                .header(JWT_TOKEN_HEADER, format!("{}{}", JWT_TOKEN_HEADER_SUFFIX, token))
-                .body(Body::empty()).unwrap())
+            .oneshot(
+                Request::builder()
+                    .method(http::Method::GET)
+                    .uri("/auth")
+                    .header(JWT_TOKEN_HEADER, format!("{}{}", JWT_TOKEN_HEADER_SUFFIX, token))
+                    .body(Body::empty())
+                    .unwrap(),
+            )
             .await
             .unwrap();
 
@@ -214,10 +211,7 @@ mod test {
 
         // Act
         let resp = app
-            .oneshot(Request::builder()
-                .method(http::Method::GET)
-                .uri("/err")
-                .body(Body::empty()).unwrap())
+            .oneshot(Request::builder().method(http::Method::GET).uri("/err").body(Body::empty()).unwrap())
             .await
             .unwrap();
 
@@ -247,10 +241,7 @@ mod test {
 
     async fn web_error() -> Result<String, LightSpeedError> {
         Err(LightSpeedError::ValidationError {
-            details: RootErrorDetails {
-                details: Default::default(),
-                message: Some("error".to_owned())
-            }
+            details: RootErrorDetails { details: Default::default(), message: Some("error".to_owned()) },
         })
     }
 
@@ -265,7 +256,7 @@ mod test {
                     signature_algorithm: Algorithm::HS256,
                     token_validity_minutes: 10,
                 })
-                    .unwrap(),
+                .unwrap(),
             ),
         }
     }

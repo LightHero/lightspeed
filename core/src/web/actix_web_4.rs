@@ -1,8 +1,8 @@
 use crate::error::{LightSpeedError, WebErrorDetails};
+use crate::web::Headers;
+use actix_web_4_ext::http::HeaderValue;
 use actix_web_4_ext::HttpResponseBuilder;
 use actix_web_4_ext::{http, HttpRequest, HttpResponse, ResponseError};
-use crate::web::{Headers};
-use actix_web_4_ext::http::HeaderValue;
 
 impl Headers for HttpRequest {
     fn get(&self, header_name: &str) -> Option<&HeaderValue> {
@@ -34,8 +34,7 @@ impl ResponseError for LightSpeedError {
                 let http_code = http::StatusCode::BAD_REQUEST;
                 HttpResponseBuilder::new(http_code).json(WebErrorDetails::from_message(http_code.as_u16(), None))
             }
-            LightSpeedError::RequestConflict { code, .. } |
-            LightSpeedError::ServiceUnavailable { code, .. } => {
+            LightSpeedError::RequestConflict { code, .. } | LightSpeedError::ServiceUnavailable { code, .. } => {
                 let http_code = http::StatusCode::CONFLICT;
                 HttpResponseBuilder::new(http_code)
                     .json(&WebErrorDetails::from_message(http_code.as_u16(), Some((*code).into())))
@@ -54,15 +53,18 @@ mod test {
 
     use super::*;
     use crate::config::JwtConfig;
-    use crate::service::auth::{InMemoryRolesProvider, Role, Auth, AuthService};
-    use crate::service::jwt::{JWT, JwtService};
-    use actix_web_4_ext::dev::Service;
-    use actix_web_4_ext::test::{init_service, TestRequest, read_body_json};
-    use actix_web_4_ext::{http::{header, StatusCode}, web, App};
-    use jsonwebtoken::Algorithm;
-    use crate::web::{JWT_TOKEN_HEADER_SUFFIX, WebAuthService, JWT_TOKEN_HEADER};
-    use std::sync::Arc;
     use crate::error::RootErrorDetails;
+    use crate::service::auth::{Auth, AuthService, InMemoryRolesProvider, Role};
+    use crate::service::jwt::{JwtService, JWT};
+    use crate::web::{WebAuthService, JWT_TOKEN_HEADER, JWT_TOKEN_HEADER_SUFFIX};
+    use actix_web_4_ext::dev::Service;
+    use actix_web_4_ext::test::{init_service, read_body_json, TestRequest};
+    use actix_web_4_ext::{
+        http::{header, StatusCode},
+        web, App,
+    };
+    use jsonwebtoken::Algorithm;
+    use std::sync::Arc;
 
     #[actix_web_4_ext::rt::test]
     async fn access_protected_url_should_return_unauthorized_if_no_token() {
@@ -197,10 +199,7 @@ mod test {
 
     async fn web_error() -> Result<String, LightSpeedError> {
         Err(LightSpeedError::ValidationError {
-            details: RootErrorDetails {
-                details: Default::default(),
-                message: Some("error".to_owned())
-            }
+            details: RootErrorDetails { details: Default::default(), message: Some("error".to_owned()) },
         })
     }
 

@@ -1,9 +1,9 @@
-use crate::service::auth::{RolesProvider, AuthService, Auth, AuthContext};
-use std::sync::Arc;
-use crate::service::jwt::JwtService;
 use crate::error::LightSpeedError;
-use log::*;
+use crate::service::auth::{Auth, AuthContext, AuthService, RolesProvider};
+use crate::service::jwt::JwtService;
 use http::{HeaderMap, HeaderValue, Request};
+use log::*;
+use std::sync::Arc;
 
 #[cfg(feature = "actix_web_4")]
 pub mod actix_web_4;
@@ -24,7 +24,7 @@ impl Headers for HeaderMap {
     }
 }
 
-impl <T> Headers for Request<T> {
+impl<T> Headers for Request<T> {
     fn get(&self, header_name: &str) -> Option<&HeaderValue> {
         self.headers().get(header_name)
     }

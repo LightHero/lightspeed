@@ -1,10 +1,10 @@
 use c3p0_common::error::C3p0Error;
 use serde::{Deserialize, Serialize};
+use std::borrow::Cow;
 use std::collections::hash_map::Entry;
 use std::collections::HashMap;
 use thiserror::Error;
 use typescript_definitions::TypeScriptify;
-use std::borrow::Cow;
 
 pub struct ErrorCodes {}
 
@@ -57,7 +57,7 @@ pub enum LightSpeedError {
     C3p0Error {
         #[from]
         #[source]
-        source: C3p0Error
+        source: C3p0Error,
     },
 
     #[error("ValidationError [{details:?}]")]
@@ -116,7 +116,11 @@ impl<'a> WebErrorDetails<'a> {
     }
 
     pub fn from_error_details(code: u16, error_details: &'a RootErrorDetails) -> Self {
-        WebErrorDetails { code, message: error_details.message.as_ref().map(|val| val.into()), details: Some(Cow::Borrowed(&error_details.details)) }
+        WebErrorDetails {
+            code,
+            message: error_details.message.as_ref().map(|val| val.into()),
+            details: Some(Cow::Borrowed(&error_details.details)),
+        }
     }
 }
 
