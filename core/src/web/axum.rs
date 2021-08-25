@@ -2,9 +2,12 @@ use crate::error::{LightSpeedError, WebErrorDetails, RootErrorDetails};
 use log::*;
 use axum_ext::response::IntoResponse;
 use axum_ext::http::{header, Response, StatusCode, HeaderValue};
-use axum_ext::body::Body;
+use axum_ext::body::{Body, HttpBody};
 
 impl IntoResponse for LightSpeedError {
+
+    type Body = Body;
+    type BodyError = <Self::Body as HttpBody>::Error;
 
     fn into_response(self) -> Response<Body> {
         match self {
@@ -88,15 +91,16 @@ mod test {
     use crate::service::jwt::{JWT, JwtService};
     use jsonwebtoken::Algorithm;
     use crate::web::{JWT_TOKEN_HEADER_SUFFIX, WebAuthService, JWT_TOKEN_HEADER};
-    use axum_ext::http::{header, HeaderMap};
-    use axum_ext::prelude::*;
-    use tower::ServiceExt;
-    use std::sync::Arc; // for `app.oneshot()`
+    use axum_ext::http::{header, HeaderMap, Request};
+    use tower::ServiceExt; // for `app.oneshot()`
+    use std::sync::Arc;
+    use axum_ext::Router;
+    use axum_ext::handler::get;
 
     #[tokio::test]
     async fn access_protected_url_should_return_unauthorized_if_no_token() {
         // Arrange
-        let app = route("/auth", get(username));
+        let app = Router::new().route("/auth", get(username));
 
         // Act
         let resp = app
@@ -129,7 +133,7 @@ mod test {
         };
         let token = new_service().jwt_service.generate_from_token(&token).unwrap();
 
-        let app = route("/auth", get(username));
+        let app = Router::new().route("/auth", get(username));
 
         // Act
         let resp = app
@@ -158,7 +162,7 @@ mod test {
         };
         let token = new_service().token_from_auth(&auth).unwrap();
 
-        let app = route("/auth", get(username));
+        let app = Router::new().route("/auth", get(username));
 
         // Act
         let resp = app
@@ -187,7 +191,7 @@ mod test {
         };
         let token = new_service().token_from_auth(&auth).unwrap();
 
-        let app = route("/auth", get(admin));
+        let app = Router::new().route("/auth", get(admin));
 
         // Act
         let resp = app
@@ -206,7 +210,7 @@ mod test {
     #[tokio::test]
     async fn should_return_json_web_error() {
         // Arrange
-        let app = route("/err", get(web_error));
+        let app = Router::new().route("/err", get(web_error));
 
         // Act
         let resp = app
