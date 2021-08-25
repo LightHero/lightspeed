@@ -21,11 +21,13 @@ pub struct FullEmailClient {
 impl FullEmailClient {
     pub fn new(email_config: EmailClientConfig) -> Result<Self, LightSpeedError> {
         let mut smtp_transport_builder = if email_config.email_server_use_tls.value() {
-            SmtpTransport::relay(&email_config.email_server_address).map_err(|err| LightSpeedError::InternalServerError {
-                message: format!(
-                    "FullEmailService.new - Cannot build SmtpTransport with TLS to the server [{}]. Err: {:?}",
-                    email_config.email_server_address, err
-                ),
+            SmtpTransport::relay(&email_config.email_server_address).map_err(|err| {
+                LightSpeedError::InternalServerError {
+                    message: format!(
+                        "FullEmailService.new - Cannot build SmtpTransport with TLS to the server [{}]. Err: {:?}",
+                        email_config.email_server_address, err
+                    ),
+                }
             })?
         } else {
             SmtpTransport::builder_dangerous(&email_config.email_server_address)
@@ -36,8 +38,10 @@ impl FullEmailClient {
             .timeout(Some(Duration::from_secs(email_config.email_client_timeout_seconds)));
 
         if !email_config.email_server_username.is_empty() && !email_config.email_server_password.is_empty() {
-            let credentials =
-                Credentials::new(email_config.email_server_username.to_owned(), email_config.email_server_password.to_owned());
+            let credentials = Credentials::new(
+                email_config.email_server_username.to_owned(),
+                email_config.email_server_password.to_owned(),
+            );
             smtp_transport_builder = smtp_transport_builder.credentials(credentials);
         }
 

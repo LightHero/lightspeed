@@ -71,19 +71,14 @@ pub async fn into_response(
 mod test {
     use super::*;
     use actix_web::dev::Service;
-    use actix_web::test::{init_service, TestRequest, read_body};
-    use actix_web::{http::StatusCode, web, App};
+    use actix_web::test::{init_service, read_body, TestRequest};
     use actix_web::web::Data;
+    use actix_web::{http::StatusCode, web, App};
     use std::path::Path;
 
     async fn download(req: HttpRequest, data: Data<AppData>) -> actix_web::Result<HttpResponse> {
         println!("Download called");
-        into_response(
-            data.content.clone(),
-            data.file_name.clone(),
-            data.set_content_disposition,
-            &req,
-        ).await
+        into_response(data.content.clone(), data.file_name.clone(), data.set_content_disposition, &req).await
     }
 
     #[derive(Clone)]
@@ -95,16 +90,17 @@ mod test {
 
     #[actix_web::rt::test]
     async fn should_download_bytes_with_no_content_disposition() {
-
         // Arrange
         let content = std::fs::read("./Cargo.toml").unwrap();
         let data = AppData {
             content: BinaryContent::InMemory { content: content.clone().into() },
             file_name: Some("Cargo.toml"),
-            set_content_disposition: false
+            set_content_disposition: false,
         };
 
-        let srv = init_service(App::new().app_data(Data::new(data.clone())).service(web::resource("/download").to(download))).await;
+        let srv =
+            init_service(App::new().app_data(Data::new(data.clone())).service(web::resource("/download").to(download)))
+                .await;
 
         let request = TestRequest::get().uri("/download").to_request();
 
@@ -121,16 +117,17 @@ mod test {
 
     #[actix_web::rt::test]
     async fn should_download_bytes_with_content_disposition() {
-
         // Arrange
         let content = std::fs::read("./Cargo.toml").unwrap();
         let data = AppData {
             content: BinaryContent::InMemory { content: content.clone().into() },
             file_name: Some("Cargo.toml"),
-            set_content_disposition: true
+            set_content_disposition: true,
         };
 
-        let srv = init_service(App::new().app_data(Data::new(data.clone())).service(web::resource("/download").to(download))).await;
+        let srv =
+            init_service(App::new().app_data(Data::new(data.clone())).service(web::resource("/download").to(download)))
+                .await;
 
         let request = TestRequest::get().uri("/download").to_request();
 
@@ -141,7 +138,10 @@ mod test {
         assert_eq!(resp.status(), StatusCode::OK);
         assert!(resp.headers().get(http::header::CONTENT_DISPOSITION).is_some());
 
-        assert_eq!(http::header::HeaderValue::from_str("inline; filename=\"Cargo.toml\"").unwrap(), resp.headers().get(http::header::CONTENT_DISPOSITION).unwrap());
+        assert_eq!(
+            http::header::HeaderValue::from_str("inline; filename=\"Cargo.toml\"").unwrap(),
+            resp.headers().get(http::header::CONTENT_DISPOSITION).unwrap()
+        );
 
         let body = read_body(resp).await;
         assert_eq!(body, &content);
@@ -149,17 +149,18 @@ mod test {
 
     #[actix_web::rt::test]
     async fn should_download_file_with_no_content_disposition() {
-
         // Arrange
         let file_path = Path::new("./Cargo.toml").to_owned();
         let content = std::fs::read(&file_path).unwrap();
         let data = AppData {
             content: BinaryContent::FromFs { file_path: file_path.clone() },
             file_name: Some("Cargo.toml"),
-            set_content_disposition: false
+            set_content_disposition: false,
         };
 
-        let srv = init_service(App::new().app_data(Data::new(data.clone())).service(web::resource("/download").to(download))).await;
+        let srv =
+            init_service(App::new().app_data(Data::new(data.clone())).service(web::resource("/download").to(download)))
+                .await;
 
         let request = TestRequest::get().uri("/download").to_request();
 
@@ -176,17 +177,18 @@ mod test {
 
     #[actix_web::rt::test]
     async fn should_download_file_with_content_disposition() {
-
         // Arrange
         let file_path = Path::new("./Cargo.toml").to_owned();
         let content = std::fs::read(&file_path).unwrap();
         let data = AppData {
             content: BinaryContent::FromFs { file_path: file_path.clone() },
             file_name: None,
-            set_content_disposition: true
+            set_content_disposition: true,
         };
 
-        let srv = init_service(App::new().app_data(Data::new(data.clone())).service(web::resource("/download").to(download))).await;
+        let srv =
+            init_service(App::new().app_data(Data::new(data.clone())).service(web::resource("/download").to(download)))
+                .await;
 
         let request = TestRequest::get().uri("/download").to_request();
 
@@ -197,10 +199,12 @@ mod test {
         assert_eq!(resp.status(), StatusCode::OK);
         assert!(resp.headers().get(http::header::CONTENT_DISPOSITION).is_some());
 
-        assert_eq!(http::header::HeaderValue::from_str("inline; filename=\"Cargo.toml\"").unwrap(), resp.headers().get(http::header::CONTENT_DISPOSITION).unwrap());
+        assert_eq!(
+            http::header::HeaderValue::from_str("inline; filename=\"Cargo.toml\"").unwrap(),
+            resp.headers().get(http::header::CONTENT_DISPOSITION).unwrap()
+        );
 
         let body = read_body(resp).await;
         assert_eq!(body, &content);
     }
-
 }
