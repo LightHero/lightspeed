@@ -139,7 +139,7 @@ impl Job {
 
         self.set_running(false).await?;
 
-        run_result.map_err(|err| SchedulerError::JobExecutionError { cause: err })
+        run_result.map_err(|err| SchedulerError::JobExecutionError { source: err })
     }
 
     async fn exec(&self) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {

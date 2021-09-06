@@ -1,15 +1,38 @@
-use thiserror::Error;
+use std::fmt::{Formatter, Display};
+use std::error::Error;
 
-#[derive(Error, Debug)]
+#[derive(Debug)]
 pub enum SchedulerError {
-    #[error("ScheduleDefinitionError: [{message}]")]
     ScheduleDefinitionError { message: String },
-    #[error("JobLockError: [{message}]")]
     JobLockError { message: String },
-    #[error("JobExecutionStateError: [{message}]")]
     JobExecutionStateError { message: String },
-    #[error("JobExecutionError: [{cause}]")]
-    JobExecutionError { cause: Box<dyn std::error::Error + Send + Sync> },
-    #[error("JobExecutionPanic: [{cause}]")]
+    JobExecutionError { source: Box<dyn std::error::Error + Send + Sync> },
     JobExecutionPanic { cause: String },
+}
+
+impl Display for SchedulerError {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        match self {
+            SchedulerError::ScheduleDefinitionError { message } => write!(f, "ScheduleDefinitionError: [{}]", message),
+            SchedulerError::JobLockError { message } => write!(f, "JobLockError: [{}]", message),
+            SchedulerError::JobExecutionStateError { message } => write!(f, "JobExecutionStateError: [{}]", message),
+            SchedulerError::JobExecutionError { .. } => write!(f, "JobExecutionError"),
+            SchedulerError::JobExecutionPanic { cause } => write!(f, "JobExecutionPanic: [{}]", cause),
+        }
+    }
+}
+
+impl Error for SchedulerError {
+
+    fn source(&self) -> Option<&(dyn Error + 'static)> {
+        match self {
+            SchedulerError::ScheduleDefinitionError { .. } |
+            SchedulerError::JobLockError { .. } |
+            SchedulerError::JobExecutionStateError { .. } |
+            SchedulerError::JobExecutionPanic { .. } => None,
+
+            SchedulerError::JobExecutionError { source } => Some(source.as_ref()),
+        }
+    }
+
 }

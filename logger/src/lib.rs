@@ -2,18 +2,27 @@ pub mod config;
 pub mod utils;
 
 use std::str::FromStr;
-use thiserror::Error;
 use tracing::subscriber::set_global_default;
 use tracing::Subscriber;
 use tracing_appender::non_blocking::WorkerGuard;
 use tracing_appender::rolling::RollingFileAppender;
 use tracing_subscriber::{fmt::Layer, layer::SubscriberExt, EnvFilter};
+use std::fmt::{Formatter, Display};
+use std::error::Error;
 
-#[derive(Error, Debug)]
+#[derive(Debug)]
 pub enum LoggerError {
-    #[error("LoggerConfigurationError: [{message}]")]
     LoggerConfigurationError { message: String },
 }
+impl Display for LoggerError {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        match self {
+            LoggerError::LoggerConfigurationError { message } => write!(f, "LoggerConfigurationError: [{}]", message),
+        }
+    }
+}
+
+impl Error for LoggerError {}
 
 impl From<log::SetLoggerError> for LoggerError {
     fn from(error: log::SetLoggerError) -> Self {
