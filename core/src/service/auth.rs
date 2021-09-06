@@ -106,24 +106,24 @@ impl<'a> AuthContext<'a> {
         if self.auth.username.is_empty() || self.auth.expiration_ts_seconds < current_epoch_seconds() {
             return Err(LightSpeedError::UnauthenticatedError {});
         };
-        Ok(&self)
+        Ok(self)
     }
 
     pub fn has_role(&self, role: &str) -> Result<&AuthContext, LightSpeedError> {
         self.is_authenticated()?;
-        if !self.has_role_bool(&role) {
+        if !self.has_role_bool(role) {
             return Err(LightSpeedError::ForbiddenError {
                 message: format!("User [{}] does not have the required role [{}]", self.auth.id, role),
             });
         };
-        Ok(&self)
+        Ok(self)
     }
 
     pub fn has_any_role(&self, roles: &[&str]) -> Result<&AuthContext, LightSpeedError> {
         self.is_authenticated()?;
         for role in roles {
             if self.has_role_bool(*role) {
-                return Ok(&self);
+                return Ok(self);
             };
         }
         Err(LightSpeedError::ForbiddenError {
@@ -140,18 +140,18 @@ impl<'a> AuthContext<'a> {
                 });
             };
         }
-        Ok(&self)
+        Ok(self)
     }
 
     pub fn has_permission(&self, permission: &str) -> Result<&AuthContext, LightSpeedError> {
         self.is_authenticated()?;
 
-        if !self.has_permission_bool(&permission) {
+        if !self.has_permission_bool(permission) {
             return Err(LightSpeedError::ForbiddenError {
                 message: format!("User [{}] does not have the required permission [{}]", self.auth.id, permission),
             });
         };
-        Ok(&self)
+        Ok(self)
     }
 
     pub fn has_any_permission(&self, permissions: &[&str]) -> Result<&AuthContext, LightSpeedError> {
@@ -159,7 +159,7 @@ impl<'a> AuthContext<'a> {
 
         for permission in permissions {
             if self.has_permission_bool(*permission) {
-                return Ok(&self);
+                return Ok(self);
             };
         }
         Err(LightSpeedError::ForbiddenError {
@@ -176,12 +176,12 @@ impl<'a> AuthContext<'a> {
                 });
             };
         }
-        Ok(&self)
+        Ok(self)
     }
 
     pub fn is_owner<T: Owned>(&self, obj: &T) -> Result<&AuthContext, LightSpeedError> {
         if self.auth.id == obj.get_owner_id() {
-            Ok(&self)
+            Ok(self)
         } else {
             Err(LightSpeedError::ForbiddenError {
                 message: format!(
@@ -196,7 +196,7 @@ impl<'a> AuthContext<'a> {
 
     pub fn is_owner_or_has_role<T: Owned>(&self, obj: &T, role: &str) -> Result<&AuthContext, LightSpeedError> {
         if (self.auth.id == obj.get_owner_id()) || self.has_role_bool(role) {
-            Ok(&self)
+            Ok(self)
         } else {
             Err(LightSpeedError::ForbiddenError {
                 message: format!(
@@ -216,7 +216,7 @@ impl<'a> AuthContext<'a> {
         permission: &str,
     ) -> Result<&AuthContext, LightSpeedError> {
         if (self.auth.id == obj.get_owner_id()) || self.has_permission_bool(permission) {
-            Ok(&self)
+            Ok(self)
         } else {
             Err(LightSpeedError::ForbiddenError {
                 message: format!(

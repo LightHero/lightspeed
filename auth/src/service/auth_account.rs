@@ -308,7 +308,7 @@ impl<RepoManager: AuthRepositoryManager> AuthAccountService<RepoManager> {
     ) -> Result<(AuthAccountModel, TokenModel), LightSpeedError> {
         info!("Generate reset password token for username [{}]", username);
 
-        let user = self.auth_repo.fetch_by_username(conn, &username).await?;
+        let user = self.auth_repo.fetch_by_username(conn, username).await?;
 
         match &user.data.status {
             AuthAccountStatus::ACTIVE => {}

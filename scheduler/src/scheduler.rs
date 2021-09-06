@@ -30,7 +30,7 @@ impl Scheduler {
                 if let Some(tz) = timezone {
                     cs.after(&after.with_timezone(&tz)).next().map(|date| date.with_timezone(&Utc))
                 } else {
-                    cs.after(&after).next()
+                    cs.after(after).next()
                 }
             }
 
@@ -148,9 +148,9 @@ impl TryToScheduler for (Duration, bool) {
     }
 }
 
-impl Into<Scheduler> for Vec<Scheduler> {
-    fn into(self) -> Scheduler {
-        Scheduler::Multi(self)
+impl From<Vec<Scheduler>> for Scheduler {
+    fn from(val: Vec<Scheduler>) -> Self {
+        Scheduler::Multi(val)
     }
 }
 
