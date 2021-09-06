@@ -1,14 +1,14 @@
 pub mod config;
 pub mod utils;
 
+use std::error::Error;
+use std::fmt::{Display, Formatter};
 use std::str::FromStr;
 use tracing::subscriber::set_global_default;
 use tracing::Subscriber;
 use tracing_appender::non_blocking::WorkerGuard;
 use tracing_appender::rolling::RollingFileAppender;
 use tracing_subscriber::{fmt::Layer, layer::SubscriberExt, EnvFilter};
-use std::fmt::{Formatter, Display};
-use std::error::Error;
 
 #[derive(Debug)]
 pub enum LoggerError {

@@ -3,9 +3,9 @@ use serde::{Deserialize, Serialize};
 use std::borrow::Cow;
 use std::collections::hash_map::Entry;
 use std::collections::HashMap;
-use typescript_definitions::TypeScriptify;
-use std::fmt::{Display, Formatter};
 use std::error::Error;
+use std::fmt::{Display, Formatter};
+use typescript_definitions::TypeScriptify;
 
 pub struct ErrorCodes {}
 
@@ -41,7 +41,7 @@ pub enum LightSpeedError {
 
     InternalServerError { message: String },
 
-    C3p0Error {source: C3p0Error},
+    C3p0Error { source: C3p0Error },
 
     ValidationError { details: RootErrorDetails },
 
@@ -77,17 +77,22 @@ impl Display for LightSpeedError {
 
             LightSpeedError::ValidationError { details } => write!(f, "ValidationError: [{:?}]", details),
 
-            LightSpeedError::BadRequest { message, code} => write!(f, "BadRequest. Code [{}]. Message [{}]", code, message),
+            LightSpeedError::BadRequest { message, code } => {
+                write!(f, "BadRequest. Code [{}]. Message [{}]", code, message)
+            }
 
-            LightSpeedError::RequestConflict { message, code } => write!(f, "RequestConflict. Code [{}]. Message [{}]", code, message),
+            LightSpeedError::RequestConflict { message, code } => {
+                write!(f, "RequestConflict. Code [{}]. Message [{}]", code, message)
+            }
 
-            LightSpeedError::ServiceUnavailable { message, code } => write!(f, "ServiceUnavailable. Code [{}]. Message [{}]", code, message),
+            LightSpeedError::ServiceUnavailable { message, code } => {
+                write!(f, "ServiceUnavailable. Code [{}]. Message [{}]", code, message)
+            }
         }
     }
 }
 
 impl Error for LightSpeedError {
-
     fn source(&self) -> Option<&(dyn Error + 'static)> {
         match self {
             LightSpeedError::InvalidTokenError { .. } |
@@ -118,7 +123,6 @@ impl Error for LightSpeedError {
             LightSpeedError::C3p0Error { source } => Some(source),
         }
     }
-
 }
 
 impl From<c3p0_common::error::C3p0Error> for LightSpeedError {

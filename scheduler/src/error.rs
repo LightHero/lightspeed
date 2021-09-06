@@ -1,5 +1,5 @@
-use std::fmt::{Formatter, Display};
 use std::error::Error;
+use std::fmt::{Display, Formatter};
 
 #[derive(Debug)]
 pub enum SchedulerError {
@@ -23,16 +23,14 @@ impl Display for SchedulerError {
 }
 
 impl Error for SchedulerError {
-
     fn source(&self) -> Option<&(dyn Error + 'static)> {
         match self {
-            SchedulerError::ScheduleDefinitionError { .. } |
-            SchedulerError::JobLockError { .. } |
-            SchedulerError::JobExecutionStateError { .. } |
-            SchedulerError::JobExecutionPanic { .. } => None,
+            SchedulerError::ScheduleDefinitionError { .. }
+            | SchedulerError::JobLockError { .. }
+            | SchedulerError::JobExecutionStateError { .. }
+            | SchedulerError::JobExecutionPanic { .. } => None,
 
             SchedulerError::JobExecutionError { source } => Some(source.as_ref()),
         }
     }
-
 }
