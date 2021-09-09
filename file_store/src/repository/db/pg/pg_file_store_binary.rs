@@ -30,7 +30,7 @@ impl DBFileStoreBinaryRepository for PgFileStoreBinaryRepository {
         let sql = &format!("SELECT DATA FROM {} WHERE repository = $1 AND filepath = $2", self.table_name);
 
         let content = conn
-            .fetch_one(&sql, &[&repository_name, &file_path], |row| {
+            .fetch_one(sql, &[&repository_name, &file_path], |row| {
                 let content: Vec<u8> = row.try_get(0).map_err(into_c3p0_error)?;
                 Ok(content)
             })
@@ -71,7 +71,7 @@ impl DBFileStoreBinaryRepository for PgFileStoreBinaryRepository {
 
         let sql = &format!("INSERT INTO {} (repository, filepath, data) VALUES ($1, $2, $3)", self.table_name);
 
-        Ok(conn.execute(&sql, &[&repository_name, &file_path, &binary_content.as_ref().as_ref()]).await?)
+        Ok(conn.execute(sql, &[&repository_name, &file_path, &binary_content.as_ref().as_ref()]).await?)
     }
 
     async fn delete_file(
@@ -81,6 +81,6 @@ impl DBFileStoreBinaryRepository for PgFileStoreBinaryRepository {
         file_path: &str,
     ) -> Result<u64, LightSpeedError> {
         let sql = &format!("DELETE FROM {} WHERE repository = $1 AND filepath = $2", self.table_name);
-        Ok(conn.execute(&sql, &[&repository_name, &file_path]).await?)
+        Ok(conn.execute(sql, &[&repository_name, &file_path]).await?)
     }
 }

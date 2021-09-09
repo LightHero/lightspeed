@@ -71,7 +71,7 @@ impl<RepoManager: CmsRepositoryManager> ContentService<RepoManager> {
 
                 let mut validator = Validator::new();
 
-                create_content_dto.content.validate(&schema, validator.error_details());
+                create_content_dto.content.validate(schema, validator.error_details());
 
                 for field in &schema.fields {
                     if let SchemaFieldArity::Unique = field.field_type.get_arity() {

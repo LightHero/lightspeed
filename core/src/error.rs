@@ -3,7 +3,8 @@ use serde::{Deserialize, Serialize};
 use std::borrow::Cow;
 use std::collections::hash_map::Entry;
 use std::collections::HashMap;
-use thiserror::Error;
+use std::error::Error;
+use std::fmt::{Display, Formatter};
 use typescript_definitions::TypeScriptify;
 
 pub struct ErrorCodes {}
@@ -20,57 +21,114 @@ impl ErrorCodes {
     pub const WRONG_CREDENTIALS: &'static str = "WRONG_CREDENTIALS";
 }
 
-#[derive(Error, Debug)]
+#[derive(Debug)]
 pub enum LightSpeedError {
-    // JWT
-    #[error("InvalidTokenError: [{message}]")]
     InvalidTokenError { message: String },
-    #[error("ExpiredTokenError: [{message}]")]
     ExpiredTokenError { message: String },
-    #[error("GenerateTokenError: [{message}]")]
     GenerateTokenError { message: String },
-    #[error("MissingAuthTokenError")]
     MissingAuthTokenError,
-    #[error("ParseAuthHeaderError: [{message}]")]
     ParseAuthHeaderError { message: String },
 
     // Module
-    #[error("ModuleBuilderError: [{message}]")]
     ModuleBuilderError { message: String },
-    #[error("ModuleStartError: [{message}]")]
     ModuleStartError { message: String },
-    #[error("ConfigurationError: [{message}]")]
     ConfigurationError { message: String },
 
     // Auth
-    #[error("UnauthenticatedError")]
     UnauthenticatedError,
-    #[error("ForbiddenError [{message}]")]
     ForbiddenError { message: String },
-    #[error("PasswordEncryptionError [{message}]")]
     PasswordEncryptionError { message: String },
 
-    #[error("InternalServerError [{message}]")]
     InternalServerError { message: String },
 
-    #[error("C3p0Error")]
-    C3p0Error {
-        #[from]
-        #[source]
-        source: C3p0Error,
-    },
+    C3p0Error { source: C3p0Error },
 
-    #[error("ValidationError [{details:?}]")]
     ValidationError { details: RootErrorDetails },
 
-    #[error("BadRequest [{message}]")]
     BadRequest { message: String, code: &'static str },
 
-    #[error("RequestConflict [{message}]")]
     RequestConflict { message: String, code: &'static str },
 
-    #[error("ServiceUnavailable [{message}]")]
     ServiceUnavailable { message: String, code: &'static str },
+}
+
+impl Display for LightSpeedError {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        match self {
+            LightSpeedError::InvalidTokenError { message } => write!(f, "InvalidTokenError: [{}]", message),
+            LightSpeedError::ExpiredTokenError { message } => write!(f, "ExpiredTokenError: [{}]", message),
+            LightSpeedError::GenerateTokenError { message } => write!(f, "GenerateTokenError: [{}]", message),
+            LightSpeedError::MissingAuthTokenError => write!(f, "MissingAuthTokenError"),
+            LightSpeedError::ParseAuthHeaderError { message } => write!(f, "ParseAuthHeaderError: [{}]", message),
+
+            // Module
+            LightSpeedError::ModuleBuilderError { message } => write!(f, "ModuleBuilderError: [{}]", message),
+            LightSpeedError::ModuleStartError { message } => write!(f, "ModuleStartError: [{}]", message),
+            LightSpeedError::ConfigurationError { message } => write!(f, "ConfigurationError: [{}]", message),
+
+            // Auth
+            LightSpeedError::UnauthenticatedError => write!(f, "UnauthenticatedError"),
+            LightSpeedError::ForbiddenError { message } => write!(f, "ForbiddenError: [{}]", message),
+            LightSpeedError::PasswordEncryptionError { message } => write!(f, "PasswordEncryptionError: [{}]", message),
+
+            LightSpeedError::InternalServerError { message } => write!(f, "InternalServerError: [{}]", message),
+
+            LightSpeedError::C3p0Error { .. } => write!(f, "C3p0Error"),
+
+            LightSpeedError::ValidationError { details } => write!(f, "ValidationError: [{:?}]", details),
+
+            LightSpeedError::BadRequest { message, code } => {
+                write!(f, "BadRequest. Code [{}]. Message [{}]", code, message)
+            }
+
+            LightSpeedError::RequestConflict { message, code } => {
+                write!(f, "RequestConflict. Code [{}]. Message [{}]", code, message)
+            }
+
+            LightSpeedError::ServiceUnavailable { message, code } => {
+                write!(f, "ServiceUnavailable. Code [{}]. Message [{}]", code, message)
+            }
+        }
+    }
+}
+
+impl Error for LightSpeedError {
+    fn source(&self) -> Option<&(dyn Error + 'static)> {
+        match self {
+            LightSpeedError::InvalidTokenError { .. } |
+            LightSpeedError::ExpiredTokenError{ .. } |
+            LightSpeedError::GenerateTokenError { .. } |
+            LightSpeedError::MissingAuthTokenError { .. } |
+            LightSpeedError::ParseAuthHeaderError { .. } |
+
+            LightSpeedError::ModuleBuilderError { .. } |
+            LightSpeedError::ModuleStartError { .. } |
+            LightSpeedError::ConfigurationError { .. } |
+
+            // Auth
+            LightSpeedError::UnauthenticatedError { .. } |
+            LightSpeedError::ForbiddenError { .. } |
+            LightSpeedError::PasswordEncryptionError { .. } |
+
+            LightSpeedError::InternalServerError { .. } |
+
+
+            LightSpeedError::ValidationError { .. } |
+
+            LightSpeedError::BadRequest { .. } |
+
+            LightSpeedError::RequestConflict { .. } |
+            LightSpeedError::ServiceUnavailable { .. } => None,
+
+            LightSpeedError::C3p0Error { source } => Some(source),
+        }
+    }
+}
+
+impl From<c3p0_common::error::C3p0Error> for LightSpeedError {
+    fn from(err: c3p0_common::error::C3p0Error) -> Self {
+        LightSpeedError::C3p0Error { source: err }
+    }
 }
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize, TypeScriptify)]
