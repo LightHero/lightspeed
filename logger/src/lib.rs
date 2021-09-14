@@ -4,11 +4,11 @@ pub mod utils;
 use std::error::Error;
 use std::fmt::{Display, Formatter};
 use std::str::FromStr;
-use tracing::subscriber::set_global_default;
 use tracing::Subscriber;
 use tracing_appender::non_blocking::WorkerGuard;
 use tracing_appender::rolling::RollingFileAppender;
-use tracing_subscriber::{fmt::Layer, layer::SubscriberExt, EnvFilter};
+use tracing_subscriber::util::SubscriberInitExt;
+use tracing_subscriber::{fmt::Layer, layer::SubscriberExt, filter::Targets};
 
 #[derive(Debug)]
 pub enum LoggerError {
@@ -38,21 +38,18 @@ impl From<std::io::Error> for LoggerError {
 
 /// Configure a simple global logger that prints to stdout
 pub fn setup_stdout_logger(logger_filter: &str, use_ansi: bool) -> Result<(), LoggerError> {
-    let env_filter = EnvFilter::from_str(logger_filter).map_err(|err| LoggerError::LoggerConfigurationError {
+    let env_filter = Targets::from_str(logger_filter).map_err(|err| LoggerError::LoggerConfigurationError {
         message: format!("Cannot parse the env_filter: [{}]. err: {:?}", logger_filter, err),
     })?;
 
-    tracing_subscriber::FmtSubscriber::builder().with_ansi(use_ansi).with_env_filter(env_filter).try_init().map_err(
-        |err| LoggerError::LoggerConfigurationError {
-            message: format!("Cannot start the stdout logger. err: {:?}", err),
-        },
-    )
+    let subscriber = tracing_subscriber::registry().with(env_filter).with(Layer::new().with_ansi(use_ansi));
+    set_global_logger(subscriber)
 }
 
 /// Configure the global logger
 pub fn setup_logger(logger_config: &config::LoggerConfig) -> Result<Option<WorkerGuard>, LoggerError> {
     let env_filter =
-        EnvFilter::from_str(&logger_config.env_filter).map_err(|err| LoggerError::LoggerConfigurationError {
+    Targets::from_str(&logger_config.env_filter).map_err(|err| LoggerError::LoggerConfigurationError {
             message: format!("Cannot parse the env_filter: [{}]. err: {:?}", logger_config.env_filter, err),
         })?;
 
@@ -85,10 +82,7 @@ fn set_global_logger<S>(subscriber: S) -> Result<(), LoggerError>
 where
     S: Subscriber + Send + Sync + 'static,
 {
-    tracing_log::LogTracer::init().map_err(|err| LoggerError::LoggerConfigurationError {
-        message: format!("Cannot start the logger LogTracer. err: {:?}", err),
-    })?;
-    set_global_default(subscriber).map_err(|err| LoggerError::LoggerConfigurationError {
+    subscriber.try_init().map_err(|err| LoggerError::LoggerConfigurationError {
         message: format!("Cannot start the logger. err: {:?}", err),
     })
 }
