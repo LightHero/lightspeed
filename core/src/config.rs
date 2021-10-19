@@ -1,7 +1,7 @@
-use clap::Clap;
+use clap::Parser;
 
 /// Defines the JSON Web Token configuration.
-#[derive(Debug, Clone, Clap)]
+#[derive(Debug, Clone, Parser)]
 #[clap(rename_all = "kebab-case")]
 #[clap(setting = clap::AppSettings::AllowExternalSubcommands)]
 pub struct JwtConfig {
@@ -30,7 +30,7 @@ pub struct JwtConfig {
 }
 
 /// Defines the Logger configuration.
-#[derive(Debug, Clone, Clap)]
+#[derive(Debug, Clone, Parser)]
 #[clap(rename_all = "kebab-case")]
 pub struct CoreConfig {
     #[clap(flatten)]

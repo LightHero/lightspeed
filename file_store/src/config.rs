@@ -1,5 +1,5 @@
 use std::error::Error;
-use clap::Clap;
+use clap::Parser;
 
 fn parse_key_val<T, U>(s: &str) -> Result<(T, U), String>
 where
@@ -12,7 +12,7 @@ where
     Ok((s[..pos].parse().map_err(|err| format!("{:?}", err))?, s[pos + 1..].parse().map_err(|err| format!("{:?}", err))?))
 }
 
-#[derive(Debug, Clone, Clap)]
+#[derive(Debug, Clone, Parser)]
 #[clap(rename_all = "kebab-case")]
 #[clap(setting = clap::AppSettings::AllowExternalSubcommands)]
 pub struct FileStoreConfig {

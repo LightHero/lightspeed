@@ -1,9 +1,9 @@
 use crate::LoggerError;
 use std::str::FromStr;
-use clap::Clap;
+use clap::Parser;
 
 /// Defines the Logger configuration.
-#[derive(Debug, Clone, Clap)]
+#[derive(Debug, Clone, Parser)]
 #[clap(rename_all = "kebab-case")]
 #[clap(setting = clap::AppSettings::AllowExternalSubcommands)]
 pub struct LoggerConfig {
@@ -30,7 +30,7 @@ impl Default for LoggerConfig {
     }
 }
 
-#[derive(Debug, Clone, Clap)]
+#[derive(Debug, Clone, Parser)]
 #[clap(rename_all = "kebab-case")]
 pub struct StandardOutputConfig {
     /// Determines whether the Logger should print to standard output.
@@ -48,7 +48,7 @@ impl Default for StandardOutputConfig {
     }
 }
 
-#[derive(Debug, Clone, Clap)]
+#[derive(Debug, Clone, Parser)]
 #[clap(rename_all = "kebab-case")]
 pub struct FileOutputConfig {
     /// Determines whether the Logger should print to a file.
