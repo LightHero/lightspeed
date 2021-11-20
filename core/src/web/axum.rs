@@ -81,9 +81,9 @@ mod test {
     use crate::service::auth::{Auth, AuthService, InMemoryRolesProvider, Role};
     use crate::service::jwt::{JwtService, JWT};
     use crate::web::{WebAuthService, JWT_TOKEN_HEADER, JWT_TOKEN_HEADER_SUFFIX};
-    use axum_ext::handler::get;
     use axum_ext::http::{header, HeaderMap, Request};
     use axum_ext::Router;
+    use axum_ext::routing::get;
     use jsonwebtoken::Algorithm;
     use std::sync::Arc;
     use tower::ServiceExt; // for `app.oneshot()`

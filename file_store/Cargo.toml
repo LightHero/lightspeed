@@ -18,7 +18,7 @@ clap = { version = "3.0.0-beta.5", default-features = false, features = ["derive
 log = "0.4"
 serde = { version = "1.0", features = ["derive", "rc"] }
 serde_json = "1"
-strum = { version = "0.22", features = ["derive"] }
+strum = { version = "0.23", features = ["derive"] }
 tokio = { version = "1", features = ["fs", "io-util"] }
 
 actix-files = { version = "0.6.0-beta.6", optional = true }
@@ -26,7 +26,7 @@ actix-web = { version = "4.0.0-beta.8", optional = true }
 mime = { version = "0.3", optional = true }
 mime_guess = { version = "2.0", optional = true }
 
-axum_ext = {package = "axum", version = "0.2", optional = true }
+axum_ext = {package = "axum", version = "0.3", optional = true }
 
 [dev-dependencies]
 actix-rt = "2"
