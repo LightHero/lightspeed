@@ -1,14 +1,12 @@
 use crate::error::{LightSpeedError, RootErrorDetails, WebErrorDetails};
-use axum_ext::body::{Body, HttpBody};
+use axum_ext::body::{Body, BoxBody, boxed};
 use axum_ext::http::{header, HeaderValue, Response, StatusCode};
 use axum_ext::response::IntoResponse;
 use log::*;
 
 impl IntoResponse for LightSpeedError {
-    type Body = Body;
-    type BodyError = <Self::Body as HttpBody>::Error;
 
-    fn into_response(self) -> Response<Body> {
+    fn into_response(self) -> Response<BoxBody> {
         match self {
             LightSpeedError::InvalidTokenError { .. }
             | LightSpeedError::ExpiredTokenError { .. }
@@ -39,34 +37,34 @@ impl IntoResponse for LightSpeedError {
 }
 
 #[inline]
-fn response_with_code(http_code: StatusCode) -> Response<Body> {
-    let mut res = Response::new(Body::empty());
+fn response_with_code(http_code: StatusCode) -> Response<BoxBody> {
+    let mut res = Response::new(boxed(Body::empty()));
     *res.status_mut() = http_code;
     res
 }
 
 #[inline]
-fn response_with_message(http_code: StatusCode, message: &Option<String>) -> Response<Body> {
+fn response_with_message(http_code: StatusCode, message: &Option<String>) -> Response<BoxBody> {
     response(http_code, &WebErrorDetails::from_message(http_code.as_u16(), message.as_ref().map(|val| val.into())))
 }
 
 #[inline]
-fn response_with_error_details(http_code: StatusCode, details: &RootErrorDetails) -> Response<Body> {
+fn response_with_error_details(http_code: StatusCode, details: &RootErrorDetails) -> Response<BoxBody> {
     response(http_code, &WebErrorDetails::from_error_details(http_code.as_u16(), details))
 }
 
 #[inline]
-fn response(http_code: StatusCode, details: &WebErrorDetails<'_>) -> Response<Body> {
+fn response(http_code: StatusCode, details: &WebErrorDetails<'_>) -> Response<BoxBody> {
     match serde_json::to_vec(details) {
         Ok(body) => {
-            let mut res = Response::new(Body::from(body));
+            let mut res = Response::new(boxed(Body::from(body)));
             *res.status_mut() = http_code;
             res.headers_mut().insert(header::CONTENT_TYPE, HeaderValue::from_static("application/json"));
             res
         }
         Err(err) => {
             error!("response_with_message - cannot serialize body. Err: {:?}", err);
-            let mut res = Response::new(Body::empty());
+            let mut res = Response::new(boxed(Body::empty()));
             *res.status_mut() = http::StatusCode::INTERNAL_SERVER_ERROR;
             res
         }

@@ -14,7 +14,6 @@ use std::time::Duration;
 /// A EmailClient implementation that forwards the email to the expected recipients
 #[derive(Clone)]
 pub struct FullEmailClient {
-    email_config: EmailClientConfig,
     client: Arc<SmtpTransport>,
 }
 
@@ -47,7 +46,7 @@ impl FullEmailClient {
 
         let transport = smtp_transport_builder.build();
 
-        Ok(FullEmailClient { email_config, client: Arc::new(transport) })
+        Ok(FullEmailClient { client: Arc::new(transport) })
     }
 }
 

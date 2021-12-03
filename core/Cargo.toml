@@ -29,7 +29,7 @@ validator = "0.14"
 typescript-definitions = { package = "typescript-definitions-ufo-patch", version = "0.1.11" }
 
 actix_web_4_ext = { package = "actix-web", version = "4.0.0-beta.11", optional = true }
-axum_ext = { package = "axum", version = "0.3", optional = true }
+axum_ext = { package = "axum", version = "0.4", optional = true }
 http = { version = "0.2", optional = true }
 
 [dev-dependencies]
