@@ -8,7 +8,7 @@ use lightspeed_core::error::LightSpeedError;
 pub mod pg_auth_account;
 pub mod pg_token;
 
-const MIGRATIONS: include_dir::Dir = include_dir::include_dir!("./src_resources/db/pg/migrations");
+const MIGRATIONS: include_dir::Dir = include_dir::include_dir!("$CARGO_MANIFEST_DIR/src_resources/db/pg/migrations");
 
 #[derive(Clone)]
 pub struct PgAuthRepositoryManager {

@@ -10,7 +10,7 @@ pub mod pg_content;
 pub mod pg_project;
 pub mod pg_schema;
 
-const MIGRATIONS: include_dir::Dir = include_dir::include_dir!("./src_resources/db/pg/migrations");
+const MIGRATIONS: include_dir::Dir = include_dir::include_dir!("$CARGO_MANIFEST_DIR/src_resources/db/pg/migrations");
 
 #[derive(Clone)]
 pub struct PgCmsRepositoryManager {
