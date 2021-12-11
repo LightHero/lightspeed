@@ -26,7 +26,9 @@ actix-web = { version = "4.0.0-beta.11", optional = true }
 mime = { version = "0.3", optional = true }
 mime_guess = { version = "2.0", optional = true }
 
-axum_ext = {package = "axum", version = "0.4", optional = true }
+axum_ext = { package = "axum", version = "0.4", optional = true }
+tokio-util = { version = "0.6", optional = true, features = ["io"] }
+
 
 [dev-dependencies]
 actix-rt = "2"
@@ -37,9 +39,10 @@ rand = "0.8"
 tempfile = "3"
 testcontainers = "0.12"
 tokio = { version = "1", features = ["macros", "rt-multi-thread"] }
+tower = "0.4"
 
 [features]
 default = []
 
 actix_web_4 = ["actix-files", "actix-web", "lightspeed_core/actix_web_4", "mime", "mime_guess"]
-axum = ["axum_ext", "lightspeed_core/axum"]
+axum = ["axum_ext", "lightspeed_core/axum", "mime_guess", "tokio-util"]
