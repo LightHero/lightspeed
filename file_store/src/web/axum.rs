@@ -137,8 +137,8 @@ mod test {
         assert_eq!(resp.status(), StatusCode::OK);
         assert!(resp.headers().get(http::header::CONTENT_DISPOSITION).is_none());
 
-        //let body = read_body(resp).await;
-        //assert_eq!(body, &content);
+        let body = hyper::body::to_bytes(resp.into_body()).await.unwrap();
+        assert_eq!(body.as_ref(), &content);
     }
 
     /*
