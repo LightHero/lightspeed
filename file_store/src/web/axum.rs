@@ -64,20 +64,24 @@ pub async fn into_response(
 
         let mut disposition = String::new();
 
-        match ct.type_() {
-            mime::IMAGE | mime::TEXT | mime::VIDEO => disposition.push_str("inline; "),
-            _ => disposition.push_str("attachment; "),
+        let disposition_type = match ct.type_() {
+            mime::IMAGE | mime::TEXT | mime::VIDEO => "inline; ",
+            mime::APPLICATION => match ct.subtype() {
+                mime::JAVASCRIPT | mime::JSON => "inline; ",
+                name if name == "wasm" => "inline; ",
+                _ => "attachment; ",
+            },
+            _ => "attachment; ",
         };
 
-        if !file_name.is_ascii() {
+        disposition.push_str(disposition_type);
 
-            
-
-        } else {
+//        if !file_name.is_ascii() {
+//        } else {
             disposition.push_str("filename=\"");
             disposition.push_str(file_name.as_ref());
             disposition.push_str("\"");
-        }
+//        }
 
         response_builder = response_builder.header(header::CONTENT_DISPOSITION, disposition);
     } else {

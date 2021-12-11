@@ -3,6 +3,7 @@ use actix_files::NamedFile;
 use actix_web::{http, HttpRequest, HttpResponse};
 use lightspeed_core::error::LightSpeedError;
 use log::*;
+use actix_web::http::header::DispositionType;
 
 pub async fn into_response(
     content: BinaryContent<'_>,
@@ -42,8 +43,13 @@ pub async fn into_response(
             if set_content_disposition {
                 debug!("Set content disposition");
                 let disposition = match ct.type_() {
-                    mime::IMAGE | mime::TEXT | mime::VIDEO => http::header::DispositionType::Inline,
-                    _ => http::header::DispositionType::Attachment,
+                    mime::IMAGE | mime::TEXT | mime::VIDEO => DispositionType::Inline,
+                    mime::APPLICATION => match ct.subtype() {
+                        mime::JAVASCRIPT | mime::JSON => DispositionType::Inline,
+                        name if name == "wasm" => DispositionType::Inline,
+                        _ => DispositionType::Attachment,
+                    },
+                    _ => DispositionType::Attachment,
                 };
                 let mut parameters = vec![http::header::DispositionParam::Filename(String::from(filename.as_ref()))];
                 if !filename.is_ascii() {
@@ -207,4 +213,5 @@ mod test {
         let body = read_body(resp).await;
         assert_eq!(body, &content);
     }
+
 }
