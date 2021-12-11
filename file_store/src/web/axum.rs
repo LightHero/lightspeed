@@ -3,7 +3,6 @@ use crate::model::BinaryContent;
 use axum_ext::{
     body::{boxed, BoxBody, Body, StreamBody},
     http::{header, Response, response::Builder},
-    response::Headers,
 };
 use lightspeed_core::error::LightSpeedError;
 use log::*;
@@ -22,7 +21,7 @@ pub async fn into_response(
             let ct = mime_guess::from_path(&file_path).first_or_octet_stream();
             let file = tokio::fs::File::open(&file_path).await
                 .map_err(|err| LightSpeedError::BadRequest {
-                    message: format!("Cannot open file {}", file_path.display()),
+                    message: format!("Cannot open file {}. Err {:?}", file_path.display(), err),
                     code: "",
                 })?;
             // convert the `AsyncRead` into a `Stream`
@@ -56,16 +55,6 @@ pub async fn into_response(
         }
     };
 
-    println!("ct is: {}", ct);
-
-    let headers = Headers([
-        (header::CONTENT_TYPE, "text/toml; charset=utf-8"),
-        (
-            header::CONTENT_DISPOSITION,
-            "attachment; filename=\"Cargo.toml\"",
-        ),
-    ]);
-
     let mut response_builder = Builder::new();
 
     response_builder = response_builder.header(header::CONTENT_TYPE, format!("{}; charset=utf-8", ct));
@@ -82,6 +71,8 @@ pub async fn into_response(
 
         if !file_name.is_ascii() {
 
+            
+
         } else {
             disposition.push_str("filename=\"");
             disposition.push_str(file_name.as_ref());
@@ -95,7 +86,7 @@ pub async fn into_response(
 
     response_builder.body(body)
         .map_err(|err| LightSpeedError::InternalServerError {
-            message: "Cannot set body request".to_owned(),
+            message: format!("Cannot set body request. Err: {:?}", err),
         })
 
 }
