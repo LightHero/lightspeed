@@ -141,7 +141,6 @@ mod test {
         assert_eq!(body.as_ref(), &content);
     }
 
-    /*
     #[tokio::test]
     async fn should_download_bytes_with_content_disposition() {
         // Arrange
@@ -152,14 +151,15 @@ mod test {
             set_content_disposition: true,
         };
 
-        let srv =
-            init_service(App::new().app_data(Data::new(data.clone())).service(web::resource("/download").to(download)))
-                .await;
-
-        let request = TestRequest::get().uri("/download").to_request();
+        let app = Router::new()
+            .route("/download", get(download))
+            .layer(AddExtensionLayer::new(data.clone()));
 
         // Act
-        let resp = srv.call(request).await.unwrap();
+        let resp = app
+            .oneshot(Request::builder().method(http::Method::GET).uri("/download").body(Body::empty()).unwrap())
+            .await
+            .unwrap();
 
         // Assert
         assert_eq!(resp.status(), StatusCode::OK);
@@ -170,8 +170,8 @@ mod test {
             resp.headers().get(http::header::CONTENT_DISPOSITION).unwrap()
         );
 
-        let body = read_body(resp).await;
-        assert_eq!(body, &content);
+        let body = hyper::body::to_bytes(resp.into_body()).await.unwrap();
+        assert_eq!(body.as_ref(), &content);
     }
 
     #[tokio::test]
@@ -185,21 +185,22 @@ mod test {
             set_content_disposition: false,
         };
 
-        let srv =
-            init_service(App::new().app_data(Data::new(data.clone())).service(web::resource("/download").to(download)))
-                .await;
-
-        let request = TestRequest::get().uri("/download").to_request();
+        let app = Router::new()
+            .route("/download", get(download))
+            .layer(AddExtensionLayer::new(data.clone()));
 
         // Act
-        let resp = srv.call(request).await.unwrap();
+        let resp = app
+            .oneshot(Request::builder().method(http::Method::GET).uri("/download").body(Body::empty()).unwrap())
+            .await
+            .unwrap();
 
         // Assert
         assert_eq!(resp.status(), StatusCode::OK);
         assert!(resp.headers().get(http::header::CONTENT_DISPOSITION).is_none());
 
-        let body = read_body(resp).await;
-        assert_eq!(body, &content);
+        let body = hyper::body::to_bytes(resp.into_body()).await.unwrap();
+        assert_eq!(body.as_ref(), &content);
     }
 
     #[tokio::test]
@@ -213,14 +214,15 @@ mod test {
             set_content_disposition: true,
         };
 
-        let srv =
-            init_service(App::new().app_data(Data::new(data.clone())).service(web::resource("/download").to(download)))
-                .await;
-
-        let request = TestRequest::get().uri("/download").to_request();
+        let app = Router::new()
+            .route("/download", get(download))
+            .layer(AddExtensionLayer::new(data.clone()));
 
         // Act
-        let resp = srv.call(request).await.unwrap();
+        let resp = app
+            .oneshot(Request::builder().method(http::Method::GET).uri("/download").body(Body::empty()).unwrap())
+            .await
+            .unwrap();
 
         // Assert
         assert_eq!(resp.status(), StatusCode::OK);
@@ -231,9 +233,8 @@ mod test {
             resp.headers().get(http::header::CONTENT_DISPOSITION).unwrap()
         );
 
-        let body = read_body(resp).await;
-        assert_eq!(body, &content);
+        let body = hyper::body::to_bytes(resp.into_body()).await.unwrap();
+        assert_eq!(body.as_ref(), &content);
     }
 
-     */
 }
