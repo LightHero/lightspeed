@@ -14,7 +14,7 @@ keywords = []
 
 [dependencies]
 chrono = { version = "0.4", default-features = false, features = ["clock"] }
-dashmap = { version = "4", optional = true }
+dashmap = { version = "5", optional = true }
 tokio = { version = "1", features = ["sync"], optional = true }
 
 [dev-dependencies]
