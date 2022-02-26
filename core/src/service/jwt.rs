@@ -34,13 +34,15 @@ impl JwtService {
         }
 
         let alg = jwt_config.signature_algorithm;
+        let mut validation_default = jsonwebtoken::Validation::new(alg);
+        validation_default.leeway = 0;
 
         Ok(JwtService {
             encoding_key: EncodingKey::from_secret(jwt_config.secret.as_ref()),
             secret: jwt_config.secret.clone(),
             token_validity_seconds: i64::from(jwt_config.token_validity_minutes) * 60,
             header_default: jsonwebtoken::Header { alg, ..jsonwebtoken::Header::default() },
-            validation_default: jsonwebtoken::Validation::new(alg),
+            validation_default,
         })
     }
 
