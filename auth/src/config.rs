@@ -2,7 +2,6 @@ use clap::Parser;
 
 #[derive(Debug, Clone, Parser)]
 #[clap(rename_all = "kebab-case")]
-#[clap(setting = clap::AppSettings::AllowExternalSubcommands)]
 pub struct AuthConfig {
     /// Determines the activation token validity minutes
     #[clap(long, env = "LS_AUTH_ACTIVATION_TOKEN_VALIDITY_MINUTES", default_value = "120")]

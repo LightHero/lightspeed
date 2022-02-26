@@ -4,7 +4,6 @@ use clap::Parser;
 
 #[derive(Debug, Clone, Parser)]
 #[clap(rename_all = "kebab-case")]
-#[clap(setting = clap::AppSettings::AllowExternalSubcommands)]
 pub struct EmailClientConfig {
     #[clap(long, env = "LS_EMAIL_CLIENT_TYPE", default_value = "full")]
     pub email_client_type: EmailClientType,

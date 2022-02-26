@@ -14,13 +14,13 @@ keywords = []
 async-trait = "0.1"
 c3p0_common = { version = "0.64" }
 chrono = { version = "0.4", default-features = false, features = ["clock"] }
-clap = { version = "3.0", default-features = false, features = ["derive", "env", "std"] }
-jsonwebtoken = "7.1"
+clap = { version = "3.1", default-features = false, features = ["derive", "env", "std"] }
+jsonwebtoken = "7.0"
 log = "0.4"
 rand = "0.8"
 serde = { version = "1.0", features = ["derive", "rc"] }
 serde_json = "1.0"
-strum = { version = "0.23", features = ["derive"] }
+strum = { version = "0.24", features = ["derive"] }
 uuid = { version = "0.8", features = ["v4"] }
 validator = "0.14"
 
@@ -28,7 +28,7 @@ validator = "0.14"
 #typescript-definitions = "0.1.10"
 typescript-definitions = { package = "typescript-definitions-ufo-patch", version = "0.1.11" }
 
-actix_web_4_ext = { package = "actix-web", version = "4.0.0-beta.11", optional = true }
+actix_web_4_ext = { package = "actix-web", version = "4.0.1", optional = true }
 axum_ext = { package = "axum", version = "0.4", optional = true }
 http = { version = "0.2", optional = true }
 

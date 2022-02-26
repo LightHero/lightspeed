@@ -14,7 +14,6 @@ where
 
 #[derive(Debug, Clone, Parser)]
 #[clap(rename_all = "kebab-case")]
-#[clap(setting = clap::AppSettings::AllowExternalSubcommands)]
 pub struct FileStoreConfig {
     /// The base folder used in case of 'FS' FileStoreType.
     #[clap(long, env = "LS_FILE_STORE_FS_REP_BASE_FOLDERS", parse(try_from_str = parse_key_val))]

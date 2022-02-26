@@ -5,7 +5,6 @@ use clap::Parser;
 /// Defines the Logger configuration.
 #[derive(Debug, Clone, Parser)]
 #[clap(rename_all = "kebab-case")]
-#[clap(setting = clap::AppSettings::AllowExternalSubcommands)]
 pub struct LoggerConfig {
     /// Sets the logger [`EnvFilter`].
     /// Valid values: trace, debug, info, warn, error

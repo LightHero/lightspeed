@@ -3,7 +3,6 @@ use clap::Parser;
 /// Defines the JSON Web Token configuration.
 #[derive(Debug, Clone, Parser)]
 #[clap(rename_all = "kebab-case")]
-#[clap(setting = clap::AppSettings::AllowExternalSubcommands)]
 pub struct JwtConfig {
     /// The secret key used to encode and decode the JWT
     #[clap(long, env = "LS_CORE_JWS_SECRET", default_value = "")]
