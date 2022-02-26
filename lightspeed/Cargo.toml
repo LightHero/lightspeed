@@ -1,7 +1,7 @@
 [package]
 name = "lightspeed"
 license = "MIT"
-version = "0.45.0"
+version = "0.45.1"
 authors = ["Francesco Cina <ufoscout@gmail.com>"]
 description = "LightSpeed"
 edition = "2018"
@@ -14,15 +14,15 @@ keywords = []
 
 [dependencies]
 c3p0 = { version = "0.64", features = ["postgres_migrate"] }
-lightspeed_auth = { version = "0.45.0", path = "../auth", optional = true }
-lightspeed_cache = { version = "0.45.0", path = "../cache", optional = true }
-lightspeed_cms = { version = "0.45.0", path = "../cms", optional = true }
-lightspeed_core = { version = "0.45.0", path = "../core", optional = true }
-lightspeed_email = { version = "0.45.0", path = "../email", optional = true }
-lightspeed_file_store = { version = "0.45.0", path = "../file_store", optional = true }
-lightspeed_hash = { version = "0.45.0", path = "../hash", optional = true }
-lightspeed_logger = { version = "0.45.0", path = "../logger", optional = true }
-lightspeed_scheduler = { version = "0.45.0", path = "../scheduler", optional = true }
+lightspeed_auth = { version = "0.45.1", path = "../auth", optional = true }
+lightspeed_cache = { version = "0.45.1", path = "../cache", optional = true }
+lightspeed_cms = { version = "0.45.1", path = "../cms", optional = true }
+lightspeed_core = { version = "0.45.1", path = "../core", optional = true }
+lightspeed_email = { version = "0.45.1", path = "../email", optional = true }
+lightspeed_file_store = { version = "0.45.1", path = "../file_store", optional = true }
+lightspeed_hash = { version = "0.45.1", path = "../hash", optional = true }
+lightspeed_logger = { version = "0.45.1", path = "../logger", optional = true }
+lightspeed_scheduler = { version = "0.45.1", path = "../scheduler", optional = true }
 
 [features]
 default = ["core"]
