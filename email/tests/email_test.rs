@@ -53,18 +53,19 @@ async fn should_start_the_mailserver() {
     assert!(email_service.send(message.clone()).await.is_ok());
 }
 
-/*
+#[ignore]
 #[tokio::test]
 async fn full_client_should_use_gmail() {
     // Arrange
     let config = EmailClientConfig {
-        server_port: 465,
-        server_address: "smtp.gmail.com".to_owned(),
-        client_type: EmailClientType::Full,
-        server_username: "ufoscout@gmail.com".to_owned(),
-        server_password: "".to_owned(),
-        server_use_tls: Boolean::True,
+        email_client_type: EmailClientType::Full,
+        email_client_timeout_seconds: 0,
+        email_server_port: 435,
+        email_server_address: "smtp.gmail.com".to_string(),
+        email_server_username: "ufoscout@gmail.com".to_string(),
+        email_server_password: "".to_string(),
         forward_all_emails_to_fixed_recipients: None,
+        email_server_use_tls: false,
     };
 
     let email_service = new(config).unwrap();
@@ -77,11 +78,9 @@ async fn full_client_should_use_gmail() {
     message.attachments.push(EmailAttachment::FromFile {
         mime_type: "plain/text".to_owned(),
         path: "./Cargo.toml".to_owned(),
-        filename: Some("cargo.txt".to_owned())
+        filename: Some("cargo.txt".to_owned()),
     });
 
     // Act
     email_service.send(message.clone()).await.unwrap();
-
 }
-*/
