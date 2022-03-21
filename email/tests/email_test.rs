@@ -59,13 +59,13 @@ async fn full_client_should_use_gmail() {
     // Arrange
     let config = EmailClientConfig {
         email_client_type: EmailClientType::Full,
-        email_client_timeout_seconds: 0,
-        email_server_port: 435,
+        email_client_timeout_seconds: 60,
+        email_server_port: 465,
         email_server_address: "smtp.gmail.com".to_string(),
         email_server_username: "ufoscout@gmail.com".to_string(),
         email_server_password: "".to_string(),
         forward_all_emails_to_fixed_recipients: None,
-        email_server_use_tls: false,
+        email_server_use_tls: true,
     };
 
     let email_service = new(config).unwrap();
@@ -75,11 +75,6 @@ async fn full_client_should_use_gmail() {
     message.to.push("FRANCESCO <ufoscout@gmail.com>".to_owned());
     message.subject = Some("EMAIL FROM RUST!!".to_owned());
     message.html = Some("HTML body".to_owned());
-    message.attachments.push(EmailAttachment::FromFile {
-        mime_type: "plain/text".to_owned(),
-        path: "./Cargo.toml".to_owned(),
-        filename: Some("cargo.txt".to_owned()),
-    });
 
     // Act
     email_service.send(message.clone()).await.unwrap();
