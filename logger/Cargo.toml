@@ -11,9 +11,9 @@ repository = "https://github.com/LightHero/lightspeed"
 keywords = []
 
 [dependencies]
-clap = { version = "3.1", default-features = false, features = ["derive", "env", "std"] }
 log = "0.4"
 rand = "0.8"
+serde = { version = "1.0", features = ["derive", "rc"] }
 tracing = "0.1"
 tracing-appender = "0.2"
 tracing-futures = "0.2"
@@ -21,5 +21,6 @@ tracing-subscriber = { version = "0.3", default-features = false, features = ["t
 
 
 [dev-dependencies]
+config = "0.12"
 tempfile = "3"
 tokio = { version = "1", features = ["macros", "rt-multi-thread"] }

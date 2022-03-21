@@ -19,7 +19,7 @@ pub struct FullEmailClient {
 
 impl FullEmailClient {
     pub fn new(email_config: EmailClientConfig) -> Result<Self, LightSpeedError> {
-        let mut smtp_transport_builder = if email_config.email_server_use_tls.value() {
+        let mut smtp_transport_builder = if email_config.email_server_use_tls {
             SmtpTransport::relay(&email_config.email_server_address).map_err(|err| {
                 LightSpeedError::InternalServerError {
                     message: format!(

@@ -1,4 +1,3 @@
-use lightspeed_core::model::boolean::Boolean;
 use lightspeed_email::config::EmailClientConfig;
 use lightspeed_email::model::email::{EmailAttachment, EmailMessage};
 use lightspeed_email::repository::email::{new, EmailClientType};
@@ -29,7 +28,7 @@ async fn should_start_the_mailserver() {
         email_client_timeout_seconds: 60,
         email_server_username: "".to_owned(),
         email_server_password: "".to_owned(),
-        email_server_use_tls: Boolean::False,
+        email_server_use_tls: false,
         forward_all_emails_to_fixed_recipients: None,
     };
 

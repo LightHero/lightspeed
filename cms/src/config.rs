@@ -1,11 +1,16 @@
-use clap::Parser;
+use serde::Deserialize;
 
-#[derive(Debug, Clone, Parser)]
-#[clap(rename_all = "kebab-case")]
+#[derive(Debug, Clone, Deserialize, Default)]
+#[serde(default)]
 pub struct CmsConfig {}
 
-impl CmsConfig {
-    pub fn build() -> Self {
-        Self::parse()
+#[cfg(test)]
+mod test {
+
+    use super::*;
+
+    #[test]
+    fn should_build_config() {
+        let _config: CmsConfig = config::Config::builder().build().unwrap().try_deserialize().unwrap();
     }
 }

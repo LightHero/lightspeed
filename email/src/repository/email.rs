@@ -6,6 +6,7 @@ use crate::repository::in_memory_email::InMemoryEmailClient;
 use crate::repository::no_ops_email::NoOpsEmailClient;
 use lightspeed_core::error::LightSpeedError;
 use log::*;
+use serde::Deserialize;
 use std::str::FromStr;
 use std::sync::Arc;
 
@@ -38,7 +39,7 @@ pub fn new(email_config: EmailClientConfig) -> Result<Arc<dyn EmailClient>, Ligh
     }
 }
 
-#[derive(Debug, PartialEq, Copy, Clone)]
+#[derive(Debug, PartialEq, Copy, Clone, Deserialize)]
 pub enum EmailClientType {
     Full,
     InMemory,
@@ -66,7 +67,7 @@ mod test {
     #[tokio::test]
     async fn should_build_fixed_recipient_client() {
         // Arrange
-        let mut config = EmailClientConfig::build();
+        let mut config = EmailClientConfig::default();
         config.email_client_type = EmailClientType::InMemory;
         config.forward_all_emails_to_fixed_recipients = Some(vec!["to@me.com".to_owned()]);
 
@@ -88,7 +89,7 @@ mod test {
     #[tokio::test]
     async fn should_build_in_memory_client() {
         // Arrange
-        let mut config = EmailClientConfig::build();
+        let mut config = EmailClientConfig::default();
         config.email_client_type = EmailClientType::InMemory;
 
         let mut email = EmailMessage::new();
@@ -109,7 +110,7 @@ mod test {
     #[test]
     fn should_fail_if_fixed_recipient_empty() {
         // Arrange
-        let mut config = EmailClientConfig::build();
+        let mut config = EmailClientConfig::default();
         config.email_client_type = EmailClientType::InMemory;
         config.forward_all_emails_to_fixed_recipients = Some(vec![]);
 

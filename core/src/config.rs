@@ -1,11 +1,10 @@
-use clap::Parser;
+use jsonwebtoken::Algorithm;
+use serde::Deserialize;
 
-/// Defines the JSON Web Token configuration.
-#[derive(Debug, Clone, Parser)]
-#[clap(rename_all = "kebab-case")]
+#[derive(Debug, Clone, Deserialize)]
+#[serde(default)]
 pub struct JwtConfig {
     /// The secret key used to encode and decode the JWT
-    #[clap(long, env = "LS_CORE_JWS_SECRET", default_value = "")]
     pub secret: String,
 
     /// Determines the JWT signature algorithm.
@@ -20,36 +19,34 @@ pub struct JwtConfig {
     /// - RS384 -> RSASSA-PKCS1-v1_5 using SHA-384,
     /// - RS512 -> RSASSA-PKCS1-v1_5 using SHA-512,
      */
-    #[clap(long, env = "LS_CORE_JWS_SIGNATURE_ALGORITHM", default_value = "HS512")]
     pub signature_algorithm: jsonwebtoken::Algorithm,
 
     /// Determines the token validity minutes
-    #[clap(long, env = "LS_CORE_JWS_TOKEN_VALIDITY_MINUTES", default_value = "60")]
     pub token_validity_minutes: u32,
 }
 
-/// Defines the Logger configuration.
-#[derive(Debug, Clone, Parser)]
-#[clap(rename_all = "kebab-case")]
-pub struct CoreConfig {
-    #[clap(flatten)]
-    pub jwt: JwtConfig,
+impl Default for JwtConfig {
+    fn default() -> Self {
+        Self { secret: "".to_owned(), signature_algorithm: Algorithm::HS512, token_validity_minutes: 60 }
+    }
 }
 
-impl CoreConfig {
-    pub fn build() -> Self {
-        Self::parse()
-    }
+/// Defines the Logger configuration.
+#[derive(Debug, Clone, Deserialize, Default)]
+pub struct CoreConfig {
+    #[serde(default)]
+    pub jwt: JwtConfig,
 }
 
 #[cfg(test)]
 mod test {
 
     use super::*;
+    use config::Config;
 
     #[test]
     fn should_build_config() {
-        let config = CoreConfig::build();
+        let config: CoreConfig = Config::builder().build().unwrap().try_deserialize().unwrap();
         assert!(config.jwt.token_validity_minutes > 0);
     }
 }

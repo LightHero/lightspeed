@@ -13,7 +13,6 @@ keywords = []
 [dependencies]
 lightspeed_core = { version = "0.45.1", path = "../core" }
 async-trait = "0.1"
-clap = { version = "3.1", default-features = false, features = ["derive", "env", "std"] }
 lettre = { version = "0.10.0-rc.4", default-features = false, features = ["smtp-transport", "builder", "hostname", "pool", "rustls-tls"] }
 log = "0.4"
 parking_lot = "0.12"
@@ -21,6 +20,7 @@ serde = { version = "1.0", features = ["derive", "rc"] }
 tokio = "1"
 
 [dev-dependencies]
+config = "0.12"
 testcontainers = "0.12"
 tokio = { version = "1", features = ["macros", "rt"] }
 
