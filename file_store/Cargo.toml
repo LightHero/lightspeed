@@ -14,7 +14,6 @@ keywords = []
 lightspeed_core = { version = "0.45.1", path = "../core" }
 async-trait = "0.1"
 c3p0 = { version = "0.64", features = ["postgres_migrate"] }
-clap = { version = "3.1", default-features = false, features = ["derive", "env", "std"] }
 log = "0.4"
 serde = { version = "1.0", features = ["derive", "rc"] }
 serde_json = "1"
@@ -32,6 +31,7 @@ tokio-util = { version = "0.7", optional = true, features = ["io"] }
 
 [dev-dependencies]
 actix-rt = "2"
+config = "0.12"
 hyper = "0.14"
 lightspeed_logger = { version = "0.45.1", path = "../logger" }
 maybe-single = { version = "0.15.0", features =["async"] }

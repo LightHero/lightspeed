@@ -1,29 +1,26 @@
-
 use crate::model::BinaryContent;
 use axum_ext::{
-    body::{boxed, BoxBody, Body, StreamBody},
-    http::{header, Response, response::Builder},
+    body::{boxed, Body, BoxBody, StreamBody},
+    http::{header, response::Builder, Response},
 };
 use lightspeed_core::error::LightSpeedError;
 use log::*;
-use tokio_util::io::ReaderStream;
 use std::borrow::Cow;
+use tokio_util::io::ReaderStream;
 
 pub async fn into_response(
     content: BinaryContent<'_>,
     file_name: Option<&str>,
     set_content_disposition: bool,
 ) -> Result<Response<BoxBody>, LightSpeedError> {
-
     let (file_name, ct, body) = match content {
         BinaryContent::FromFs { file_path } => {
             debug!("Create HttpResponse from FS content");
             let ct = mime_guess::from_path(&file_path).first_or_octet_stream();
-            let file = tokio::fs::File::open(&file_path).await
-                .map_err(|err| LightSpeedError::BadRequest {
-                    message: format!("Cannot open file {}. Err {:?}", file_path.display(), err),
-                    code: "",
-                })?;
+            let file = tokio::fs::File::open(&file_path).await.map_err(|err| LightSpeedError::BadRequest {
+                message: format!("Cannot open file {}. Err {:?}", file_path.display(), err),
+                code: "",
+            })?;
             // convert the `AsyncRead` into a `Stream`
             let stream = ReaderStream::new(file);
             // convert the `Stream` into an `axum::body::HttpBody`
@@ -76,32 +73,30 @@ pub async fn into_response(
 
         disposition.push_str(disposition_type);
 
-//        if !file_name.is_ascii() {
-//        } else {
-            disposition.push_str("filename=\"");
-            disposition.push_str(file_name.as_ref());
-            disposition.push_str("\"");
-//        }
+        //        if !file_name.is_ascii() {
+        //        } else {
+        disposition.push_str("filename=\"");
+        disposition.push_str(file_name.as_ref());
+        disposition.push_str("\"");
+        //        }
 
         response_builder = response_builder.header(header::CONTENT_DISPOSITION, disposition);
     } else {
         debug!("Ignore content disposition");
     };
 
-    response_builder.body(body)
-        .map_err(|err| LightSpeedError::InternalServerError {
-            message: format!("Cannot set body request. Err: {:?}", err),
-        })
-
+    response_builder.body(body).map_err(|err| LightSpeedError::InternalServerError {
+        message: format!("Cannot set body request. Err: {:?}", err),
+    })
 }
 
 #[cfg(test)]
 mod test {
     use super::*;
-    use axum_ext::{Router, AddExtensionLayer};
     use axum_ext::extract::Extension;
     use axum_ext::http::{self, Request, StatusCode};
     use axum_ext::routing::get;
+    use axum_ext::{AddExtensionLayer, Router};
     use std::path::Path;
     use std::sync::Arc;
     use tower::ServiceExt; // for `app.oneshot()`
@@ -127,9 +122,7 @@ mod test {
             set_content_disposition: false,
         });
 
-        let app = Router::new()
-            .route("/download", get(download))
-            .layer(AddExtensionLayer::new(data.clone()));
+        let app = Router::new().route("/download", get(download)).layer(AddExtensionLayer::new(data.clone()));
 
         // Act
         let resp = app
@@ -155,9 +148,7 @@ mod test {
             set_content_disposition: true,
         });
 
-        let app = Router::new()
-            .route("/download", get(download))
-            .layer(AddExtensionLayer::new(data.clone()));
+        let app = Router::new().route("/download", get(download)).layer(AddExtensionLayer::new(data.clone()));
 
         // Act
         let resp = app
@@ -189,9 +180,7 @@ mod test {
             set_content_disposition: false,
         });
 
-        let app = Router::new()
-            .route("/download", get(download))
-            .layer(AddExtensionLayer::new(data.clone()));
+        let app = Router::new().route("/download", get(download)).layer(AddExtensionLayer::new(data.clone()));
 
         // Act
         let resp = app
@@ -218,9 +207,7 @@ mod test {
             set_content_disposition: true,
         });
 
-        let app = Router::new()
-            .route("/download", get(download))
-            .layer(AddExtensionLayer::new(data.clone()));
+        let app = Router::new().route("/download", get(download)).layer(AddExtensionLayer::new(data.clone()));
 
         // Act
         let resp = app
@@ -240,5 +227,4 @@ mod test {
         let body = hyper::body::to_bytes(resp.into_body()).await.unwrap();
         assert_eq!(body.as_ref(), &content);
     }
-
 }

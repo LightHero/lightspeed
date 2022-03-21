@@ -39,7 +39,7 @@ async fn init() -> MaybeType {
 
     let repo_manager = RepoManager::new(c3p0.clone());
 
-    let mut auth_config = AuthConfig::build();
+    let mut auth_config = AuthConfig::default();
     auth_config.bcrypt_password_hash_cost = 4;
 
     let mut auth_module = AuthModule::new(repo_manager, auth_config);

@@ -14,7 +14,7 @@ async fn init() -> HashModule {
         println!("Warning: {:?}", err)
     };
 
-    let mut core_config = CoreConfig::build();
+    let mut core_config = CoreConfig::default();
     core_config.jwt.secret = "secret".to_owned();
 
     let mut core_module = CoreModule::new(core_config).unwrap();

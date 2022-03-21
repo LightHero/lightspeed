@@ -1,11 +1,10 @@
 use crate::error::{LightSpeedError, RootErrorDetails, WebErrorDetails};
-use axum_ext::body::{Body, BoxBody, boxed};
+use axum_ext::body::{boxed, Body, BoxBody};
 use axum_ext::http::{header, HeaderValue, Response, StatusCode};
 use axum_ext::response::IntoResponse;
 use log::*;
 
 impl IntoResponse for LightSpeedError {
-
     fn into_response(self) -> Response<BoxBody> {
         match self {
             LightSpeedError::InvalidTokenError { .. }
@@ -80,8 +79,8 @@ mod test {
     use crate::service::jwt::{JwtService, JWT};
     use crate::web::{WebAuthService, JWT_TOKEN_HEADER, JWT_TOKEN_HEADER_SUFFIX};
     use axum_ext::http::{header, HeaderMap, Request};
-    use axum_ext::Router;
     use axum_ext::routing::get;
+    use axum_ext::Router;
     use jsonwebtoken::Algorithm;
     use std::sync::Arc;
     use tower::ServiceExt; // for `app.oneshot()`

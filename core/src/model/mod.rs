@@ -3,7 +3,6 @@ use crate::service::validator::ownership::WithIdAndVersion;
 use serde::{Deserialize, Serialize};
 use typescript_definitions::TypeScriptify;
 
-pub mod boolean;
 pub mod language;
 pub mod model_dto;
 

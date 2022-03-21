@@ -8,7 +8,7 @@ use tracing::Subscriber;
 use tracing_appender::non_blocking::WorkerGuard;
 use tracing_appender::rolling::RollingFileAppender;
 use tracing_subscriber::util::SubscriberInitExt;
-use tracing_subscriber::{fmt::Layer, layer::SubscriberExt, filter::Targets};
+use tracing_subscriber::{filter::Targets, fmt::Layer, layer::SubscriberExt};
 
 #[derive(Debug)]
 pub enum LoggerError {
@@ -49,7 +49,7 @@ pub fn setup_stdout_logger(logger_filter: &str, use_ansi: bool) -> Result<(), Lo
 /// Configure the global logger
 pub fn setup_logger(logger_config: &config::LoggerConfig) -> Result<Option<WorkerGuard>, LoggerError> {
     let env_filter =
-    Targets::from_str(&logger_config.env_filter).map_err(|err| LoggerError::LoggerConfigurationError {
+        Targets::from_str(&logger_config.env_filter).map_err(|err| LoggerError::LoggerConfigurationError {
             message: format!("Cannot parse the env_filter: [{}]. err: {:?}", logger_config.env_filter, err),
         })?;
 

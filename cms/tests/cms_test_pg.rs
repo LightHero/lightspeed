@@ -39,7 +39,7 @@ async fn init() -> MaybeType {
 
     let repo_manager = RepoManager::new(c3p0);
 
-    let cms_config = CmsConfig::build();
+    let cms_config = CmsConfig::default();
 
     let mut cms_module = CmsModule::new(repo_manager, cms_config);
     cms_module.start().await.unwrap();

@@ -1,29 +1,17 @@
-use std::error::Error;
-use clap::Parser;
+use serde::Deserialize;
 
-fn parse_key_val<T, U>(s: &str) -> Result<(T, U), String>
-where
-    T: std::str::FromStr,
-    T::Err: Error + 'static,
-    U: std::str::FromStr,
-    U::Err: Error + 'static,
-{
-    let pos = s.find('=').ok_or_else(|| format!("invalid KEY=value: no `=` found in `{}`", s))?;
-    Ok((s[..pos].parse().map_err(|err| format!("{:?}", err))?, s[pos + 1..].parse().map_err(|err| format!("{:?}", err))?))
-}
-
-#[derive(Debug, Clone, Parser)]
-#[clap(rename_all = "kebab-case")]
+#[derive(Debug, Clone, Deserialize, Default)]
+#[serde(default)]
 pub struct FileStoreConfig {
     /// The base folder used in case of 'FS' FileStoreType.
-    #[clap(long, env = "LS_FILE_STORE_FS_REP_BASE_FOLDERS", parse(try_from_str = parse_key_val))]
+    #[serde(default)]
     pub fs_repo_base_folders: Vec<(String, String)>,
 }
 
-impl FileStoreConfig {
-    pub fn build() -> Self {
-        Self::parse()
-    }
+#[derive(Debug, Clone, Deserialize, Default)]
+pub struct FsStore {
+    pub key: String,
+    pub folder: String,
 }
 
 #[cfg(test)]
@@ -33,13 +21,6 @@ mod test {
 
     #[test]
     fn should_build_config() {
-        FileStoreConfig::build();
-    }
-
-    #[test]
-    fn should_parse() {
-        let (key, value) = parse_key_val::<String, String>("my_key=my_value").unwrap();
-        assert_eq!("my_key", key);
-        assert_eq!("my_value", value);
+        let _config: FileStoreConfig = config::Config::builder().build().unwrap().try_deserialize().unwrap();
     }
 }

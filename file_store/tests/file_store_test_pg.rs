@@ -39,7 +39,7 @@ async fn init() -> MaybeType {
 
     let repo_manager = RepoManager::new(c3p0.clone());
 
-    let mut file_store_config = FileStoreConfig::build();
+    let mut file_store_config = FileStoreConfig::default();
     file_store_config.fs_repo_base_folders.push(("REPO_ONE".to_owned(), "../target/repo_one".to_owned()));
     file_store_config.fs_repo_base_folders.push(("REPO_TWO".to_owned(), "../target/repo_two".to_owned()));
 

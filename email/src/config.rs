@@ -1,38 +1,31 @@
 use crate::repository::email::EmailClientType;
-use lightspeed_core::model::boolean::Boolean;
-use clap::Parser;
+use serde::Deserialize;
 
-#[derive(Debug, Clone, Parser)]
-#[clap(rename_all = "kebab-case")]
+#[derive(Debug, Clone, Deserialize)]
+#[serde(default)]
 pub struct EmailClientConfig {
-    #[clap(long, env = "LS_EMAIL_CLIENT_TYPE", default_value = "full")]
     pub email_client_type: EmailClientType,
-
-    #[clap(long, env = "LS_EMAIL_CLIENT_TIMEOUT_SECONDS", default_value = "60")]
     pub email_client_timeout_seconds: u64,
-
-    #[clap(long, env = "LS_EMAIL_SERVER_PORT", default_value = "1025")]
     pub email_server_port: u16,
-
-    #[clap(long, env = "LS_EMAIL_SERVER_ADDRESS", default_value = "127.0.0.1")]
     pub email_server_address: String,
-
-    #[clap(long, env = "LS_EMAIL_SERVER_USERNAME", default_value = "")]
     pub email_server_username: String,
-
-    #[clap(long, env = "LS_EMAIL_SERVER_PASSWORD", default_value = "")]
     pub email_server_password: String,
-
-    #[clap(long, env = "LS_EMAIL_SERVER_USE_TLS", default_value = "false")]
-    pub email_server_use_tls: Boolean,
-
-    #[clap(long, env = "LS_EMAIL_FORWARD_ALL_EMAILS_TO_FIXED_RECIPIENTS", value_delimiter = ';')]
+    pub email_server_use_tls: bool,
     pub forward_all_emails_to_fixed_recipients: Option<Vec<String>>,
 }
 
-impl EmailClientConfig {
-    pub fn build() -> Self {
-        Self::parse()
+impl Default for EmailClientConfig {
+    fn default() -> Self {
+        EmailClientConfig {
+            email_client_type: EmailClientType::Full,
+            email_client_timeout_seconds: 60,
+            email_server_port: 1025,
+            email_server_address: "127.0.0.1".to_owned(),
+            email_server_username: "".to_owned(),
+            email_server_password: "".to_owned(),
+            email_server_use_tls: false,
+            forward_all_emails_to_fixed_recipients: None,
+        }
     }
 }
 
@@ -43,7 +36,7 @@ mod test {
 
     #[test]
     fn should_build_config() {
-        let config = EmailClientConfig::build();
+        let config: EmailClientConfig = config::Config::builder().build().unwrap().try_deserialize().unwrap();
         assert!(config.forward_all_emails_to_fixed_recipients.is_none());
     }
 

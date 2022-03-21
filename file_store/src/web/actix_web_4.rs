@@ -1,9 +1,9 @@
 use crate::model::BinaryContent;
 use actix_files::NamedFile;
+use actix_web::http::header::DispositionType;
 use actix_web::{http, HttpRequest, HttpResponse};
 use lightspeed_core::error::LightSpeedError;
 use log::*;
-use actix_web::http::header::DispositionType;
 
 pub async fn into_response(
     content: BinaryContent<'_>,
@@ -213,5 +213,4 @@ mod test {
         let body = read_body(resp).await;
         assert_eq!(body, &content);
     }
-
 }
