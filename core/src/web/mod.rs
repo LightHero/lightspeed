@@ -9,6 +9,8 @@ use std::sync::Arc;
 pub mod actix_web_4;
 #[cfg(feature = "axum")]
 pub mod axum;
+#[cfg(feature = "poem")]
+pub mod poem;
 
 pub const JWT_TOKEN_HEADER: &str = "Authorization";
 pub const JWT_TOKEN_HEADER_SUFFIX: &str = "Bearer ";

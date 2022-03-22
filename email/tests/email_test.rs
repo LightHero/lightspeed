@@ -3,6 +3,7 @@ use lightspeed_email::model::email::{EmailAttachment, EmailMessage};
 use lightspeed_email::repository::email::{new, EmailClientType};
 use lightspeed_email::service::EmailService;
 use testcontainers::*;
+use lettre::message::SinglePart;
 
 pub fn new_mail_server(docker: &clients::Cli) -> (u16, Container<clients::Cli, images::generic::GenericImage>) {
     let node = docker.run(
@@ -53,17 +54,46 @@ async fn should_start_the_mailserver() {
     assert!(email_service.send(message.clone()).await.is_ok());
 }
 
-#[ignore]
+#[tokio::test]
+async fn full_client_should_use_gmail2() {
+    use lettre::transport::smtp::authentication::Credentials;
+    use lettre::{Message, SmtpTransport, Transport};
+
+    let email = Message::builder()
+        .from("NoBody <ufoscout@gmail.com>".parse().unwrap())
+        .reply_to("Yuin <ufoscout@gmail.com>".parse().unwrap())
+        .to("Hei <ufoscout@gmail.com>".parse().unwrap())
+        .subject("Happy new year")
+        .singlepart(SinglePart::plain("hello".to_owned()))
+        .unwrap();
+
+    let creds = Credentials::new("ufoscout@gmail.com".to_string(), "laziogol3GMail!".to_string());
+
+// Open a remote connection to gmail
+    let mailer = SmtpTransport::starttls_relay("smtp.gmail.com")
+        .unwrap()
+        .credentials(creds)
+        .build();
+
+// Send the email
+    match mailer.send(&email) {
+        Ok(_) => println!("Email sent successfully!"),
+        Err(e) => panic!("Could not send email: {:?}", e),
+    }
+}
+
+
+
 #[tokio::test]
 async fn full_client_should_use_gmail() {
     // Arrange
     let config = EmailClientConfig {
         email_client_type: EmailClientType::Full,
         email_client_timeout_seconds: 60,
-        email_server_port: 465,
+        email_server_port: 587,
         email_server_address: "smtp.gmail.com".to_string(),
         email_server_username: "ufoscout@gmail.com".to_string(),
-        email_server_password: "".to_string(),
+        email_server_password: "laziogol3GMail!".to_string(),
         forward_all_emails_to_fixed_recipients: None,
         email_server_use_tls: true,
     };
