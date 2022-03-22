@@ -67,7 +67,7 @@ async fn full_client_should_use_gmail2() {
         .singlepart(SinglePart::plain("hello".to_owned()))
         .unwrap();
 
-    let creds = Credentials::new("ufoscout@gmail.com".to_string(), "laziogol3GMail!".to_string());
+    let creds = Credentials::new("ufoscout@gmail.com".to_string(), "".to_string());
 
 // Open a remote connection to gmail
     let mailer = SmtpTransport::starttls_relay("smtp.gmail.com")
@@ -93,7 +93,7 @@ async fn full_client_should_use_gmail() {
         email_server_port: 587,
         email_server_address: "smtp.gmail.com".to_string(),
         email_server_username: "ufoscout@gmail.com".to_string(),
-        email_server_password: "laziogol3GMail!".to_string(),
+        email_server_password: "".to_string(),
         forward_all_emails_to_fixed_recipients: None,
         email_server_use_tls: true,
     };
