@@ -1,6 +1,5 @@
 use c3p0_common::error::C3p0Error;
 use serde::{Deserialize, Serialize};
-use std::borrow::Cow;
 use std::collections::hash_map::Entry;
 use std::collections::HashMap;
 use std::error::Error;
@@ -132,6 +131,7 @@ impl From<c3p0_common::error::C3p0Error> for LightSpeedError {
 }
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize, TypeScriptify)]
+#[cfg_attr(feature = "poem_openapi", derive(poem_openapi_ext::Object))]
 pub struct ErrorDetail {
     error: String,
     params: Vec<String>,
@@ -161,24 +161,21 @@ impl From<(&str, Vec<String>)> for ErrorDetail {
     }
 }
 
-#[derive(Serialize, Deserialize, TypeScriptify)]
-pub struct WebErrorDetails<'a> {
+#[derive(Debug, Serialize, Deserialize, TypeScriptify)]
+#[cfg_attr(feature = "poem_openapi", derive(poem_openapi_ext::Object))]
+pub struct WebErrorDetails {
     pub code: u16,
-    pub message: Option<Cow<'a, str>>,
-    pub details: Option<Cow<'a, HashMap<String, Vec<ErrorDetail>>>>,
+    pub message: Option<String>,
+    pub details: HashMap<String, Vec<ErrorDetail>>,
 }
 
-impl<'a> WebErrorDetails<'a> {
-    pub fn from_message(code: u16, message: Option<Cow<'a, str>>) -> Self {
-        WebErrorDetails { code, message, details: None }
+impl WebErrorDetails {
+    pub fn from_message(code: u16, message: Option<String>) -> Self {
+        WebErrorDetails { code, message, details: HashMap::new() }
     }
 
-    pub fn from_error_details(code: u16, error_details: &'a RootErrorDetails) -> Self {
-        WebErrorDetails {
-            code,
-            message: error_details.message.as_ref().map(|val| val.into()),
-            details: Some(Cow::Borrowed(&error_details.details)),
-        }
+    pub fn from_error_details(code: u16, error_details: RootErrorDetails) -> Self {
+        WebErrorDetails { code, message: error_details.message, details: error_details.details }
     }
 }
 
@@ -230,7 +227,7 @@ impl<'a> ErrorDetails<'a> {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct RootErrorDetails {
     pub message: Option<String>,
     pub details: HashMap<String, Vec<ErrorDetail>>,

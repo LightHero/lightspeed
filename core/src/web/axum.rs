@@ -15,14 +15,14 @@ impl IntoResponse for LightSpeedError {
             | LightSpeedError::UnauthenticatedError => response_with_code(StatusCode::UNAUTHORIZED),
             LightSpeedError::ForbiddenError { .. } => response_with_code(StatusCode::FORBIDDEN),
             LightSpeedError::ValidationError { details } => {
-                response_with_error_details(StatusCode::UNPROCESSABLE_ENTITY, &details)
+                response_with_error_details(StatusCode::UNPROCESSABLE_ENTITY, details)
             }
             LightSpeedError::BadRequest { code, .. } => {
-                response_with_message(StatusCode::BAD_REQUEST, &Some((code).to_string()))
+                response_with_message(StatusCode::BAD_REQUEST, Some((code).to_string()))
             }
-            LightSpeedError::C3p0Error { .. } => response_with_message(StatusCode::BAD_REQUEST, &None),
+            LightSpeedError::C3p0Error { .. } => response_with_message(StatusCode::BAD_REQUEST, None),
             LightSpeedError::RequestConflict { code, .. } | LightSpeedError::ServiceUnavailable { code, .. } => {
-                response_with_message(StatusCode::CONFLICT, &Some((code).to_string()))
+                response_with_message(StatusCode::CONFLICT, Some((code).to_string()))
             }
             LightSpeedError::InternalServerError { .. }
             | LightSpeedError::ModuleBuilderError { .. }
@@ -43,17 +43,17 @@ fn response_with_code(http_code: StatusCode) -> Response<BoxBody> {
 }
 
 #[inline]
-fn response_with_message(http_code: StatusCode, message: &Option<String>) -> Response<BoxBody> {
+fn response_with_message(http_code: StatusCode, message: Option<String>) -> Response<BoxBody> {
     response(http_code, &WebErrorDetails::from_message(http_code.as_u16(), message.as_ref().map(|val| val.into())))
 }
 
 #[inline]
-fn response_with_error_details(http_code: StatusCode, details: &RootErrorDetails) -> Response<BoxBody> {
+fn response_with_error_details(http_code: StatusCode, details: RootErrorDetails) -> Response<BoxBody> {
     response(http_code, &WebErrorDetails::from_error_details(http_code.as_u16(), details))
 }
 
 #[inline]
-fn response(http_code: StatusCode, details: &WebErrorDetails<'_>) -> Response<BoxBody> {
+fn response(http_code: StatusCode, details: &WebErrorDetails) -> Response<BoxBody> {
     match serde_json::to_vec(details) {
         Ok(body) => {
             let mut res = Response::new(boxed(Body::from(body)));

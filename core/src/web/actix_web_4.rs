@@ -23,7 +23,7 @@ impl ResponseError for LightSpeedError {
             LightSpeedError::ValidationError { details } => {
                 let http_code = http::StatusCode::UNPROCESSABLE_ENTITY;
                 HttpResponseBuilder::new(http_code)
-                    .json(&WebErrorDetails::from_error_details(http_code.as_u16(), details))
+                    .json(&WebErrorDetails::from_error_details(http_code.as_u16(), details.clone()))
             }
             LightSpeedError::BadRequest { code, .. } => {
                 let http_code = http::StatusCode::BAD_REQUEST;
