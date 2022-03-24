@@ -25,6 +25,5 @@ serde = { version = "1", features = ["derive", "rc"] }
 config = "0.12"
 lightspeed_logger = { version = "0.47.2", path = "../logger" }
 maybe-single = { version = "0.15.0", features =["async"] }
-maplit = "1"
 testcontainers = "0.12"
 tokio = { version = "1", features = ["rt-multi-thread"] }

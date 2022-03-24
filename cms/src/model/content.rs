@@ -283,7 +283,6 @@ mod test {
     use lightspeed_core::error::{ErrorDetail, LightSpeedError};
     use lightspeed_core::service::validator::order::{MUST_BE_GREATER_OR_EQUAL, MUST_BE_LESS_OR_EQUAL};
     use lightspeed_core::service::validator::Validator;
-    use maplit::*;
 
     /*
         #[test]
@@ -370,16 +369,16 @@ mod test {
         let content = Content {
             updated_ms: 0,
             created_ms: 0,
-            fields: hashmap![
-                "one".to_owned() =>
+            fields: HashMap::from([
+                ("one".to_owned(),
                     ContentFieldValue::Boolean{value: ContentFieldValueArity::Single {
                         value: Some(true),
-                    }},
-                "two".to_owned() =>
+                    }}),
+                ("two".to_owned(),
                     ContentFieldValue::Boolean{value: ContentFieldValueArity::Single {
                         value: Some(true),
-                    }},
-            ],
+                    }}),
+            ]),
         };
 
         let result = validate_content(&schema, &content);
@@ -428,11 +427,12 @@ mod test {
         let content = Content {
             updated_ms: 0,
             created_ms: 0,
-            fields: hashmap!["two".to_owned() =>
+            fields: HashMap::from([
+                ("two".to_owned() ,
                 ContentFieldValue::Boolean{value: ContentFieldValueArity::Single {
                     value: Some(true),
-                }},
-            ],
+                }}),
+            ]),
         };
 
         let result = validate_content(&schema, &content);
@@ -461,11 +461,12 @@ mod test {
         let content = Content {
             updated_ms: 0,
             created_ms: 0,
-            fields: hashmap!["one".to_owned() =>
+            fields: HashMap::from([
+                ("one".to_owned(),
                 ContentFieldValue::String{value: ContentFieldValueArity::Single {
                     value: Some("hello world".to_owned()),
-                }},
-            ],
+                }}),
+            ]),
         };
 
         let result = validate_content(&schema, &content);
@@ -500,12 +501,12 @@ mod test {
         let content = Content {
             updated_ms: 0,
             created_ms: 0,
-            fields: hashmap![
-                "one".to_owned() =>
+            fields: HashMap::from([
+                ("one".to_owned(),
                 ContentFieldValue::Boolean{value: ContentFieldValueArity::Single {
                     value: Some(false),
-                }},
-            ],
+                }}),
+            ]),
         };
 
         let result = validate_content(&schema, &content);
@@ -533,12 +534,12 @@ mod test {
         let content = Content {
             updated_ms: 0,
             created_ms: 0,
-            fields: hashmap![
-                "one".to_owned() =>
+            fields: HashMap::from([
+                ("one".to_owned(),
                 ContentFieldValue::Boolean{value: ContentFieldValueArity::Single {
                     value: Some(false),
-                }},
-            ],
+                }}),
+            ]),
         };
 
         let result = validate_content(&schema, &content);
@@ -571,12 +572,12 @@ mod test {
         let content = Content {
             updated_ms: 0,
             created_ms: 0,
-            fields: hashmap![
-                "one".to_owned() =>
+            fields: HashMap::from([
+                ("one".to_owned(),
                 ContentFieldValue::String{value: ContentFieldValueArity::Single {
                     value: Some("hello world".to_owned()),
-                }},
-            ],
+                }}),
+            ]),
         };
 
         let result = validate_content(&schema, &content);
@@ -609,12 +610,12 @@ mod test {
         let content = Content {
             updated_ms: 0,
             created_ms: 0,
-            fields: hashmap![
-                "one".to_owned() =>
+            fields: HashMap::from([
+                ("one".to_owned(),
                 ContentFieldValue::Number{value: ContentFieldValueArity::Single {
                     value: Some(99),
-                }},
-            ],
+                }}),
+            ]),
         };
 
         let result = validate_content(&schema, &content);
@@ -648,12 +649,12 @@ mod test {
         let content = Content {
             updated_ms: 0,
             created_ms: 0,
-            fields: hashmap![
-                "one".to_owned() =>
+            fields: HashMap::from([
+                ("one".to_owned(),
                 ContentFieldValue::Number{value: ContentFieldValueArity::Single {
                     value: Some(1099),
-                }},
-            ],
+                }}),
+            ]),
         };
 
         let result = validate_content(&schema, &content);
@@ -687,12 +688,12 @@ mod test {
         let content = Content {
             updated_ms: 0,
             created_ms: 0,
-            fields: hashmap![
-                "one".to_owned() =>
+            fields: HashMap::from([
+                ("one".to_owned(),
                 ContentFieldValue::String{value: ContentFieldValueArity::Single {
                     value: Some("hello world".to_owned()),
-                }},
-            ],
+                }}),
+            ]),
         };
 
         let result = validate_content(&schema, &content);
@@ -726,12 +727,12 @@ mod test {
         let content = Content {
             updated_ms: 0,
             created_ms: 0,
-            fields: hashmap![
-                "one".to_owned() =>
+            fields: HashMap::from([
+                ("one".to_owned(),
                 ContentFieldValue::String{value: ContentFieldValueArity::Single {
                     value: Some("hello world?!?!?!?!?!".to_owned()),
-                }},
-            ],
+                }}),
+            ]),
         };
 
         let result = validate_content(&schema, &content);
@@ -768,16 +769,16 @@ mod test {
         let content = Content {
             updated_ms: 0,
             created_ms: 0,
-            fields: hashmap![
-                "one".to_owned() =>
+            fields: HashMap::from([
+                ("one".to_owned(),
                     ContentFieldValue::Boolean{value: ContentFieldValueArity::Single {
                         value: None,
-                    }},
-                "two".to_owned() =>
+                    }}),
+                ("two".to_owned(),
                     ContentFieldValue::Boolean{value: ContentFieldValueArity::Single {
                         value: None,
-                    }},
-            ],
+                    }}),
+            ]),
         };
 
         let result = validate_content(&schema, &content);
@@ -805,11 +806,12 @@ mod test {
         let content = Content {
             updated_ms: 0,
             created_ms: 0,
-            fields: hashmap!["one".to_owned() =>
+            fields: HashMap::from([
+                ("one".to_owned(),
                 ContentFieldValue::Boolean{value: ContentFieldValueArity::Localizable {
                     values: HashMap::new(),
-                }},
-            ],
+                }}),
+            ]),
         };
 
         let result = validate_content(&schema, &content);
@@ -844,12 +846,12 @@ mod test {
         let content = Content {
             updated_ms: 0,
             created_ms: 0,
-            fields: hashmap![
-                "one".to_owned() =>
+            fields: HashMap::from([
+                ("one".to_owned(),
                 ContentFieldValue::Boolean{value: ContentFieldValueArity::Single {
                     value: Some(true),
-                }},
-            ],
+                }}),
+            ]),
         };
 
         let result = validate_content(&schema, &content);
@@ -886,14 +888,15 @@ mod test {
         let content = Content {
             updated_ms: 0,
             created_ms: 0,
-            fields: hashmap![ "one".to_owned() =>
+            fields: HashMap::from([
+                ( "one".to_owned(),
                 ContentFieldValue::Boolean{value: ContentFieldValueArity::Localizable {
-                    values: hashmap![
-                        "IT".to_owned() => Some(true),
-                        "EN".to_owned() => None,
-                    ],
-                }},
-            ],
+                    values: HashMap::from([
+                        ("IT".to_owned(), Some(true)),
+                        ("EN".to_owned(), None),
+                    ]),
+                }}),
+            ]),
         };
 
         let result = validate_content(&schema, &content);
@@ -929,10 +932,10 @@ mod test {
         let content = Content {
             updated_ms: 0,
             created_ms: 0,
-            fields: hashmap![
-                "slug".to_owned() =>
-                ContentFieldValue::Slug{value: ContentFieldValueArity::Single { value: Some("a-valid-slug".to_owned()) }},
-            ],
+            fields: HashMap::from([
+                ("slug".to_owned(),
+                ContentFieldValue::Slug{value: ContentFieldValueArity::Single { value: Some("a-valid-slug".to_owned()) }}),
+            ]),
         };
 
         let result = validate_content(&schema, &content);
@@ -954,9 +957,9 @@ mod test {
         let content = Content {
             updated_ms: 0,
             created_ms: 0,
-            fields: hashmap!["slug".to_owned()
-                => ContentFieldValue::Slug{value: ContentFieldValueArity::Single { value: Some("a---notvalid-slug!".to_owned()) }} ,
-            ],
+            fields: HashMap::from([
+                ("slug".to_owned(), ContentFieldValue::Slug{value: ContentFieldValueArity::Single { value: Some("a---notvalid-slug!".to_owned()) }} ),
+            ]),
         };
 
         let result = validate_content(&schema, &content);
@@ -984,12 +987,12 @@ mod test {
         let content = Content {
             updated_ms: 0,
             created_ms: 0,
-            fields: hashmap![
-                "slug".to_owned() =>
+            fields: HashMap::from([
+                ("slug".to_owned(),
                 ContentFieldValue::Slug{value: ContentFieldValueArity::Localizable {
                     values: HashMap::new(),
-                }},
-            ],
+                }}),
+            ]),
         };
 
         let result = validate_content(&schema, &content);
