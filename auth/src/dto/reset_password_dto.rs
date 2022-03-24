@@ -2,10 +2,9 @@ use lightspeed_core::error::{ErrorDetails, LightSpeedError};
 use lightspeed_core::service::validator::must_match::validate_must_be_equals;
 use lightspeed_core::service::validator::Validable;
 use serde::{Deserialize, Serialize};
-use typescript_definitions::TypeScriptify;
 
-#[derive(Serialize, Deserialize, TypeScriptify)]
-#[serde(rename_all = "camelCase")]
+#[derive(Serialize, Deserialize)]
+#[cfg_attr(feature = "poem_openapi_", derive(poem_openapi::Object))]
 pub struct ResetPasswordDto {
     pub token: String,
     pub password: String,

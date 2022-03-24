@@ -6,10 +6,9 @@ use lightspeed_core::service::validator::must_match::validate_must_be_equals;
 use lightspeed_core::service::validator::Validable;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
-use typescript_definitions::TypeScriptify;
 
-#[derive(Clone, Serialize, Deserialize, TypeScriptify)]
-#[serde(rename_all = "camelCase")]
+#[derive(Clone, Serialize, Deserialize)]
+#[cfg_attr(feature = "poem_openapi_", derive(poem_openapi::Object))]
 pub struct CreateLoginDto {
     pub username: Option<String>,
     pub email: String,

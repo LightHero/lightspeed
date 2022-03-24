@@ -14,7 +14,7 @@ async fn should_generate_validation_code() -> Result<(), LightSpeedError> {
 
     let validation_code_request = ValidationCodeRequestDto {
         to_be_validated: "123456789".to_owned(),
-        language: Some(Language::IT),
+        language: Some(Language::It),
         code: format!("{}", Utc::now().timestamp_millis()),
         validation_code_validity_seconds,
     };

@@ -14,7 +14,6 @@ pub enum BinaryContent<'a> {
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
 pub struct FileStoreDataData {
     pub filename: String,
     pub repository: RepositoryFile,

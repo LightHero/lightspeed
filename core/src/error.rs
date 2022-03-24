@@ -4,7 +4,6 @@ use std::collections::hash_map::Entry;
 use std::collections::HashMap;
 use std::error::Error;
 use std::fmt::{Display, Formatter};
-use typescript_definitions::TypeScriptify;
 
 pub struct ErrorCodes {}
 
@@ -130,8 +129,8 @@ impl From<c3p0_common::error::C3p0Error> for LightSpeedError {
     }
 }
 
-#[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize, TypeScriptify)]
-#[cfg_attr(feature = "poem_openapi", derive(poem_openapi_ext::Object))]
+#[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[cfg_attr(feature = "poem_openapi_", derive(poem_openapi::Object))]
 pub struct ErrorDetail {
     error: String,
     params: Vec<String>,
@@ -161,8 +160,8 @@ impl From<(&str, Vec<String>)> for ErrorDetail {
     }
 }
 
-#[derive(Debug, Serialize, Deserialize, TypeScriptify)]
-#[cfg_attr(feature = "poem_openapi", derive(poem_openapi_ext::Object))]
+#[derive(Debug, Serialize, Deserialize)]
+#[cfg_attr(feature = "poem_openapi_", derive(poem_openapi::Object))]
 pub struct WebErrorDetails {
     pub code: u16,
     pub message: Option<String>,

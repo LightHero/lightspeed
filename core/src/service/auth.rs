@@ -5,10 +5,9 @@ use serde::{Deserialize, Serialize};
 use std::borrow::Cow;
 use std::collections::{BTreeMap, HashMap};
 use std::sync::Arc;
-use typescript_definitions::TypeScriptify;
 
-#[derive(Debug, Clone, Serialize, Deserialize, TypeScriptify)]
-#[serde(rename_all = "camelCase")]
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[cfg_attr(feature = "poem_openapi_", derive(poem_openapi::Object))]
 pub struct Auth {
     pub id: i64,
     pub username: String,

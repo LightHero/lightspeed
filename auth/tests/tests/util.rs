@@ -30,7 +30,7 @@ pub async fn create_user_with_password<RepoManager: AuthRepositoryManager>(
             email,
             data: HashMap::new(),
             accept_privacy_policy: true,
-            language: Language::EN,
+            language: Language::En,
             password: password.to_string(),
             password_confirm: password.to_string(),
         })

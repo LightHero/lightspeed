@@ -9,7 +9,6 @@ use std::borrow::Cow;
 pub type TokenModel = Model<TokenData>;
 
 #[derive(Clone, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
 pub struct TokenData {
     pub token: String,
     pub username: String,
@@ -18,10 +17,9 @@ pub struct TokenData {
 }
 
 #[derive(Debug, PartialEq, Clone, Serialize, Deserialize)]
-#[allow(non_camel_case_types)]
 pub enum TokenType {
-    ACCOUNT_ACTIVATION,
-    RESET_PASSWORD,
+    AccountActivation,
+    ResetPassword,
 }
 
 #[derive(Clone, Serialize, Deserialize)]
@@ -66,7 +64,7 @@ pub mod test {
     pub fn token_not_expired_should_be_valid() {
         let token = TokenData {
             token: "".to_owned(),
-            token_type: TokenType::ACCOUNT_ACTIVATION,
+            token_type: TokenType::AccountActivation,
             username: "".to_owned(),
             expire_at_epoch_seconds: current_epoch_seconds() + 1000,
         };
@@ -78,7 +76,7 @@ pub mod test {
     pub fn token_expired_should_not_be_valid() {
         let token = TokenData {
             token: "".to_owned(),
-            token_type: TokenType::ACCOUNT_ACTIVATION,
+            token_type: TokenType::AccountActivation,
             username: "".to_owned(),
             expire_at_epoch_seconds: current_epoch_seconds() - 1000,
         };

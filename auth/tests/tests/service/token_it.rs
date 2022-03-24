@@ -19,7 +19,7 @@ fn should_delete_token() -> Result<(), LightSpeedError> {
             data: TokenData {
                 token: new_hyphenated_uuid(),
                 expire_at_epoch_seconds: 9999999999999,
-                token_type: TokenType::RESET_PASSWORD,
+                token_type: TokenType::ResetPassword,
                 username: "test@test.com".to_owned(),
             },
         };
@@ -49,7 +49,7 @@ fn should_generate_token() -> Result<(), LightSpeedError> {
         c3p0.transaction(|mut conn| async move {
             let conn = &mut conn;
             let username = new_hyphenated_uuid();
-            let token_type = TokenType::ACCOUNT_ACTIVATION;
+            let token_type = TokenType::AccountActivation;
 
             let before = current_epoch_seconds();
             let token = auth_module
@@ -63,7 +63,7 @@ fn should_generate_token() -> Result<(), LightSpeedError> {
             assert_eq!(username, token.data.username);
 
             match token.data.token_type {
-                TokenType::ACCOUNT_ACTIVATION => {}
+                TokenType::AccountActivation => {}
                 _ => assert!(false),
             }
             assert!((before + expiration_seconds) <= token.data.expire_at_epoch_seconds);
@@ -94,7 +94,7 @@ fn should_validate_token_on_fetch() -> Result<(), LightSpeedError> {
                 data: TokenData {
                     token: new_hyphenated_uuid(),
                     expire_at_epoch_seconds: current_epoch_seconds() - 1,
-                    token_type: TokenType::RESET_PASSWORD,
+                    token_type: TokenType::ResetPassword,
                     username: "test@test.com".to_owned(),
                 },
             };
@@ -140,7 +140,7 @@ fn should_return_all_tokens_by_username() -> Result<(), LightSpeedError> {
                         data: TokenData {
                             token: new_hyphenated_uuid(),
                             expire_at_epoch_seconds: current_epoch_seconds() - 1,
-                            token_type: TokenType::RESET_PASSWORD,
+                            token_type: TokenType::ResetPassword,
                             username: username_1.clone(),
                         },
                     },
@@ -157,7 +157,7 @@ fn should_return_all_tokens_by_username() -> Result<(), LightSpeedError> {
                         data: TokenData {
                             token: new_hyphenated_uuid(),
                             expire_at_epoch_seconds: current_epoch_seconds() - 1,
-                            token_type: TokenType::ACCOUNT_ACTIVATION,
+                            token_type: TokenType::AccountActivation,
                             username: username_1.clone(),
                         },
                     },

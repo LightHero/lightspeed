@@ -5,7 +5,6 @@ use jsonwebtoken::{DecodingKey, EncodingKey};
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
 pub struct JWT<T> {
     pub payload: T,
     // The subject of the token

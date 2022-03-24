@@ -1,9 +1,8 @@
 use c3p0_common::json::model::{IdType, VersionType};
 use c3p0_common::Model;
 use serde::{Deserialize, Serialize};
-use typescript_definitions::TypeScriptify;
 
-#[derive(Clone, Serialize, Deserialize, TypeScriptify)]
+#[derive(Clone, Serialize, Deserialize)]
 pub struct ModelDto<DATA>
 where
     DATA: Clone + serde::ser::Serialize + Send,

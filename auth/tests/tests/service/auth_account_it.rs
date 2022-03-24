@@ -30,7 +30,7 @@ fn should_create_pending_user() -> Result<(), LightSpeedError> {
                 email: email.clone(),
                 data: HashMap::new(),
                 accept_privacy_policy: true,
-                language: Language::EN,
+                language: Language::En,
                 password: password.clone(),
                 password_confirm: password.clone(),
             })
@@ -42,10 +42,10 @@ fn should_create_pending_user() -> Result<(), LightSpeedError> {
 
         assert!(user.data.roles.is_empty());
 
-        assert_eq!(AuthAccountStatus::PENDING_ACTIVATION, user.data.status);
+        assert_eq!(AuthAccountStatus::PendingActivation, user.data.status);
         assert_eq!(username, token.data.username);
 
-        assert_eq!(TokenType::ACCOUNT_ACTIVATION, token.data.token_type);
+        assert_eq!(TokenType::AccountActivation, token.data.token_type);
 
         Ok(())
     })
@@ -78,7 +78,7 @@ fn should_assign_default_roles_at_account_creation() -> Result<(), LightSpeedErr
                 email: email.clone(),
                 data: HashMap::new(),
                 accept_privacy_policy: true,
-                language: Language::EN,
+                language: Language::En,
                 password: password.clone(),
                 password_confirm: password.clone(),
             })
@@ -155,7 +155,7 @@ fn should_use_the_email_as_username_if_not_provided() -> Result<(), LightSpeedEr
                 email: email.clone(),
                 data: HashMap::new(),
                 accept_privacy_policy: true,
-                language: Language::EN,
+                language: Language::En,
                 password: password.clone(),
                 password_confirm: password.clone(),
             })
@@ -186,7 +186,7 @@ fn should_use_the_email_as_username_if_username_is_empty() -> Result<(), LightSp
                 email: email.clone(),
                 data: HashMap::new(),
                 accept_privacy_policy: true,
-                language: Language::EN,
+                language: Language::En,
                 password: password.clone(),
                 password_confirm: password.clone(),
             })
@@ -209,12 +209,12 @@ fn should_activate_user() -> Result<(), LightSpeedError> {
 
         let (user, token) = create_user(&auth_module, false).await?;
 
-        assert_eq!(AuthAccountStatus::PENDING_ACTIVATION, user.data.status);
-        assert_eq!(TokenType::ACCOUNT_ACTIVATION, token.data.token_type);
+        assert_eq!(AuthAccountStatus::PendingActivation, user.data.status);
+        assert_eq!(TokenType::AccountActivation, token.data.token_type);
 
         let activated_user = auth_module.auth_account_service.activate_user(&token.data.token).await?;
 
-        assert_eq!(AuthAccountStatus::ACTIVE, activated_user.data.status);
+        assert_eq!(AuthAccountStatus::Active, activated_user.data.status);
 
         assert_eq!(user.data.username, activated_user.data.username);
 
@@ -240,7 +240,7 @@ fn should_activate_user_only_if_activation_token_type() -> Result<(), LightSpeed
         let auth_module = &data.0;
 
         let (user, _) = create_user(&auth_module, false).await?;
-        assert_eq!(AuthAccountStatus::PENDING_ACTIVATION, user.data.status);
+        assert_eq!(AuthAccountStatus::PendingActivation, user.data.status);
 
         auth_module
             .repo_manager
@@ -248,7 +248,7 @@ fn should_activate_user_only_if_activation_token_type() -> Result<(), LightSpeed
             .transaction(|mut conn| async move {
                 let token = auth_module
                     .token_service
-                    .generate_and_save_token_with_conn(&mut conn, &user.data.username, TokenType::RESET_PASSWORD)
+                    .generate_and_save_token_with_conn(&mut conn, &user.data.username, TokenType::ResetPassword)
                     .await?;
 
                 let activation_result = auth_module.auth_account_service.activate_user(&token.data.token).await;
@@ -268,7 +268,7 @@ fn should_activate_user_only_if_pending_activation() -> Result<(), LightSpeedErr
         let auth_module = &data.0;
 
         let (user, _) = create_user(&auth_module, true).await?;
-        assert_eq!(AuthAccountStatus::ACTIVE, user.data.status);
+        assert_eq!(AuthAccountStatus::Active, user.data.status);
 
         auth_module
             .repo_manager
@@ -276,7 +276,7 @@ fn should_activate_user_only_if_pending_activation() -> Result<(), LightSpeedErr
             .transaction::<_, LightSpeedError, _, _>(|mut conn| async move {
                 let token = auth_module
                     .token_service
-                    .generate_and_save_token_with_conn(&mut conn, &user.data.username, TokenType::ACCOUNT_ACTIVATION)
+                    .generate_and_save_token_with_conn(&mut conn, &user.data.username, TokenType::AccountActivation)
                     .await?;
 
                 let activation_result = auth_module.auth_account_service.activate_user(&token.data.token).await;
@@ -308,7 +308,7 @@ fn should_regenerate_activation_token() -> Result<(), LightSpeedError> {
 
         let activated_user = auth_module.auth_account_service.activate_user(&new_token.data.token).await?;
 
-        assert_eq!(AuthAccountStatus::ACTIVE, activated_user.data.status);
+        assert_eq!(AuthAccountStatus::Active, activated_user.data.status);
         assert_eq!(user.id, activated_user.id);
 
         Ok(())
@@ -349,7 +349,7 @@ fn should_regenerate_activation_token_by_email_and_username() -> Result<(), Ligh
 
         let activated_user = auth_module.auth_account_service.activate_user(&new_token.data.token).await?;
 
-        assert_eq!(AuthAccountStatus::ACTIVE, activated_user.data.status);
+        assert_eq!(AuthAccountStatus::Active, activated_user.data.status);
         assert_eq!(user.id, activated_user.id);
 
         Ok(())
@@ -405,7 +405,7 @@ fn should_resend_activation_token_only_if_correct_token_type() -> Result<(), Lig
             .transaction(|mut conn| async move {
                 auth_module
                     .token_service
-                    .generate_and_save_token_with_conn(&mut conn, &user.data.username, TokenType::RESET_PASSWORD)
+                    .generate_and_save_token_with_conn(&mut conn, &user.data.username, TokenType::ResetPassword)
                     .await
             })
             .await?;
@@ -534,7 +534,7 @@ fn create_user_should_fail_if_passwords_do_not_match() -> Result<(), LightSpeedE
                 email: email.clone(),
                 data: HashMap::new(),
                 accept_privacy_policy: true,
-                language: Language::EN,
+                language: Language::En,
                 password: new_hyphenated_uuid(),
                 password_confirm: new_hyphenated_uuid(),
             })
@@ -569,7 +569,7 @@ fn create_user_should_fail_if_not_valid_email() -> Result<(), LightSpeedError> {
                 email: email.clone(),
                 data: HashMap::new(),
                 accept_privacy_policy: true,
-                language: Language::EN,
+                language: Language::En,
                 password: password.clone(),
                 password_confirm: password.clone(),
             })
@@ -604,7 +604,7 @@ fn create_user_should_fail_if_not_accepted_privacy_policy() -> Result<(), LightS
                 email: email.clone(),
                 data: HashMap::new(),
                 accept_privacy_policy: false,
-                language: Language::EN,
+                language: Language::En,
                 password: password.clone(),
                 password_confirm: password.clone(),
             })
@@ -636,7 +636,7 @@ fn create_user_should_fail_if_username_not_unique() -> Result<(), LightSpeedErro
             email: format!("{}@email.fake", new_hyphenated_uuid()),
             data: HashMap::new(),
             accept_privacy_policy: true,
-            language: Language::EN,
+            language: Language::En,
             password: password.clone(),
             password_confirm: password.clone(),
         };
@@ -672,7 +672,7 @@ fn create_user_should_fail_if_email_not_unique() -> Result<(), LightSpeedError> 
             email: format!("{}@email.fake", new_hyphenated_uuid()),
             data: HashMap::new(),
             accept_privacy_policy: true,
-            language: Language::EN,
+            language: Language::En,
             password: password.clone(),
             password_confirm: password.clone(),
         };
@@ -709,7 +709,7 @@ fn should_reset_password_by_token() -> Result<(), LightSpeedError> {
             .transaction(|mut conn| async move {
                 auth_module
                     .token_service
-                    .generate_and_save_token_with_conn(&mut conn, &user.data.username, TokenType::RESET_PASSWORD)
+                    .generate_and_save_token_with_conn(&mut conn, &user.data.username, TokenType::ResetPassword)
                     .await
             })
             .await?;
@@ -750,7 +750,7 @@ fn should_reset_password_only_if_correct_token_type() -> Result<(), LightSpeedEr
             .transaction(|mut conn| async move {
                 auth_module
                     .token_service
-                    .generate_and_save_token_with_conn(&mut conn, &user.data.username, TokenType::ACCOUNT_ACTIVATION)
+                    .generate_and_save_token_with_conn(&mut conn, &user.data.username, TokenType::AccountActivation)
                     .await
             })
             .await?;
@@ -787,7 +787,7 @@ fn should_reset_password_only_if_user_is_active() -> Result<(), LightSpeedError>
             .transaction(|mut conn| async move {
                 auth_module
                     .token_service
-                    .generate_and_save_token_with_conn(&mut conn, &user.data.username, TokenType::RESET_PASSWORD)
+                    .generate_and_save_token_with_conn(&mut conn, &user.data.username, TokenType::ResetPassword)
                     .await
             })
             .await?;
@@ -823,7 +823,7 @@ fn should_reset_password_only_if_passwords_match() -> Result<(), LightSpeedError
             .transaction(|mut conn| async move {
                 auth_module
                     .token_service
-                    .generate_and_save_token_with_conn(&mut conn, &user.data.username, TokenType::RESET_PASSWORD)
+                    .generate_and_save_token_with_conn(&mut conn, &user.data.username, TokenType::ResetPassword)
                     .await
             })
             .await?;
@@ -863,7 +863,7 @@ fn should_generate_reset_password_token() -> Result<(), LightSpeedError> {
         let (new_user, token) =
             auth_module.auth_account_service.generate_reset_password_token(&user.data.username).await?;
         assert_eq!(user.id, new_user.id);
-        assert_eq!(TokenType::RESET_PASSWORD, token.data.token_type);
+        assert_eq!(TokenType::ResetPassword, token.data.token_type);
         Ok(())
     })
 }
@@ -1024,7 +1024,7 @@ fn should_add_and_remove_roles() -> Result<(), LightSpeedError> {
                 email: email.clone(),
                 data: HashMap::new(),
                 accept_privacy_policy: true,
-                language: Language::EN,
+                language: Language::En,
                 password: password.clone(),
                 password_confirm: password.clone(),
             })
@@ -1168,13 +1168,13 @@ fn should_disable_an_active_user() -> Result<(), LightSpeedError> {
         let updated_user = auth_module.auth_account_service.disable_by_user_id(user.id).await.unwrap();
 
         // Assert
-        assert_eq!(AuthAccountStatus::DISABLED, updated_user.data.status);
+        assert_eq!(AuthAccountStatus::Disabled, updated_user.data.status);
 
         assert!(auth_module.auth_account_service.login(&user.data.username, password).await.is_err());
 
         let loaded_user = auth_module.auth_account_service.fetch_by_user_id(user.id).await.unwrap();
 
-        assert_eq!(AuthAccountStatus::DISABLED, loaded_user.data.status);
+        assert_eq!(AuthAccountStatus::Disabled, loaded_user.data.status);
 
         Ok(())
     })
@@ -1239,13 +1239,13 @@ fn should_activate_a_disabled_user() -> Result<(), LightSpeedError> {
         let updated_user = auth_module.auth_account_service.reactivate_disabled_user_by_user_id(user.id).await.unwrap();
 
         // Assert
-        assert_eq!(AuthAccountStatus::ACTIVE, updated_user.data.status);
+        assert_eq!(AuthAccountStatus::Active, updated_user.data.status);
 
         assert!(auth_module.auth_account_service.login(&user.data.username, password).await.is_ok());
 
         let loaded_user = auth_module.auth_account_service.fetch_by_user_id(user.id).await.unwrap();
 
-        assert_eq!(AuthAccountStatus::ACTIVE, loaded_user.data.status);
+        assert_eq!(AuthAccountStatus::Active, loaded_user.data.status);
 
         Ok(())
     })
@@ -1355,19 +1355,19 @@ fn should_return_users_by_status() -> Result<(), LightSpeedError> {
         // Act
         let all_active_users = auth_module
             .auth_account_service
-            .fetch_all_by_status(AuthAccountStatus::ACTIVE, 0, u32::max_value())
+            .fetch_all_by_status(AuthAccountStatus::Active, 0, u32::max_value())
             .await
             .unwrap();
 
         let all_pending_users = auth_module
             .auth_account_service
-            .fetch_all_by_status(AuthAccountStatus::PENDING_ACTIVATION, 0, u32::max_value())
+            .fetch_all_by_status(AuthAccountStatus::PendingActivation, 0, u32::max_value())
             .await
             .unwrap();
 
         let all_disabled_users = auth_module
             .auth_account_service
-            .fetch_all_by_status(AuthAccountStatus::DISABLED, 0, u32::max_value())
+            .fetch_all_by_status(AuthAccountStatus::Disabled, 0, u32::max_value())
             .await
             .unwrap();
 
@@ -1411,19 +1411,19 @@ fn should_return_users_by_status_with_offset_and_limit() -> Result<(), LightSpee
         // Act
         let all_users = auth_module
             .auth_account_service
-            .fetch_all_by_status(AuthAccountStatus::ACTIVE, user_1.id, u32::max_value())
+            .fetch_all_by_status(AuthAccountStatus::Active, user_1.id, u32::max_value())
             .await
             .unwrap();
 
         let offset_one_users = auth_module
             .auth_account_service
-            .fetch_all_by_status(AuthAccountStatus::ACTIVE, user_2.id, u32::max_value())
+            .fetch_all_by_status(AuthAccountStatus::Active, user_2.id, u32::max_value())
             .await
             .unwrap();
 
         let limit_two_users = auth_module
             .auth_account_service
-            .fetch_all_by_status(AuthAccountStatus::ACTIVE, user_2.id, 2)
+            .fetch_all_by_status(AuthAccountStatus::Active, user_2.id, 2)
             .await
             .unwrap();
 

@@ -91,13 +91,13 @@ fn response(http_code: StatusCode, details: &WebErrorDetails) -> Response {
     }
 }
 
-#[cfg(feature = "poem_openapi")]
+#[cfg(feature = "poem_openapi_")]
 pub mod openapi {
 
     use crate::error::{LightSpeedError, WebErrorDetails};
     use poem_ext::http::StatusCode;
-    use poem_openapi_ext::payload::Json;
-    use poem_openapi_ext::ApiResponse;
+    use poem_openapi::payload::Json;
+    use poem_openapi::ApiResponse;
 
     #[derive(ApiResponse, Debug)]
     pub enum LightSpeedErrorResponse {
@@ -310,15 +310,15 @@ mod test {
         }
     }
 
-    #[cfg(feature = "poem_openapi")]
+    #[cfg(feature = "poem_openapi_")]
     #[cfg(test)]
     mod test_openapi {
         use super::*;
         use crate::web::poem::openapi::LightSpeedErrorResponse;
         use poem_ext::test::TestClient;
         use poem_ext::Route;
-        use poem_openapi_ext::payload::{Json, PlainText};
-        use poem_openapi_ext::*;
+        use poem_openapi::payload::{Json, PlainText};
+        use poem_openapi::*;
         use serde::Serialize;
 
         #[tokio::test]

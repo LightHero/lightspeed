@@ -3,12 +3,10 @@ use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use std::borrow::Cow;
 use strum::{AsRefStr, Display};
-use typescript_definitions::TypeScriptify;
 
 pub type AuthAccountModel = Model<AuthAccountData>;
 
 #[derive(Clone, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
 pub struct AuthAccountData {
     pub username: String,
     pub email: String,
@@ -18,12 +16,12 @@ pub struct AuthAccountData {
     pub status: AuthAccountStatus,
 }
 
-#[derive(Debug, PartialEq, Clone, Serialize, Deserialize, AsRefStr, Display, TypeScriptify)]
-#[allow(non_camel_case_types)]
+#[derive(Debug, PartialEq, Clone, Serialize, Deserialize, AsRefStr, Display)]
+#[cfg_attr(feature = "poem_openapi_", derive(poem_openapi::Enum))]
 pub enum AuthAccountStatus {
-    ACTIVE,
-    PENDING_ACTIVATION,
-    DISABLED,
+    Active,
+    PendingActivation,
+    Disabled,
 }
 
 #[derive(Clone, Serialize, Deserialize)]

@@ -53,7 +53,7 @@ impl<RepoManager: AuthRepositoryManager> AuthAccountService<RepoManager> {
         if let Some(user) = model {
             if self.password_service.verify_match(password, &user.data.password)? {
                 match &user.data.status {
-                    AuthAccountStatus::ACTIVE => {}
+                    AuthAccountStatus::Active => {}
                     _ => {
                         return Err(LightSpeedError::BadRequest {
                             message: format!("User [{}] not in status Active", username),
@@ -136,7 +136,7 @@ impl<RepoManager: AuthRepositoryManager> AuthAccountService<RepoManager> {
                     password: hashed_password,
                     roles: self.auth_config.default_roles_on_account_creation.clone(),
                     created_date_epoch_seconds: current_epoch_seconds(),
-                    status: AuthAccountStatus::PENDING_ACTIVATION,
+                    status: AuthAccountStatus::PendingActivation,
                 }),
             )
             .await?;
@@ -151,7 +151,7 @@ impl<RepoManager: AuthRepositoryManager> AuthAccountService<RepoManager> {
         username: &str,
     ) -> Result<TokenModel, LightSpeedError> {
         debug!("Generate activation token for username [{}]", username);
-        self.token_service.generate_and_save_token_with_conn(conn, username, TokenType::ACCOUNT_ACTIVATION).await
+        self.token_service.generate_and_save_token_with_conn(conn, username, TokenType::AccountActivation).await
     }
 
     pub async fn generate_new_activation_token_by_username_and_email(
@@ -187,7 +187,7 @@ impl<RepoManager: AuthRepositoryManager> AuthAccountService<RepoManager> {
             .fetch_all_by_username_with_conn(conn, username)
             .await?
             .into_iter()
-            .filter(|token| token.data.token_type == TokenType::ACCOUNT_ACTIVATION)
+            .filter(|token| token.data.token_type == TokenType::AccountActivation)
             .map(|token| token.data.token)
             .collect::<Vec<String>>()
             .first()
@@ -220,7 +220,7 @@ impl<RepoManager: AuthRepositoryManager> AuthAccountService<RepoManager> {
 
         Validator::validate(&|error_details: &mut ErrorDetails| {
             match &token.data.token_type {
-                TokenType::ACCOUNT_ACTIVATION => {}
+                TokenType::AccountActivation => {}
                 _ => error_details.add_detail("token_type", WRONG_TYPE),
             };
             Ok(())
@@ -231,7 +231,7 @@ impl<RepoManager: AuthRepositoryManager> AuthAccountService<RepoManager> {
         let user = self.auth_repo.fetch_by_username(conn, &token.data.username).await?;
 
         match &user.data.status {
-            AuthAccountStatus::PENDING_ACTIVATION => {}
+            AuthAccountStatus::PendingActivation => {}
             _ => {
                 return Err(LightSpeedError::BadRequest {
                     message: format!("User [{}] not in status PendingActivation", token.data.username),
@@ -263,7 +263,7 @@ impl<RepoManager: AuthRepositoryManager> AuthAccountService<RepoManager> {
 
         Validator::validate(&|error_details: &mut ErrorDetails| {
             match &token.data.token_type {
-                TokenType::ACCOUNT_ACTIVATION => {}
+                TokenType::AccountActivation => {}
                 _ => error_details.add_detail("token_type", WRONG_TYPE),
             };
             Ok(())
@@ -274,7 +274,7 @@ impl<RepoManager: AuthRepositoryManager> AuthAccountService<RepoManager> {
         let mut user = self.auth_repo.fetch_by_username(conn, &token.data.username).await?;
 
         match &user.data.status {
-            AuthAccountStatus::PENDING_ACTIVATION => {}
+            AuthAccountStatus::PendingActivation => {}
             _ => {
                 return Err(LightSpeedError::BadRequest {
                     message: format!("User [{}] not in status PendingActivation", token.data.username),
@@ -285,7 +285,7 @@ impl<RepoManager: AuthRepositoryManager> AuthAccountService<RepoManager> {
 
         self.token_service.delete_with_conn(conn, token).await?;
 
-        user.data.status = AuthAccountStatus::ACTIVE;
+        user.data.status = AuthAccountStatus::Active;
         user = self.auth_repo.update(conn, user).await?;
         Ok(user)
     }
@@ -311,7 +311,7 @@ impl<RepoManager: AuthRepositoryManager> AuthAccountService<RepoManager> {
         let user = self.auth_repo.fetch_by_username(conn, username).await?;
 
         match &user.data.status {
-            AuthAccountStatus::ACTIVE => {}
+            AuthAccountStatus::Active => {}
             _ => {
                 return Err(LightSpeedError::BadRequest {
                     message: format!("User [{}] not in status Active", username),
@@ -321,7 +321,7 @@ impl<RepoManager: AuthRepositoryManager> AuthAccountService<RepoManager> {
         };
 
         let token =
-            self.token_service.generate_and_save_token_with_conn(conn, username, TokenType::RESET_PASSWORD).await?;
+            self.token_service.generate_and_save_token_with_conn(conn, username, TokenType::ResetPassword).await?;
 
         Ok((user, token))
     }
@@ -351,7 +351,7 @@ impl<RepoManager: AuthRepositoryManager> AuthAccountService<RepoManager> {
 
         Validator::validate(&|error_details: &mut ErrorDetails| {
             match &token.data.token_type {
-                TokenType::RESET_PASSWORD => {}
+                TokenType::ResetPassword => {}
                 _ => error_details.add_detail("token_type", WRONG_TYPE),
             };
             Ok(())
@@ -360,7 +360,7 @@ impl<RepoManager: AuthRepositoryManager> AuthAccountService<RepoManager> {
         let mut user = self.auth_repo.fetch_by_username(conn, &token.data.username).await?;
 
         match &user.data.status {
-            AuthAccountStatus::ACTIVE => {}
+            AuthAccountStatus::Active => {}
             _ => {
                 return Err(LightSpeedError::BadRequest {
                     message: format!("User [{}] not in status Active", token.data.username),
@@ -393,7 +393,7 @@ impl<RepoManager: AuthRepositoryManager> AuthAccountService<RepoManager> {
         info!("Change password of user [{}]", user.data.username);
 
         match &user.data.status {
-            AuthAccountStatus::ACTIVE => {}
+            AuthAccountStatus::Active => {}
             _ => {
                 return Err(LightSpeedError::BadRequest {
                     message: format!("User [{}] not in status Active", user.data.username),
@@ -567,7 +567,7 @@ impl<RepoManager: AuthRepositoryManager> AuthAccountService<RepoManager> {
         let mut user = self.auth_repo.fetch_by_id(conn, user_id).await?;
 
         match &user.data.status {
-            AuthAccountStatus::ACTIVE => {}
+            AuthAccountStatus::Active => {}
             _ => {
                 return Err(LightSpeedError::BadRequest {
                     message: format!("User [{}] not in status Active", user_id),
@@ -576,7 +576,7 @@ impl<RepoManager: AuthRepositoryManager> AuthAccountService<RepoManager> {
             }
         };
 
-        user.data.status = AuthAccountStatus::DISABLED;
+        user.data.status = AuthAccountStatus::Disabled;
         self.auth_repo.update(conn, user).await
     }
 
@@ -597,7 +597,7 @@ impl<RepoManager: AuthRepositoryManager> AuthAccountService<RepoManager> {
         let mut user = self.auth_repo.fetch_by_id(conn, user_id).await?;
 
         match &user.data.status {
-            AuthAccountStatus::DISABLED => {}
+            AuthAccountStatus::Disabled => {}
             _ => {
                 return Err(LightSpeedError::BadRequest {
                     message: format!("User [{}] not in status Disabled", user_id),
@@ -606,7 +606,7 @@ impl<RepoManager: AuthRepositoryManager> AuthAccountService<RepoManager> {
             }
         };
 
-        user.data.status = AuthAccountStatus::ACTIVE;
+        user.data.status = AuthAccountStatus::Active;
         self.auth_repo.update(conn, user).await
     }
 

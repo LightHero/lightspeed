@@ -40,4 +40,4 @@ scheduler = ["lightspeed_scheduler"]
 axum = ["lightspeed_core/axum", "lightspeed_file_store/axum"]
 actix_web = ["lightspeed_core/actix_web", "lightspeed_file_store/actix_web"]
 poem = ["lightspeed_core/poem"]
-poem_openapi = ["lightspeed_core/poem_openapi", "poem"]
+poem_openapi = ["lightspeed_core/poem_openapi_", "poem"] # "lightspeed_auth/poem_openapi_", should be added too
