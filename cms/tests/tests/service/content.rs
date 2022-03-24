@@ -180,9 +180,12 @@ fn should_create_unique_constraints_for_slug_schema_fields() -> Result<(), Light
         let content = ContentData {
             schema_id: saved_schema_1.id,
             content: Content {
-                fields: HashMap::from([
-                    (field_name.to_owned(), ContentFieldValue::Slug{value: ContentFieldValueArity::Single { value: Some("a-valid-slug".to_owned()) }}),
-                ]),
+                fields: HashMap::from([(
+                    field_name.to_owned(),
+                    ContentFieldValue::Slug {
+                        value: ContentFieldValueArity::Single { value: Some("a-valid-slug".to_owned()) },
+                    },
+                )]),
                 created_ms: 0,
                 updated_ms: 0,
             },
@@ -244,9 +247,12 @@ fn should_create_unique_constraints_for_string_unique_schema_fields() -> Result<
         let content = ContentData {
             schema_id: saved_schema_1.id,
             content: Content {
-                fields: HashMap::from([
-                    (field_name.to_owned(), ContentFieldValue::String{value: ContentFieldValueArity::Single { value: Some("a-valid-string".to_owned()) }}),
-                ]),
+                fields: HashMap::from([(
+                    field_name.to_owned(),
+                    ContentFieldValue::String {
+                        value: ContentFieldValueArity::Single { value: Some("a-valid-string".to_owned()) },
+                    },
+                )]),
                 created_ms: 0,
                 updated_ms: 0,
             },
@@ -308,9 +314,10 @@ fn should_create_unique_constraints_for_number_unique_schema_fields() -> Result<
         let content = ContentData {
             schema_id: saved_schema_1.id,
             content: Content {
-                fields: HashMap::from([
-                    (field_name.to_owned(), ContentFieldValue::Number{value: ContentFieldValueArity::Single { value: Some(123456789) }}),
-                ]),
+                fields: HashMap::from([(
+                    field_name.to_owned(),
+                    ContentFieldValue::Number { value: ContentFieldValueArity::Single { value: Some(123456789) } },
+                )]),
                 created_ms: 0,
                 updated_ms: 0,
             },
@@ -367,9 +374,10 @@ fn should_create_unique_constraints_for_boolean_unique_schema_fields() -> Result
         let content = ContentData {
             schema_id: saved_schema_1.id,
             content: Content {
-                fields: HashMap::from([
-                    (field_name.to_owned(), ContentFieldValue::Boolean{value: ContentFieldValueArity::Single { value: Some(true) }}),
-                ]),
+                fields: HashMap::from([(
+                    field_name.to_owned(),
+                    ContentFieldValue::Boolean { value: ContentFieldValueArity::Single { value: Some(true) } },
+                )]),
                 created_ms: 0,
                 updated_ms: 0,
             },
