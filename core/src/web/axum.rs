@@ -88,11 +88,11 @@ mod test {
     #[tokio::test]
     async fn access_protected_url_should_return_unauthorized_if_no_token() {
         // Arrange
-        let app = Router::new().route("/auth", get(username));
+        let app = Router::new().route("/username", get(username));
 
         // Act
         let resp = app
-            .oneshot(Request::builder().method(http::Method::GET).uri("/auth").body(Body::empty()).unwrap())
+            .oneshot(Request::builder().method(http::Method::GET).uri("/username").body(Body::empty()).unwrap())
             .await
             .unwrap();
 
@@ -118,14 +118,14 @@ mod test {
         };
         let token = new_service().jwt_service.generate_from_token(&token).unwrap();
 
-        let app = Router::new().route("/auth", get(username));
+        let app = Router::new().route("/username", get(username));
 
         // Act
         let resp = app
             .oneshot(
                 Request::builder()
                     .method(http::Method::GET)
-                    .uri("/auth")
+                    .uri("/username")
                     .header(JWT_TOKEN_HEADER, format!("{}{}", JWT_TOKEN_HEADER_SUFFIX, token))
                     .body(Body::empty())
                     .unwrap(),
@@ -150,14 +150,14 @@ mod test {
         };
         let token = new_service().token_from_auth(&auth).unwrap();
 
-        let app = Router::new().route("/auth", get(username));
+        let app = Router::new().route("/username", get(username));
 
         // Act
         let resp = app
             .oneshot(
                 Request::builder()
                     .method(http::Method::GET)
-                    .uri("/auth")
+                    .uri("/username")
                     .header(JWT_TOKEN_HEADER, format!("{}{}", JWT_TOKEN_HEADER_SUFFIX, token))
                     .body(Body::empty())
                     .unwrap(),
@@ -182,14 +182,14 @@ mod test {
         };
         let token = new_service().token_from_auth(&auth).unwrap();
 
-        let app = Router::new().route("/auth", get(admin));
+        let app = Router::new().route("/admin", get(admin));
 
         // Act
         let resp = app
             .oneshot(
                 Request::builder()
                     .method(http::Method::GET)
-                    .uri("/auth")
+                    .uri("/admin")
                     .header(JWT_TOKEN_HEADER, format!("{}{}", JWT_TOKEN_HEADER_SUFFIX, token))
                     .body(Body::empty())
                     .unwrap(),
@@ -204,11 +204,11 @@ mod test {
     #[tokio::test]
     async fn should_return_json_web_error() {
         // Arrange
-        let app = Router::new().route("/err", get(web_error));
+        let app = Router::new().route("/web_error", get(web_error));
 
         // Act
         let resp = app
-            .oneshot(Request::builder().method(http::Method::GET).uri("/err").body(Body::empty()).unwrap())
+            .oneshot(Request::builder().method(http::Method::GET).uri("/web_error").body(Body::empty()).unwrap())
             .await
             .unwrap();
 

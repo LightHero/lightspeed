@@ -97,7 +97,6 @@ mod open_api {
     use crate::error::{LightSpeedError, WebErrorDetails};
     use poem_ext::http::StatusCode;
     use poem_openapi_ext::payload::Json;
-    use poem_openapi_ext::types::{ToJSON, Type};
     use poem_openapi_ext::ApiResponse;
 
     #[derive(ApiResponse, Debug)]
@@ -149,32 +148,6 @@ mod open_api {
             }
         }
     }
-
-    /// A generic JSON type response with status code 200
-    #[derive(ApiResponse)]
-    pub enum JsonResponse<T: Type + ToJSON> {
-        #[oai(status = 200)]
-        Ok(Json<T>),
-    }
-
-    impl<T: Type + ToJSON> JsonResponse<T> {
-        /// Returns Ok(JsonResponse::Ok(Json(json)))
-        pub fn ok<E>(json: T) -> Result<Self, E> {
-            Ok(JsonResponse::Ok(Json(json)))
-        }
-    }
-
-    impl<T: Type + ToJSON> From<Json<T>> for JsonResponse<T> {
-        fn from(json: Json<T>) -> Self {
-            JsonResponse::Ok(json)
-        }
-    }
-
-    impl<T: Type + ToJSON> From<T> for JsonResponse<T> {
-        fn from(json: T) -> Self {
-            JsonResponse::Ok(Json(json))
-        }
-    }
 }
 
 #[cfg(test)]
@@ -195,11 +168,11 @@ mod test {
     async fn access_protected_url_should_return_unauthorized_if_no_token() {
         // Arrange
 
-        let app = Route::new().at("/auth", username);
+        let app = Route::new().at("/username", username);
         let cli = TestClient::new(app);
 
         // Act
-        let resp = cli.get("/auth").send().await.into_inner();
+        let resp = cli.get("/username").send().await.0;
 
         // Assert
         assert_eq!(resp.status(), StatusCode::UNAUTHORIZED);
@@ -223,12 +196,12 @@ mod test {
         };
         let token = new_service().jwt_service.generate_from_token(&token).unwrap();
 
-        let app = Route::new().at("/auth", username);
+        let app = Route::new().at("/username", username);
         let cli = TestClient::new(app);
 
         // Act
         let resp =
-            cli.get("/auth").header(JWT_TOKEN_HEADER, format!("{}{}", JWT_TOKEN_HEADER_SUFFIX, token)).send().await;
+            cli.get("/username").header(JWT_TOKEN_HEADER, format!("{}{}", JWT_TOKEN_HEADER_SUFFIX, token)).send().await;
 
         // Assert
         resp.assert_status(StatusCode::UNAUTHORIZED);
@@ -247,12 +220,12 @@ mod test {
         };
         let token = new_service().token_from_auth(&auth).unwrap();
 
-        let app = Route::new().at("/auth", username);
+        let app = Route::new().at("/username", username);
         let cli = TestClient::new(app);
 
         // Act
         let resp =
-            cli.get("/auth").header(JWT_TOKEN_HEADER, format!("{}{}", JWT_TOKEN_HEADER_SUFFIX, token)).send().await;
+            cli.get("/username").header(JWT_TOKEN_HEADER, format!("{}{}", JWT_TOKEN_HEADER_SUFFIX, token)).send().await;
 
         // Assert
         resp.assert_status_is_ok();
@@ -271,12 +244,12 @@ mod test {
         };
         let token = new_service().token_from_auth(&auth).unwrap();
 
-        let app = Route::new().at("/auth", admin);
+        let app = Route::new().at("/admin", admin);
         let cli = TestClient::new(app);
 
         // Act
         let resp =
-            cli.get("/auth").header(JWT_TOKEN_HEADER, format!("{}{}", JWT_TOKEN_HEADER_SUFFIX, token)).send().await;
+            cli.get("/admin").header(JWT_TOKEN_HEADER, format!("{}{}", JWT_TOKEN_HEADER_SUFFIX, token)).send().await;
 
         // Assert
         resp.assert_status(StatusCode::FORBIDDEN);
@@ -285,17 +258,17 @@ mod test {
     #[tokio::test]
     async fn should_return_json_web_error() {
         // Arrange
-        let app = Route::new().at("/err", web_error);
+        let app = Route::new().at("/web_error", web_error);
         let cli = TestClient::new(app);
 
         // Act
-        let resp = cli.get("/err").send().await;
+        let resp = cli.get("/web_error").send().await;
 
         // Assert
         resp.assert_status(StatusCode::UNPROCESSABLE_ENTITY);
         resp.assert_header(http::header::CONTENT_TYPE, "application/json");
 
-        let body: WebErrorDetails = resp.into_body().into_json().await.unwrap();
+        let body: WebErrorDetails = resp.0.into_body().into_json().await.unwrap();
         assert_eq!("error", body.message.unwrap());
     }
 
@@ -336,109 +309,224 @@ mod test {
             ),
         }
     }
-}
 
-#[cfg(test)]
-mod test_openapi {
+    #[cfg(feature = "poem_openapi")]
+    #[cfg(test)]
+    mod test_openapi {
+        use super::*;
+        use crate::web::poem::open_api::LightSpeedErrorResponse;
+        use poem_ext::test::TestClient;
+        use poem_ext::Route;
+        use poem_openapi_ext::payload::{Json, PlainText};
+        use poem_openapi_ext::*;
+        use serde::Serialize;
 
-    use super::*;
-    use crate::config::JwtConfig;
-    use crate::service::auth::{Auth, AuthService, InMemoryRolesProvider, Role};
-    use crate::service::jwt::{JwtService, JWT};
-    use crate::web::poem::open_api::OpenApiResponse;
-    use crate::web::{WebAuthService, JWT_TOKEN_HEADER, JWT_TOKEN_HEADER_SUFFIX};
-    use jsonwebtoken::Algorithm;
-    use poem_ext::http::HeaderMap;
-    use poem_ext::test::TestClient;
-    use poem_ext::web::Json;
-    use poem_ext::{handler, Request, Route};
-    use poem_openapi_ext::payload::PlainText;
-    use poem_openapi_ext::registry::{MetaResponses, Registry};
-    use poem_openapi_ext::*;
-    use std::sync::Arc;
+        #[tokio::test]
+        async fn should_use_lightspeederror_with_openapi_ok_text() {
+            // Arrange
+            let api_service = OpenApiService::new(Api, "Hello World", "1.0").server("http://localhost:3000/api");
+            let ui = api_service.swagger_ui();
 
-    #[tokio::test]
-    async fn should_use_lightspeederror_with_openapi() {
-        // Arrange
-        let api_service = OpenApiService::new(Api, "Hello World", "1.0").server("http://localhost:3000/api");
-        let ui = api_service.swagger_ui();
+            let app = Route::new().nest("/api", api_service).nest("/", ui);
+            let cli = TestClient::new(app);
 
-        let app = Route::new().nest("/api", api_service).nest("/", ui);
-        let cli = TestClient::new(app);
+            // Act
+            let resp = cli.get("/api/ok_text").send().await.0;
 
-        // Act
-        let resp = cli.get("/api").send().await.into_inner();
-
-        // Assert
-        assert_eq!(resp.status(), StatusCode::OK);
-        let body = resp.into_body().into_string().await.unwrap();
-        println!("{:?}", body)
-    }
-
-    struct Api;
-
-    #[OpenApi]
-    impl Api {
-        #[oai(path = "/ok", method = "get")]
-        async fn web_ok(&self) -> OpenApiResponse<PlainText<String>> {
-            Ok("".to_owned()).into()
+            // Assert
+            assert_eq!(resp.status(), StatusCode::OK);
+            let body = resp.into_body().into_string().await.unwrap();
+            println!("{:?}", body)
         }
 
-        #[oai(path = "/admin", method = "get")]
-        async fn admin(&self, req: &HeaderMap) -> poem_ext::Result<PlainText<String>> {
-            let auth_service = new_service();
-            let auth_context = auth_service.auth_from_request(req)?;
-            auth_context.has_role("admin")?;
-            Ok(PlainText(auth_context.auth.username.clone()))
+        #[tokio::test]
+        async fn should_use_lightspeederror_with_openapi_ok_json() {
+            // Arrange
+            let api_service = OpenApiService::new(Api, "Hello World", "1.0").server("http://localhost:3000/api");
+            let ui = api_service.swagger_ui();
+
+            let app = Route::new().nest("/api", api_service).nest("/", ui);
+            let cli = TestClient::new(app);
+
+            // Act
+            let resp = cli.get("/api/ok_json").send().await;
+
+            // Assert
+            resp.assert_status_is_ok();
+            resp.assert_json(MyJson { data: "ok json".to_owned() }).await;
         }
 
-        #[oai(path = "/username", method = "get")]
-        async fn username(&self, req: &Request) -> poem_ext::Result<PlainText<String>> {
-            let auth_service = new_service();
-            let auth_context = auth_service.auth_from_request(req)?;
-            Ok(PlainText(auth_context.auth.username))
+        #[tokio::test]
+        async fn access_protected_url_should_return_unauthorized_if_no_token() {
+            // Arrange
+            let api_service = OpenApiService::new(Api, "Hello World", "1.0").server("http://localhost:3000/api");
+            let ui = api_service.swagger_ui();
+
+            let app = Route::new().nest("/api", api_service).nest("/", ui);
+            let cli = TestClient::new(app);
+
+            // Act
+            let resp = cli.get("/api/username").send().await.0;
+
+            // Assert
+            assert_eq!(resp.status(), StatusCode::UNAUTHORIZED);
         }
 
-        #[oai(path = "/error", method = "get")]
-        async fn web_error(&self) -> poem_ext::Result<PlainText<String>> {
-            Err(LightSpeedError::ValidationError {
-                details: RootErrorDetails { details: Default::default(), message: Some("error".to_owned()) },
-            })?
+        #[tokio::test]
+        async fn access_protected_url_should_return_unauthorized_if_expired_token() {
+            // Arrange
+            let token = JWT {
+                payload: Auth {
+                    username: "Amelia".to_owned(),
+                    id: 100,
+                    session_id: "a_0".to_owned(),
+                    roles: vec![],
+                    creation_ts_seconds: 0,
+                    expiration_ts_seconds: i64::MAX,
+                },
+                exp: 0,
+                iat: 0,
+                sub: "".to_owned(),
+            };
+            let token = new_service().jwt_service.generate_from_token(&token).unwrap();
+
+            let api_service = OpenApiService::new(Api, "Hello World", "1.0").server("http://localhost:3000/api");
+            let ui = api_service.swagger_ui();
+
+            let app = Route::new().nest("/api", api_service).nest("/", ui);
+            let cli = TestClient::new(app);
+
+            // Act
+            let resp = cli
+                .get("/api/username")
+                .header(JWT_TOKEN_HEADER, format!("{}{}", JWT_TOKEN_HEADER_SUFFIX, token))
+                .send()
+                .await;
+
+            // Assert
+            resp.assert_status(StatusCode::UNAUTHORIZED);
         }
-    }
 
-    #[derive(ApiResponse)]
-    enum GetResponse {
-        #[oai(status = 200)]
-        Todo(PlainText<String>),
+        #[tokio::test]
+        async fn access_protected_url_should_return_ok_if_valid_token() {
+            // Arrange
+            let auth = Auth {
+                username: "Amelia".to_owned(),
+                id: 100,
+                session_id: "a_0".to_owned(),
+                roles: vec![],
+                creation_ts_seconds: 0,
+                expiration_ts_seconds: i64::MAX,
+            };
+            let token = new_service().token_from_auth(&auth).unwrap();
 
-        #[oai(status = 404)]
-        NotFound(PlainText<String>),
-    }
+            let api_service = OpenApiService::new(Api, "Hello World", "1.0").server("http://localhost:3000/api");
+            let ui = api_service.swagger_ui();
 
-    // impl ApiResponse for Result<(), LightSpeedError> {
-    //     fn meta() -> MetaResponses {
-    //         todo!()
-    //     }
-    //
-    //     fn register(registry: &mut Registry) {
-    //         todo!()
-    //     }
-    // }
+            let app = Route::new().nest("/api", api_service).nest("/", ui);
+            let cli = TestClient::new(app);
 
-    fn new_service() -> WebAuthService<InMemoryRolesProvider> {
-        WebAuthService {
-            auth_service: Arc::new(AuthService::new(InMemoryRolesProvider::new(
-                vec![Role { name: "admin".to_owned(), permissions: vec![] }].into(),
-            ))),
-            jwt_service: Arc::new(
-                JwtService::new(&JwtConfig {
-                    secret: "secret".to_owned(),
-                    signature_algorithm: Algorithm::HS256,
-                    token_validity_minutes: 10,
-                })
-                .unwrap(),
-            ),
+            // Act
+            let resp = cli
+                .get("/api/username")
+                .header(JWT_TOKEN_HEADER, format!("{}{}", JWT_TOKEN_HEADER_SUFFIX, token))
+                .send()
+                .await;
+
+            // Assert
+            resp.assert_status_is_ok();
+        }
+
+        #[tokio::test]
+        async fn access_admin_url_should_return_forbidden_if_not_admin_role() {
+            // Arrange
+            let auth = Auth {
+                username: "Amelia".to_owned(),
+                id: 100,
+                session_id: "a_0".to_owned(),
+                roles: vec![],
+                creation_ts_seconds: 0,
+                expiration_ts_seconds: i64::MAX,
+            };
+            let token = new_service().token_from_auth(&auth).unwrap();
+
+            let api_service = OpenApiService::new(Api, "Hello World", "1.0").server("http://localhost:3000/api");
+            let ui = api_service.swagger_ui();
+
+            let app = Route::new().nest("/api", api_service).nest("/", ui);
+            let cli = TestClient::new(app);
+
+            // Act
+            let resp = cli
+                .get("/api/admin")
+                .header(JWT_TOKEN_HEADER, format!("{}{}", JWT_TOKEN_HEADER_SUFFIX, token))
+                .send()
+                .await;
+
+            // Assert
+            resp.assert_status(StatusCode::FORBIDDEN);
+        }
+
+        #[tokio::test]
+        async fn should_return_json_web_error() {
+            // Arrange
+            let api_service = OpenApiService::new(Api, "Hello World", "1.0").server("http://localhost:3000/api");
+            let ui = api_service.swagger_ui();
+
+            let app = Route::new().nest("/api", api_service).nest("/", ui);
+            let cli = TestClient::new(app);
+
+            // Act
+            let resp = cli.get("/api/web_error").send().await;
+
+            // Assert
+            resp.assert_status(StatusCode::UNPROCESSABLE_ENTITY);
+            resp.assert_header(http::header::CONTENT_TYPE, "application/json; charset=utf-8");
+
+            let body: WebErrorDetails = resp.0.into_body().into_json().await.unwrap();
+            assert_eq!("error", body.message.unwrap());
+        }
+
+        #[derive(Serialize, Object)]
+        pub struct MyJson {
+            data: String,
+        }
+
+        struct Api;
+
+        #[OpenApi]
+        impl Api {
+            #[oai(path = "/ok_text", method = "get")]
+            async fn ok_text(&self) -> Result<PlainText<String>, LightSpeedErrorResponse> {
+                Ok(PlainText("ok text".to_owned()))
+            }
+
+            #[oai(path = "/ok_json", method = "get")]
+            async fn ok_json(&self) -> Result<Json<MyJson>, LightSpeedErrorResponse> {
+                Ok(Json(MyJson { data: "ok json".to_owned() }))
+            }
+
+            #[oai(path = "/admin", method = "get")]
+            async fn admin(&self, req: &Request) -> Result<PlainText<String>, LightSpeedErrorResponse> {
+                let auth_service = new_service();
+                let auth_context = auth_service.auth_from_request(req)?;
+                auth_context.has_role("admin")?;
+                Ok(PlainText(auth_context.auth.username.clone()))
+            }
+
+            #[oai(path = "/username", method = "get")]
+            async fn username(&self, req: &Request) -> Result<PlainText<String>, LightSpeedErrorResponse> {
+                let auth_service = new_service();
+                let auth_context = auth_service.auth_from_request(req)?;
+                Ok(PlainText(auth_context.auth.username))
+            }
+
+            #[oai(path = "/web_error", method = "get")]
+            async fn web_error(&self) -> Result<PlainText<String>, LightSpeedErrorResponse> {
+                Err(LightSpeedError::ValidationError {
+                    details: RootErrorDetails { details: Default::default(), message: Some("error".to_owned()) },
+                })?
+            }
         }
     }
 }

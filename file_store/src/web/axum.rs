@@ -93,10 +93,9 @@ pub async fn into_response(
 #[cfg(test)]
 mod test {
     use super::*;
-    use axum_ext::extract::Extension;
     use axum_ext::http::{self, Request, StatusCode};
     use axum_ext::routing::get;
-    use axum_ext::{AddExtensionLayer, Router};
+    use axum_ext::{extract::Extension, Router};
     use std::path::Path;
     use std::sync::Arc;
     use tower::ServiceExt; // for `app.oneshot()`
@@ -122,7 +121,7 @@ mod test {
             set_content_disposition: false,
         });
 
-        let app = Router::new().route("/download", get(download)).layer(AddExtensionLayer::new(data.clone()));
+        let app = Router::new().route("/download", get(download)).layer(Extension(data.clone()));
 
         // Act
         let resp = app
@@ -148,7 +147,7 @@ mod test {
             set_content_disposition: true,
         });
 
-        let app = Router::new().route("/download", get(download)).layer(AddExtensionLayer::new(data.clone()));
+        let app = Router::new().route("/download", get(download)).layer(Extension(data.clone()));
 
         // Act
         let resp = app
@@ -180,7 +179,7 @@ mod test {
             set_content_disposition: false,
         });
 
-        let app = Router::new().route("/download", get(download)).layer(AddExtensionLayer::new(data.clone()));
+        let app = Router::new().route("/download", get(download)).layer(Extension(data.clone()));
 
         // Act
         let resp = app
@@ -207,7 +206,7 @@ mod test {
             set_content_disposition: true,
         });
 
-        let app = Router::new().route("/download", get(download)).layer(AddExtensionLayer::new(data.clone()));
+        let app = Router::new().route("/download", get(download)).layer(Extension(data.clone()));
 
         // Act
         let resp = app

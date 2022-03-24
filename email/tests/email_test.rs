@@ -1,9 +1,9 @@
+use lettre::message::SinglePart;
 use lightspeed_email::config::EmailClientConfig;
 use lightspeed_email::model::email::{EmailAttachment, EmailMessage};
 use lightspeed_email::repository::email::{new, EmailClientType};
 use lightspeed_email::service::EmailService;
 use testcontainers::*;
-use lettre::message::SinglePart;
 
 pub fn new_mail_server(docker: &clients::Cli) -> (u16, Container<clients::Cli, images::generic::GenericImage>) {
     let node = docker.run(
@@ -54,6 +54,7 @@ async fn should_start_the_mailserver() {
     assert!(email_service.send(message.clone()).await.is_ok());
 }
 
+#[ignore]
 #[tokio::test]
 async fn full_client_should_use_gmail2() {
     use lettre::transport::smtp::authentication::Credentials;
@@ -69,21 +70,17 @@ async fn full_client_should_use_gmail2() {
 
     let creds = Credentials::new("ufoscout@gmail.com".to_string(), "".to_string());
 
-// Open a remote connection to gmail
-    let mailer = SmtpTransport::starttls_relay("smtp.gmail.com")
-        .unwrap()
-        .credentials(creds)
-        .build();
+    // Open a remote connection to gmail
+    let mailer = SmtpTransport::starttls_relay("smtp.gmail.com").unwrap().credentials(creds).build();
 
-// Send the email
+    // Send the email
     match mailer.send(&email) {
         Ok(_) => println!("Email sent successfully!"),
         Err(e) => panic!("Could not send email: {:?}", e),
     }
 }
 
-
-
+#[ignore]
 #[tokio::test]
 async fn full_client_should_use_gmail() {
     // Arrange

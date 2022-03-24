@@ -38,4 +38,4 @@ logger = ["lightspeed_logger"]
 scheduler = ["lightspeed_scheduler"]
 
 axum = ["lightspeed_core/axum", "lightspeed_file_store/axum"]
-actix_web_4 = ["lightspeed_core/actix_web_4", "lightspeed_file_store/actix_web_4"]
+actix_web = ["lightspeed_core/actix_web", "lightspeed_file_store/actix_web"]

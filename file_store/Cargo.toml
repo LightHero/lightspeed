@@ -45,5 +45,5 @@ tower = "0.4"
 [features]
 default = []
 
-actix_web_4 = ["actix-files", "actix-web", "lightspeed_core/actix_web_4", "mime", "mime_guess"]
+actix_web = ["actix-files", "actix-web", "lightspeed_core/actix_web", "mime", "mime_guess"]
 axum = ["axum_ext", "lightspeed_core/axum", "mime", "mime_guess", "tokio-util"]
