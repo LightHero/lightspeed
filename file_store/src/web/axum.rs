@@ -1,5 +1,5 @@
 use crate::model::BinaryContent;
-use axum_ext::{
+use axum::{
     body::{boxed, Body, BoxBody, StreamBody},
     http::{header, response::Builder, Response},
 };
@@ -93,9 +93,9 @@ pub async fn into_response(
 #[cfg(test)]
 mod test {
     use super::*;
-    use axum_ext::http::{self, Request, StatusCode};
-    use axum_ext::routing::get;
-    use axum_ext::{extract::Extension, Router};
+    use axum::http::{self, Request, StatusCode};
+    use axum::routing::get;
+    use axum::{extract::Extension, Router};
     use std::path::Path;
     use std::sync::Arc;
     use tower::ServiceExt; // for `app.oneshot()`

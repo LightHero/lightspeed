@@ -1,8 +1,8 @@
 use crate::error::{LightSpeedError, WebErrorDetails};
 use crate::web::Headers;
 use ::http::HeaderValue;
-use actix_web_ext::HttpResponseBuilder;
-use actix_web_ext::{http, HttpRequest, HttpResponse, ResponseError};
+use actix_web::HttpResponseBuilder;
+use actix_web::{http, HttpRequest, HttpResponse, ResponseError};
 
 impl Headers for HttpRequest {
     fn get(&self, header_name: &str) -> Option<&HeaderValue> {
@@ -57,16 +57,16 @@ mod test {
     use crate::service::auth::{Auth, AuthService, InMemoryRolesProvider, Role};
     use crate::service::jwt::{JwtService, JWT};
     use crate::web::{WebAuthService, JWT_TOKEN_HEADER, JWT_TOKEN_HEADER_SUFFIX};
-    use actix_web_ext::dev::Service;
-    use actix_web_ext::test::{init_service, read_body_json, TestRequest};
-    use actix_web_ext::{
+    use actix_web::dev::Service;
+    use actix_web::test::{init_service, read_body_json, TestRequest};
+    use actix_web::{
         http::{header, StatusCode},
         web, App,
     };
     use jsonwebtoken::Algorithm;
     use std::sync::Arc;
 
-    #[actix_web_ext::rt::test]
+    #[actix_web::rt::test]
     async fn access_protected_url_should_return_unauthorized_if_no_token() {
         // Arrange
         let srv = init_service(App::new().service(web::resource("/username").to(username))).await;
@@ -80,7 +80,7 @@ mod test {
         assert_eq!(resp.status(), StatusCode::UNAUTHORIZED);
     }
 
-    #[actix_web_ext::rt::test]
+    #[actix_web::rt::test]
     async fn access_protected_url_should_return_unauthorized_if_expired_token() {
         // Arrange
         let token = JWT {
@@ -112,7 +112,7 @@ mod test {
         assert_eq!(resp.status(), StatusCode::UNAUTHORIZED);
     }
 
-    #[actix_web_ext::rt::test]
+    #[actix_web::rt::test]
     async fn access_protected_url_should_return_ok_if_valid_token() {
         // Arrange
         let auth = Auth {
@@ -139,7 +139,7 @@ mod test {
         assert_eq!(resp.status(), StatusCode::OK);
     }
 
-    #[actix_web_ext::rt::test]
+    #[actix_web::rt::test]
     async fn access_admin_url_should_return_forbidden_if_not_admin_role() {
         // Arrange
         let auth = Auth {
@@ -166,7 +166,7 @@ mod test {
         assert_eq!(resp.status(), StatusCode::FORBIDDEN);
     }
 
-    #[actix_web_ext::rt::test]
+    #[actix_web::rt::test]
     async fn should_return_json_web_error() {
         // Arrange
         let srv = init_service(App::new().service(web::resource("/web_error").to(web_error))).await;
@@ -184,14 +184,14 @@ mod test {
         assert_eq!("error", body.message.unwrap());
     }
 
-    async fn admin(req: HttpRequest) -> actix_web_ext::Result<String> {
+    async fn admin(req: HttpRequest) -> actix_web::Result<String> {
         let auth_service = new_service();
         let auth_context = auth_service.auth_from_request(&req)?;
         auth_context.has_role("admin")?;
         Ok(auth_context.auth.username.clone())
     }
 
-    async fn username(req: HttpRequest) -> actix_web_ext::Result<String> {
+    async fn username(req: HttpRequest) -> actix_web::Result<String> {
         let auth_service = new_service();
         let auth_context = auth_service.auth_from_request(&req)?;
         Ok(auth_context.auth.username)

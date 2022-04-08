@@ -1,7 +1,7 @@
 use crate::error::{LightSpeedError, RootErrorDetails, WebErrorDetails};
-use axum_ext::body::{boxed, Body, BoxBody};
-use axum_ext::http::{header, HeaderValue, Response, StatusCode};
-use axum_ext::response::IntoResponse;
+use axum::body::{boxed, Body, BoxBody};
+use axum::http::{header, HeaderValue, Response, StatusCode};
+use axum::response::IntoResponse;
 use log::*;
 
 impl IntoResponse for LightSpeedError {
@@ -78,9 +78,9 @@ mod test {
     use crate::service::auth::{Auth, AuthService, InMemoryRolesProvider, Role};
     use crate::service::jwt::{JwtService, JWT};
     use crate::web::{WebAuthService, JWT_TOKEN_HEADER, JWT_TOKEN_HEADER_SUFFIX};
-    use axum_ext::http::{header, HeaderMap, Request};
-    use axum_ext::routing::get;
-    use axum_ext::Router;
+    use axum::http::{header, HeaderMap, Request};
+    use axum::routing::get;
+    use axum::Router;
     use jsonwebtoken::Algorithm;
     use std::sync::Arc;
     use tower::ServiceExt; // for `app.oneshot()`

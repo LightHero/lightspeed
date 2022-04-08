@@ -2,7 +2,7 @@ use crate::error::{LightSpeedError, RootErrorDetails, WebErrorDetails};
 use crate::web::Headers;
 use http::HeaderValue;
 use log::*;
-use poem_ext::{error::ResponseError, http::StatusCode, Request, Response};
+use poem::{error::ResponseError, http::StatusCode, Request, Response};
 use std::error::Error as StdError;
 
 impl Headers for Request {
@@ -95,7 +95,7 @@ fn response(http_code: StatusCode, details: &WebErrorDetails) -> Response {
 pub mod openapi {
 
     use crate::error::{LightSpeedError, WebErrorDetails};
-    use poem_ext::http::StatusCode;
+    use poem::http::StatusCode;
     use poem_openapi::payload::Json;
     use poem_openapi::ApiResponse;
 
@@ -159,9 +159,9 @@ mod test {
     use crate::service::jwt::{JwtService, JWT};
     use crate::web::{WebAuthService, JWT_TOKEN_HEADER, JWT_TOKEN_HEADER_SUFFIX};
     use jsonwebtoken::Algorithm;
-    use poem_ext::http::HeaderMap;
-    use poem_ext::test::TestClient;
-    use poem_ext::{handler, Request, Route};
+    use poem::http::HeaderMap;
+    use poem::test::TestClient;
+    use poem::{handler, Request, Route};
     use std::sync::Arc;
 
     #[tokio::test]
@@ -315,8 +315,8 @@ mod test {
     mod test_openapi {
         use super::*;
         use crate::web::poem::openapi::LightSpeedErrorResponse;
-        use poem_ext::test::TestClient;
-        use poem_ext::Route;
+        use poem::test::TestClient;
+        use poem::Route;
         use poem_openapi::payload::{Json, PlainText};
         use poem_openapi::*;
         use serde::Serialize;

@@ -55,7 +55,7 @@ impl EmailClient for FixedRecipientEmailClient {
     }
 
     fn retain_emails(&self, retain: Box<dyn FnMut(&EmailMessage) -> bool>) -> Result<(), LightSpeedError> {
-        self.retain_emails(retain)
+        self.client.retain_emails(retain)
     }
 }
 

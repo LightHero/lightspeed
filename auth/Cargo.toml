@@ -33,4 +33,4 @@ tokio = { version = "1", features = ["rt-multi-thread"] }
 
 [features]
 default = []
-poem_openapi_ = ["poem-openapi"]
+poem_openapi = ["dep:poem-openapi"]
