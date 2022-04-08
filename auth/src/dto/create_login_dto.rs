@@ -8,7 +8,7 @@ use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
 #[derive(Clone, Serialize, Deserialize)]
-#[cfg_attr(feature = "poem_openapi_", derive(poem_openapi::Object))]
+#[cfg_attr(feature = "poem_openapi", derive(poem_openapi::Object))]
 pub struct CreateLoginDto {
     pub username: Option<String>,
     pub email: String,

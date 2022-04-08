@@ -13,7 +13,7 @@ keywords = []
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-c3p0 = { version = "0.64", features = ["postgres_migrate"] }
+c3p0 = { version = "0.64", features = ["postgres_migrate"], optional = true }
 lightspeed_auth = { version = "0.49.0", path = "../auth", optional = true }
 lightspeed_cache = { version = "0.49.0", path = "../cache", optional = true }
 lightspeed_cms = { version = "0.49.0", path = "../cms", optional = true }
@@ -39,5 +39,6 @@ scheduler = ["dep:lightspeed_scheduler"]
 
 axum = ["lightspeed_core?/axum", "lightspeed_file_store?/axum"]
 actix_web = ["lightspeed_core?/actix_web", "lightspeed_file_store?/actix_web"]
+c3p0 = ["dep:c3p0", "lightspeed_core?/c3p0"]
 poem = ["lightspeed_core?/poem"]
 poem_openapi = ["lightspeed_core?/poem_openapi", "poem", "lightspeed_auth?/poem_openapi"]

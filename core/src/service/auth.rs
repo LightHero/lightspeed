@@ -1,13 +1,12 @@
 use crate::error::LightSpeedError;
 use crate::utils::current_epoch_seconds;
-use c3p0_common::Model;
 use serde::{Deserialize, Serialize};
 use std::borrow::Cow;
 use std::collections::{BTreeMap, HashMap};
 use std::sync::Arc;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-#[cfg_attr(feature = "poem_openapi_", derive(poem_openapi::Object))]
+#[cfg_attr(feature = "poem_openapi", derive(poem_openapi::Object))]
 pub struct Auth {
     pub id: i64,
     pub username: String,
@@ -59,7 +58,8 @@ impl Owned for i64 {
     }
 }
 
-impl<T: Owned + Clone + serde::ser::Serialize + Send> Owned for Model<T> {
+#[cfg(feature = "c3p0")]
+impl<T: Owned + Clone + serde::ser::Serialize + Send> Owned for c3p0_common::Model<T> {
     fn get_owner_id(&self) -> i64 {
         self.data.get_owner_id()
     }

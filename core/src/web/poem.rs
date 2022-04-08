@@ -91,7 +91,7 @@ fn response(http_code: StatusCode, details: &WebErrorDetails) -> Response {
     }
 }
 
-#[cfg(feature = "poem_openapi_")]
+#[cfg(feature = "poem_openapi")]
 pub mod openapi {
 
     use crate::error::{LightSpeedError, WebErrorDetails};
@@ -310,7 +310,7 @@ mod test {
         }
     }
 
-    #[cfg(feature = "poem_openapi_")]
+    #[cfg(feature = "poem_openapi")]
     #[cfg(test)]
     mod test_openapi {
         use super::*;

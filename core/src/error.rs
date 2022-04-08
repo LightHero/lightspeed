@@ -1,4 +1,3 @@
-use c3p0_common::error::C3p0Error;
 use serde::{Deserialize, Serialize};
 use std::collections::hash_map::Entry;
 use std::collections::HashMap;
@@ -21,33 +20,67 @@ impl ErrorCodes {
 
 #[derive(Debug)]
 pub enum LightSpeedError {
-    InvalidTokenError { message: String },
-    ExpiredTokenError { message: String },
-    GenerateTokenError { message: String },
+    InvalidTokenError {
+        message: String,
+    },
+    ExpiredTokenError {
+        message: String,
+    },
+    GenerateTokenError {
+        message: String,
+    },
     MissingAuthTokenError,
-    ParseAuthHeaderError { message: String },
+    ParseAuthHeaderError {
+        message: String,
+    },
 
     // Module
-    ModuleBuilderError { message: String },
-    ModuleStartError { message: String },
-    ConfigurationError { message: String },
+    ModuleBuilderError {
+        message: String,
+    },
+    ModuleStartError {
+        message: String,
+    },
+    ConfigurationError {
+        message: String,
+    },
 
     // Auth
     UnauthenticatedError,
-    ForbiddenError { message: String },
-    PasswordEncryptionError { message: String },
+    ForbiddenError {
+        message: String,
+    },
+    PasswordEncryptionError {
+        message: String,
+    },
 
-    InternalServerError { message: String },
+    InternalServerError {
+        message: String,
+    },
 
-    C3p0Error { source: C3p0Error },
+    #[cfg(feature = "c3p0")]
+    C3p0Error {
+        source: c3p0_common::error::C3p0Error,
+    },
 
-    ValidationError { details: RootErrorDetails },
+    ValidationError {
+        details: RootErrorDetails,
+    },
 
-    BadRequest { message: String, code: &'static str },
+    BadRequest {
+        message: String,
+        code: &'static str,
+    },
 
-    RequestConflict { message: String, code: &'static str },
+    RequestConflict {
+        message: String,
+        code: &'static str,
+    },
 
-    ServiceUnavailable { message: String, code: &'static str },
+    ServiceUnavailable {
+        message: String,
+        code: &'static str,
+    },
 }
 
 impl Display for LightSpeedError {
@@ -71,6 +104,7 @@ impl Display for LightSpeedError {
 
             LightSpeedError::InternalServerError { message } => write!(f, "InternalServerError: [{}]", message),
 
+            #[cfg(feature = "c3p0")]
             LightSpeedError::C3p0Error { .. } => write!(f, "C3p0Error"),
 
             LightSpeedError::ValidationError { details } => write!(f, "ValidationError: [{:?}]", details),
@@ -118,11 +152,13 @@ impl Error for LightSpeedError {
             LightSpeedError::RequestConflict { .. } |
             LightSpeedError::ServiceUnavailable { .. } => None,
 
+            #[cfg(feature = "c3p0")]
             LightSpeedError::C3p0Error { source } => Some(source),
         }
     }
 }
 
+#[cfg(feature = "c3p0")]
 impl From<c3p0_common::error::C3p0Error> for LightSpeedError {
     fn from(err: c3p0_common::error::C3p0Error) -> Self {
         LightSpeedError::C3p0Error { source: err }
@@ -130,7 +166,7 @@ impl From<c3p0_common::error::C3p0Error> for LightSpeedError {
 }
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
-#[cfg_attr(feature = "poem_openapi_", derive(poem_openapi::Object))]
+#[cfg_attr(feature = "poem_openapi", derive(poem_openapi::Object))]
 pub struct ErrorDetail {
     error: String,
     params: Vec<String>,
@@ -161,7 +197,7 @@ impl From<(&str, Vec<String>)> for ErrorDetail {
 }
 
 #[derive(Debug, Serialize, Deserialize)]
-#[cfg_attr(feature = "poem_openapi_", derive(poem_openapi::Object))]
+#[cfg_attr(feature = "poem_openapi", derive(poem_openapi::Object))]
 pub struct WebErrorDetails {
     pub code: u16,
     pub message: Option<String>,

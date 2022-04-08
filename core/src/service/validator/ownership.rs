@@ -1,6 +1,5 @@
 use crate::error::ErrorDetails;
 use crate::service::auth::Owned;
-use c3p0_common::Model;
 
 pub const WRONG_OWNER: &str = "WRONG_OWNER";
 pub const WRONG_ID: &str = "WRONG_ID";
@@ -11,7 +10,8 @@ pub trait WithIdAndVersion {
     fn get_version(&self) -> i32;
 }
 
-impl<T: Clone + serde::ser::Serialize + Send> WithIdAndVersion for Model<T> {
+#[cfg(feature = "c3p0")]
+impl<T: Clone + serde::ser::Serialize + Send> WithIdAndVersion for c3p0_common::Model<T> {
     fn get_id(&self) -> i64 {
         self.id
     }
@@ -70,13 +70,14 @@ mod tests {
         assert!(error_details.details().is_empty())
     }
 
+    #[cfg(feature = "c3p0")]
     #[test]
     fn should_validate_ownership_2() {
         // Arrange
         let mut error_details = ErrorDetails::default();
 
-        let first = Model { id: 13, version: 1, data: 1000 };
-        let second = Model { id: 12, version: 0, data: 1000 };
+        let first = c3p0_common::Model { id: 13, version: 1, data: 1000 };
+        let second = c3p0_common::Model { id: 12, version: 0, data: 1000 };
 
         // Act
         validate_ownership(&mut error_details, &first, &second);
@@ -85,13 +86,14 @@ mod tests {
         assert!(error_details.details().is_empty())
     }
 
+    #[cfg(feature = "c3p0")]
     #[test]
     fn should_fail_validate_ownership() {
         // Arrange
         let mut error_details = ErrorDetails::default();
 
-        let first = Model { id: 13, version: 1, data: 1001 };
-        let second = Model { id: 12, version: 0, data: 1000 };
+        let first = c3p0_common::Model { id: 13, version: 1, data: 1001 };
+        let second = c3p0_common::Model { id: 12, version: 0, data: 1000 };
 
         // Act
         validate_ownership(&mut error_details, &first, &second);
@@ -101,13 +103,14 @@ mod tests {
         assert_eq!(ErrorDetail::new(WRONG_OWNER, vec![]), error_details.details()["owner_id"][0])
     }
 
+    #[cfg(feature = "c3p0")]
     #[test]
     fn should_validate_id_and_version() {
         // Arrange
         let mut error_details = ErrorDetails::default();
 
-        let first = Model { id: 12, version: 0, data: 1001 };
-        let second = Model { id: 12, version: 0, data: 1000 };
+        let first = c3p0_common::Model { id: 12, version: 0, data: 1001 };
+        let second = c3p0_common::Model { id: 12, version: 0, data: 1000 };
 
         // Act
         validate_id_and_version(&mut error_details, &first, &second);
@@ -116,13 +119,14 @@ mod tests {
         assert!(error_details.details().is_empty())
     }
 
+    #[cfg(feature = "c3p0")]
     #[test]
     fn should_fail_validate_id_and_version() {
         // Arrange
         let mut error_details = ErrorDetails::default();
 
-        let first = Model { id: 13, version: 1, data: 1001 };
-        let second = Model { id: 12, version: 0, data: 1000 };
+        let first = c3p0_common::Model { id: 13, version: 1, data: 1001 };
+        let second = c3p0_common::Model { id: 12, version: 0, data: 1000 };
 
         // Act
         validate_id_and_version(&mut error_details, &first, &second);
@@ -133,13 +137,14 @@ mod tests {
         assert_eq!(ErrorDetail::new(WRONG_VERSION, vec![]), error_details.details()["version"][0]);
     }
 
+    #[cfg(feature = "c3p0")]
     #[test]
     fn should_validate_ownership_id_and_version() {
         // Arrange
         let mut error_details = ErrorDetails::default();
 
-        let first = Model { id: 12, version: 0, data: 1000 };
-        let second = Model { id: 12, version: 0, data: 1000 };
+        let first = c3p0_common::Model { id: 12, version: 0, data: 1000 };
+        let second = c3p0_common::Model { id: 12, version: 0, data: 1000 };
 
         // Act
         validate_ownership_id_and_version(&mut error_details, &first, &second);
@@ -148,13 +153,14 @@ mod tests {
         assert!(error_details.details().is_empty())
     }
 
+    #[cfg(feature = "c3p0")]
     #[test]
     fn should_fail_validate_ownership_id_and_version_if_bad_id() {
         // Arrange
         let mut error_details = ErrorDetails::default();
 
-        let first = Model { id: 13, version: 0, data: 1000 };
-        let second = Model { id: 12, version: 0, data: 1000 };
+        let first = c3p0_common::Model { id: 13, version: 0, data: 1000 };
+        let second = c3p0_common::Model { id: 12, version: 0, data: 1000 };
 
         // Act
         validate_ownership_id_and_version(&mut error_details, &first, &second);
@@ -164,13 +170,14 @@ mod tests {
         assert_eq!(ErrorDetail::new(WRONG_ID, vec![]), error_details.details()["id"][0]);
     }
 
+    #[cfg(feature = "c3p0")]
     #[test]
     fn should_fail_validate_ownership_id_and_version_if_bad_version() {
         // Arrange
         let mut error_details = ErrorDetails::default();
 
-        let first = Model { id: 12, version: 1, data: 1000 };
-        let second = Model { id: 12, version: 0, data: 1000 };
+        let first = c3p0_common::Model { id: 12, version: 1, data: 1000 };
+        let second = c3p0_common::Model { id: 12, version: 0, data: 1000 };
 
         // Act
         validate_ownership_id_and_version(&mut error_details, &first, &second);
@@ -180,13 +187,14 @@ mod tests {
         assert_eq!(ErrorDetail::new(WRONG_VERSION, vec![]), error_details.details()["version"][0]);
     }
 
+    #[cfg(feature = "c3p0")]
     #[test]
     fn should_fail_validate_ownership_id_and_version_if_bad_owner() {
         // Arrange
         let mut error_details = ErrorDetails::default();
 
-        let first = Model { id: 12, version: 0, data: 1001 };
-        let second = Model { id: 12, version: 0, data: 1000 };
+        let first = c3p0_common::Model { id: 12, version: 0, data: 1001 };
+        let second = c3p0_common::Model { id: 12, version: 0, data: 1000 };
 
         // Act
         validate_ownership_id_and_version(&mut error_details, &first, &second);

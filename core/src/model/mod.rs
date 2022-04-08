@@ -3,6 +3,7 @@ use crate::service::validator::ownership::WithIdAndVersion;
 use serde::{Deserialize, Serialize};
 
 pub mod language;
+#[cfg(feature = "c3p0")]
 pub mod model_dto;
 
 #[derive(Clone, Debug, PartialEq, Deserialize, Serialize)]

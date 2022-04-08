@@ -12,7 +12,7 @@ keywords = []
 
 [dependencies]
 lightspeed_cache = { version = "0.49.0", path = "../cache" }
-lightspeed_core = { version = "0.49.0", path = "../core" }
+lightspeed_core = { version = "0.49.0", path = "../core", features = ["c3p0"] }
 async-trait = "0.1"
 c3p0 = { version = "0.64", features = ["postgres_migrate"] }
 log = "0.4"
