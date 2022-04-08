@@ -24,11 +24,11 @@ strum = { version = "0.24", features = ["derive"] }
 
 
 [dev-dependencies]
-config = "0.12"
+config = "0.13"
 lightspeed_logger = { version = "0.50.1", path = "../logger" }
 maybe-single = { version = "0.15.0", features =["async"] }
 once_cell = "1"
-testcontainers = "0.13"
+testcontainers = "0.12"
 tokio = { version = "1", features = ["rt-multi-thread"] }
 
 [features]

@@ -31,14 +31,14 @@ tokio-util = { version = "0.7", optional = true, features = ["io"] }
 
 [dev-dependencies]
 actix-rt = "2"
-config = "0.12"
+config = "0.13"
 hyper = "0.14"
 lightspeed_logger = { version = "0.50.1", path = "../logger" }
 maybe-single = { version = "0.15.0", features =["async"] }
 once_cell = "1.5"
 rand = "0.8"
 tempfile = "3"
-testcontainers = "0.13"
+testcontainers = "0.12"
 tokio = { version = "1", features = ["macros", "rt-multi-thread"] }
 tower = "0.4"
 
