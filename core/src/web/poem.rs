@@ -23,6 +23,7 @@ impl ResponseError for LightSpeedError {
             LightSpeedError::ForbiddenError { .. } => StatusCode::FORBIDDEN,
             LightSpeedError::ValidationError { .. } => StatusCode::UNPROCESSABLE_ENTITY,
             LightSpeedError::BadRequest { .. } => StatusCode::BAD_REQUEST,
+            #[cfg(feature = "c3p0")]
             LightSpeedError::C3p0Error { .. } => StatusCode::BAD_REQUEST,
             LightSpeedError::RequestConflict { .. } | LightSpeedError::ServiceUnavailable { .. } => {
                 StatusCode::CONFLICT
@@ -49,6 +50,7 @@ impl ResponseError for LightSpeedError {
             LightSpeedError::ForbiddenError { .. } => response_with_code(self.status()),
             LightSpeedError::ValidationError { details } => response_with_error_details(self.status(), details.clone()),
             LightSpeedError::BadRequest { code, .. } => response_with_message(self.status(), Some((code).to_string())),
+            #[cfg(feature = "c3p0")]
             LightSpeedError::C3p0Error { .. } => response_with_message(self.status(), None),
             LightSpeedError::RequestConflict { code, .. } | LightSpeedError::ServiceUnavailable { code, .. } => {
                 response_with_message(self.status(), Some((code).to_string()))
@@ -131,6 +133,7 @@ pub mod openapi {
                 LightSpeedError::BadRequest { code, .. } => LightSpeedErrorResponse::BadRequest(Json(
                     WebErrorDetails::from_message(StatusCode::BAD_REQUEST.as_u16(), Some((code).to_string())),
                 )),
+                #[cfg(feature = "c3p0")]
                 LightSpeedError::C3p0Error { .. } => LightSpeedErrorResponse::BadRequest(Json(
                     WebErrorDetails::from_message(StatusCode::BAD_REQUEST.as_u16(), None),
                 )),

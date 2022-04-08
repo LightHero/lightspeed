@@ -21,7 +21,7 @@ tokio = "1"
 
 [dev-dependencies]
 config = "0.12"
-testcontainers = "0.12"
+testcontainers = "0.13"
 tokio = { version = "1", features = ["macros", "rt"] }
 
 lightspeed_logger = { version = "0.50.0", path = "../logger" }

@@ -20,6 +20,7 @@ impl IntoResponse for LightSpeedError {
             LightSpeedError::BadRequest { code, .. } => {
                 response_with_message(StatusCode::BAD_REQUEST, Some((code).to_string()))
             }
+            #[cfg(feature = "c3p0")]
             LightSpeedError::C3p0Error { .. } => response_with_message(StatusCode::BAD_REQUEST, None),
             LightSpeedError::RequestConflict { code, .. } | LightSpeedError::ServiceUnavailable { code, .. } => {
                 response_with_message(StatusCode::CONFLICT, Some((code).to_string()))

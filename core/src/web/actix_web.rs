@@ -30,6 +30,7 @@ impl ResponseError for LightSpeedError {
                 HttpResponseBuilder::new(http_code)
                     .json(&WebErrorDetails::from_message(http_code.as_u16(), Some((*code).into())))
             }
+            #[cfg(feature = "c3p0")]
             LightSpeedError::C3p0Error { .. } => {
                 let http_code = http::StatusCode::BAD_REQUEST;
                 HttpResponseBuilder::new(http_code).json(WebErrorDetails::from_message(http_code.as_u16(), None))
