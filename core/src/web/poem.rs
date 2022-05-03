@@ -40,6 +40,7 @@ impl ResponseError for LightSpeedError {
     where
         Self: StdError + Send + Sync + 'static,
     {
+        error!("Converting error into poem response. Err: {:?}", self);
         match self {
             LightSpeedError::InvalidTokenError { .. }
             | LightSpeedError::ExpiredTokenError { .. }
@@ -95,7 +96,7 @@ fn response(http_code: StatusCode, details: &WebErrorDetails) -> Response {
 
 #[cfg(feature = "poem_openapi")]
 pub mod openapi {
-
+    use log::error;
     use crate::error::{LightSpeedError, WebErrorDetails};
     use poem::http::StatusCode;
     use poem_openapi::payload::Json;
@@ -119,6 +120,7 @@ pub mod openapi {
 
     impl From<LightSpeedError> for LightSpeedErrorResponse {
         fn from(err: LightSpeedError) -> Self {
+            error!("Converting error into poem response. Err: {:?}", err);
             match err {
                 LightSpeedError::InvalidTokenError { .. }
                 | LightSpeedError::ExpiredTokenError { .. }

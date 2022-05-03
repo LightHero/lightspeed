@@ -10,5 +10,5 @@ pub fn current_epoch_seconds() -> i64 {
 
 #[inline]
 pub fn new_hyphenated_uuid() -> String {
-    Uuid::new_v4().to_hyphenated().to_string()
+    Uuid::new_v4().as_hyphenated().to_string()
 }
