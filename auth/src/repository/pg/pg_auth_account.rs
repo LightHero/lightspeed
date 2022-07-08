@@ -29,13 +29,13 @@ impl AuthAccountRepository for PgAuthAccountRepository {
         start_user_id: i64,
         limit: u32,
     ) -> Result<Vec<AuthAccountModel>, LightSpeedError> {
-        let sql = r#"
-            select id, version, data from LS_AUTH_ACCOUNT
+        let sql = format!(r#"
+            {}
             where id >= $1 and DATA ->> 'status' = $2
             order by id asc
             limit $3
-        "#;
-        Ok(self.repo.fetch_all_with_sql(conn, sql, &[&start_user_id, &status.as_ref(), &(limit as i64)]).await?)
+        "#, self.queries().find_base_sql_query);
+        Ok(self.repo.fetch_all_with_sql(conn, &sql, &[&start_user_id, &status.as_ref(), &(limit as i64)]).await?)
     }
 
     async fn fetch_by_id(
@@ -62,12 +62,12 @@ impl AuthAccountRepository for PgAuthAccountRepository {
         conn: &mut Self::Conn,
         username: &str,
     ) -> Result<Option<Model<AuthAccountData>>, LightSpeedError> {
-        let sql = r#"
-            select id, version, data from LS_AUTH_ACCOUNT
+        let sql = format!(r#"
+            {}
             where DATA ->> 'username' = $1
             limit 1
-        "#;
-        Ok(self.repo.fetch_one_optional_with_sql(conn, sql, &[&username]).await?)
+        "#, self.queries().find_base_sql_query);
+        Ok(self.repo.fetch_one_optional_with_sql(conn, &sql, &[&username]).await?)
     }
 
     async fn fetch_by_email_optional(
@@ -75,12 +75,12 @@ impl AuthAccountRepository for PgAuthAccountRepository {
         conn: &mut PgConnection,
         email: &str,
     ) -> Result<Option<AuthAccountModel>, LightSpeedError> {
-        let sql = r#"
-            select id, version, data from LS_AUTH_ACCOUNT
+        let sql = format!(r#"
+            {}
             where DATA ->> 'email' = $1
             limit 1
-        "#;
-        Ok(self.repo.fetch_one_optional_with_sql(conn, sql, &[&email]).await?)
+        "#, self.queries().find_base_sql_query);
+        Ok(self.repo.fetch_one_optional_with_sql(conn, &sql, &[&email]).await?)
     }
 
     async fn save(
