@@ -43,14 +43,15 @@ impl FileStoreDataRepository for PgFileStoreDataRepository {
         conn: &mut Self::Conn,
         repository: &RepositoryFile,
     ) -> Result<FileStoreDataModel, LightSpeedError> {
-        let sql =
-            "SELECT id, version, DATA FROM LS_FILE_STORE_DATA WHERE (data -> 'repository' ->> '_json_tag') = $1 AND (data -> 'repository' ->> 'repository_name') = $2 AND (data -> 'repository' ->> 'file_path') = $3";
-
+        let sql = format!(r#"
+            {}
+            WHERE (data -> 'repository' ->> '_json_tag') = $1 AND (data -> 'repository' ->> 'repository_name') = $2 AND (data -> 'repository' ->> 'file_path') = $3
+        "#, self.repo.queries().find_base_sql_query);
         let repo_info = RepoFileInfo::new(repository);
 
         Ok(self
             .repo
-            .fetch_one_with_sql(conn, sql, &[&repo_info.repo_type, &repo_info.repository_name, &repo_info.file_path])
+            .fetch_one_with_sql(conn, &sql, &[&repo_info.repo_type, &repo_info.repository_name, &repo_info.file_path])
             .await?)
     }
 
@@ -63,12 +64,13 @@ impl FileStoreDataRepository for PgFileStoreDataRepository {
         sort: &OrderBy,
     ) -> Result<Vec<FileStoreDataModel>, LightSpeedError> {
         let sql = format!(
-            r#"SELECT id, version, DATA FROM LS_FILE_STORE_DATA
+            r#"{}
                WHERE (data -> 'repository' ->> '_json_tag') = $1 AND (data -> 'repository' ->> 'repository_name') = $2
                 order by id {}
                 limit {}
                 offset {}
                "#,
+            self.repo.queries().find_base_sql_query,
             sort.to_sql(),
             max,
             offset

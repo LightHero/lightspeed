@@ -7,6 +7,8 @@
 create table LS_CMS_PROJECT (
     ID bigserial primary key,
     VERSION int not null,
+    create_epoch_millis bigint not null,
+    update_epoch_millis bigint not null,
     DATA JSONB
 );
 
@@ -21,6 +23,8 @@ CREATE UNIQUE INDEX LS_CMS_PROJECT_UNIQUE_NAME ON LS_CMS_PROJECT( (DATA->>'name'
 create table LS_CMS_SCHEMA (
     ID bigserial primary key,
     VERSION int not null,
+    create_epoch_millis bigint not null,
+    update_epoch_millis bigint not null,
     DATA JSONB
 );
 

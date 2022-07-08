@@ -13,7 +13,7 @@ keywords = []
 [dependencies]
 lightspeed_core = { version = "0.51.0", path = "../core", features = ["c3p0"] }
 async-trait = "0.1"
-c3p0 = { version = "0.66", features = ["postgres", "migrate"] }
+c3p0 = { version = "0.67", features = ["postgres", "migrate"] }
 log = "0.4"
 serde = { version = "1.0", features = ["derive", "rc"] }
 serde_json = "1"

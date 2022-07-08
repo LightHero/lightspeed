@@ -7,6 +7,8 @@
 create table LS_FILE_STORE_DATA (
     ID bigserial primary key,
     VERSION int not null,
+    create_epoch_millis bigint not null,
+    update_epoch_millis bigint not null,
     DATA JSONB
 );
 
