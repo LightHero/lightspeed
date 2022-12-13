@@ -1,26 +1,26 @@
 [package]
 name = "lightspeed_logger"
 license = "MIT"
-version = "0.52.0"
+version.workspace = true
+edition.workspace = true
 authors = ["Francesco Cina <ufoscout@gmail.com>"]
 description = "LightSpeed"
-edition = "2018"
 readme = "README.md"
 homepage = "https://github.com/LightHero/lightspeed"
 repository = "https://github.com/LightHero/lightspeed"
 keywords = []
 
 [dependencies]
-log = "0.4"
-rand = "0.8"
-serde = { version = "1.0", features = ["derive", "rc"] }
-tracing = "0.1"
-tracing-appender = "0.2"
-tracing-futures = "0.2"
-tracing-subscriber = { version = "0.3", default-features = false, features = ["tracing-log", "ansi", "fmt"] }
+log = { workspace = true }
+rand = { workspace = true }
+serde = { workspace = true }
+tracing = { workspace = true }
+tracing-appender = { workspace = true }
+tracing-futures = { workspace = true }
+tracing-subscriber = { workspace = true, default-features = false, features = ["tracing-log", "ansi", "fmt"] }
 
 
 [dev-dependencies]
-config = "0.13"
-tempfile = "3"
-tokio = { version = "1", features = ["macros", "rt-multi-thread"] }
+config = { workspace = true }
+tempfile = { workspace = true }
+tokio = { workspace = true, features = ["macros", "rt-multi-thread"] }

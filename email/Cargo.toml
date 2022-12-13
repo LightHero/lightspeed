@@ -1,28 +1,28 @@
 [package]
 name = "lightspeed_email"
 license = "MIT"
-version = "0.52.0"
+version.workspace = true
+edition.workspace = true
 authors = ["Francesco Cina <ufoscout@gmail.com>"]
 description = "LightSpeed"
-edition = "2018"
 readme = "README.md"
 homepage = "https://github.com/LightHero/lightspeed"
 repository = "https://github.com/LightHero/lightspeed"
 keywords = []
 
 [dependencies]
-lightspeed_core = { version = "0.52.0", path = "../core" }
-async-trait = "0.1"
-lettre = { version = "0.10", default-features = false, features = ["smtp-transport", "builder", "hostname", "pool", "rustls-tls"] }
-log = "0.4"
-parking_lot = "0.12"
-serde = { version = "1.0", features = ["derive", "rc"] }
-tokio = "1"
+lightspeed_core = { workspace = true }
+async-trait = { workspace = true }
+lettre = { workspace = true, features = ["smtp-transport", "builder", "hostname", "pool", "rustls-tls"] }
+log = { workspace = true }
+parking_lot = { workspace = true }
+serde = { workspace = true, features = ["derive", "rc"] }
+tokio = { workspace = true }
 
 [dev-dependencies]
-config = "0.13"
-testcontainers = "0.12"
-tokio = { version = "1", features = ["macros", "rt"] }
+config = { workspace = true }
+testcontainers = { workspace = true }
+tokio = { workspace = true, features = ["macros", "rt"] }
 
-lightspeed_logger = { version = "0.52.0", path = "../logger" }
+lightspeed_logger = { workspace = true }
 

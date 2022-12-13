@@ -1,10 +1,10 @@
 [package]
 name = "lightspeed_cache"
 license = "MIT"
-version = "0.52.0"
+version.workspace = true
+edition.workspace = true
 authors = ["ufoscout <ufoscout@gmail.com>"]
 description = "LightSpeed"
-edition = "2018"
 readme = "README.md"
 homepage = "https://github.com/LightHero/lightspeed"
 repository = "https://github.com/LightHero/lightspeed"
@@ -13,13 +13,13 @@ keywords = []
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-chrono = { version = "0.4", default-features = false, features = ["clock"] }
-dashmap = { version = "5", optional = true }
-tokio = { version = "1", features = ["sync"], optional = true }
+chrono = { workspace = true }
+dashmap = { workspace = true, optional = true }
+tokio = { workspace = true, features = ["sync"], optional = true }
 
 [dev-dependencies]
-thiserror = "1"
-tokio = { version = "1", features = ["macros", "rt"] }
+thiserror = { workspace = true }
+tokio = { workspace = true, features = ["macros", "rt"] }
 
 [features]
 default = ["tokio_1"]
