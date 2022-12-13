@@ -43,10 +43,13 @@ impl FileStoreDataRepository for PgFileStoreDataRepository {
         conn: &mut Self::Conn,
         repository: &RepositoryFile,
     ) -> Result<FileStoreDataModel, LightSpeedError> {
-        let sql = format!(r#"
+        let sql = format!(
+            r#"
             {}
             WHERE (data -> 'repository' ->> '_json_tag') = $1 AND (data -> 'repository' ->> 'repository_name') = $2 AND (data -> 'repository' ->> 'file_path') = $3
-        "#, self.repo.queries().find_base_sql_query);
+        "#,
+            self.repo.queries().find_base_sql_query
+        );
         let repo_info = RepoFileInfo::new(repository);
 
         Ok(self

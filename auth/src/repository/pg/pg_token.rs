@@ -29,11 +29,14 @@ impl TokenRepository for PgTokenRepository {
     type Conn = PgConnection;
 
     async fn fetch_by_token(&self, conn: &mut PgConnection, token_string: &str) -> Result<TokenModel, LightSpeedError> {
-        let sql = format!(r#"
+        let sql = format!(
+            r#"
             {}
             where data ->> 'token' = $1
             limit 1
-        "#, self.queries().find_base_sql_query);
+        "#,
+            self.queries().find_base_sql_query
+        );
         Ok(self.repo.fetch_one_with_sql(conn, &sql, &[&token_string]).await?)
     }
 
@@ -42,10 +45,13 @@ impl TokenRepository for PgTokenRepository {
         conn: &mut PgConnection,
         username: &str,
     ) -> Result<Vec<TokenModel>, LightSpeedError> {
-        let sql = format!(r#"
+        let sql = format!(
+            r#"
             {}
             where data ->> 'username' = $1
-        "#, self.queries().find_base_sql_query);
+        "#,
+            self.queries().find_base_sql_query
+        );
         Ok(self.repo.fetch_all_with_sql(conn, &sql, &[&username]).await?)
     }
 

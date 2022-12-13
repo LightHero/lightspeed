@@ -29,12 +29,15 @@ impl AuthAccountRepository for PgAuthAccountRepository {
         start_user_id: i64,
         limit: u32,
     ) -> Result<Vec<AuthAccountModel>, LightSpeedError> {
-        let sql = format!(r#"
+        let sql = format!(
+            r#"
             {}
             where id >= $1 and DATA ->> 'status' = $2
             order by id asc
             limit $3
-        "#, self.queries().find_base_sql_query);
+        "#,
+            self.queries().find_base_sql_query
+        );
         Ok(self.repo.fetch_all_with_sql(conn, &sql, &[&start_user_id, &status.as_ref(), &(limit as i64)]).await?)
     }
 
@@ -62,11 +65,14 @@ impl AuthAccountRepository for PgAuthAccountRepository {
         conn: &mut Self::Conn,
         username: &str,
     ) -> Result<Option<Model<AuthAccountData>>, LightSpeedError> {
-        let sql = format!(r#"
+        let sql = format!(
+            r#"
             {}
             where DATA ->> 'username' = $1
             limit 1
-        "#, self.queries().find_base_sql_query);
+        "#,
+            self.queries().find_base_sql_query
+        );
         Ok(self.repo.fetch_one_optional_with_sql(conn, &sql, &[&username]).await?)
     }
 
@@ -75,11 +81,14 @@ impl AuthAccountRepository for PgAuthAccountRepository {
         conn: &mut PgConnection,
         email: &str,
     ) -> Result<Option<AuthAccountModel>, LightSpeedError> {
-        let sql = format!(r#"
+        let sql = format!(
+            r#"
             {}
             where DATA ->> 'email' = $1
             limit 1
-        "#, self.queries().find_base_sql_query);
+        "#,
+            self.queries().find_base_sql_query
+        );
         Ok(self.repo.fetch_one_optional_with_sql(conn, &sql, &[&email]).await?)
     }
 

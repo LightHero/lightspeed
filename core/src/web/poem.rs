@@ -96,8 +96,8 @@ fn response(http_code: StatusCode, details: &WebErrorDetails) -> Response {
 
 #[cfg(feature = "poem_openapi")]
 pub mod openapi {
-    use log::error;
     use crate::error::{LightSpeedError, WebErrorDetails};
+    use log::error;
     use poem::http::StatusCode;
     use poem_openapi::payload::Json;
     use poem_openapi::ApiResponse;
