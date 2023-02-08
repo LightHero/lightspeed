@@ -55,7 +55,7 @@ impl AuthAccountRepository for PgAuthAccountRepository {
         username: &str,
     ) -> Result<AuthAccountModel, LightSpeedError> {
         self.fetch_by_username_optional(conn, username).await?.ok_or_else(|| LightSpeedError::BadRequest {
-            message: format!("No user found with username [{}]", username),
+            message: format!("No user found with username [{username}]"),
             code: ErrorCodes::NOT_FOUND,
         })
     }

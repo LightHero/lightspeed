@@ -20,7 +20,7 @@ async fn should_start_the_mailserver() {
     let docker = clients::Cli::default();
     let server = new_mail_server(&docker);
     let server_port = server.0;
-    println!("using port: {}", server_port);
+    println!("using port: {server_port}");
 
     let config = EmailClientConfig {
         email_server_port: server_port,
@@ -76,7 +76,7 @@ async fn full_client_should_use_gmail2() {
     // Send the email
     match mailer.send(&email) {
         Ok(_) => println!("Email sent successfully!"),
-        Err(e) => panic!("Could not send email: {:?}", e),
+        Err(e) => panic!("Could not send email: {e:?}"),
     }
 }
 

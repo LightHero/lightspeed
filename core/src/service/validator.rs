@@ -239,7 +239,7 @@ pub mod test {
             Err(LightSpeedError::ValidationError { details }) => {
                 assert_eq!("duplicated", details.details["username"][0])
             }
-            _ => assert!(false),
+            _ => panic!(),
         }
     }
 
@@ -250,8 +250,8 @@ pub mod test {
 
         assert!(result.is_err());
         match result {
-            Err(LightSpeedError::UnauthenticatedError) => assert!(true),
-            _ => assert!(false),
+            Err(LightSpeedError::UnauthenticatedError) => (),
+            _ => panic!(),
         }
     }
 
@@ -275,7 +275,7 @@ pub mod test {
             Err(LightSpeedError::ValidationError { details }) => {
                 assert_eq!("2", details.details["1"][0])
             }
-            _ => assert!(false),
+            _ => panic!(),
         }
     }
 
@@ -303,7 +303,7 @@ pub mod test {
                 assert_eq!("22", details.details["2"][0]);
                 assert_eq!("33", details.details["3"][0]);
             }
-            _ => assert!(false),
+            _ => panic!(),
         }
     }
 
@@ -358,7 +358,7 @@ pub mod test {
                 assert_eq!(5, details.details["1"].len());
                 assert_eq!(2, details.details["2"].len());
             }
-            _ => assert!(false),
+            _ => panic!(),
         }
     }
 

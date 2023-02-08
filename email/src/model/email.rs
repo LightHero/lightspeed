@@ -6,7 +6,7 @@ pub enum EmailAttachment {
     FromFile { path: String, filename: Option<String>, mime_type: String },
 }
 
-#[derive(Clone, Serialize, Deserialize, Debug)]
+#[derive(Clone, Serialize, Deserialize, Debug, Default)]
 pub struct EmailMessage {
     pub from: Option<String>,
     pub to: Vec<String>,
@@ -16,21 +16,6 @@ pub struct EmailMessage {
     pub text: Option<String>,
     pub html: Option<String>,
     pub attachments: Vec<EmailAttachment>,
-}
-
-impl Default for EmailMessage {
-    fn default() -> Self {
-        EmailMessage {
-            from: None,
-            to: vec![],
-            cc: vec![],
-            bcc: vec![],
-            subject: None,
-            text: None,
-            html: None,
-            attachments: vec![],
-        }
-    }
 }
 
 impl EmailMessage {

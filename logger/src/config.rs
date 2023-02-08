@@ -84,7 +84,7 @@ impl FromStr for Rotation {
             "hourly" => Ok(Rotation::Hourly),
             "daily" => Ok(Rotation::Daily),
             "never" => Ok(Rotation::Never),
-            _ => Err(LoggerError::LoggerConfigurationError { message: format!("Could not parse rotation [{}]", val) }),
+            _ => Err(LoggerError::LoggerConfigurationError { message: format!("Could not parse rotation [{val}]") }),
         }
     }
 }

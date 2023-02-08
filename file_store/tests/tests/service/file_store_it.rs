@@ -15,7 +15,7 @@ fn should_save_file_to_db() -> Result<(), LightSpeedError> {
         let file_store = &data.0.file_store_service;
 
         let random: u32 = rand::random();
-        let file_name = format!("file_{}", random);
+        let file_name = format!("file_{random}");
         let binary_content = BinaryContent::FromFs { file_path: SOURCE_FILE.to_owned().into() };
         let content_type = "application/text".to_owned();
         let save_repository = SaveRepository::DB { subfolder: None, repository_name: "MY_REPO".to_owned() };
@@ -29,7 +29,7 @@ fn should_save_file_to_db() -> Result<(), LightSpeedError> {
                 assert_eq!("MY_REPO", repository_name);
                 assert_eq!(&file_name, file_path);
             }
-            _ => assert!(false),
+            _ => panic!(),
         }
 
         match file_store.read_file_content(&loaded.data.repository).await {
@@ -37,7 +37,7 @@ fn should_save_file_to_db() -> Result<(), LightSpeedError> {
                 let file_content = std::str::from_utf8(&content).unwrap();
                 assert_eq!(&std::fs::read_to_string(SOURCE_FILE).unwrap(), file_content);
             }
-            _ => assert!(false),
+            _ => panic!(),
         }
 
         Ok(())
@@ -51,7 +51,7 @@ fn should_save_file_to_fs() -> Result<(), LightSpeedError> {
         let file_store = &data.0.file_store_service;
 
         let random: u32 = rand::random();
-        let file_name = format!("file_{}", random);
+        let file_name = format!("file_{random}");
         let binary_content = BinaryContent::FromFs { file_path: SOURCE_FILE.to_owned().into() };
         let content_type = "application/text".to_owned();
         let save_repository = SaveRepository::FS { subfolder: None, repository_name: "REPO_ONE".to_owned() };
@@ -65,20 +65,20 @@ fn should_save_file_to_fs() -> Result<(), LightSpeedError> {
                 assert_eq!("REPO_ONE", repository_name);
                 assert_eq!(&file_name, file_path);
             }
-            _ => assert!(false),
+            _ => panic!(),
         }
 
         println!("Data: [{:#?}]", loaded.data);
 
         match &file_store.read_file_content(&loaded.data.repository).await {
             Ok(BinaryContent::FromFs { file_path }) => {
-                assert_eq!(&PathBuf::from(format!("../target/repo_one/{}", file_name)), file_path);
+                assert_eq!(&PathBuf::from(format!("../target/repo_one/{file_name}")), file_path);
                 assert_eq!(
                     &std::fs::read_to_string(SOURCE_FILE).unwrap(),
                     &std::fs::read_to_string(file_path).unwrap()
                 );
             }
-            _ => assert!(false),
+            _ => panic!(),
         }
         Ok(())
     })
@@ -93,8 +93,8 @@ fn should_save_file_to_db_with_specific_repo() -> Result<(), LightSpeedError> {
         let random: u32 = rand::random();
         let binary_content = BinaryContent::FromFs { file_path: SOURCE_FILE.to_owned().into() };
         let content_type = "application/text".to_owned();
-        let file_name_1 = format!("file_2_{}", random);
-        let file_name_2 = format!("file_1_{}", random);
+        let file_name_1 = format!("file_2_{random}");
+        let file_name_2 = format!("file_1_{random}");
 
         let save_repository_1 = SaveRepository::DB { subfolder: None, repository_name: "REPO_ONE".to_owned() };
 
@@ -110,7 +110,7 @@ fn should_save_file_to_db_with_specific_repo() -> Result<(), LightSpeedError> {
                 let file_content = std::str::from_utf8(&content).unwrap();
                 assert_eq!(&std::fs::read_to_string(SOURCE_FILE).unwrap(), file_content);
             }
-            _ => assert!(false),
+            _ => panic!(),
         }
 
         match file_store.read_file_content(&saved_2.data.repository).await {
@@ -118,7 +118,7 @@ fn should_save_file_to_db_with_specific_repo() -> Result<(), LightSpeedError> {
                 let file_content = std::str::from_utf8(&content).unwrap();
                 assert_eq!(&std::fs::read_to_string(SOURCE_FILE).unwrap(), file_content);
             }
-            _ => assert!(false),
+            _ => panic!(),
         }
 
         println!("{:#?}", serde_json::to_string(&saved_1).unwrap());
@@ -144,8 +144,8 @@ fn should_save_file_to_fs_with_specific_repo() -> Result<(), LightSpeedError> {
         let random: u32 = rand::random();
         let binary_content = BinaryContent::FromFs { file_path: SOURCE_FILE.to_owned().into() };
         let content_type = "application/text".to_owned();
-        let file_name_1 = format!("file_2_{}", random);
-        let file_name_2 = format!("file_1_{}", random);
+        let file_name_1 = format!("file_2_{random}");
+        let file_name_2 = format!("file_1_{random}");
         let save_repository_1 = SaveRepository::FS { subfolder: None, repository_name: "REPO_ONE".to_owned() };
 
         let save_repository_2 = SaveRepository::FS { subfolder: None, repository_name: "REPO_TWO".to_owned() };
@@ -157,16 +157,16 @@ fn should_save_file_to_fs_with_specific_repo() -> Result<(), LightSpeedError> {
 
         match file_store.read_file_content(&save_1.data.repository).await {
             Ok(BinaryContent::FromFs { file_path }) => {
-                assert_eq!(PathBuf::from(format!("../target/repo_one/{}", file_name_1)), file_path);
+                assert_eq!(PathBuf::from(format!("../target/repo_one/{file_name_1}")), file_path);
             }
-            _ => assert!(false),
+            _ => panic!(),
         }
 
         match file_store.read_file_content(&save_2.data.repository).await {
             Ok(BinaryContent::FromFs { file_path }) => {
-                assert_eq!(PathBuf::from(format!("../target/repo_two/{}", file_name_2)), file_path);
+                assert_eq!(PathBuf::from(format!("../target/repo_two/{file_name_2}")), file_path);
             }
-            _ => assert!(false),
+            _ => panic!(),
         }
 
         let loaded_data_by_repository_1 =
@@ -190,7 +190,7 @@ fn save_should_fails_if_fs_repo_does_not_exist() -> Result<(), LightSpeedError> 
         let random: u32 = rand::random();
         let binary_content = BinaryContent::FromFs { file_path: SOURCE_FILE.to_owned().into() };
         let content_type = "application/text".to_owned();
-        let file_name_1 = format!("file_2_{}", random);
+        let file_name_1 = format!("file_2_{random}");
         let save_repository_1 = SaveRepository::FS { subfolder: None, repository_name: "REPO_NOT_EXISTING".to_owned() };
 
         assert!(file_store
@@ -209,7 +209,7 @@ fn should_save_file_to_db_with_relative_folder() -> Result<(), LightSpeedError> 
         let file_store = &data.0.file_store_service;
 
         let random: u32 = rand::random();
-        let file_name = format!("relative/folder/file_{}", random);
+        let file_name = format!("relative/folder/file_{random}");
         let binary_content = BinaryContent::FromFs { file_path: SOURCE_FILE.to_owned().into() };
         let content_type = "application/text".to_owned();
         let save_repository = SaveRepository::DB { subfolder: None, repository_name: "REPO_ONE".to_owned() };
@@ -223,7 +223,7 @@ fn should_save_file_to_db_with_relative_folder() -> Result<(), LightSpeedError> 
                 assert_eq!("REPO_ONE", repository_name);
                 assert_eq!(&file_name, file_path);
             }
-            _ => assert!(false),
+            _ => panic!(),
         }
 
         match file_store.read_file_content(&saved.data.repository).await {
@@ -231,7 +231,7 @@ fn should_save_file_to_db_with_relative_folder() -> Result<(), LightSpeedError> 
                 let file_content = std::str::from_utf8(&content).unwrap();
                 assert_eq!(&std::fs::read_to_string(SOURCE_FILE).unwrap(), file_content);
             }
-            _ => assert!(false),
+            _ => panic!(),
         }
 
         Ok(())
@@ -245,7 +245,7 @@ fn should_save_file_to_fs_with_relative_folder() -> Result<(), LightSpeedError> 
         let file_store = &data.0.file_store_service;
 
         let random: u32 = rand::random();
-        let file_name = format!("relative/folder/file_{}", random);
+        let file_name = format!("relative/folder/file_{random}");
         let binary_content = BinaryContent::FromFs { file_path: SOURCE_FILE.to_owned().into() };
         let content_type = "application/text".to_owned();
         let save_repository = SaveRepository::FS { subfolder: None, repository_name: "REPO_ONE".to_owned() };
@@ -259,18 +259,18 @@ fn should_save_file_to_fs_with_relative_folder() -> Result<(), LightSpeedError> 
                 assert_eq!("REPO_ONE", repository_name);
                 assert_eq!(&file_name, file_path);
             }
-            _ => assert!(false),
+            _ => panic!(),
         }
 
         match file_store.read_file_content(&saved.data.repository).await {
             Ok(BinaryContent::FromFs { file_path }) => {
-                assert_eq!(PathBuf::from(format!("../target/repo_one/{}", file_name)), file_path);
+                assert_eq!(PathBuf::from(format!("../target/repo_one/{file_name}")), file_path);
                 assert_eq!(
                     &std::fs::read_to_string(SOURCE_FILE).unwrap(),
                     &std::fs::read_to_string(file_path).unwrap()
                 );
             }
-            _ => assert!(false),
+            _ => panic!(),
         }
 
         Ok(())
@@ -284,7 +284,7 @@ fn should_save_file_to_db_with_relative_folder_in_repository() -> Result<(), Lig
         let file_store = &data.0.file_store_service;
 
         let random: u32 = rand::random();
-        let file_name = format!("folder/file_{}", random);
+        let file_name = format!("folder/file_{random}");
         let binary_content = BinaryContent::FromFs { file_path: SOURCE_FILE.to_owned().into() };
         let content_type = "application/text".to_owned();
         let save_repository =
@@ -297,9 +297,9 @@ fn should_save_file_to_db_with_relative_folder_in_repository() -> Result<(), Lig
         match &loaded.data.repository {
             RepositoryFile::DB { repository_name, file_path } => {
                 assert_eq!("REPO_ONE", repository_name);
-                assert_eq!(&format!("relative/{}", file_name), file_path);
+                assert_eq!(&format!("relative/{file_name}"), file_path);
             }
-            _ => assert!(false),
+            _ => panic!(),
         }
 
         match file_store.read_file_content(&saved.data.repository).await {
@@ -307,7 +307,7 @@ fn should_save_file_to_db_with_relative_folder_in_repository() -> Result<(), Lig
                 let file_content = std::str::from_utf8(&content).unwrap();
                 assert_eq!(&std::fs::read_to_string(SOURCE_FILE).unwrap(), file_content);
             }
-            _ => assert!(false),
+            _ => panic!(),
         }
 
         Ok(())
@@ -321,7 +321,7 @@ fn should_save_file_to_fs_with_relative_folder_in_repository() -> Result<(), Lig
         let file_store = &data.0.file_store_service;
 
         let random: u32 = rand::random();
-        let file_name = format!("folder/file_{}", random);
+        let file_name = format!("folder/file_{random}");
         let binary_content = BinaryContent::FromFs { file_path: SOURCE_FILE.to_owned().into() };
         let content_type = "application/text".to_owned();
         let save_repository =
@@ -334,20 +334,20 @@ fn should_save_file_to_fs_with_relative_folder_in_repository() -> Result<(), Lig
         match &loaded.data.repository {
             RepositoryFile::FS { repository_name, file_path } => {
                 assert_eq!("REPO_ONE", repository_name);
-                assert_eq!(&format!("relative/{}", file_name), file_path);
+                assert_eq!(&format!("relative/{file_name}"), file_path);
             }
-            _ => assert!(false),
+            _ => panic!(),
         }
 
         match file_store.read_file_content(&saved.data.repository).await {
             Ok(BinaryContent::FromFs { file_path }) => {
-                assert_eq!(PathBuf::from(format!("../target/repo_one/relative/{}", file_name)), file_path);
+                assert_eq!(PathBuf::from(format!("../target/repo_one/relative/{file_name}")), file_path);
                 assert_eq!(
                     &std::fs::read_to_string(SOURCE_FILE).unwrap(),
                     &std::fs::read_to_string(file_path).unwrap()
                 );
             }
-            _ => assert!(false),
+            _ => panic!(),
         }
 
         Ok(())
@@ -363,7 +363,7 @@ fn should_delete_file_from_db() -> Result<(), LightSpeedError> {
         let db_file_binary_repo = &data.0.repo_manager.file_store_binary_repo();
 
         let random: u32 = rand::random();
-        let file_name = format!("file_{}", random);
+        let file_name = format!("file_{random}");
         let binary_content = BinaryContent::FromFs { file_path: SOURCE_FILE.to_owned().into() };
         let content_type = "application/text".to_owned();
         let save_repository =
@@ -374,8 +374,7 @@ fn should_delete_file_from_db() -> Result<(), LightSpeedError> {
         let (repository_name, file_path) = match &saved.data.repository {
             RepositoryFile::DB { repository_name, file_path } => (repository_name.as_str(), file_path.as_str()),
             _ => {
-                assert!(false);
-                ("", "")
+                panic!();
             }
         };
 
@@ -413,7 +412,7 @@ fn should_delete_file_from_fs() -> Result<(), LightSpeedError> {
         let file_store = &data.0.file_store_service;
 
         let random: u32 = rand::random();
-        let file_name = format!("relative/folder/file_{}", random);
+        let file_name = format!("relative/folder/file_{random}");
         let binary_content = BinaryContent::FromFs { file_path: SOURCE_FILE.to_owned().into() };
         let content_type = "application/text".to_owned();
         let save_repository = SaveRepository::FS { subfolder: None, repository_name: "REPO_ONE".to_owned() };
@@ -421,14 +420,13 @@ fn should_delete_file_from_fs() -> Result<(), LightSpeedError> {
         let saved = file_store.save_file(file_name.clone(), content_type, &binary_content, save_repository).await?;
 
         let file_path = match &saved.data.repository {
-            RepositoryFile::FS { file_path, .. } => format!("../target/repo_one/{}", file_path),
+            RepositoryFile::FS { file_path, .. } => format!("../target/repo_one/{file_path}"),
             _ => {
-                assert!(false);
-                "".to_owned()
+                panic!();
             }
         };
 
-        println!("file_path: {}", file_path);
+        println!("file_path: {file_path}");
 
         assert!(Path::new(&file_path).exists());
 
@@ -450,8 +448,8 @@ fn should_allow_same_files_with_same_repository_name_and_path_but_different_repo
 
         // Arrange
         let random: u32 = rand::random();
-        let same_file_name = format!("folder/file_{}", random);
-        let same_file_path = format!("path_{}", random);
+        let same_file_name = format!("folder/file_{random}");
+        let same_file_path = format!("path_{random}");
         let same_repository_name = "REPO_ONE";
 
         let binary_content = BinaryContent::FromFs { file_path: SOURCE_FILE.to_owned().into() };
@@ -483,9 +481,9 @@ fn should_allow_same_files_with_same_repository_name_and_path_but_different_repo
         match &loaded_db.data.repository {
             RepositoryFile::DB { repository_name, file_path } => {
                 assert_eq!(same_repository_name, repository_name);
-                assert_eq!(&format!("{}/{}", same_file_path, same_file_name), file_path);
+                assert_eq!(&format!("{same_file_path}/{same_file_name}"), file_path);
             }
-            _ => assert!(false),
+            _ => panic!(),
         }
 
         let loaded_fs = file_store.read_file_data_by_id(saved_fs.id).await?;
@@ -493,9 +491,9 @@ fn should_allow_same_files_with_same_repository_name_and_path_but_different_repo
         match &loaded_fs.data.repository {
             RepositoryFile::FS { repository_name, file_path } => {
                 assert_eq!(same_repository_name, repository_name);
-                assert_eq!(&format!("{}/{}", same_file_path, same_file_name), file_path);
+                assert_eq!(&format!("{same_file_path}/{same_file_name}"), file_path);
             }
-            _ => assert!(false),
+            _ => panic!(),
         }
 
         Ok(())
@@ -510,8 +508,8 @@ fn should_fail_if_file_already_exists_in_db() -> Result<(), LightSpeedError> {
 
         // Arrange
         let random: u32 = rand::random();
-        let same_file_name = format!("folder/file_{}", random);
-        let same_file_path = format!("path_{}", random);
+        let same_file_name = format!("folder/file_{random}");
+        let same_file_path = format!("path_{random}");
         let same_repository_name = "REPO_ONE";
 
         let binary_content = BinaryContent::FromFs { file_path: SOURCE_FILE.to_owned().into() };
@@ -536,15 +534,17 @@ fn should_fail_if_file_already_exists_in_db() -> Result<(), LightSpeedError> {
             .is_err());
 
         // success if file has different name
-        assert!(file_store
-            .save_file(
-                format!("{}-1", same_file_name),
-                content_type.clone(),
-                &binary_content,
-                save_repository_db.clone(),
-            )
-            .await
-            .is_ok());
+        assert!(
+            file_store
+                .save_file(
+                    format!("{same_file_name}-1"),
+                    content_type.clone(),
+                    &binary_content,
+                    save_repository_db.clone(),
+                )
+                .await
+                .is_ok()
+        );
 
         // success if file has different repository_name
         assert!(file_store
@@ -564,7 +564,7 @@ fn should_fail_if_file_already_exists_in_db() -> Result<(), LightSpeedError> {
                 content_type.clone(),
                 &binary_content,
                 SaveRepository::DB {
-                    subfolder: Some(format!("{}-1", same_file_path)),
+                    subfolder: Some(format!("{same_file_path}-1")),
                     repository_name: same_repository_name.to_owned(),
                 },
             )
@@ -583,8 +583,8 @@ fn should_fail_if_file_already_exists_in_fs() -> Result<(), LightSpeedError> {
 
         // Arrange
         let random: u32 = rand::random();
-        let same_file_name = format!("folder/file_{}", random);
-        let same_file_path = format!("path_{}", random);
+        let same_file_name = format!("folder/file_{random}");
+        let same_file_path = format!("path_{random}");
         let same_repository_name = "REPO_ONE";
 
         let binary_content = BinaryContent::FromFs { file_path: SOURCE_FILE.to_owned().into() };
@@ -609,15 +609,17 @@ fn should_fail_if_file_already_exists_in_fs() -> Result<(), LightSpeedError> {
             .is_err());
 
         // success if file has different name
-        assert!(file_store
-            .save_file(
-                format!("{}-1", same_file_name),
-                content_type.clone(),
-                &binary_content,
-                save_repository_db.clone(),
-            )
-            .await
-            .is_ok());
+        assert!(
+            file_store
+                .save_file(
+                    format!("{same_file_name}-1"),
+                    content_type.clone(),
+                    &binary_content,
+                    save_repository_db.clone(),
+                )
+                .await
+                .is_ok()
+        );
 
         // success if file has different repository_name
         assert!(file_store
@@ -637,7 +639,7 @@ fn should_fail_if_file_already_exists_in_fs() -> Result<(), LightSpeedError> {
                 content_type.clone(),
                 &binary_content,
                 SaveRepository::FS {
-                    subfolder: Some(format!("{}-1", same_file_path)),
+                    subfolder: Some(format!("{same_file_path}-1")),
                     repository_name: same_repository_name.to_owned(),
                 },
             )
@@ -657,9 +659,9 @@ fn should_read_all_file_data_by_repository() -> Result<(), LightSpeedError> {
         let random: u32 = rand::random();
         let binary_content = BinaryContent::FromFs { file_path: SOURCE_FILE.to_owned().into() };
         let content_type = "application/text".to_owned();
-        let file_name_1 = format!("file_1_{}", random);
-        let file_name_2 = format!("file_2_{}", random);
-        let file_name_3 = format!("file_3_{}", random);
+        let file_name_1 = format!("file_1_{random}");
+        let file_name_2 = format!("file_2_{random}");
+        let file_name_3 = format!("file_3_{random}");
         let repository_name = new_hyphenated_uuid();
 
         let save_repository = SaveRepository::DB { subfolder: None, repository_name: repository_name.clone() };
@@ -714,7 +716,7 @@ fn should_return_if_file_exists_by_repository() -> Result<(), LightSpeedError> {
 
         // Arrange
         let random: u32 = rand::random();
-        let file_name = format!("file_{}", random);
+        let file_name = format!("file_{random}");
         let binary_content = BinaryContent::FromFs { file_path: SOURCE_FILE.to_owned().into() };
         let content_type = "application/text".to_owned();
         let save_repository =

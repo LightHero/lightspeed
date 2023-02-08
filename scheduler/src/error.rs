@@ -13,11 +13,11 @@ pub enum SchedulerError {
 impl Display for SchedulerError {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         match self {
-            SchedulerError::ScheduleDefinitionError { message } => write!(f, "ScheduleDefinitionError: [{}]", message),
-            SchedulerError::JobLockError { message } => write!(f, "JobLockError: [{}]", message),
-            SchedulerError::JobExecutionStateError { message } => write!(f, "JobExecutionStateError: [{}]", message),
+            SchedulerError::ScheduleDefinitionError { message } => write!(f, "ScheduleDefinitionError: [{message}]"),
+            SchedulerError::JobLockError { message } => write!(f, "JobLockError: [{message}]"),
+            SchedulerError::JobExecutionStateError { message } => write!(f, "JobExecutionStateError: [{message}]"),
             SchedulerError::JobExecutionError { .. } => write!(f, "JobExecutionError"),
-            SchedulerError::JobExecutionPanic { cause } => write!(f, "JobExecutionPanic: [{}]", cause),
+            SchedulerError::JobExecutionPanic { cause } => write!(f, "JobExecutionPanic: [{cause}]"),
         }
     }
 }

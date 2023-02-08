@@ -22,6 +22,6 @@ thiserror = { workspace = true }
 tokio = { workspace = true, features = ["macros", "rt"] }
 
 [features]
-default = ["tokio_1"]
-
-tokio_1 = ["tokio"]
+default = ["tokio"]
+dashmap = ["dep:dashmap"]
+tokio = ["dep:tokio"]

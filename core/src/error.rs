@@ -86,39 +86,39 @@ pub enum LightSpeedError {
 impl Display for LightSpeedError {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         match self {
-            LightSpeedError::InvalidTokenError { message } => write!(f, "InvalidTokenError: [{}]", message),
-            LightSpeedError::ExpiredTokenError { message } => write!(f, "ExpiredTokenError: [{}]", message),
-            LightSpeedError::GenerateTokenError { message } => write!(f, "GenerateTokenError: [{}]", message),
+            LightSpeedError::InvalidTokenError { message } => write!(f, "InvalidTokenError: [{message}]"),
+            LightSpeedError::ExpiredTokenError { message } => write!(f, "ExpiredTokenError: [{message}]"),
+            LightSpeedError::GenerateTokenError { message } => write!(f, "GenerateTokenError: [{message}]"),
             LightSpeedError::MissingAuthTokenError => write!(f, "MissingAuthTokenError"),
-            LightSpeedError::ParseAuthHeaderError { message } => write!(f, "ParseAuthHeaderError: [{}]", message),
+            LightSpeedError::ParseAuthHeaderError { message } => write!(f, "ParseAuthHeaderError: [{message}]"),
 
             // Module
-            LightSpeedError::ModuleBuilderError { message } => write!(f, "ModuleBuilderError: [{}]", message),
-            LightSpeedError::ModuleStartError { message } => write!(f, "ModuleStartError: [{}]", message),
-            LightSpeedError::ConfigurationError { message } => write!(f, "ConfigurationError: [{}]", message),
+            LightSpeedError::ModuleBuilderError { message } => write!(f, "ModuleBuilderError: [{message}]"),
+            LightSpeedError::ModuleStartError { message } => write!(f, "ModuleStartError: [{message}]"),
+            LightSpeedError::ConfigurationError { message } => write!(f, "ConfigurationError: [{message}]"),
 
             // Auth
             LightSpeedError::UnauthenticatedError => write!(f, "UnauthenticatedError"),
-            LightSpeedError::ForbiddenError { message } => write!(f, "ForbiddenError: [{}]", message),
-            LightSpeedError::PasswordEncryptionError { message } => write!(f, "PasswordEncryptionError: [{}]", message),
+            LightSpeedError::ForbiddenError { message } => write!(f, "ForbiddenError: [{message}]"),
+            LightSpeedError::PasswordEncryptionError { message } => write!(f, "PasswordEncryptionError: [{message}]"),
 
-            LightSpeedError::InternalServerError { message } => write!(f, "InternalServerError: [{}]", message),
+            LightSpeedError::InternalServerError { message } => write!(f, "InternalServerError: [{message}]"),
 
             #[cfg(feature = "c3p0")]
             LightSpeedError::C3p0Error { .. } => write!(f, "C3p0Error"),
 
-            LightSpeedError::ValidationError { details } => write!(f, "ValidationError: [{:?}]", details),
+            LightSpeedError::ValidationError { details } => write!(f, "ValidationError: [{details:?}]"),
 
             LightSpeedError::BadRequest { message, code } => {
-                write!(f, "BadRequest. Code [{}]. Message [{}]", code, message)
+                write!(f, "BadRequest. Code [{code}]. Message [{message}]")
             }
 
             LightSpeedError::RequestConflict { message, code } => {
-                write!(f, "RequestConflict. Code [{}]. Message [{}]", code, message)
+                write!(f, "RequestConflict. Code [{code}]. Message [{message}]")
             }
 
             LightSpeedError::ServiceUnavailable { message, code } => {
-                write!(f, "ServiceUnavailable. Code [{}]. Message [{}]", code, message)
+                write!(f, "ServiceUnavailable. Code [{code}]. Message [{message}]")
             }
         }
     }
@@ -262,16 +262,10 @@ impl<'a> ErrorDetails<'a> {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Default)]
 pub struct RootErrorDetails {
     pub message: Option<String>,
     pub details: HashMap<String, Vec<ErrorDetail>>,
-}
-
-impl Default for RootErrorDetails {
-    fn default() -> Self {
-        RootErrorDetails { message: None, details: HashMap::new() }
-    }
 }
 
 #[derive(Debug)]
@@ -310,7 +304,7 @@ impl<'a> ScopedErrorDetails<'a> {
 
 impl From<serde_json::Error> for LightSpeedError {
     fn from(err: serde_json::Error) -> Self {
-        LightSpeedError::BadRequest { message: format!("{:?}", err), code: ErrorCodes::JSON_PARSE_ERROR }
+        LightSpeedError::BadRequest { message: format!("{err:?}"), code: ErrorCodes::JSON_PARSE_ERROR }
     }
 }
 

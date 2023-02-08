@@ -135,11 +135,11 @@ impl<RepoManager: CmsRepositoryManager> ContentService<RepoManager> {
     }
 
     fn content_table_name(&self, schema_id: i64) -> String {
-        format!("{}{}", CMS_CONTENT_TABLE_PREFIX, schema_id)
+        format!("{CMS_CONTENT_TABLE_PREFIX}{schema_id}")
     }
 
     fn unique_index_name(&self, schema_id: i64, field_name: &str) -> String {
-        format!("{}{}_UNIQUE_{}", CMS_CONTENT_TABLE_PREFIX, schema_id, field_name)
+        format!("{CMS_CONTENT_TABLE_PREFIX}{schema_id}_UNIQUE_{field_name}")
     }
 }
 

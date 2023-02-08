@@ -57,13 +57,10 @@ mod test {
         assert!(result.is_err());
 
         match result {
-            Err(err) => match err {
-                LightSpeedError::ModuleStartError { message } => {
-                    assert_eq!("test_failure", message)
-                }
-                _ => assert!(false),
-            },
-            _ => assert!(false),
+            Err(LightSpeedError::ModuleStartError { message }) => {
+                assert_eq!("test_failure", message)
+            }
+            _ => panic!(),
         }
 
         assert_eq!(1, output.lock().await.len());
@@ -80,7 +77,7 @@ mod test {
     impl super::Module for SimpleModOne {
         async fn start(&mut self) -> Result<(), LightSpeedError> {
             let mut owned = self.name.to_owned();
-            owned.push_str(&"-start");
+            owned.push_str("-start");
             self.output.lock().await.push(owned);
             Ok(())
         }
@@ -101,7 +98,7 @@ mod test {
             }
 
             let mut owned = self.name.to_owned();
-            owned.push_str(&"-start");
+            owned.push_str("-start");
             self.output.lock().await.push(owned);
 
             Ok(())

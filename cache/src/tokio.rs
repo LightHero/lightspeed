@@ -141,7 +141,7 @@ mod test {
         let cache = Cache::new(1000);
         cache.insert("hello", "world").await;
 
-        let result = cache.get_or_insert_with(&"hello", || async { "new world!" }).await;
+        let result = cache.get_or_insert_with("hello", || async { "new world!" }).await;
 
         assert_eq!(&"world", result.as_ref());
     }
@@ -155,7 +155,7 @@ mod test {
 
         sleep(Duration::from_millis(2));
 
-        let result = cache.get_or_insert_with(&"hello", || async { "new world" }).await;
+        let result = cache.get_or_insert_with("hello", || async { "new world" }).await;
 
         assert_eq!(&"new world", result.as_ref());
     }
@@ -182,7 +182,7 @@ mod test {
         let cache = Cache::new(1000);
         cache.insert("hello", "world").await;
 
-        let result = cache.get_or_try_insert_with(&"hello", insert_new_world_ok).await.unwrap();
+        let result = cache.get_or_try_insert_with("hello", insert_new_world_ok).await.unwrap();
 
         assert_eq!(&"world", result.as_ref());
     }
@@ -204,7 +204,7 @@ mod test {
 
         sleep(Duration::from_millis(2));
 
-        let result = cache.get_or_try_insert_with(&"hello", insert_new_world_ok).await.unwrap();
+        let result = cache.get_or_try_insert_with("hello", insert_new_world_ok).await.unwrap();
 
         assert_eq!(&"new world", result.as_ref());
     }
@@ -225,7 +225,7 @@ mod test {
         let result = cache.get_or_try_insert_with(&"hello", insert_new_world_err).await;
 
         match result {
-            Ok(_) => assert!(false),
+            Ok(_) => panic!(),
             Err(e) => assert_eq!(TestError::Error { message: "cannot insert" }, e),
         }
     }

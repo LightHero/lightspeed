@@ -34,8 +34,8 @@ actix-web = { version = "4.0.1" }
 async-trait = "0.1"
 atomic = "0.5"
 axum = { version = "0.6" }
-base64 = "0.20"
-bcrypt = "0.13"
+base64 = "0.21"
+bcrypt = "0.14"
 c3p0 = { version = "0.67", features = ["postgres", "migrate"] }
 c3p0_common = { version = "0.67" }
 chrono = { version = "0.4", default-features = false, features = ["clock"] }

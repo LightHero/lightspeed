@@ -125,7 +125,7 @@ impl TryToScheduler for &[&dyn TryToScheduler] {
 impl<'a> TryToScheduler for &'a str {
     fn to_scheduler(&self) -> Result<Scheduler, SchedulerError> {
         Ok(Scheduler::Cron(self.parse().map_err(|err| SchedulerError::ScheduleDefinitionError {
-            message: format!("Cannot create schedule for [{}]. Err: {:?}", self, err),
+            message: format!("Cannot create schedule for [{self}]. Err: {err:?}"),
         })?))
     }
 }
@@ -194,8 +194,8 @@ pub mod test {
     fn should_build_an_interval_schedule_from_duration() {
         let schedule = Duration::new(1, 1).to_scheduler().unwrap();
         match schedule {
-            Scheduler::Interval { .. } => assert!(true),
-            _ => assert!(false),
+            Scheduler::Interval { .. } => (),
+            _ => panic!(),
         }
     }
 
@@ -203,17 +203,17 @@ pub mod test {
     fn should_build_a_periodic_schedule_from_str() {
         let schedule = "* * * * * *".to_scheduler().unwrap();
         match schedule {
-            Scheduler::Cron(_) => assert!(true),
-            _ => assert!(false),
+            Scheduler::Cron(_) => (),
+            _ => panic!(),
         }
     }
 
     #[test]
     fn should_build_a_multi_scheduler_from_empty_array() {
-        let schedule = Scheduler::from(&vec![]).unwrap();
+        let schedule = Scheduler::from(&[]).unwrap();
         match schedule {
-            Scheduler::Never => assert!(true),
-            _ => assert!(false),
+            Scheduler::Never => (),
+            _ => panic!(),
         }
     }
 
@@ -221,8 +221,8 @@ pub mod test {
     fn should_build_a_multi_scheduler_from_single_entry_array() {
         let schedule = Scheduler::from(&[&vec!["* * * * * *"]]).unwrap();
         match schedule {
-            Scheduler::Cron(_) => assert!(true),
-            _ => assert!(false),
+            Scheduler::Cron(_) => (),
+            _ => panic!(),
         }
     }
 
@@ -232,24 +232,24 @@ pub mod test {
         match schedule {
             Scheduler::Multi(inner) => {
                 match inner[0] {
-                    Scheduler::Cron(_) => assert!(true),
-                    _ => assert!(false),
+                    Scheduler::Cron(_) => (),
+                    _ => panic!(),
                 };
                 match inner[1] {
-                    Scheduler::Interval { .. } => assert!(true),
-                    _ => assert!(false),
+                    Scheduler::Interval { .. } => (),
+                    _ => panic!(),
                 };
             }
-            _ => assert!(false),
+            _ => panic!(),
         }
     }
 
     #[test]
     fn cron_should_be_time_zone_aware_with_utc() {
         let mut schedule = "* 11 10 * * *".to_scheduler().unwrap();
-        let date = Utc.ymd(2010, 1, 1).and_hms(10, 10, 0);
+        let date = Utc.with_ymd_and_hms(2010, 1, 1, 10, 10, 0).unwrap();
 
-        let expected_utc = Utc.ymd(2010, 1, 1).and_hms(10, 11, 0);
+        let expected_utc = Utc.with_ymd_and_hms(2010, 1, 1, 10, 11, 0).unwrap();
 
         let next = schedule.next(&date, Some(UTC)).unwrap();
 
@@ -260,8 +260,8 @@ pub mod test {
     fn cron_should_be_time_zone_aware_with_custom_time_zone() {
         let mut schedule = "* 11 10 * * *".to_scheduler().unwrap();
 
-        let date = Utc.ymd(2010, 1, 1).and_hms(10, 10, 0);
-        let expected_utc = Utc.ymd(2010, 1, 2).and_hms(09, 11, 0);
+        let date = Utc.with_ymd_and_hms(2010, 1, 1, 10, 10, 0).unwrap();
+        let expected_utc = Utc.with_ymd_and_hms(2010, 1, 2, 9, 11, 0).unwrap();
 
         let tz = chrono_tz::Europe::Rome;
 
@@ -275,24 +275,24 @@ pub mod test {
         let mut schedule = Scheduler::from(&[&"* 10 10 * * *", &"* 20 20 * * *"]).unwrap();
 
         {
-            let date = Utc.ymd(2010, 1, 1).and_hms(10, 8, 0);
-            let expected = Utc.ymd(2010, 1, 1).and_hms(10, 10, 0);
+            let date = Utc.with_ymd_and_hms(2010, 1, 1, 10, 8, 0).unwrap();
+            let expected = Utc.with_ymd_and_hms(2010, 1, 1, 10, 10, 0).unwrap();
 
             let next = schedule.next(&date, Some(UTC)).unwrap();
             assert_eq!(next.with_timezone(&Utc), expected);
         }
 
         {
-            let date = Utc.ymd(2010, 1, 1).and_hms(11, 8, 0);
-            let expected = Utc.ymd(2010, 1, 1).and_hms(20, 20, 0);
+            let date = Utc.with_ymd_and_hms(2010, 1, 1, 11, 8, 0).unwrap();
+            let expected = Utc.with_ymd_and_hms(2010, 1, 1, 20, 20, 0).unwrap();
 
             let next = schedule.next(&date, Some(UTC)).unwrap();
             assert_eq!(next.with_timezone(&Utc), expected);
         }
 
         {
-            let date = Utc.ymd(2010, 1, 1).and_hms(22, 8, 0);
-            let expected = Utc.ymd(2010, 1, 2).and_hms(10, 10, 0);
+            let date = Utc.with_ymd_and_hms(2010, 1, 1, 22, 8, 0).unwrap();
+            let expected = Utc.with_ymd_and_hms(2010, 1, 2, 10, 10, 0).unwrap();
 
             let next = schedule.next(&date, Some(UTC)).unwrap();
             assert_eq!(next.with_timezone(&Utc), expected);

@@ -208,7 +208,7 @@ mod test {
         let result = cache.get_or_try_insert_with(&"hello", insert_new_world_err).await;
 
         match result {
-            Ok(_) => assert!(false),
+            Ok(_) => panic!(),
             Err(e) => assert_eq!(TestError::Error { message: "cannot insert" }, e),
         }
     }

@@ -76,7 +76,7 @@ impl ContentRepository for PgContentRepository {
     }
 
     async fn drop_unique_constraint(&self, conn: &mut Self::Conn, index_name: &str) -> Result<(), LightSpeedError> {
-        Ok(conn.batch_execute(&format!("DROP INDEX {} IF EXISTS", index_name)).await?)
+        Ok(conn.batch_execute(&format!("DROP INDEX {index_name} IF EXISTS")).await?)
     }
 
     async fn fetch_by_id(&self, conn: &mut Self::Conn, id: i64) -> Result<Model<ContentData>, LightSpeedError> {

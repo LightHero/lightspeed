@@ -64,7 +64,7 @@ fn should_generate_token() -> Result<(), LightSpeedError> {
 
             match token.data.token_type {
                 TokenType::AccountActivation => {}
-                _ => assert!(false),
+                _ => panic!(),
             }
             assert!((before + expiration_seconds) <= token.data.expire_at_epoch_seconds);
             assert!((after + expiration_seconds) >= token.data.expire_at_epoch_seconds);

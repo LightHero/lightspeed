@@ -158,7 +158,7 @@ impl Job {
             Ok(response) => response,
             Err(panic) => {
                 error!("A panic happened. Err: {:?}", panic);
-                Err(SchedulerError::JobExecutionPanic { cause: format!("{:?}", panic) }.into())
+                Err(SchedulerError::JobExecutionPanic { cause: format!("{panic:?}") }.into())
             }
         }
     }
@@ -247,7 +247,7 @@ pub mod test {
                 let mut lock = lock_clone.lock().await;
                 let count = *lock;
                 *lock = count + 1;
-                println!("job - count {}", count);
+                println!("job - count {count}");
                 Ok(())
             })
         });
@@ -276,7 +276,7 @@ pub mod test {
                 let mut lock = lock_clone.lock().await;
                 let count = *lock;
                 *lock = count + 1;
-                println!("job - count {}", count);
+                println!("job - count {count}");
                 Err(SchedulerError::JobLockError { message: "".to_owned() })?
             })
         });
@@ -306,7 +306,7 @@ pub mod test {
                 let mut lock = lock_clone.lock().await;
                 let count = *lock;
                 *lock = count + 1;
-                println!("job - count {}", count);
+                println!("job - count {count}");
 
                 if count == succeed_at {
                     Ok(())
@@ -340,7 +340,7 @@ pub mod test {
                 let mut lock = lock_clone.lock().await;
                 let count = *lock;
                 *lock = count + 1;
-                println!("job - count {}", count);
+                println!("job - count {count}");
                 panic!("Manual panic for test")
             })
         });

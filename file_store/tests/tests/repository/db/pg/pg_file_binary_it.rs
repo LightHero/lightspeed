@@ -27,7 +27,7 @@ fn should_save_file_from_fs() -> Result<(), LightSpeedError> {
                         let file_content = std::str::from_utf8(&content).unwrap();
                         assert_eq!(&std::fs::read_to_string(SOURCE_FILE).unwrap(), file_content);
                     }
-                    _ => assert!(false),
+                    _ => panic!(),
                 }
 
                 Ok(())
@@ -55,7 +55,7 @@ fn should_save_file_from_memory() -> Result<(), LightSpeedError> {
                     Ok(BinaryContent::InMemory { content }) => {
                         assert_eq!("Hello world!", String::from_utf8(content.into_owned()).unwrap());
                     }
-                    _ => assert!(false),
+                    _ => panic!(),
                 }
 
                 Ok(())

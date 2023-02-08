@@ -17,7 +17,7 @@ pub enum LoggerError {
 impl Display for LoggerError {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         match self {
-            LoggerError::LoggerConfigurationError { message } => write!(f, "LoggerConfigurationError: [{}]", message),
+            LoggerError::LoggerConfigurationError { message } => write!(f, "LoggerConfigurationError: [{message}]"),
         }
     }
 }
@@ -26,20 +26,20 @@ impl Error for LoggerError {}
 
 impl From<log::SetLoggerError> for LoggerError {
     fn from(error: log::SetLoggerError) -> Self {
-        LoggerError::LoggerConfigurationError { message: format!("{}", error) }
+        LoggerError::LoggerConfigurationError { message: format!("{error}") }
     }
 }
 
 impl From<std::io::Error> for LoggerError {
     fn from(error: std::io::Error) -> Self {
-        LoggerError::LoggerConfigurationError { message: format!("{}", error) }
+        LoggerError::LoggerConfigurationError { message: format!("{error}") }
     }
 }
 
 /// Configure a simple global logger that prints to stdout
 pub fn setup_stdout_logger(logger_filter: &str, use_ansi: bool) -> Result<(), LoggerError> {
     let env_filter = Targets::from_str(logger_filter).map_err(|err| LoggerError::LoggerConfigurationError {
-        message: format!("Cannot parse the env_filter: [{}]. err: {:?}", logger_filter, err),
+        message: format!("Cannot parse the env_filter: [{logger_filter}]. err: {err:?}"),
     })?;
 
     let subscriber = tracing_subscriber::registry().with(env_filter).with(Layer::new().with_ansi(use_ansi));
@@ -56,8 +56,8 @@ pub fn setup_logger(logger_config: &config::LoggerConfig) -> Result<Option<Worke
     let (file_subscriber, file_guard) = if logger_config.file_output.file_output_enabled {
         let file_appender = RollingFileAppender::new(
             logger_config.file_output.file_output_rotation.to_tracing_appender_rotation(),
-            logger_config.file_output.file_output_directory.to_owned(),
-            logger_config.file_output.file_output_name_prefix.to_owned(),
+            &logger_config.file_output.file_output_directory,
+            &logger_config.file_output.file_output_name_prefix,
         );
 
         let (non_blocking, guard) = tracing_appender::non_blocking(file_appender);
@@ -83,6 +83,6 @@ where
     S: Subscriber + Send + Sync + 'static,
 {
     subscriber.try_init().map_err(|err| LoggerError::LoggerConfigurationError {
-        message: format!("Cannot start the logger. err: {:?}", err),
+        message: format!("Cannot start the logger. err: {err:?}"),
     })
 }

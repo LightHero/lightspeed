@@ -140,7 +140,7 @@ fn should_validate_content_on_save() -> Result<(), LightSpeedError> {
 
         match result {
             Err(LightSpeedError::ValidationError { .. }) => {}
-            _ => assert!(false),
+            _ => panic!(),
         }
 
         assert_eq!(0, content_service.count_all_by_schema_id(saved_schema_1.id).await?);
@@ -198,13 +198,13 @@ fn should_create_unique_constraints_for_slug_schema_fields() -> Result<(), Light
 
         match result {
             Err(LightSpeedError::ValidationError { details }) => {
-                println!("details: {:#?}", details);
+                println!("details: {details:#?}");
                 assert_eq!(
-                    details.details[&format!("fields[{}]", field_name)],
+                    details.details[&format!("fields[{field_name}]")],
                     vec![ErrorDetail::new(ERR_NOT_UNIQUE, vec![])]
                 )
             }
-            _ => assert!(false),
+            _ => panic!(),
         };
 
         Ok(())
@@ -265,13 +265,13 @@ fn should_create_unique_constraints_for_string_unique_schema_fields() -> Result<
 
         match result {
             Err(LightSpeedError::ValidationError { details }) => {
-                println!("details: {:#?}", details);
+                println!("details: {details:#?}");
                 assert_eq!(
-                    details.details[&format!("fields[{}]", field_name)],
+                    details.details[&format!("fields[{field_name}]")],
                     vec![ErrorDetail::new(ERR_NOT_UNIQUE, vec![])]
                 )
             }
-            _ => assert!(false),
+            _ => panic!(),
         };
 
         Ok(())
@@ -330,13 +330,13 @@ fn should_create_unique_constraints_for_number_unique_schema_fields() -> Result<
 
         match result {
             Err(LightSpeedError::ValidationError { details }) => {
-                println!("details: {:#?}", details);
+                println!("details: {details:#?}");
                 assert_eq!(
-                    details.details[&format!("fields[{}]", field_name)],
+                    details.details[&format!("fields[{field_name}]")],
                     vec![ErrorDetail::new(ERR_NOT_UNIQUE, vec![])]
                 )
             }
-            _ => assert!(false),
+            _ => panic!(),
         };
 
         Ok(())
@@ -390,13 +390,13 @@ fn should_create_unique_constraints_for_boolean_unique_schema_fields() -> Result
 
         match result {
             Err(LightSpeedError::ValidationError { details }) => {
-                println!("details: {:#?}", details);
+                println!("details: {details:#?}");
                 assert_eq!(
-                    details.details[&format!("fields[{}]", field_name)],
+                    details.details[&format!("fields[{field_name}]")],
                     vec![ErrorDetail::new(ERR_NOT_UNIQUE, vec![])]
                 )
             }
-            _ => assert!(false),
+            _ => panic!(),
         };
 
         Ok(())

@@ -11,7 +11,7 @@ fn should_setup_logger_with_env_filter() -> Result<(), std::io::Error> {
     let tempdir = tempfile::tempdir().unwrap();
     let file_output_directory = tempdir.path().to_str().unwrap().to_owned();
     let file_output_name_prefix = format!("filename_{}.log", rand::random::<u64>());
-    let log_filename = format!("{}/{}", file_output_directory, file_output_name_prefix);
+    let log_filename = format!("{file_output_directory}/{file_output_name_prefix}");
 
     let config = LoggerConfig {
         stdout_output: StandardOutputConfig { stdout_enabled: true, stdout_use_ansi_colors: true },

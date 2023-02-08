@@ -21,7 +21,7 @@ pub async fn create_user_with_password<RepoManager: AuthRepositoryManager>(
     activate: bool,
 ) -> Result<(AuthAccountModel, TokenModel), LightSpeedError> {
     let username = new_hyphenated_uuid();
-    let email = format!("{}@email.fake", username);
+    let email = format!("{username}@email.fake");
 
     let (user, token) = auth_module
         .auth_account_service

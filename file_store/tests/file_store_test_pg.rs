@@ -20,20 +20,22 @@ pub type MaybeType = (FileStoreModule<RepoManager>, Container<'static, clients::
 async fn init() -> MaybeType {
     static DOCKER: OnceCell<clients::Cli> = OnceCell::new();
 
-    let node = DOCKER.get_or_init(|| clients::Cli::default()).run(images::postgres::Postgres::default());
-
-    let mut config = deadpool::postgres::Config::default();
-    config.user = Some("postgres".to_owned());
-    config.password = Some("postgres".to_owned());
-    config.dbname = Some("postgres".to_owned());
-    config.host = Some(format!("127.0.0.1"));
-    config.port = Some(node.get_host_port(5432).unwrap());
+    let node = DOCKER.get_or_init(clients::Cli::default).run(images::postgres::Postgres::default());
 
     let mut pool_config = deadpool::managed::PoolConfig::default();
     pool_config.timeouts.create = Some(Duration::from_secs(5));
     pool_config.timeouts.recycle = Some(Duration::from_secs(5));
     pool_config.timeouts.wait = Some(Duration::from_secs(5));
-    config.pool = Some(pool_config);
+
+    let config = c3p0::postgres::deadpool::postgres::Config {
+        user: Some("postgres".to_owned()),
+        password: Some("postgres".to_owned()),
+        dbname: Some("postgres".to_owned()),
+        host: Some("127.0.0.1".to_string()),
+        port: Some(node.get_host_port(5432).unwrap()),
+        pool: Some(pool_config),
+        ..Default::default()
+    };
 
     let c3p0 = PgC3p0Pool::new(config.create_pool(Some(Runtime::Tokio1), NoTls).unwrap());
 

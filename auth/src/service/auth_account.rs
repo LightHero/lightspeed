@@ -56,7 +56,7 @@ impl<RepoManager: AuthRepositoryManager> AuthAccountService<RepoManager> {
                     AuthAccountStatus::Active => {}
                     _ => {
                         return Err(LightSpeedError::BadRequest {
-                            message: format!("User [{}] not in status Active", username),
+                            message: format!("User [{username}] not in status Active"),
                             code: ErrorCodes::INACTIVE_USER,
                         })
                     }
@@ -193,7 +193,7 @@ impl<RepoManager: AuthRepositoryManager> AuthAccountService<RepoManager> {
             .first()
             .cloned()
             .ok_or_else(|| LightSpeedError::BadRequest {
-                message: format!("Previous activation token not found for user [{}]", username),
+                message: format!("Previous activation token not found for user [{username}]"),
                 code: ErrorCodes::NOT_PENDING_USER,
             })?;
         self.generate_new_activation_token_by_token_with_conn(conn, &previous_activation_token).await
@@ -314,7 +314,7 @@ impl<RepoManager: AuthRepositoryManager> AuthAccountService<RepoManager> {
             AuthAccountStatus::Active => {}
             _ => {
                 return Err(LightSpeedError::BadRequest {
-                    message: format!("User [{}] not in status Active", username),
+                    message: format!("User [{username}] not in status Active"),
                     code: ErrorCodes::INACTIVE_USER,
                 })
             }
@@ -485,7 +485,7 @@ impl<RepoManager: AuthRepositoryManager> AuthAccountService<RepoManager> {
                 account.data.roles.push(role.to_owned())
             }
         }
-        Ok(self.auth_repo.update(conn, account).await?)
+        self.auth_repo.update(conn, account).await
     }
 
     pub async fn delete_roles(&self, user_id: i64, roles: &[String]) -> Result<AuthAccountModel, LightSpeedError> {
@@ -506,7 +506,7 @@ impl<RepoManager: AuthRepositoryManager> AuthAccountService<RepoManager> {
         for role in roles {
             account.data.roles.retain(|r| r != role);
         }
-        Ok(self.auth_repo.update(conn, account).await?)
+        self.auth_repo.update(conn, account).await
     }
 
     pub async fn change_user_data(
@@ -570,7 +570,7 @@ impl<RepoManager: AuthRepositoryManager> AuthAccountService<RepoManager> {
             AuthAccountStatus::Active => {}
             _ => {
                 return Err(LightSpeedError::BadRequest {
-                    message: format!("User [{}] not in status Active", user_id),
+                    message: format!("User [{user_id}] not in status Active"),
                     code: ErrorCodes::INACTIVE_USER,
                 })
             }
@@ -600,7 +600,7 @@ impl<RepoManager: AuthRepositoryManager> AuthAccountService<RepoManager> {
             AuthAccountStatus::Disabled => {}
             _ => {
                 return Err(LightSpeedError::BadRequest {
-                    message: format!("User [{}] not in status Disabled", user_id),
+                    message: format!("User [{user_id}] not in status Disabled"),
                     code: ErrorCodes::ACTIVE_USER,
                 })
             }

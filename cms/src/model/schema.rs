@@ -29,7 +29,7 @@ pub struct SchemaData {
 impl Validable for SchemaData {
     fn validate(&self, error_details: &mut ErrorDetails) -> Result<(), LightSpeedError> {
         validate_ge(error_details, "name", 3, self.name.len());
-        (&self.schema).validate(&mut error_details.with_scope("schema"))?;
+        self.schema.validate(&mut error_details.with_scope("schema"))?;
         Ok(())
     }
 }
@@ -45,8 +45,8 @@ impl Validable for Schema {
     fn validate(&self, error_details: &mut ErrorDetails) -> Result<(), LightSpeedError> {
         let mut field_names = vec![];
 
-        for (count, schema_field) in (&self.fields).iter().enumerate() {
-            let mut scoped_err = error_details.with_scope(format!("fields[{}]", count));
+        for (count, schema_field) in self.fields.iter().enumerate() {
+            let mut scoped_err = error_details.with_scope(format!("fields[{count}]"));
             if field_names.contains(&&schema_field.name) {
                 scoped_err.add_detail("name", ERR_NOT_UNIQUE);
             }
@@ -163,7 +163,7 @@ mod test {
                     Some(&vec![ErrorDetail::new(ERR_NOT_UNIQUE, vec![])])
                 );
             }
-            _ => assert!(false),
+            _ => panic!(),
         }
     }
 
@@ -202,7 +202,7 @@ mod test {
                     ])
                 );
             }
-            _ => assert!(false),
+            _ => panic!(),
         }
     }
 
@@ -254,7 +254,7 @@ mod test {
                     Some(&vec![ErrorDetail::new(NOT_VALID_FIELD_NAME, vec![]),])
                 );
             }
-            _ => assert!(false),
+            _ => panic!(),
         }
     }
 }

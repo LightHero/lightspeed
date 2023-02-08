@@ -54,7 +54,7 @@ impl FromStr for EmailClientType {
             "full" => Ok(EmailClientType::Full),
             "in_memory" => Ok(EmailClientType::InMemory),
             "no_ops" => Ok(EmailClientType::NoOps),
-            _ => Err(LightSpeedError::ConfigurationError { message: format!("Unknown Email client_type [{}]", s) }),
+            _ => Err(LightSpeedError::ConfigurationError { message: format!("Unknown Email client_type [{s}]") }),
         }
     }
 }
@@ -67,9 +67,11 @@ mod test {
     #[tokio::test]
     async fn should_build_fixed_recipient_client() {
         // Arrange
-        let mut config = EmailClientConfig::default();
-        config.email_client_type = EmailClientType::InMemory;
-        config.forward_all_emails_to_fixed_recipients = Some(vec!["to@me.com".to_owned()]);
+        let config = EmailClientConfig {
+            email_client_type: EmailClientType::InMemory,
+            forward_all_emails_to_fixed_recipients: Some(vec!["to@me.com".to_owned()]),
+            ..Default::default()
+        };
 
         let mut email = EmailMessage::new();
         email.to.push("original_to@mail.com".to_owned());
@@ -89,8 +91,7 @@ mod test {
     #[tokio::test]
     async fn should_build_in_memory_client() {
         // Arrange
-        let mut config = EmailClientConfig::default();
-        config.email_client_type = EmailClientType::InMemory;
+        let config = EmailClientConfig { email_client_type: EmailClientType::InMemory, ..Default::default() };
 
         let mut email = EmailMessage::new();
         email.to.push("original_to@mail.com".to_owned());
@@ -110,9 +111,11 @@ mod test {
     #[test]
     fn should_fail_if_fixed_recipient_empty() {
         // Arrange
-        let mut config = EmailClientConfig::default();
-        config.email_client_type = EmailClientType::InMemory;
-        config.forward_all_emails_to_fixed_recipients = Some(vec![]);
+        let config = EmailClientConfig {
+            email_client_type: EmailClientType::InMemory,
+            forward_all_emails_to_fixed_recipients: Some(vec![]),
+            ..Default::default()
+        };
 
         let mut email = EmailMessage::new();
         email.to.push("original_to@mail.com".to_owned());

@@ -23,9 +23,7 @@ impl FromStr for Language {
             "es" => Ok(Language::Es),
             "fr" => Ok(Language::Fr),
             "it" => Ok(Language::It),
-            _ => {
-                Err(LightSpeedError::ConfigurationError { message: format!("Could not parse language [{}]", language) })
-            }
+            _ => Err(LightSpeedError::ConfigurationError { message: format!("Could not parse language [{language}]") }),
         }
     }
 }

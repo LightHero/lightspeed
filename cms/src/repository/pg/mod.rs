@@ -36,17 +36,17 @@ impl CmsRepositoryManager for PgCmsRepositoryManager {
     }
 
     async fn start(&self) -> Result<(), LightSpeedError> {
-        let migrate_table_name = format!("LS_CMS_{}", C3P0_MIGRATE_TABLE_DEFAULT);
+        let migrate_table_name = format!("LS_CMS_{C3P0_MIGRATE_TABLE_DEFAULT}");
 
         let migrate = C3p0MigrateBuilder::new(self.c3p0().clone())
             .with_table_name(migrate_table_name)
             .with_migrations(from_embed(&MIGRATIONS).map_err(|err| LightSpeedError::ModuleStartError {
-                message: format!("PgCmsRepositoryManager - failed to read db migrations: {:?}", err),
+                message: format!("PgCmsRepositoryManager - failed to read db migrations: {err:?}"),
             })?)
             .build();
 
         migrate.migrate().await.map_err(|err| LightSpeedError::ModuleStartError {
-            message: format!("PgCmsRepositoryManager - db migration failed: {:?}", err),
+            message: format!("PgCmsRepositoryManager - db migration failed: {err:?}"),
         })
     }
 

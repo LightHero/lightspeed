@@ -28,11 +28,11 @@ impl EmailClient for FixedRecipientEmailClient {
 
         let original_data_info = to_text(&email_message.to, &email_message.cc, &email_message.bcc);
         if let Some(text) = email_message.text {
-            email_message.text = Some(format!("{}\n{}", original_data_info, text));
+            email_message.text = Some(format!("{original_data_info}\n{text}"));
         }
 
         if let Some(html) = email_message.html {
-            email_message.html = Some(format!("<pre>\n{}\n</pre>\n</br>\n{}", original_data_info, html));
+            email_message.html = Some(format!("<pre>\n{original_data_info}\n</pre>\n</br>\n{html}"));
         }
 
         if let (None, None) = (&email_message.text, &email_message.html) {
@@ -103,14 +103,13 @@ pub mod test {
 
         // Assert
         let expected_info_1 = format!(
-            r#"{}
-{}
+            r#"{SECTION_SEPARATOR}
+{RECIPIENT_ALTERATION_MESSAGE}
 TO: to@email.com; two@email.com
 CC: cc@email.com; two@email.com
 BCC: bcc@email.com
-{}
-"#,
-            SECTION_SEPARATOR, RECIPIENT_ALTERATION_MESSAGE, SECTION_SEPARATOR
+{SECTION_SEPARATOR}
+"#
         );
         assert_eq!(expected_info_1, info_1);
     }
@@ -124,7 +123,7 @@ BCC: bcc@email.com
         let info_1 = to_subject(&subject, &to);
 
         // Assert
-        assert_eq!(format!("[TO: to@email.com; two@email.com] {}", subject), info_1);
+        assert_eq!(format!("[TO: to@email.com; two@email.com] {subject}"), info_1);
     }
 
     #[tokio::test]

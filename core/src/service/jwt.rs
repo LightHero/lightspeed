@@ -115,7 +115,7 @@ mod test {
         };
 
         let jwt_string = jwt.generate_from_token(&token).unwrap();
-        println!("Jwt string: [{}]", jwt_string);
+        println!("Jwt string: [{jwt_string}]");
     }
 
     #[test]
@@ -128,7 +128,7 @@ mod test {
 
         assert_eq!(payload.id, jwt.payload.id);
 
-        println!("Jwt string: [{}]", jwt_string);
+        println!("Jwt string: [{jwt_string}]");
     }
 
     #[test]
@@ -161,7 +161,7 @@ mod test {
 
         let issued_at = token.iat;
         let expiration = token.exp;
-        let timeout = (60 as i64) * 60;
+        let timeout = 60_i64 * 60;
 
         assert!(issued_at >= time_before);
         assert!(issued_at <= time_after);
@@ -175,18 +175,18 @@ mod test {
         let payload = MyTestClaym { id: Local::now().timestamp(), name: "Red".to_string() };
 
         let mut jwt_string = jwt.generate_from_payload(&payload).unwrap().1;
-        jwt_string.push_str("1");
+        jwt_string.push('1');
 
         let result: Result<super::JWT<MyTestClaym>, super::LightSpeedError> = jwt.parse_token(&jwt_string);
         let mut is_invalid = false;
         match result {
-            Ok(r) => println!("Ok: {:?}", r),
+            Ok(r) => println!("Ok: {r:?}"),
             Err(e) => match e {
                 super::LightSpeedError::InvalidTokenError { message: mes } => {
                     println!("Error message: {:?}", &mes);
                     is_invalid = true;
                 }
-                _ => println!("Other kind of error: {:?}", e),
+                _ => println!("Other kind of error: {e:?}"),
             },
         };
         assert!(is_invalid)
@@ -208,13 +208,13 @@ mod test {
         let result: Result<MyTestClaym, super::LightSpeedError> = jwt.parse_payload(&jwt_string);
         let mut is_expired = false;
         match result {
-            Ok(r) => println!("Ok: {:?}", r),
+            Ok(r) => println!("Ok: {r:?}"),
             Err(e) => match e {
                 super::LightSpeedError::ExpiredTokenError { message: mes } => {
                     println!("Expired: {:?}", &mes);
                     is_expired = true;
                 }
-                _ => println!("Other kind of error: {:?}", e),
+                _ => println!("Other kind of error: {e:?}"),
             },
         };
         assert!(is_expired)

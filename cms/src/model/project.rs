@@ -41,7 +41,7 @@ pub mod test {
                     Some(&vec![ErrorDetail::new(MUST_BE_GREATER_OR_EQUAL, vec!["3".to_owned()])])
                 );
             }
-            _ => assert!(false),
+            _ => panic!(),
         }
     }
 

@@ -226,7 +226,7 @@ impl<RepoManager: DBFileStoreRepositoryManager> FileStoreService<RepoManager> {
     #[inline]
     fn get_fs_repository(&self, repository_name: &str) -> Result<&FsFileStoreBinaryRepository, LightSpeedError> {
         self.fs_repositories.get(repository_name).ok_or_else(|| LightSpeedError::BadRequest {
-            message: format!("FileStoreService - Cannot find FS repository with name [{}]", repository_name),
+            message: format!("FileStoreService - Cannot find FS repository with name [{repository_name}]"),
             code: ErrorCodes::NOT_FOUND,
         })
     }

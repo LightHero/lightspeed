@@ -132,8 +132,7 @@ impl JobExecutorInternal {
                         let minutes = (duration_secs / 60) % 60;
                         let hours = (duration_secs / 60) / 60;
                         let duration_fmt = format!(
-                            "{:02} hour(s), {:02} minute(s), {:02} second(s) and {:03} millis",
-                            hours, minutes, seconds, mills
+                            "{hours:02} hour(s), {minutes:02} minute(s), {seconds:02} second(s) and {mills:03} millis"
                         );
 
                         match result {
@@ -277,7 +276,7 @@ pub mod test {
             .unwrap();
 
         for i in 0..100 {
-            println!("run_pending {}", i);
+            println!("run_pending {i}");
             executor.executor.run_pending_jobs().await;
             tokio::time::sleep(Duration::new(0, 2)).await;
         }
@@ -359,7 +358,7 @@ pub mod test {
 
         let before_millis = Utc::now().timestamp_millis();
         for i in 0..100 {
-            println!("run_pending {}", i);
+            println!("run_pending {i}");
             executor.executor.run_pending_jobs().await;
             tokio::time::sleep(Duration::new(0, 1_000_000)).await;
         }
@@ -508,7 +507,7 @@ pub mod test {
         let runs = 100;
 
         for i in 0..runs {
-            println!("run_pending {}", i);
+            println!("run_pending {i}");
             executor.executor.run_pending_jobs().await;
             tokio::time::sleep(Duration::new(0, 1_000_000)).await;
         }

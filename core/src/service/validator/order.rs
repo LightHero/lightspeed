@@ -15,7 +15,7 @@ pub fn validate_le<N: PartialOrd + Display, S: Into<String>>(
     val: N,
 ) {
     if val > max {
-        error_details.add_detail(field_name.into(), ErrorDetail::new(MUST_BE_LESS_OR_EQUAL, vec![format!("{}", max)]))
+        error_details.add_detail(field_name.into(), ErrorDetail::new(MUST_BE_LESS_OR_EQUAL, vec![format!("{max}")]))
     }
 }
 
@@ -28,7 +28,7 @@ pub fn validate_lt<N: PartialOrd + Display, S: Into<String>>(
     val: N,
 ) {
     if val >= max {
-        error_details.add_detail(field_name.into(), ErrorDetail::new(MUST_BE_LESS, vec![format!("{}", max)]))
+        error_details.add_detail(field_name.into(), ErrorDetail::new(MUST_BE_LESS, vec![format!("{max}")]))
     }
 }
 
@@ -41,8 +41,7 @@ pub fn validate_ge<N: PartialOrd + Display, S: Into<String>>(
     val: N,
 ) {
     if val < min {
-        error_details
-            .add_detail(field_name.into(), ErrorDetail::new(MUST_BE_GREATER_OR_EQUAL, vec![format!("{}", min)]))
+        error_details.add_detail(field_name.into(), ErrorDetail::new(MUST_BE_GREATER_OR_EQUAL, vec![format!("{min}")]))
     }
 }
 
@@ -55,7 +54,7 @@ pub fn validate_gt<N: PartialOrd + Display, S: Into<String>>(
     val: N,
 ) {
     if val <= min {
-        error_details.add_detail(field_name.into(), ErrorDetail::new(MUST_BE_GREATER, vec![format!("{}", min)]))
+        error_details.add_detail(field_name.into(), ErrorDetail::new(MUST_BE_GREATER, vec![format!("{min}")]))
     }
 }
 

@@ -1,3 +1,4 @@
+use base64::{engine::general_purpose, Engine as _};
 use sha2::Digest;
 
 #[derive(Clone, Default)]
@@ -12,7 +13,7 @@ impl HashService {
         let mut hasher = sha2::Sha256::default();
         hasher.update(text);
         let result = hasher.finalize();
-        base64::encode(&result)
+        general_purpose::STANDARD_NO_PAD.encode(result)
     }
 
     pub fn verify_hash(&self, text: &str, expected_hash: &str) -> bool {
@@ -34,13 +35,13 @@ mod test {
         let first_hash = hash_service.hash(&template);
         let second_hash = hash_service.hash(&template);
 
-        println!("hash: {}", first_hash);
+        println!("hash: {first_hash}");
 
         assert_ne!(template, second_hash);
         assert_eq!(first_hash, second_hash);
 
         assert!(hash_service.verify_hash(&template, &first_hash));
-        assert!(!hash_service.verify_hash(&template, &format!("{}1", first_hash)));
+        assert!(!hash_service.verify_hash(&template, &format!("{first_hash}1")));
         assert!(!hash_service.verify_hash(&template, &template));
     }
 }

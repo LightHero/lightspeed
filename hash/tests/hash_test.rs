@@ -11,7 +11,7 @@ mod service;
 async fn init() -> HashModule {
     let conf = LoggerConfig::default();
     if let Err(err) = setup_logger(&conf) {
-        println!("Warning: {:?}", err)
+        println!("Warning: {err:?}")
     };
 
     let mut core_config = CoreConfig::default();

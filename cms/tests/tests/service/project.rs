@@ -73,7 +73,7 @@ fn should_return_not_unique_validation_error() -> Result<(), LightSpeedError> {
                 assert_eq!(details.details.len(), 1);
                 assert_eq!(details.details.get("name").unwrap()[0], ErrorDetail::from(ERR_NOT_UNIQUE));
             }
-            _ => assert!(false),
+            _ => panic!(),
         };
 
         Ok(())

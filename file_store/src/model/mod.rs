@@ -90,7 +90,7 @@ pub enum SaveRepository {
 
 pub fn to_file_path(subfolder: Option<&str>, filename: &str) -> String {
     match subfolder {
-        Some(path) => format!("{}/{}", path, filename),
+        Some(path) => format!("{path}/{filename}"),
         None => filename.to_owned(),
     }
 }
@@ -134,15 +134,15 @@ mod test {
             file_path: main_file_path.clone(),
         }) {
             Repository::DB { repository_name } => assert_eq!(main_repository_name, repository_name),
-            _ => assert!(false),
+            _ => panic!(),
         };
 
         match Repository::from(&RepositoryFile::FS {
             repository_name: main_repository_name.clone(),
-            file_path: main_file_path.clone(),
+            file_path: main_file_path,
         }) {
             Repository::FS { repository_name } => assert_eq!(main_repository_name, repository_name),
-            _ => assert!(false),
+            _ => panic!(),
         };
     }
 
@@ -154,14 +154,14 @@ mod test {
             Repository::DB { repository_name } => {
                 assert_eq!(main_repository_name, repository_name);
             }
-            _ => assert!(false),
+            _ => panic!(),
         };
 
         match Repository::from(&SaveRepository::FS { repository_name: main_repository_name.clone(), subfolder: None }) {
             Repository::FS { repository_name } => {
                 assert_eq!(main_repository_name, repository_name);
             }
-            _ => assert!(false),
+            _ => panic!(),
         };
     }
 
@@ -179,7 +179,7 @@ mod test {
                 assert_eq!(main_repository_name, repository_name);
                 assert_eq!(to_file_path(None, &main_file_name), file_path);
             }
-            _ => assert!(false),
+            _ => panic!(),
         };
 
         match RepositoryFile::from(
@@ -190,7 +190,7 @@ mod test {
                 assert_eq!(main_repository_name, repository_name);
                 assert_eq!(to_file_path(None, &main_file_name), file_path);
             }
-            _ => assert!(false),
+            _ => panic!(),
         };
 
         match RepositoryFile::from(
@@ -204,7 +204,7 @@ mod test {
                 assert_eq!(main_repository_name, repository_name);
                 assert_eq!(to_file_path(Some(&main_subfolder), &main_file_name), file_path);
             }
-            _ => assert!(false),
+            _ => panic!(),
         };
 
         match RepositoryFile::from(
@@ -218,7 +218,7 @@ mod test {
                 assert_eq!(main_repository_name, repository_name);
                 assert_eq!(to_file_path(Some(&main_subfolder), &main_file_name), file_path);
             }
-            _ => assert!(false),
+            _ => panic!(),
         };
     }
 }

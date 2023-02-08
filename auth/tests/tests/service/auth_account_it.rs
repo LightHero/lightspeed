@@ -20,7 +20,7 @@ fn should_create_pending_user() -> Result<(), LightSpeedError> {
         let auth_module = &data.0;
 
         let username = new_hyphenated_uuid();
-        let email = format!("{}@email.fake", username);
+        let email = format!("{username}@email.fake");
         let password = new_hyphenated_uuid();
 
         let (user, token) = auth_module
@@ -58,7 +58,7 @@ fn should_assign_default_roles_at_account_creation() -> Result<(), LightSpeedErr
         let auth_module = &data.0;
 
         let username = new_hyphenated_uuid();
-        let email = format!("{}@email.fake", username);
+        let email = format!("{username}@email.fake");
         let password = new_hyphenated_uuid();
 
         let mut auth_config = auth_module.auth_config.clone();
@@ -97,7 +97,7 @@ fn should_return_user_by_id() -> Result<(), LightSpeedError> {
         let data = data(false).await;
         let auth_module = &data.0;
 
-        let (user, _) = create_user(&auth_module, false).await?;
+        let (user, _) = create_user(auth_module, false).await?;
 
         auth_module
             .repo_manager
@@ -120,7 +120,7 @@ fn should_return_user_by_username() -> Result<(), LightSpeedError> {
         let data = data(false).await;
         let auth_module = &data.0;
 
-        let (user, _) = create_user(&auth_module, false).await?;
+        let (user, _) = create_user(auth_module, false).await?;
 
         auth_module
             .repo_manager
@@ -207,7 +207,7 @@ fn should_activate_user() -> Result<(), LightSpeedError> {
         let data = data(false).await;
         let auth_module = &data.0;
 
-        let (user, token) = create_user(&auth_module, false).await?;
+        let (user, token) = create_user(auth_module, false).await?;
 
         assert_eq!(AuthAccountStatus::PendingActivation, user.data.status);
         assert_eq!(TokenType::AccountActivation, token.data.token_type);
@@ -239,7 +239,7 @@ fn should_activate_user_only_if_activation_token_type() -> Result<(), LightSpeed
         let data = data(false).await;
         let auth_module = &data.0;
 
-        let (user, _) = create_user(&auth_module, false).await?;
+        let (user, _) = create_user(auth_module, false).await?;
         assert_eq!(AuthAccountStatus::PendingActivation, user.data.status);
 
         auth_module
@@ -267,7 +267,7 @@ fn should_activate_user_only_if_pending_activation() -> Result<(), LightSpeedErr
         let data = data(false).await;
         let auth_module = &data.0;
 
-        let (user, _) = create_user(&auth_module, true).await?;
+        let (user, _) = create_user(auth_module, true).await?;
         assert_eq!(AuthAccountStatus::Active, user.data.status);
 
         auth_module
@@ -296,13 +296,13 @@ fn should_regenerate_activation_token() -> Result<(), LightSpeedError> {
     test(async {
         let data = data(false).await;
         let auth_module = &data.0;
-        let (user, token) = create_user(&auth_module, false).await?;
+        let (user, token) = create_user(auth_module, false).await?;
 
         let (new_user, new_token) =
             auth_module.auth_account_service.generate_new_activation_token_by_token(&token.data.token).await?;
         assert_eq!(user.id, new_user.id);
-        assert!(!(token.id == new_token.id));
-        assert!(!(token.data.token == new_token.data.token));
+        assert!(token.id != new_token.id);
+        assert!(token.data.token != new_token.data.token);
 
         assert!(auth_module.auth_account_service.activate_user(&token.data.token).await.is_err());
 
@@ -320,7 +320,7 @@ fn should_regenerate_activation_token_by_email_and_username() -> Result<(), Ligh
     test(async {
         let data = data(false).await;
         let auth_module = &data.0;
-        let (user, token) = create_user(&auth_module, false).await?;
+        let (user, token) = create_user(auth_module, false).await?;
 
         // use wrong email
         assert!(auth_module
@@ -342,8 +342,8 @@ fn should_regenerate_activation_token_by_email_and_username() -> Result<(), Ligh
             .await?;
 
         assert_eq!(user.id, new_user.id);
-        assert!(!(token.id == new_token.id));
-        assert!(!(token.data.token == new_token.data.token));
+        assert!(token.id != new_token.id);
+        assert!(token.data.token != new_token.data.token);
 
         assert!(auth_module.auth_account_service.activate_user(&token.data.token).await.is_err());
 
@@ -361,7 +361,7 @@ fn should_regenerate_activation_token_even_if_token_expired() -> Result<(), Ligh
     test(async {
         let data = data(false).await;
         let auth_module = &data.0;
-        let (_, mut token) = create_user(&auth_module, false).await?;
+        let (_, mut token) = create_user(auth_module, false).await?;
         token.data.expire_at_epoch_seconds = 0;
 
         let token_model = &auth_module
@@ -397,7 +397,7 @@ fn should_resend_activation_token_only_if_correct_token_type() -> Result<(), Lig
     test(async {
         let data = data(false).await;
         let auth_module = &data.0;
-        let (user, _) = create_user(&auth_module, false).await?;
+        let (user, _) = create_user(auth_module, false).await?;
 
         let token = auth_module
             .repo_manager
@@ -426,7 +426,7 @@ fn should_login_active_user() -> Result<(), LightSpeedError> {
         let data = data(false).await;
         let auth_module = &data.0;
         let password = "123456789";
-        let (user, _) = create_user_with_password(&auth_module, password, true).await?;
+        let (user, _) = create_user_with_password(auth_module, password, true).await?;
 
         let auth_validity_seconds = auth_module.auth_config.auth_session_max_validity_minutes * 60;
         let before_login_ts_seconds = current_epoch_seconds();
@@ -453,7 +453,7 @@ fn should_not_login_inactive_user() -> Result<(), LightSpeedError> {
         let data = data(false).await;
         let auth_module = &data.0;
         let password = "123456789";
-        let (user, _) = create_user_with_password(&auth_module, password, false).await?;
+        let (user, _) = create_user_with_password(auth_module, password, false).await?;
 
         let result = auth_module.auth_account_service.login(&user.data.username, password).await;
 
@@ -462,7 +462,7 @@ fn should_not_login_inactive_user() -> Result<(), LightSpeedError> {
                 assert_eq!(ErrorCodes::INACTIVE_USER, code);
                 assert_eq!(format!("User [{}] not in status Active", &user.data.username), message);
             }
-            _ => assert!(false),
+            _ => panic!(),
         }
 
         Ok(())
@@ -475,7 +475,7 @@ fn should_return_wrong_credentials_on_login_of_inactive_user_with_wrong_password
         let data = data(false).await;
         let auth_module = &data.0;
         let password = "123456789";
-        let (user, _) = create_user_with_password(&auth_module, password, false).await?;
+        let (user, _) = create_user_with_password(auth_module, password, false).await?;
 
         let result = auth_module.auth_account_service.login(&user.data.username, "wrong_password").await;
 
@@ -484,7 +484,7 @@ fn should_return_wrong_credentials_on_login_of_inactive_user_with_wrong_password
                 assert_eq!(ErrorCodes::WRONG_CREDENTIALS, code);
                 assert_eq!(format!("Wrong credentials"), message);
             }
-            _ => assert!(false),
+            _ => panic!(),
         }
 
         Ok(())
@@ -497,7 +497,7 @@ fn should_not_login_with_wrong_username() -> Result<(), LightSpeedError> {
         let data = data(false).await;
         let auth_module = &data.0;
         let password = "123456789";
-        let (user, _) = create_user_with_password(&auth_module, password, true).await?;
+        let (user, _) = create_user_with_password(auth_module, password, true).await?;
 
         assert!(auth_module.auth_account_service.login(&format!("{}_", user.data.username), password).await.is_err());
 
@@ -511,9 +511,9 @@ fn should_not_login_with_wrong_password() -> Result<(), LightSpeedError> {
         let data = data(false).await;
         let auth_module = &data.0;
         let password = "123456789";
-        let (user, _) = create_user_with_password(&auth_module, password, true).await?;
+        let (user, _) = create_user_with_password(auth_module, password, true).await?;
 
-        assert!(auth_module.auth_account_service.login(&user.data.username, &format!("{}_", password)).await.is_err());
+        assert!(auth_module.auth_account_service.login(&user.data.username, &format!("{password}_")).await.is_err());
 
         Ok(())
     })
@@ -525,7 +525,7 @@ fn create_user_should_fail_if_passwords_do_not_match() -> Result<(), LightSpeedE
         let data = data(false).await;
         let auth_module = &data.0;
         let username = new_hyphenated_uuid();
-        let email = format!("{}@email.fake", username);
+        let email = format!("{username}@email.fake");
 
         let result = auth_module
             .auth_account_service
@@ -546,7 +546,7 @@ fn create_user_should_fail_if_passwords_do_not_match() -> Result<(), LightSpeedE
             Err(LightSpeedError::ValidationError { details }) => {
                 assert!(details.details.contains_key("password"))
             }
-            _ => assert!(false),
+            _ => panic!(),
         }
 
         Ok(())
@@ -581,7 +581,7 @@ fn create_user_should_fail_if_not_valid_email() -> Result<(), LightSpeedError> {
             Err(LightSpeedError::ValidationError { details }) => {
                 assert!(details.details.contains_key("email"))
             }
-            _ => assert!(false),
+            _ => panic!(),
         }
 
         Ok(())
@@ -594,7 +594,7 @@ fn create_user_should_fail_if_not_accepted_privacy_policy() -> Result<(), LightS
         let data = data(false).await;
         let auth_module = &data.0;
         let username = new_hyphenated_uuid();
-        let email = format!("{}@email.fake", username);
+        let email = format!("{username}@email.fake");
         let password = new_hyphenated_uuid();
 
         let result = auth_module
@@ -616,7 +616,7 @@ fn create_user_should_fail_if_not_accepted_privacy_policy() -> Result<(), LightS
             Err(LightSpeedError::ValidationError { details }) => {
                 assert!(details.details.contains_key("accept_privacy_policy"))
             }
-            _ => assert!(false),
+            _ => panic!(),
         };
 
         Ok(())
@@ -652,7 +652,7 @@ fn create_user_should_fail_if_username_not_unique() -> Result<(), LightSpeedErro
             Err(LightSpeedError::ValidationError { details }) => {
                 assert!(details.details.contains_key("username"))
             }
-            _ => assert!(false),
+            _ => panic!(),
         };
 
         Ok(())
@@ -687,7 +687,7 @@ fn create_user_should_fail_if_email_not_unique() -> Result<(), LightSpeedError> 
             Err(LightSpeedError::ValidationError { details }) => {
                 assert!(details.details.contains_key("email"))
             }
-            _ => assert!(false),
+            _ => panic!(),
         }
 
         Ok(())
@@ -701,7 +701,7 @@ fn should_reset_password_by_token() -> Result<(), LightSpeedError> {
         let auth_module = &data.0;
 
         let password = new_hyphenated_uuid();
-        let (user, _) = &create_user_with_password(&auth_module, &password, true).await?;
+        let (user, _) = &create_user_with_password(auth_module, &password, true).await?;
 
         let token = auth_module
             .repo_manager
@@ -742,7 +742,7 @@ fn should_reset_password_only_if_correct_token_type() -> Result<(), LightSpeedEr
         let auth_module = &data.0;
 
         let password = new_hyphenated_uuid();
-        let (user, _) = create_user_with_password(&auth_module, &password, true).await?;
+        let (user, _) = create_user_with_password(auth_module, &password, true).await?;
 
         let token = auth_module
             .repo_manager
@@ -779,7 +779,7 @@ fn should_reset_password_only_if_user_is_active() -> Result<(), LightSpeedError>
         let auth_module = &data.0;
 
         let password = new_hyphenated_uuid();
-        let (user, _) = create_user_with_password(&auth_module, &password, false).await?;
+        let (user, _) = create_user_with_password(auth_module, &password, false).await?;
 
         let token = auth_module
             .repo_manager
@@ -815,7 +815,7 @@ fn should_reset_password_only_if_passwords_match() -> Result<(), LightSpeedError
         let auth_module = &data.0;
 
         let password = new_hyphenated_uuid();
-        let (user, _) = create_user_with_password(&auth_module, &password, false).await?;
+        let (user, _) = create_user_with_password(auth_module, &password, false).await?;
 
         let token = auth_module
             .repo_manager
@@ -845,7 +845,7 @@ fn should_reset_password_only_if_passwords_match() -> Result<(), LightSpeedError
             Err(LightSpeedError::ValidationError { details }) => {
                 assert!(details.details.contains_key("password"))
             }
-            _ => assert!(false),
+            _ => panic!(),
         };
 
         Ok(())
@@ -858,7 +858,7 @@ fn should_generate_reset_password_token() -> Result<(), LightSpeedError> {
         let data = data(false).await;
         let auth_module = &data.0;
 
-        let (user, _) = create_user(&auth_module, true).await?;
+        let (user, _) = create_user(auth_module, true).await?;
 
         let (new_user, token) =
             auth_module.auth_account_service.generate_reset_password_token(&user.data.username).await?;
@@ -874,7 +874,7 @@ fn should_not_generate_reset_password_token_if_user_not_active() -> Result<(), L
         let data = data(false).await;
         let auth_module = &data.0;
 
-        let (user, _) = create_user(&auth_module, false).await?;
+        let (user, _) = create_user(auth_module, false).await?;
 
         assert!(auth_module.auth_account_service.generate_reset_password_token(&user.data.username).await.is_err());
 
@@ -889,7 +889,7 @@ fn should_change_user_password() -> Result<(), LightSpeedError> {
         let auth_module = &data.0;
 
         let password = new_hyphenated_uuid();
-        let (user, _) = create_user_with_password(&auth_module, &password, true).await?;
+        let (user, _) = create_user_with_password(auth_module, &password, true).await?;
 
         let password_new = new_hyphenated_uuid();
 
@@ -920,7 +920,7 @@ fn should_not_change_user_password_if_wrong_old_password() -> Result<(), LightSp
         let auth_module = &data.0;
 
         let password = new_hyphenated_uuid();
-        let (user, _) = create_user_with_password(&auth_module, &password, true).await?;
+        let (user, _) = create_user_with_password(auth_module, &password, true).await?;
 
         let password_new = new_hyphenated_uuid();
 
@@ -928,7 +928,7 @@ fn should_not_change_user_password_if_wrong_old_password() -> Result<(), LightSp
             .auth_account_service
             .change_password(ChangePasswordDto {
                 user_id: user.id,
-                old_password: format!("__{}__", password),
+                old_password: format!("__{password}__"),
                 new_password: password_new.clone(),
                 new_password_confirm: password_new.clone(),
             })
@@ -951,7 +951,7 @@ fn should_not_change_user_password_if_inactive_user() -> Result<(), LightSpeedEr
         let auth_module = &data.0;
 
         let password = new_hyphenated_uuid();
-        let (user, _) = create_user_with_password(&auth_module, &password, false).await?;
+        let (user, _) = create_user_with_password(auth_module, &password, false).await?;
 
         let password_new = new_hyphenated_uuid();
 
@@ -978,7 +978,7 @@ fn should_not_change_user_password_if_new_passwords_do_not_match() -> Result<(),
         let auth_module = &data.0;
 
         let password = new_hyphenated_uuid();
-        let (user, _) = create_user_with_password(&auth_module, &password, true).await?;
+        let (user, _) = create_user_with_password(auth_module, &password, true).await?;
 
         let password_new = new_hyphenated_uuid();
 
@@ -998,7 +998,7 @@ fn should_not_change_user_password_if_new_passwords_do_not_match() -> Result<(),
             Err(LightSpeedError::ValidationError { details }) => {
                 assert!(details.details.contains_key("new_password"))
             }
-            _ => assert!(false),
+            _ => panic!(),
         }
 
         Ok(())
@@ -1014,7 +1014,7 @@ fn should_add_and_remove_roles() -> Result<(), LightSpeedError> {
         let auh_service = &auth_module.auth_account_service;
 
         let username = new_hyphenated_uuid();
-        let email = format!("{}@email.fake", username);
+        let email = format!("{username}@email.fake");
         let password = new_hyphenated_uuid();
 
         let (user, _) = auth_module
@@ -1032,22 +1032,22 @@ fn should_add_and_remove_roles() -> Result<(), LightSpeedError> {
 
         assert!(user.data.roles.is_empty());
 
-        let user = auh_service.add_roles(user.id, &vec![]).await?;
+        let user = auh_service.add_roles(user.id, &[]).await?;
         assert!(user.data.roles.is_empty());
 
-        let user = auh_service.delete_roles(user.id, &vec!["one".to_owned()]).await?;
+        let user = auh_service.delete_roles(user.id, &["one".to_owned()]).await?;
         assert!(user.data.roles.is_empty());
 
-        let user = auh_service.add_roles(user.id, &vec!["one".to_owned()]).await?;
+        let user = auh_service.add_roles(user.id, &["one".to_owned()]).await?;
         assert_eq!(vec!["one".to_owned()], user.data.roles);
 
-        let user = auh_service.add_roles(user.id, &vec!["two".to_owned(), "three".to_owned()]).await?;
+        let user = auh_service.add_roles(user.id, &["two".to_owned(), "three".to_owned()]).await?;
         assert_eq!(vec!["one".to_owned(), "two".to_owned(), "three".to_owned()], user.data.roles);
 
-        let user = auh_service.delete_roles(user.id, &vec!["two".to_owned(), "four".to_owned()]).await?;
+        let user = auh_service.delete_roles(user.id, &["two".to_owned(), "four".to_owned()]).await?;
         assert_eq!(vec!["one".to_owned(), "three".to_owned()], user.data.roles);
 
-        let user = auh_service.delete_roles(user.id, &vec!["one".to_owned(), "three".to_owned()]).await?;
+        let user = auh_service.delete_roles(user.id, &["one".to_owned(), "three".to_owned()]).await?;
         assert!(user.data.roles.is_empty());
 
         Ok(())
@@ -1061,7 +1061,7 @@ fn should_change_username() -> Result<(), LightSpeedError> {
         let data = data(false).await;
         let auth_module = &data.0;
         let password = "123456789";
-        let (user, _) = create_user_with_password(&auth_module, password, true).await?;
+        let (user, _) = create_user_with_password(auth_module, password, true).await?;
 
         assert!(auth_module.auth_account_service.login(&user.data.username, password).await.is_ok());
 
@@ -1094,7 +1094,7 @@ fn should_change_email() -> Result<(), LightSpeedError> {
         let data = data(false).await;
         let auth_module = &data.0;
         let password = "123456789";
-        let (user, _) = create_user_with_password(&auth_module, password, true).await?;
+        let (user, _) = create_user_with_password(auth_module, password, true).await?;
 
         assert!(auth_module.auth_account_service.login(&user.data.username, password).await.is_ok());
 
@@ -1124,13 +1124,13 @@ fn should_change_username_and_email() -> Result<(), LightSpeedError> {
         let data = data(false).await;
         let auth_module = &data.0;
         let password = "123456789";
-        let (user, _) = create_user_with_password(&auth_module, password, true).await?;
+        let (user, _) = create_user_with_password(auth_module, password, true).await?;
 
         assert!(auth_module.auth_account_service.login(&user.data.username, password).await.is_ok());
 
         // Act
         let new_username = new_hyphenated_uuid();
-        let new_email = format!("{}@test.com", new_username);
+        let new_email = format!("{new_username}@test.com");
         let updated_user = auth_module
             .auth_account_service
             .change_user_data(user.id, Some(new_username.clone()), Some(new_email.clone()))
@@ -1160,7 +1160,7 @@ fn should_disable_an_active_user() -> Result<(), LightSpeedError> {
         let data = data(false).await;
         let auth_module = &data.0;
         let password = "123456789";
-        let (user, _) = create_user_with_password(&auth_module, password, true).await?;
+        let (user, _) = create_user_with_password(auth_module, password, true).await?;
 
         assert!(auth_module.auth_account_service.login(&user.data.username, password).await.is_ok());
 
@@ -1187,7 +1187,7 @@ fn should_fail_disabling_a_pending_user() -> Result<(), LightSpeedError> {
         let data = data(false).await;
         let auth_module = &data.0;
         let password = "123456789";
-        let (user, _) = create_user_with_password(&auth_module, password, false).await?;
+        let (user, _) = create_user_with_password(auth_module, password, false).await?;
 
         assert!(auth_module.auth_account_service.login(&user.data.username, password).await.is_err());
 
@@ -1208,7 +1208,7 @@ fn should_fail_disabling_a_disabled_user() -> Result<(), LightSpeedError> {
         let data = data(false).await;
         let auth_module = &data.0;
         let password = "123456789";
-        let (user, _) = create_user_with_password(&auth_module, password, true).await?;
+        let (user, _) = create_user_with_password(auth_module, password, true).await?;
 
         assert!(auth_module.auth_account_service.login(&user.data.username, password).await.is_ok());
 
@@ -1231,7 +1231,7 @@ fn should_activate_a_disabled_user() -> Result<(), LightSpeedError> {
         let data = data(false).await;
         let auth_module = &data.0;
         let password = "123456789";
-        let (user, _) = create_user_with_password(&auth_module, password, true).await?;
+        let (user, _) = create_user_with_password(auth_module, password, true).await?;
 
         assert!(auth_module.auth_account_service.disable_by_user_id(user.id).await.is_ok());
 
@@ -1258,7 +1258,7 @@ fn should_fail_reactivating_a_pending_user() -> Result<(), LightSpeedError> {
         let data = data(false).await;
         let auth_module = &data.0;
         let password = "123456789";
-        let (user, _) = create_user_with_password(&auth_module, password, false).await?;
+        let (user, _) = create_user_with_password(auth_module, password, false).await?;
 
         assert!(auth_module.auth_account_service.login(&user.data.username, password).await.is_err());
 
@@ -1279,7 +1279,7 @@ fn should_fail_reactivating_an_active_user() -> Result<(), LightSpeedError> {
         let data = data(false).await;
         let auth_module = &data.0;
         let password = "123456789";
-        let (user, _) = create_user_with_password(&auth_module, password, true).await?;
+        let (user, _) = create_user_with_password(auth_module, password, true).await?;
 
         assert!(auth_module.auth_account_service.login(&user.data.username, password).await.is_ok());
 
@@ -1300,7 +1300,7 @@ fn should_delete_a_user() -> Result<(), LightSpeedError> {
         let data = data(false).await;
         let auth_module = &data.0;
         let password = "123456789";
-        let (user, _) = create_user_with_password(&auth_module, password, true).await?;
+        let (user, _) = create_user_with_password(auth_module, password, true).await?;
 
         // Act
         let deleted_user_count = auth_module.auth_account_service.delete_by_user_id(user.id).await.unwrap();
@@ -1323,7 +1323,7 @@ fn should_not_fail_deleting_a_deleted_user() -> Result<(), LightSpeedError> {
         let data = data(false).await;
         let auth_module = &data.0;
         let password = "123456789";
-        let (user, _) = create_user_with_password(&auth_module, password, true).await?;
+        let (user, _) = create_user_with_password(auth_module, password, true).await?;
 
         auth_module.auth_account_service.delete_by_user_id(user.id).await.unwrap();
 
@@ -1344,11 +1344,11 @@ fn should_return_users_by_status() -> Result<(), LightSpeedError> {
         let data = data(false).await;
         let auth_module = &data.0;
 
-        let (user_active_1, _) = create_user(&auth_module, true).await?;
-        let (user_active_2, _) = create_user(&auth_module, true).await?;
-        let (user_pending_1, _) = create_user(&auth_module, false).await?;
-        let (user_pending_2, _) = create_user(&auth_module, false).await?;
-        let (user_disabled_1, _) = create_user(&auth_module, true).await?;
+        let (user_active_1, _) = create_user(auth_module, true).await?;
+        let (user_active_2, _) = create_user(auth_module, true).await?;
+        let (user_pending_1, _) = create_user(auth_module, false).await?;
+        let (user_pending_2, _) = create_user(auth_module, false).await?;
+        let (user_disabled_1, _) = create_user(auth_module, true).await?;
 
         assert!(auth_module.auth_account_service.disable_by_user_id(user_disabled_1.id).await.is_ok());
 
@@ -1404,9 +1404,9 @@ fn should_return_users_by_status_with_offset_and_limit() -> Result<(), LightSpee
         let data = data(true).await;
         let auth_module = &data.0;
 
-        let (user_1, _) = create_user(&auth_module, true).await?;
-        let (user_2, _) = create_user(&auth_module, true).await?;
-        let (_user_3, _) = create_user(&auth_module, true).await?;
+        let (user_1, _) = create_user(auth_module, true).await?;
+        let (user_2, _) = create_user(auth_module, true).await?;
+        let (_user_3, _) = create_user(auth_module, true).await?;
 
         // Act
         let all_users = auth_module
