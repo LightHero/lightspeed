@@ -9,8 +9,8 @@ use lightspeed_auth::AuthModule;
 use lightspeed_core::module::Module;
 use once_cell::sync::OnceCell;
 use testcontainers::postgres::Postgres;
-use testcontainers::testcontainers::Container;
 use testcontainers::testcontainers::clients::Cli;
+use testcontainers::testcontainers::Container;
 use tokio::time::Duration;
 
 mod tests;

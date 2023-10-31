@@ -143,8 +143,8 @@ impl Job {
     }
 
     async fn exec(&self) -> Result<(), Box<dyn std::error::Error + Send + Sync + 'static>> {
-            let function = self.function.lock().await;
-            (function)().await
+        let function = self.function.lock().await;
+        (function)().await
     }
 
     async fn set_running(&self, is_running: bool) -> Result<(), SchedulerError> {
@@ -308,6 +308,4 @@ pub mod test {
         let count = *lock;
         assert_eq!(succeed_at + 1, count);
     }
-
-    
 }

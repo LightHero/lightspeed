@@ -3,14 +3,14 @@ use c3p0::postgres::tokio_postgres::NoTls;
 use c3p0::postgres::*;
 use maybe_single::nio::*;
 
+use ::testcontainers::postgres::Postgres;
+use ::testcontainers::testcontainers::clients::Cli;
 use lightspeed_core::module::Module;
 use lightspeed_file_store::config::FileStoreConfig;
 use lightspeed_file_store::repository::db::pg::PgFileStoreRepositoryManager;
 use lightspeed_file_store::FileStoreModule;
 use once_cell::sync::OnceCell;
-use ::testcontainers::postgres::Postgres;
 use testcontainers::testcontainers::Container;
-use ::testcontainers::testcontainers::clients::Cli;
 use tokio::time::Duration;
 
 mod tests;

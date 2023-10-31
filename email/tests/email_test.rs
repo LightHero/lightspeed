@@ -3,9 +3,9 @@ use lightspeed_email::config::EmailClientConfig;
 use lightspeed_email::model::email::{EmailAttachment, EmailMessage};
 use lightspeed_email::repository::email::{new, EmailClientType};
 use lightspeed_email::service::EmailService;
+use testcontainers::testcontainers::clients::Cli;
 use testcontainers::testcontainers::core::WaitFor;
 use testcontainers::testcontainers::{Container, GenericImage};
-use testcontainers::testcontainers::clients::Cli;
 
 pub fn new_mail_server(docker: &Cli) -> (u16, Container<GenericImage>) {
     let node = docker.run(
