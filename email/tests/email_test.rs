@@ -3,21 +3,23 @@ use lightspeed_email::config::EmailClientConfig;
 use lightspeed_email::model::email::{EmailAttachment, EmailMessage};
 use lightspeed_email::repository::email::{new, EmailClientType};
 use lightspeed_email::service::EmailService;
-use testcontainers::*;
+use testcontainers::testcontainers::core::WaitFor;
+use testcontainers::testcontainers::{Container, GenericImage};
+use testcontainers::testcontainers::clients::Cli;
 
-pub fn new_mail_server(docker: &clients::Cli) -> (u16, Container<clients::Cli, images::generic::GenericImage>) {
+pub fn new_mail_server(docker: &Cli) -> (u16, Container<GenericImage>) {
     let node = docker.run(
-        images::generic::GenericImage::new("mailhog/mailhog:v1.0.0")
-            .with_wait_for(images::generic::WaitFor::message_on_stdout("Creating API v2 with WebPath:")),
+        GenericImage::new("mailhog/mailhog", "v1.0.0")
+            .with_wait_for(WaitFor::message_on_stdout("Creating API v2 with WebPath:")),
     );
 
-    (node.get_host_port(1025).unwrap(), node)
+    (node.get_host_port_ipv4(1025), node)
 }
 
 #[tokio::test]
 async fn should_start_the_mailserver() {
     // Arrange
-    let docker = clients::Cli::default();
+    let docker = Cli::default();
     let server = new_mail_server(&docker);
     let server_port = server.0;
     println!("using port: {server_port}");

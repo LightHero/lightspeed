@@ -2,25 +2,27 @@ use c3p0::postgres::deadpool::{self, Runtime};
 use c3p0::postgres::tokio_postgres::NoTls;
 use c3p0::postgres::*;
 use maybe_single::nio::*;
-use testcontainers::*;
 
 use lightspeed_core::module::Module;
 use lightspeed_file_store::config::FileStoreConfig;
 use lightspeed_file_store::repository::db::pg::PgFileStoreRepositoryManager;
 use lightspeed_file_store::FileStoreModule;
 use once_cell::sync::OnceCell;
+use ::testcontainers::postgres::Postgres;
+use testcontainers::testcontainers::Container;
+use ::testcontainers::testcontainers::clients::Cli;
 use tokio::time::Duration;
 
 mod tests;
 
 pub type RepoManager = PgFileStoreRepositoryManager;
 
-pub type MaybeType = (FileStoreModule<RepoManager>, Container<'static, clients::Cli, images::postgres::Postgres>);
+pub type MaybeType = (FileStoreModule<RepoManager>, Container<'static, Postgres>);
 
 async fn init() -> MaybeType {
-    static DOCKER: OnceCell<clients::Cli> = OnceCell::new();
+    static DOCKER: OnceCell<Cli> = OnceCell::new();
 
-    let node = DOCKER.get_or_init(clients::Cli::default).run(images::postgres::Postgres::default());
+    let node = DOCKER.get_or_init(Cli::default).run(Postgres::default());
 
     let mut pool_config = deadpool::managed::PoolConfig::default();
     pool_config.timeouts.create = Some(Duration::from_secs(5));
@@ -32,7 +34,7 @@ async fn init() -> MaybeType {
         password: Some("postgres".to_owned()),
         dbname: Some("postgres".to_owned()),
         host: Some("127.0.0.1".to_string()),
-        port: Some(node.get_host_port(5432).unwrap()),
+        port: Some(node.get_host_port_ipv4(5432)),
         pool: Some(pool_config),
         ..Default::default()
     };

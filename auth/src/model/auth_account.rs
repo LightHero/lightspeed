@@ -34,7 +34,7 @@ enum AuthAccountDataVersioning<'a> {
 pub struct AuthAccountDataCodec {}
 
 impl JsonCodec<AuthAccountData> for AuthAccountDataCodec {
-    fn from_value(&self, value: Value) -> Result<AuthAccountData, C3p0Error> {
+    fn data_from_value(&self, value: Value) -> Result<AuthAccountData, C3p0Error> {
         let versioning = serde_json::from_value(value)?;
         let data = match versioning {
             AuthAccountDataVersioning::V1(data_v1) => data_v1.into_owned(),
@@ -42,7 +42,7 @@ impl JsonCodec<AuthAccountData> for AuthAccountDataCodec {
         Ok(data)
     }
 
-    fn to_value(&self, data: &AuthAccountData) -> Result<Value, C3p0Error> {
+    fn data_to_value(&self, data: &AuthAccountData) -> Result<Value, C3p0Error> {
         serde_json::to_value(AuthAccountDataVersioning::V1(Cow::Borrowed(data))).map_err(C3p0Error::from)
     }
 }

@@ -32,7 +32,7 @@ enum TokenDataVersioning<'a> {
 pub struct TokenDataCodec {}
 
 impl JsonCodec<TokenData> for TokenDataCodec {
-    fn from_value(&self, value: Value) -> Result<TokenData, C3p0Error> {
+    fn data_from_value(&self, value: Value) -> Result<TokenData, C3p0Error> {
         let versioning = serde_json::from_value(value)?;
         let data = match versioning {
             TokenDataVersioning::V1(data_v1) => data_v1.into_owned(),
@@ -40,7 +40,7 @@ impl JsonCodec<TokenData> for TokenDataCodec {
         Ok(data)
     }
 
-    fn to_value(&self, data: &TokenData) -> Result<Value, C3p0Error> {
+    fn data_to_value(&self, data: &TokenData) -> Result<Value, C3p0Error> {
         serde_json::to_value(TokenDataVersioning::V1(Cow::Borrowed(data))).map_err(C3p0Error::from)
     }
 }

@@ -105,7 +105,7 @@ enum FileStoreDataVersioning<'a> {
 pub struct FileStoreDataDataCodec {}
 
 impl JsonCodec<FileStoreDataData> for FileStoreDataDataCodec {
-    fn from_value(&self, value: Value) -> Result<FileStoreDataData, C3p0Error> {
+    fn data_from_value(&self, value: Value) -> Result<FileStoreDataData, C3p0Error> {
         let versioning = serde_json::from_value(value)?;
         let data = match versioning {
             FileStoreDataVersioning::V1(data_v1) => data_v1.into_owned(),
@@ -113,7 +113,7 @@ impl JsonCodec<FileStoreDataData> for FileStoreDataDataCodec {
         Ok(data)
     }
 
-    fn to_value(&self, data: &FileStoreDataData) -> Result<Value, C3p0Error> {
+    fn data_to_value(&self, data: &FileStoreDataData) -> Result<Value, C3p0Error> {
         serde_json::to_value(FileStoreDataVersioning::V1(Cow::Borrowed(data))).map_err(C3p0Error::from)
     }
 }
