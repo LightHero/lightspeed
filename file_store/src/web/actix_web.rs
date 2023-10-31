@@ -14,19 +14,19 @@ pub async fn into_response(
     match content {
         BinaryContent::FromFs { file_path } => {
             debug!("Create HttpResponse from FS content");
-            let mut named_file = NamedFile::open(&file_path)?;
+            let mut named_file = NamedFile::open(file_path)?;
 
             if !set_content_disposition {
                 debug!("Ignore content disposition");
                 named_file = named_file.disable_content_disposition();
             }
 
-            Ok(named_file.into_response(&req))
+            Ok(named_file.into_response(req))
         }
         BinaryContent::InMemory { content } => {
             debug!("Create HttpResponse from Memory content of {} bytes", content.len());
             let path = std::path::Path::new(file_name.unwrap_or(""));
-            let ct = mime_guess::from_path(&path).first_or_octet_stream();
+            let ct = mime_guess::from_path(path).first_or_octet_stream();
 
             let filename = match path.file_name() {
                 Some(name) => name.to_string_lossy(),
@@ -84,7 +84,7 @@ mod test {
 
     async fn download(req: HttpRequest, data: Data<AppData>) -> actix_web::Result<HttpResponse> {
         println!("Download called");
-        into_response(data.content.clone(), data.file_name.clone(), data.set_content_disposition, &req).await
+        into_response(data.content.clone(), data.file_name, data.set_content_disposition, &req).await
     }
 
     #[derive(Clone)]

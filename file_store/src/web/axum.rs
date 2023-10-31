@@ -46,7 +46,7 @@ pub async fn into_response(
             debug!("Create HttpResponse from Memory content of {} bytes", content.len());
             let file_name = Cow::Borrowed(file_name.unwrap_or(""));
             let path = std::path::Path::new(file_name.as_ref());
-            let ct = mime_guess::from_path(&path).first_or_octet_stream();
+            let ct = mime_guess::from_path(path).first_or_octet_stream();
             let owned_vec: Vec<u8> = content.to_owned().into();
             (file_name, ct, boxed(Body::from(owned_vec)))
         }
@@ -77,7 +77,7 @@ pub async fn into_response(
         //        } else {
         disposition.push_str("filename=\"");
         disposition.push_str(file_name.as_ref());
-        disposition.push_str("\"");
+        disposition.push('\"');
         //        }
 
         response_builder = response_builder.header(header::CONTENT_DISPOSITION, disposition);
@@ -102,7 +102,7 @@ mod test {
 
     async fn download(Extension(data): Extension<Arc<AppData>>) -> Result<Response<BoxBody>, LightSpeedError> {
         println!("Download called");
-        into_response(data.content.clone(), data.file_name.clone(), data.set_content_disposition).await
+        into_response(data.content.clone(), data.file_name, data.set_content_disposition).await
     }
 
     pub struct AppData {

@@ -53,8 +53,8 @@ fn schema_name_should_be_unique_per_project() -> Result<(), LightSpeedError> {
 
         let schema_clone = schema.clone();
         c3p0.transaction::<_, C3p0Error, _, _>(|mut conn| async move {
-            assert!(schema_repo.save(&mut conn, NewModel::new(schema_clone.clone())).await.is_ok());
-            assert!(schema_repo.save(&mut conn, NewModel::new(schema_clone)).await.is_err());
+            assert!(schema_repo.save(conn, NewModel::new(schema_clone.clone())).await.is_ok());
+            assert!(schema_repo.save(conn, NewModel::new(schema_clone)).await.is_err());
             Ok(())
         })
         .await?;
@@ -62,7 +62,7 @@ fn schema_name_should_be_unique_per_project() -> Result<(), LightSpeedError> {
         schema.project_id = -2;
 
         c3p0.transaction(|mut conn| async move {
-            assert!(schema_repo.save(&mut conn, NewModel::new(schema.clone())).await.is_ok());
+            assert!(schema_repo.save(conn, NewModel::new(schema.clone())).await.is_ok());
 
             Ok(())
         })

@@ -38,7 +38,7 @@ impl<RepoManager: AuthRepositoryManager> AuthAccountService<RepoManager> {
     }
 
     pub async fn login(&self, username: &str, password: &str) -> Result<Auth, LightSpeedError> {
-        self.c3p0.transaction(|mut conn| async move { self.login_with_conn(&mut conn, username, password).await }).await
+        self.c3p0.transaction(|conn| async move { self.login_with_conn(conn, username, password).await }).await
     }
 
     pub async fn login_with_conn(
@@ -87,7 +87,7 @@ impl<RepoManager: AuthRepositoryManager> AuthAccountService<RepoManager> {
         create_login_dto: CreateLoginDto,
     ) -> Result<(AuthAccountModel, TokenModel), LightSpeedError> {
         self.c3p0
-            .transaction(|mut conn| async move { self.create_user_with_conn(&mut conn, create_login_dto).await })
+            .transaction(|conn| async move { self.create_user_with_conn(conn, create_login_dto).await })
             .await
     }
 
@@ -160,8 +160,8 @@ impl<RepoManager: AuthRepositoryManager> AuthAccountService<RepoManager> {
         email: &str,
     ) -> Result<(AuthAccountModel, TokenModel), LightSpeedError> {
         self.c3p0
-            .transaction(|mut conn| async move {
-                self.generate_new_activation_token_by_username_and_email_with_conn(&mut conn, username, email).await
+            .transaction(|conn| async move {
+                self.generate_new_activation_token_by_username_and_email_with_conn(conn, username, email).await
             })
             .await
     }
@@ -204,8 +204,8 @@ impl<RepoManager: AuthRepositoryManager> AuthAccountService<RepoManager> {
         previous_activation_token: &str,
     ) -> Result<(AuthAccountModel, TokenModel), LightSpeedError> {
         self.c3p0
-            .transaction(|mut conn| async move {
-                self.generate_new_activation_token_by_token_with_conn(&mut conn, previous_activation_token).await
+            .transaction(|conn| async move {
+                self.generate_new_activation_token_by_token_with_conn(conn, previous_activation_token).await
             })
             .await
     }
@@ -248,7 +248,7 @@ impl<RepoManager: AuthRepositoryManager> AuthAccountService<RepoManager> {
 
     pub async fn activate_user(&self, activation_token: &str) -> Result<AuthAccountModel, LightSpeedError> {
         self.c3p0
-            .transaction(|mut conn| async move { self.activate_user_with_conn(&mut conn, activation_token).await })
+            .transaction(|conn| async move { self.activate_user_with_conn(conn, activation_token).await })
             .await
     }
 
@@ -296,7 +296,7 @@ impl<RepoManager: AuthRepositoryManager> AuthAccountService<RepoManager> {
     ) -> Result<(AuthAccountModel, TokenModel), LightSpeedError> {
         self.c3p0
             .transaction(
-                |mut conn| async move { self.generate_reset_password_token_with_conn(&mut conn, username).await },
+                |conn| async move { self.generate_reset_password_token_with_conn(conn, username).await },
             )
             .await
     }
@@ -331,8 +331,8 @@ impl<RepoManager: AuthRepositoryManager> AuthAccountService<RepoManager> {
         reset_password_dto: ResetPasswordDto,
     ) -> Result<AuthAccountModel, LightSpeedError> {
         self.c3p0
-            .transaction(|mut conn| async move {
-                self.reset_password_by_token_with_conn(&mut conn, reset_password_dto).await
+            .transaction(|conn| async move {
+                self.reset_password_by_token_with_conn(conn, reset_password_dto).await
             })
             .await
     }
@@ -377,7 +377,7 @@ impl<RepoManager: AuthRepositoryManager> AuthAccountService<RepoManager> {
     }
 
     pub async fn change_password(&self, dto: ChangePasswordDto) -> Result<AuthAccountModel, LightSpeedError> {
-        self.c3p0.transaction(|mut conn| async move { self.change_password_with_conn(&mut conn, dto).await }).await
+        self.c3p0.transaction(|conn| async move { self.change_password_with_conn(conn, dto).await }).await
     }
 
     pub async fn change_password_with_conn(
@@ -416,7 +416,7 @@ impl<RepoManager: AuthRepositoryManager> AuthAccountService<RepoManager> {
     }
 
     pub async fn fetch_by_user_id(&self, user_id: i64) -> Result<AuthAccountModel, LightSpeedError> {
-        self.c3p0.transaction(|mut conn| async move { self.fetch_by_user_id_with_conn(&mut conn, user_id).await }).await
+        self.c3p0.transaction(|conn| async move { self.fetch_by_user_id_with_conn(conn, user_id).await }).await
     }
 
     pub async fn fetch_by_user_id_with_conn(
@@ -430,7 +430,7 @@ impl<RepoManager: AuthRepositoryManager> AuthAccountService<RepoManager> {
 
     pub async fn fetch_by_username(&self, username: &str) -> Result<AuthAccountModel, LightSpeedError> {
         self.c3p0
-            .transaction(|mut conn| async move { self.fetch_by_username_with_conn(&mut conn, username).await })
+            .transaction(|conn| async move { self.fetch_by_username_with_conn(conn, username).await })
             .await
     }
 
@@ -450,8 +450,8 @@ impl<RepoManager: AuthRepositoryManager> AuthAccountService<RepoManager> {
         limit: u32,
     ) -> Result<Vec<AuthAccountModel>, LightSpeedError> {
         self.c3p0
-            .transaction(|mut conn| async move {
-                self.fetch_all_by_status_with_conn(&mut conn, status, start_user_id, limit).await
+            .transaction(|conn| async move {
+                self.fetch_all_by_status_with_conn(conn, status, start_user_id, limit).await
             })
             .await
     }
@@ -468,7 +468,7 @@ impl<RepoManager: AuthRepositoryManager> AuthAccountService<RepoManager> {
     }
 
     pub async fn add_roles(&self, user_id: i64, roles: &[String]) -> Result<AuthAccountModel, LightSpeedError> {
-        self.c3p0.transaction(|mut conn| async move { self.add_roles_with_conn(&mut conn, user_id, roles).await }).await
+        self.c3p0.transaction(|conn| async move { self.add_roles_with_conn(conn, user_id, roles).await }).await
     }
 
     pub async fn add_roles_with_conn(
@@ -490,7 +490,7 @@ impl<RepoManager: AuthRepositoryManager> AuthAccountService<RepoManager> {
 
     pub async fn delete_roles(&self, user_id: i64, roles: &[String]) -> Result<AuthAccountModel, LightSpeedError> {
         self.c3p0
-            .transaction(|mut conn| async move { self.delete_roles_with_conn(&mut conn, user_id, roles).await })
+            .transaction(|conn| async move { self.delete_roles_with_conn(conn, user_id, roles).await })
             .await
     }
 
@@ -516,8 +516,8 @@ impl<RepoManager: AuthRepositoryManager> AuthAccountService<RepoManager> {
         new_email: Option<String>,
     ) -> Result<AuthAccountModel, LightSpeedError> {
         self.c3p0
-            .transaction(|mut conn| async move {
-                self.change_user_data_with_conn(&mut conn, user_id, new_username, new_email).await
+            .transaction(|conn| async move {
+                self.change_user_data_with_conn(conn, user_id, new_username, new_email).await
             })
             .await
     }
@@ -554,7 +554,7 @@ impl<RepoManager: AuthRepositoryManager> AuthAccountService<RepoManager> {
 
     pub async fn disable_by_user_id(&self, user_id: i64) -> Result<AuthAccountModel, LightSpeedError> {
         self.c3p0
-            .transaction(|mut conn| async move { self.disable_by_user_id_with_conn(&mut conn, user_id).await })
+            .transaction(|conn| async move { self.disable_by_user_id_with_conn(conn, user_id).await })
             .await
     }
 
@@ -582,8 +582,8 @@ impl<RepoManager: AuthRepositoryManager> AuthAccountService<RepoManager> {
 
     pub async fn reactivate_disabled_user_by_user_id(&self, user_id: i64) -> Result<AuthAccountModel, LightSpeedError> {
         self.c3p0
-            .transaction(|mut conn| async move {
-                self.reactivate_disabled_user_by_user_id_with_conn(&mut conn, user_id).await
+            .transaction(|conn| async move {
+                self.reactivate_disabled_user_by_user_id_with_conn(conn, user_id).await
             })
             .await
     }
@@ -612,7 +612,7 @@ impl<RepoManager: AuthRepositoryManager> AuthAccountService<RepoManager> {
 
     pub async fn delete_by_user_id(&self, user_id: i64) -> Result<u64, LightSpeedError> {
         self.c3p0
-            .transaction(|mut conn| async move { self.delete_by_user_id_with_conn(&mut conn, user_id).await })
+            .transaction(|conn| async move { self.delete_by_user_id_with_conn(conn, user_id).await })
             .await
     }
 

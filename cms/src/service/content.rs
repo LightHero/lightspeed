@@ -25,15 +25,15 @@ impl<RepoManager: CmsRepositoryManager> ContentService<RepoManager> {
 
     pub async fn create_content_table(&self, schema: &SchemaModel) -> Result<(), LightSpeedError> {
         self.c3p0
-            .transaction(|mut conn| async move {
+            .transaction(|conn| async move {
                 let schema_id = schema.id;
                 let repo = self.get_content_repo_by_schema_id(schema_id).await;
-                repo.create_table(&mut conn).await?;
+                repo.create_table(conn).await?;
 
                 for field in &schema.data.schema.fields {
                     if let SchemaFieldArity::Unique = field.field_type.get_arity() {
                         let index_name = self.unique_index_name(schema_id, &field.name);
-                        repo.create_unique_constraint(&mut conn, &index_name, &field.name).await?;
+                        repo.create_unique_constraint(conn, &index_name, &field.name).await?;
                     }
                 }
                 Ok(())
@@ -43,18 +43,18 @@ impl<RepoManager: CmsRepositoryManager> ContentService<RepoManager> {
 
     pub async fn drop_content_table(&self, schema_id: i64) -> Result<(), LightSpeedError> {
         self.c3p0
-            .transaction(|mut conn| async move {
+            .transaction(|conn| async move {
                 let repo = self.get_content_repo_by_schema_id(schema_id).await;
-                repo.drop_table(&mut conn).await
+                repo.drop_table(conn).await
             })
             .await
     }
 
     pub async fn count_all_by_schema_id(&self, schema_id: i64) -> Result<u64, LightSpeedError> {
         self.c3p0
-            .transaction(|mut conn| async move {
+            .transaction(|conn| async move {
                 let repo = self.get_content_repo_by_schema_id(schema_id).await;
-                repo.count_all(&mut conn).await
+                repo.count_all(conn).await
             })
             .await
     }
@@ -119,9 +119,9 @@ impl<RepoManager: CmsRepositoryManager> ContentService<RepoManager> {
 
     pub async fn delete_content(&self, content_model: ContentModel) -> Result<ContentModel, LightSpeedError> {
         self.c3p0
-            .transaction(|mut conn| async move {
+            .transaction(|conn| async move {
                 let repo = self.get_content_repo_by_schema_id(content_model.data.schema_id).await;
-                repo.delete(&mut conn, content_model).await
+                repo.delete(conn, content_model).await
             })
             .await
     }

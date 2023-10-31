@@ -26,8 +26,8 @@ impl<RepoManager: CmsRepositoryManager> ProjectService<RepoManager> {
 
     pub async fn create_project(&self, create_project_dto: CreateProjectDto) -> Result<ProjectModel, LightSpeedError> {
         self.c3p0
-            .transaction(|mut conn| async move {
-                let name_already_exists = self.project_repo.exists_by_name(&mut conn, &create_project_dto.name).await?;
+            .transaction(|conn| async move {
+                let name_already_exists = self.project_repo.exists_by_name(conn, &create_project_dto.name).await?;
 
                 let data = ProjectData { name: create_project_dto.name };
                 Validator::validate(&(&data, &|error_details: &mut ErrorDetails| {
@@ -36,7 +36,7 @@ impl<RepoManager: CmsRepositoryManager> ProjectService<RepoManager> {
                     }
                     Ok(())
                 }))?;
-                self.project_repo.save(&mut conn, NewModel::new(data)).await
+                self.project_repo.save(conn, NewModel::new(data)).await
             })
             .await
     }
