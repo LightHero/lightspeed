@@ -47,7 +47,7 @@ futures-util = { version = "0.3", default-features = false }
 http = { version = "0.2" }
 hyper = "0.14"
 jsonwebtoken = "9.0"
-lettre = { version = "0.10", default-features = false }
+lettre = { version = "0.11", default-features = false }
 log = "0.4"
 maybe-single = { version = "0.15.0", features =["async"] }
 mime = { version = "0.3" }
