@@ -2,10 +2,8 @@ use crate::error::SchedulerError;
 use crate::scheduler::Scheduler;
 use chrono::{DateTime, Utc};
 use chrono_tz::Tz;
-use futures_util::FutureExt;
 use log::*;
 use std::future::Future;
-use std::panic::AssertUnwindSafe;
 use std::pin::Pin;
 use tokio::sync::{Mutex, RwLock};
 
@@ -68,7 +66,8 @@ impl JobScheduler {
 
 pub type JobFn = dyn 'static
     + Send
-    + Fn() -> Pin<Box<dyn Future<Output = Result<(), Box<dyn std::error::Error + Send + Sync>>> + Send>>;
+    + Sync
+    + Fn() -> Pin<Box<dyn Future<Output = Result<(), Box<dyn std::error::Error + Send + Sync>>> + Send + Sync>>;
 
 pub struct Job {
     function: Mutex<Box<JobFn>>,
@@ -85,7 +84,8 @@ impl Job {
         N: Into<String>,
         F: 'static
             + Send
-            + Fn() -> Pin<Box<dyn Future<Output = Result<(), Box<dyn std::error::Error + Send + Sync>>> + Send>>,
+            + Sync
+            + Fn() -> Pin<Box<dyn Future<Output = Result<(), Box<dyn std::error::Error + Send + Sync>>> + Send + Sync>>,
     >(
         group: G,
         name: N,
@@ -142,25 +142,9 @@ impl Job {
         run_result.map_err(|err| SchedulerError::JobExecutionError { source: err })
     }
 
-    async fn exec(&self) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
-        let wrapped = AssertUnwindSafe(async {
-            let result = {
-                let function = self.function.lock().await;
-                (function)()
-            };
-            result.await
-        })
-        .catch_unwind();
-
-        match wrapped.await {
-            // Here we unwrap just the outer panic-induced `Result`, returning
-            // the inner `Result`
-            Ok(response) => response,
-            Err(panic) => {
-                error!("A panic happened. Err: {:?}", panic);
-                Err(SchedulerError::JobExecutionPanic { cause: format!("{panic:?}") }.into())
-            }
-        }
+    async fn exec(&self) -> Result<(), Box<dyn std::error::Error + Send + Sync + 'static>> {
+            let function = self.function.lock().await;
+            (function)().await
     }
 
     async fn set_running(&self, is_running: bool) -> Result<(), SchedulerError> {
@@ -325,32 +309,5 @@ pub mod test {
         assert_eq!(succeed_at + 1, count);
     }
 
-    #[tokio::test]
-    async fn job_run_should_gracefully_catch_panics() {
-        let lock = Arc::new(Mutex::new(0));
-        let lock_clone = lock.clone();
-
-        let max_retries = 12;
-
-        let job = Job::new("g", "n", Some(max_retries), move || {
-            let lock_clone = lock_clone.clone();
-            Box::pin(async move {
-                println!("job - started");
-                println!("job - Trying to get the lock");
-                let mut lock = lock_clone.lock().await;
-                let count = *lock;
-                *lock = count + 1;
-                println!("job - count {count}");
-                panic!("Manual panic for test")
-            })
-        });
-
-        let result = job.run().await;
-
-        assert!(result.is_err());
-
-        let lock = lock.lock().await;
-        let count = *lock;
-        assert_eq!(max_retries + 1, count);
-    }
+    
 }

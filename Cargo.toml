@@ -43,7 +43,6 @@ chrono-tz = "0.8"
 config = "0.13"
 cron = "0.12.0"
 dashmap = { version = "5" }
-futures-util = { version = "0.3", default-features = false }
 http = { version = "0.2" }
 hyper = "0.14"
 jsonwebtoken = "9.0"

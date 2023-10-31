@@ -15,7 +15,6 @@ atomic = { workspace = true }
 cron = { workspace = true }
 chrono = { workspace = true }
 chrono-tz = { workspace = true }
-futures-util = { workspace = true, features = ["std"] }
 log = { workspace = true }
 tokio = { workspace = true, features = ["sync", "time"] }
 tracing = { workspace = true }
