@@ -19,7 +19,7 @@ fn should_save_file_from_fs() -> Result<(), LightSpeedError> {
 
         repo_manager
             .c3p0()
-            .transaction(|mut conn| async move {
+            .transaction(|conn| async {
                 file_store.save_file(conn, repository_name, file_path, &binary_content).await?;
 
                 match file_store.read_file(conn, repository_name, file_path).await {
@@ -48,7 +48,7 @@ fn should_save_file_from_memory() -> Result<(), LightSpeedError> {
 
         repo_manager
             .c3p0()
-            .transaction(|mut conn| async move {
+            .transaction(|conn| async {
                 file_store.save_file(conn, repository_name, file_path, &binary_content).await?;
 
                 match file_store.read_file(conn, repository_name, file_path).await {
@@ -76,7 +76,7 @@ fn save_file_should_fail_if_file_exists_in_same_repository() -> Result<(), Light
 
         repo_manager
             .c3p0()
-            .transaction(|mut conn| async move {
+            .transaction(|conn| async {
                 file_store.save_file(conn, repository_name, file_path, &binary_content).await?;
                 assert!(file_store.save_file(conn, repository_name, file_path, &binary_content).await.is_err());
                 Ok(())
@@ -98,7 +98,7 @@ fn save_file_not_should_fail_if_file_exists_in_different_repository() -> Result<
 
         repo_manager
             .c3p0()
-            .transaction(|mut conn| async move {
+            .transaction(|conn| async {
                 file_store.save_file(conn, repository_name_1, file_path, &binary_content).await?;
                 assert!(file_store.save_file(conn, repository_name_2, file_path, &binary_content).await.is_ok());
                 Ok(())

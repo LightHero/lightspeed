@@ -29,7 +29,7 @@ impl<RepoManager: DBFileStoreRepositoryManager> FileStoreService<RepoManager> {
     }
 
     pub async fn read_file_data_by_id(&self, id: IdType) -> Result<FileStoreDataModel, LightSpeedError> {
-        self.c3p0.transaction(|conn| async move { self.read_file_data_by_id_with_conn(conn, id).await }).await
+        self.c3p0.transaction(|conn| async { self.read_file_data_by_id_with_conn(conn, id).await }).await
     }
 
     pub async fn read_file_data_by_id_with_conn(
@@ -43,7 +43,7 @@ impl<RepoManager: DBFileStoreRepositoryManager> FileStoreService<RepoManager> {
 
     pub async fn exists_by_repository(&self, repository: &RepositoryFile) -> Result<bool, LightSpeedError> {
         self.c3p0
-            .transaction(|conn| async move { self.exists_by_repository_with_conn(conn, repository).await })
+            .transaction(|conn| async { self.exists_by_repository_with_conn(conn, repository).await })
             .await
     }
 
@@ -62,7 +62,7 @@ impl<RepoManager: DBFileStoreRepositoryManager> FileStoreService<RepoManager> {
     ) -> Result<FileStoreDataModel, LightSpeedError> {
         self.c3p0
             .transaction(
-                |conn| async move { self.read_file_data_by_repository_with_conn(conn, repository).await },
+                |conn| async { self.read_file_data_by_repository_with_conn(conn, repository).await },
             )
             .await
     }
@@ -84,7 +84,7 @@ impl<RepoManager: DBFileStoreRepositoryManager> FileStoreService<RepoManager> {
         sort: &OrderBy,
     ) -> Result<Vec<FileStoreDataModel>, LightSpeedError> {
         self.c3p0
-            .transaction(|conn| async move {
+            .transaction(|conn| async {
                 self.read_all_file_data_by_repository_with_conn(conn, repository, offset, max, sort).await
             })
             .await
@@ -107,7 +107,7 @@ impl<RepoManager: DBFileStoreRepositoryManager> FileStoreService<RepoManager> {
         match repository {
             RepositoryFile::DB { file_path, repository_name } => {
                 self.c3p0
-                    .transaction(|conn| async move {
+                    .transaction(|conn| async {
                         self.db_binary_repo.read_file(conn, repository_name, file_path).await
                     })
                     .await
@@ -181,14 +181,14 @@ impl<RepoManager: DBFileStoreRepositoryManager> FileStoreService<RepoManager> {
         repository: SaveRepository,
     ) -> Result<FileStoreDataModel, LightSpeedError> {
         self.c3p0
-            .transaction(|conn| async move {
+            .transaction(|conn| async {
                 self.save_file_with_conn(conn, filename, content_type, content, repository).await
             })
             .await
     }
 
     pub async fn delete_file_by_id(&self, id: IdType) -> Result<u64, LightSpeedError> {
-        self.c3p0.transaction(|conn| async move { self.delete_file_by_id_with_conn(conn, id).await }).await
+        self.c3p0.transaction(|conn| async { self.delete_file_by_id_with_conn(conn, id).await }).await
     }
 
     pub async fn delete_file_by_id_with_conn(

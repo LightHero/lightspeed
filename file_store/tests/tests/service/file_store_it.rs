@@ -381,7 +381,7 @@ fn should_delete_file_from_db() -> Result<(), LightSpeedError> {
         data.0
             .repo_manager
             .c3p0()
-            .transaction::<_, LightSpeedError, _, _>(|mut conn| async move {
+            .transaction::<_, LightSpeedError, _, _>(|conn| async {
                 assert!(db_file_binary_repo.read_file(conn, repository_name, file_path).await.is_ok());
                 Ok(())
             })
@@ -394,7 +394,7 @@ fn should_delete_file_from_db() -> Result<(), LightSpeedError> {
         data.0
             .repo_manager
             .c3p0()
-            .transaction::<_, LightSpeedError, _, _>(|mut conn| async move {
+            .transaction::<_, LightSpeedError, _, _>(|conn| async {
                 assert!(db_file_binary_repo.read_file(conn, repository_name, file_path).await.is_err());
                 Ok(())
             })

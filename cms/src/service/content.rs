@@ -25,7 +25,7 @@ impl<RepoManager: CmsRepositoryManager> ContentService<RepoManager> {
 
     pub async fn create_content_table(&self, schema: &SchemaModel) -> Result<(), LightSpeedError> {
         self.c3p0
-            .transaction(|conn| async move {
+            .transaction(|conn| async {
                 let schema_id = schema.id;
                 let repo = self.get_content_repo_by_schema_id(schema_id).await;
                 repo.create_table(conn).await?;
@@ -43,7 +43,7 @@ impl<RepoManager: CmsRepositoryManager> ContentService<RepoManager> {
 
     pub async fn drop_content_table(&self, schema_id: i64) -> Result<(), LightSpeedError> {
         self.c3p0
-            .transaction(|conn| async move {
+            .transaction(|conn| async {
                 let repo = self.get_content_repo_by_schema_id(schema_id).await;
                 repo.drop_table(conn).await
             })
@@ -52,7 +52,7 @@ impl<RepoManager: CmsRepositoryManager> ContentService<RepoManager> {
 
     pub async fn count_all_by_schema_id(&self, schema_id: i64) -> Result<u64, LightSpeedError> {
         self.c3p0
-            .transaction(|conn| async move {
+            .transaction(|conn| async {
                 let repo = self.get_content_repo_by_schema_id(schema_id).await;
                 repo.count_all(conn).await
             })
@@ -65,8 +65,7 @@ impl<RepoManager: CmsRepositoryManager> ContentService<RepoManager> {
         create_content_dto: CreateContentDto,
     ) -> Result<ContentModel, LightSpeedError> {
         self.c3p0
-            .transaction(|mut conn| async move {
-                let conn = &mut conn;
+            .transaction(|conn| async {
                 let repo = self.get_content_repo_by_schema_id(create_content_dto.schema_id).await;
 
                 let mut validator = Validator::new();
@@ -119,7 +118,7 @@ impl<RepoManager: CmsRepositoryManager> ContentService<RepoManager> {
 
     pub async fn delete_content(&self, content_model: ContentModel) -> Result<ContentModel, LightSpeedError> {
         self.c3p0
-            .transaction(|conn| async move {
+            .transaction(|conn| async {
                 let repo = self.get_content_repo_by_schema_id(content_model.data.schema_id).await;
                 repo.delete(conn, content_model).await
             })

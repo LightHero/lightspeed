@@ -22,8 +22,7 @@ fn should_create_project() -> Result<(), LightSpeedError> {
 
         let saved_project = cms_module.project_service.create_project(project).await?;
 
-        c3p0.transaction(|mut conn| async move {
-            let conn = &mut conn;
+        c3p0.transaction(|conn| async {
             assert!(project_repo.exists_by_id(conn, &saved_project.id).await?);
             assert!(cms_module.project_service.delete(saved_project.clone()).await.is_ok());
             assert!(!project_repo.exists_by_id(conn, &saved_project.id).await?);
@@ -45,8 +44,7 @@ fn project_name_should_be_unique() -> Result<(), LightSpeedError> {
 
         let project = NewModel { version: 0, data: ProjectData { name: new_hyphenated_uuid() } };
 
-        c3p0.transaction(|mut conn| async move {
-            let conn = &mut conn;
+        c3p0.transaction(|conn| async {
             assert!(project_repo.save(conn, project.clone()).await.is_ok());
             assert!(project_repo.save(conn, project).await.is_err());
 
@@ -113,8 +111,7 @@ fn should_delete_all_schemas_when_project_is_deleted() -> Result<(), LightSpeedE
         assert!(project_service.delete(saved_project).await.is_ok());
 
         // Assert
-        c3p0.transaction(|mut conn| async move {
-            let conn = &mut conn;
+        c3p0.transaction(|conn| async {
             assert!(!schema_repo.exists_by_id(conn, &saved_schema_1.id).await?);
             assert!(!schema_repo.exists_by_id(conn, &saved_schema_2.id).await?);
             assert!(schema_repo.exists_by_id(conn, &saved_schema_other.id).await?);

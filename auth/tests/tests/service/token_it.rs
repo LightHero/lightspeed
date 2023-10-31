@@ -24,8 +24,7 @@ fn should_delete_token() -> Result<(), LightSpeedError> {
             },
         };
 
-        c3p0.transaction(|mut conn| async move {
-            let conn = &mut conn;
+        c3p0.transaction(|conn| async {
 
             let saved_token = token_repo.save(conn, token).await?;
 
@@ -46,8 +45,7 @@ fn should_generate_token() -> Result<(), LightSpeedError> {
         let auth_module = &data.0;
 
         let c3p0 = auth_module.repo_manager.c3p0();
-        c3p0.transaction(|mut conn| async move {
-            let conn = &mut conn;
+        c3p0.transaction(|conn| async {
             let username = new_hyphenated_uuid();
             let token_type = TokenType::AccountActivation;
 
@@ -87,8 +85,7 @@ fn should_validate_token_on_fetch() -> Result<(), LightSpeedError> {
         let c3p0 = auth_module.repo_manager.c3p0();
         let token_repo = auth_module.repo_manager.token_repo();
 
-        c3p0.transaction(|mut conn| async move {
-            let conn = &mut conn;
+        c3p0.transaction(|conn| async {
             let token = NewModel {
                 version: 0,
                 data: TokenData {
@@ -126,9 +123,7 @@ fn should_return_all_tokens_by_username() -> Result<(), LightSpeedError> {
         let username_1 = new_hyphenated_uuid();
         let username_2 = new_hyphenated_uuid();
 
-        c3p0.transaction(|mut conn| async move {
-            let conn = &mut conn;
-
+        c3p0.transaction(|conn| async {
             assert_eq!(0, token_service.fetch_all_by_username_with_conn(conn, &username_1).await?.len());
             assert_eq!(0, token_service.fetch_all_by_username_with_conn(conn, &username_2).await?.len());
 
