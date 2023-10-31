@@ -47,7 +47,7 @@ pub async fn into_response(
             let file_name = Cow::Borrowed(file_name.unwrap_or(""));
             let path = std::path::Path::new(file_name.as_ref());
             let ct = mime_guess::from_path(path).first_or_octet_stream();
-            let owned_vec: Vec<u8> = content.to_owned().into();
+            let owned_vec: Vec<u8> = content.into();
             (file_name, ct, boxed(Body::from(owned_vec)))
         }
     };
