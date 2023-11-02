@@ -21,31 +21,6 @@ pub struct JobExecutor {
     executor: Arc<JobExecutorInternal>,
 }
 
-/// Creates a new Executor that uses the Local time zone for the execution times evaluation.
-/// For example, the cron expressions will refer to the Local time zone.
-pub fn new_executor_with_local_tz() -> JobExecutor {
-    new_executor_with_tz(None)
-}
-
-/// Creates a new Executor that uses the UTC time zone for the execution times evaluation.
-/// For example, the cron expressions will refer to the UTC time zone.
-pub fn new_executor_with_utc_tz() -> JobExecutor {
-    new_executor_with_tz(Some(UTC))
-}
-
-/// Creates a new Executor that uses a custom time zone for the execution times evaluation.
-/// For example, the cron expressions will refer to the specified time zone.
-pub fn new_executor_with_tz(timezone: Option<Tz>) -> JobExecutor {
-    JobExecutor {
-        executor: Arc::new(JobExecutorInternal {
-            sleep_between_checks: Atomic::new(Duration::new(1, 0)),
-            running: AtomicBool::new(false),
-            timezone,
-            jobs: RwLock::new(vec![]),
-        }),
-    }
-}
-
 struct JobExecutorInternal {
     sleep_between_checks: Atomic<Duration>,
     running: AtomicBool,
@@ -173,6 +148,32 @@ impl JobExecutorInternal {
 }
 
 impl JobExecutor {
+
+    /// Creates a new Executor that uses the Local time zone for the execution times evaluation.
+    /// For example, the cron expressions will refer to the Local time zone.
+    pub fn new_with_local_tz() -> JobExecutor {
+        Self::new_with_tz(None)
+    }
+
+    /// Creates a new Executor that uses the UTC time zone for the execution times evaluation.
+    /// For example, the cron expressions will refer to the UTC time zone.
+    pub fn new_with_utc_tz() -> JobExecutor {
+        Self::new_with_tz(Some(UTC))
+    }
+
+    /// Creates a new Executor that uses a custom time zone for the execution times evaluation.
+    /// For example, the cron expressions will refer to the specified time zone.
+    pub fn new_with_tz(timezone: Option<Tz>) -> JobExecutor {
+        JobExecutor {
+            executor: Arc::new(JobExecutorInternal {
+                sleep_between_checks: Atomic::new(Duration::new(1, 0)),
+                running: AtomicBool::new(false),
+                timezone,
+                jobs: RwLock::new(vec![]),
+            }),
+        }
+}
+
     /// Adds a job to the JobExecutor.
     pub async fn add_job(&self, schedule: &dyn TryToScheduler, job: Job) -> Result<(), SchedulerError> {
         self.add_job_with_scheduler(schedule.to_scheduler()?, job).await;
@@ -214,11 +215,11 @@ impl JobExecutor {
     }
 
     /// Stops the JobExecutor
-    pub async fn stop(&self, grateful: bool) -> Result<(), SchedulerError> {
+    pub async fn stop(&self, graceful: bool) -> Result<(), SchedulerError> {
         let was_running = self.executor.running.swap(false, Ordering::SeqCst);
         if was_running {
             info!("Stopping the job executor");
-            if grateful {
+            if graceful {
                 info!("Wait for all Jobs to complete");
                 while self.executor.is_running_job().await {
                     tokio::time::sleep(self.executor.sleep_between_checks.load(Ordering::SeqCst)).await;
@@ -250,7 +251,7 @@ pub mod test {
 
     #[tokio::test]
     async fn should_not_run_an_already_running_job() {
-        let executor = new_executor_with_utc_tz();
+        let executor = JobExecutor::new_with_utc_tz();
 
         let count = Arc::new(AtomicUsize::new(0));
         let count_clone = count.clone();
@@ -289,7 +290,7 @@ pub mod test {
 
     #[tokio::test]
     async fn a_running_job_should_not_block_the_executor() {
-        let executor = new_executor_with_local_tz();
+        let executor = JobExecutor::new_with_local_tz();
 
         let (tx, mut rx) = channel(959898);
 
@@ -376,7 +377,7 @@ pub mod test {
 
     #[tokio::test]
     async fn should_gracefully_shutdown_the_job_executor() {
-        let executor = new_executor_with_utc_tz();
+        let executor = JobExecutor::new_with_utc_tz();
 
         let count = Arc::new(AtomicUsize::new(0));
 
@@ -419,7 +420,7 @@ pub mod test {
 
     #[tokio::test]
     async fn start_should_fail_if_already_running() {
-        let executor = new_executor_with_utc_tz();
+        let executor = JobExecutor::new_with_utc_tz();
         assert!(executor.run().await.is_ok());
         assert!(executor.run().await.is_err());
         assert!(executor.stop(false).await.is_ok());
@@ -427,7 +428,7 @@ pub mod test {
 
     #[tokio::test]
     async fn stop_should_fail_if_not_running() {
-        let executor = new_executor_with_utc_tz();
+        let executor = JobExecutor::new_with_utc_tz();
         assert!(executor.stop(false).await.is_err());
         assert!(executor.run().await.is_ok());
         assert!(executor.stop(false).await.is_ok());
@@ -436,7 +437,7 @@ pub mod test {
 
     #[tokio::test]
     async fn should_add_with_explicit_scheduler() {
-        let executor = new_executor_with_utc_tz();
+        let executor = JobExecutor::new_with_utc_tz();
         executor
             .add_job_with_scheduler(Scheduler::Never, Job::new("g", "n", None, move || Box::pin(async { Ok(()) })))
             .await;
@@ -444,7 +445,7 @@ pub mod test {
 
     #[tokio::test]
     async fn should_register_a_schedule_by_vec() {
-        let executor = new_executor_with_utc_tz();
+        let executor = JobExecutor::new_with_utc_tz();
         executor
             .add_job(&vec!["0 1 * * * * *"], Job::new("g", "n", None, move || Box::pin(async { Ok(()) })))
             .await
