@@ -14,19 +14,19 @@ members = [
 ]
 
 [workspace.package]
-version = "0.54.0"
+version = "0.55.0"
 edition = "2021"
 
 [workspace.dependencies]
-lightspeed_auth = { version = "0.54.0", path = "./auth" }
-lightspeed_cache = { version = "0.54.0", path = "./cache" }
-lightspeed_cms = { version = "0.54.0", path = "./cms" }
-lightspeed_core = { version = "0.54.0", path = "./core" }
-lightspeed_email = { version = "0.54.0", path = "./email" }
-lightspeed_file_store = { version = "0.54.0", path = "./file_store" }
-lightspeed_hash = { version = "0.54.0", path = "./hash" }
-lightspeed_logger = { version = "0.54.0", path = "./logger" }
-lightspeed_scheduler = { version = "0.54.0", path = "./scheduler" }
+lightspeed_auth = { version = "0.55.0", path = "./auth" }
+lightspeed_cache = { version = "0.55.0", path = "./cache" }
+lightspeed_cms = { version = "0.55.0", path = "./cms" }
+lightspeed_core = { version = "0.55.0", path = "./core" }
+lightspeed_email = { version = "0.55.0", path = "./email" }
+lightspeed_file_store = { version = "0.55.0", path = "./file_store" }
+lightspeed_hash = { version = "0.55.0", path = "./hash" }
+lightspeed_logger = { version = "0.55.0", path = "./logger" }
+lightspeed_scheduler = { version = "0.55.0", path = "./scheduler" }
 
 actix-files = { version = "0.6.0" }
 actix-rt = "2"
