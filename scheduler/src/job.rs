@@ -3,7 +3,7 @@ use crate::scheduler::Scheduler;
 use chrono::{DateTime, Utc};
 use chrono_tz::Tz;
 use log::*;
-use std::future::Future;
+use std::{future::Future, sync::Arc};
 use std::pin::Pin;
 use tokio::sync::{Mutex, RwLock};
 
@@ -67,10 +67,10 @@ impl JobScheduler {
 pub type JobFn = dyn 'static
     + Send
     + Sync
-    + Fn() -> Pin<Box<dyn Future<Output = Result<(), Box<dyn std::error::Error + Send + Sync>>> + Send + Sync>>;
+    + Fn() -> Pin<Box<dyn Future<Output = Result<(), Box<dyn std::error::Error + Send + Sync>>> + Send>>;
 
 pub struct Job {
-    function: Mutex<Box<JobFn>>,
+    function: Arc<JobFn>,
     group: String,
     name: String,
     is_active: bool,
@@ -85,7 +85,7 @@ impl Job {
         F: 'static
             + Send
             + Sync
-            + Fn() -> Pin<Box<dyn Future<Output = Result<(), Box<dyn std::error::Error + Send + Sync>>> + Send + Sync>>,
+            + Fn() -> Pin<Box<dyn Future<Output = Result<(), Box<dyn std::error::Error + Send + Sync>>> + Send>>,
     >(
         group: G,
         name: N,
@@ -93,7 +93,7 @@ impl Job {
         function: F,
     ) -> Self {
         Job {
-            function: Mutex::new(Box::new(function)),
+            function: Arc::new(function),
             name: name.into(),
             group: group.into(),
             retries_after_failure,
@@ -142,8 +142,8 @@ impl Job {
         run_result.map_err(|err| SchedulerError::JobExecutionError { source: err })
     }
 
-    async fn exec(&self) -> Result<(), Box<dyn std::error::Error + Send + Sync + 'static>> {
-        let function = self.function.lock().await;
+    async fn exec(&self) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+        let function = self.function.clone();
         (function)().await
     }
 
