@@ -22,6 +22,8 @@ serde = { workspace = true }
 serde_json = { workspace = true }
 strum = { workspace = true }
 
+# TO BE REMOVED
+sqlx = { version = "0.7", features = ["migrate"] }
 
 [dev-dependencies]
 config = { workspace = true }
@@ -33,4 +35,4 @@ tokio = { workspace = true, features = ["rt-multi-thread"] }
 
 [features]
 default = []
-poem_openapi = ["dep:poem-openapi"]
+poem_openapi = ["dep:poem-openapi", "lightspeed_core/poem_openapi"]

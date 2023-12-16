@@ -1,13 +1,13 @@
 use crate::model::auth_account::{AuthAccountData, AuthAccountDataCodec, AuthAccountModel, AuthAccountStatus};
 use crate::repository::AuthAccountRepository;
-use c3p0::postgres::*;
+use c3p0::sqlx::*;
 use c3p0::*;
 use lightspeed_core::error::{ErrorCodes, LsError};
 use std::ops::Deref;
 
 #[derive(Clone)]
 pub struct PgAuthAccountRepository {
-    repo: PgC3p0Json<AuthAccountData, AuthAccountDataCodec>,
+    repo: SqlxPgC3p0Json<AuthAccountData, AuthAccountDataCodec>,
 }
 
 impl Default for PgAuthAccountRepository {
@@ -20,7 +20,7 @@ impl Default for PgAuthAccountRepository {
 
 #[async_trait::async_trait]
 impl AuthAccountRepository for PgAuthAccountRepository {
-    type Conn = PgConnection;
+    type Conn = SqlxPgConnection;
 
     async fn fetch_all_by_status(
         &self,
@@ -38,7 +38,10 @@ impl AuthAccountRepository for PgAuthAccountRepository {
         "#,
             self.queries().find_base_sql_query
         );
-        Ok(self.repo.fetch_all_with_sql(conn, &sql, &[&start_user_id, &status.as_ref(), &(limit as i64)]).await?)
+        
+        Ok(self.repo.fetch_all_with_sql(conn, ::sqlx::query(&sql).bind(start_user_id)
+        .bind(status.as_ref())
+        .bind(limit as i64)).await?)
     }
 
     async fn fetch_by_id(
@@ -51,7 +54,7 @@ impl AuthAccountRepository for PgAuthAccountRepository {
 
     async fn fetch_by_username(
         &self,
-        conn: &mut PgConnection,
+        conn: &mut Self::Conn,
         username: &str,
     ) -> Result<AuthAccountModel, LsError> {
         self.fetch_by_username_optional(conn, username).await?.ok_or_else(|| LsError::BadRequest {
@@ -65,7 +68,7 @@ impl AuthAccountRepository for PgAuthAccountRepository {
         conn: &mut Self::Conn,
         username: &str,
     ) -> Result<Option<Model<AuthAccountData>>, LsError> {
-        let sql = format!(
+        let sql = &format!(
             r#"
             {}
             where DATA ->> 'username' = $1
@@ -73,12 +76,12 @@ impl AuthAccountRepository for PgAuthAccountRepository {
         "#,
             self.queries().find_base_sql_query
         );
-        Ok(self.repo.fetch_one_optional_with_sql(conn, &sql, &[&username]).await?)
+        Ok(self.repo.fetch_one_optional_with_sql(conn, ::sqlx::query(&sql).bind(username)).await?)
     }
 
     async fn fetch_by_email_optional(
         &self,
-        conn: &mut PgConnection,
+        conn: &mut Self::Conn,
         email: &str,
     ) -> Result<Option<AuthAccountModel>, LsError> {
         let sql = format!(
@@ -89,7 +92,8 @@ impl AuthAccountRepository for PgAuthAccountRepository {
         "#,
             self.queries().find_base_sql_query
         );
-        Ok(self.repo.fetch_one_optional_with_sql(conn, &sql, &[&email]).await?)
+        Ok(self.repo.fetch_one_optional_with_sql(conn, ::sqlx::query(&sql)
+        .bind(email)).await?)
     }
 
     async fn save(
@@ -122,7 +126,7 @@ impl AuthAccountRepository for PgAuthAccountRepository {
 }
 
 impl Deref for PgAuthAccountRepository {
-    type Target = PgC3p0Json<AuthAccountData, AuthAccountDataCodec>;
+    type Target = SqlxPgC3p0Json<AuthAccountData, AuthAccountDataCodec>;
 
     fn deref(&self) -> &Self::Target {
         &self.repo

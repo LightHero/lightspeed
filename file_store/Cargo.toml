@@ -28,6 +28,8 @@ mime_guess = { workspace = true, optional = true }
 axum = { workspace = true, optional = true }
 tokio-util = { workspace = true, optional = true, features = ["io"] }
 
+# TO BE REMOVED
+sqlx = { version = "0.7", features = ["migrate"] }
 
 [dev-dependencies]
 actix-rt = { workspace = true }

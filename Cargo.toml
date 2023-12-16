@@ -37,8 +37,8 @@ atomic = "0.5"
 axum = { version = "0.6" }
 base64 = "0.21"
 bcrypt = "0.15"
-c3p0 = { version = "0.68", features = ["postgres", "migrate"] }
-c3p0_common = { version = "0.68" }
+c3p0 = { git = "https://github.com/ufoscout/c3p0", branch = "master", features = ["sqlx_postgres"] }
+c3p0_common = { git = "https://github.com/ufoscout/c3p0", branch = "master" }
 chrono = { version = "0.4", default-features = false, features = ["clock"] }
 chrono-tz = "0.8"
 config = "0.13"

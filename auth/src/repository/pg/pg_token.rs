@@ -1,17 +1,17 @@
 use crate::model::token::{TokenData, TokenDataCodec, TokenModel};
 use crate::repository::TokenRepository;
-use c3p0::postgres::*;
+use c3p0::sqlx::*;
 use c3p0::*;
 use lightspeed_core::error::LsError;
 use std::ops::Deref;
 
 #[derive(Clone)]
 pub struct PgTokenRepository {
-    repo: PgC3p0Json<TokenData, TokenDataCodec>,
+    repo: SqlxPgC3p0Json<TokenData, TokenDataCodec>,
 }
 
 impl Deref for PgTokenRepository {
-    type Target = PgC3p0Json<TokenData, TokenDataCodec>;
+    type Target = SqlxPgC3p0Json<TokenData, TokenDataCodec>;
 
     fn deref(&self) -> &Self::Target {
         &self.repo
@@ -26,10 +26,10 @@ impl Default for PgTokenRepository {
 
 #[async_trait::async_trait]
 impl TokenRepository for PgTokenRepository {
-    type Conn = PgConnection;
+    type Conn = SqlxPgConnection;
 
-    async fn fetch_by_token(&self, conn: &mut PgConnection, token_string: &str) -> Result<TokenModel, LsError> {
-        let sql = format!(
+    async fn fetch_by_token(&self, conn: &mut Self::Conn, token_string: &str) -> Result<TokenModel, LsError> {
+        let sql = &format!(
             r#"
             {}
             where data ->> 'token' = $1
@@ -37,12 +37,12 @@ impl TokenRepository for PgTokenRepository {
         "#,
             self.queries().find_base_sql_query
         );
-        Ok(self.repo.fetch_one_with_sql(conn, &sql, &[&token_string]).await?)
+        Ok(self.repo.fetch_one_with_sql(conn, ::sqlx::query(&sql).bind(token_string)).await?)
     }
 
     async fn fetch_by_username(
         &self,
-        conn: &mut PgConnection,
+        conn: &mut Self::Conn,
         username: &str,
     ) -> Result<Vec<TokenModel>, LsError> {
         let sql = format!(
@@ -52,7 +52,8 @@ impl TokenRepository for PgTokenRepository {
         "#,
             self.queries().find_base_sql_query
         );
-        Ok(self.repo.fetch_all_with_sql(conn, &sql, &[&username]).await?)
+        
+        Ok(self.repo.fetch_all_with_sql(conn, ::sqlx::query(&sql).bind(username)).await?)
     }
 
     async fn save(

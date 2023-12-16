@@ -1,6 +1,6 @@
 use crate::model::BinaryContent;
 use crate::repository::db::DBFileStoreBinaryRepository;
-use c3p0::postgres::*;
+use c3p0::sqlx::*;
 use lightspeed_core::error::{ErrorCodes, LsError};
 use std::borrow::Cow;
 use tokio::fs::File;
@@ -19,7 +19,7 @@ impl Default for PgFileStoreBinaryRepository {
 
 #[async_trait::async_trait]
 impl DBFileStoreBinaryRepository for PgFileStoreBinaryRepository {
-    type Conn = PgConnection;
+    type Conn = SqlxPgConnection;
 
     async fn read_file<'a>(
         &self,

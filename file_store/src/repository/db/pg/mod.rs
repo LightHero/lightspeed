@@ -1,48 +1,39 @@
 use crate::repository::db::pg::pg_file_store_binary::PgFileStoreBinaryRepository;
 use crate::repository::db::pg::pg_file_store_data::PgFileStoreDataRepository;
 use crate::repository::db::DBFileStoreRepositoryManager;
-use c3p0::postgres::*;
-use c3p0::*;
+use c3p0::{*, sqlx::*};
 use lightspeed_core::error::LsError;
+use ::sqlx::{*, migrate::Migrator};
 
 pub mod pg_file_store_binary;
 pub mod pg_file_store_data;
 
-const MIGRATIONS: include_dir::Dir = include_dir::include_dir!("$CARGO_MANIFEST_DIR/src_resources/db/pg/migrations");
+static MIGRATOR: Migrator = migrate!("src_resources/db/pg/migrations");
 
 #[derive(Clone)]
 pub struct PgFileStoreRepositoryManager {
-    c3p0: PgC3p0Pool,
+    c3p0: SqlxPgC3p0Pool,
 }
 
 impl PgFileStoreRepositoryManager {
-    pub fn new(c3p0: PgC3p0Pool) -> Self {
+    pub fn new(c3p0: SqlxPgC3p0Pool) -> Self {
         Self { c3p0 }
     }
 }
 
 #[async_trait::async_trait]
 impl DBFileStoreRepositoryManager for PgFileStoreRepositoryManager {
-    type Conn = PgConnection;
-    type C3P0 = PgC3p0Pool;
+    type Conn = SqlxPgConnection;
+    type C3P0 = SqlxPgC3p0Pool;
     type FileStoreBinaryRepo = PgFileStoreBinaryRepository;
     type FileStoreDataRepo = PgFileStoreDataRepository;
 
-    fn c3p0(&self) -> &PgC3p0Pool {
+    fn c3p0(&self) -> &Self::C3P0 {
         &self.c3p0
     }
 
     async fn start(&self) -> Result<(), LsError> {
-        let migrate_table_name = format!("LS_FILE_STORE_{C3P0_MIGRATE_TABLE_DEFAULT}");
-
-        let migrate = C3p0MigrateBuilder::new(self.c3p0().clone())
-            .with_table_name(migrate_table_name)
-            .with_migrations(from_embed(&MIGRATIONS).map_err(|err| LsError::ModuleStartError {
-                message: format!("PgFileStoreRepositoryManager - failed to read db migrations: {err:?}"),
-            })?)
-            .build();
-
-        migrate.migrate().await.map_err(|err| LsError::ModuleStartError {
+        MIGRATOR.run(self.c3p0.pool()).await.map_err(|err| LsError::ModuleStartError {
             message: format!("PgFileStoreRepositoryManager - db migration failed: {err:?}"),
         })
     }

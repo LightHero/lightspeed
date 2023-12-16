@@ -1,12 +1,12 @@
 use crate::model::{FileStoreDataData, FileStoreDataDataCodec, FileStoreDataModel, Repository, RepositoryFile};
 use crate::repository::db::FileStoreDataRepository;
-use c3p0::postgres::*;
+use c3p0::sqlx::*;
 use c3p0::*;
 use lightspeed_core::error::LsError;
 
 #[derive(Clone)]
 pub struct PgFileStoreDataRepository {
-    repo: PgC3p0Json<FileStoreDataData, FileStoreDataDataCodec>,
+    repo: SqlxPgC3p0Json<FileStoreDataData, FileStoreDataDataCodec>,
 }
 
 impl Default for PgFileStoreDataRepository {
@@ -19,7 +19,7 @@ impl Default for PgFileStoreDataRepository {
 
 #[async_trait::async_trait]
 impl FileStoreDataRepository for PgFileStoreDataRepository {
-    type Conn = PgConnection;
+    type Conn = SqlxPgConnection;
 
     async fn exists_by_repository(
         &self,

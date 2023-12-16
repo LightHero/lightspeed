@@ -16,11 +16,8 @@ declare -a publish_list=(
     "lightspeed"
 )
 
-echo 'Attempt ''cargo test'' before publishing'
-cargo test
-
-echo 'Attempt ''cargo test --all-features'' before publishing'
-cargo test --all-features
+echo 'Execute before publishing'
+./scripts/test.sh
 
 for i in "${publish_list[@]}"
 do
