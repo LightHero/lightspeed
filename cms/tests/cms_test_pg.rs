@@ -2,7 +2,7 @@ use c3p0::postgres::deadpool;
 use c3p0::postgres::deadpool::Runtime;
 use c3p0::postgres::tokio_postgres::*;
 use c3p0::postgres::*;
-use maybe_single::nio::*;
+use maybe_single::tokio::*;
 
 use lightspeed_cms::config::CmsConfig;
 use lightspeed_cms::repository::pg::PgCmsRepositoryManager;

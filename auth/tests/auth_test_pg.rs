@@ -1,7 +1,7 @@
 use c3p0::postgres::deadpool::{self, Runtime};
 use c3p0::postgres::tokio_postgres::NoTls;
 use c3p0::postgres::*;
-use maybe_single::nio::*;
+use maybe_single::tokio::*;
 
 use lightspeed_auth::config::AuthConfig;
 use lightspeed_auth::repository::pg::PgAuthRepositoryManager;
