@@ -8,7 +8,7 @@ use ::sqlx::{*, migrate::Migrator};
 pub mod pg_auth_account;
 pub mod pg_token;
 
-static MIGRATOR: Migrator = migrate!("src_resources/db/pg/migrations");
+static MIGRATOR: Migrator = ::sqlx::migrate!("src_resources/db/pg/migrations");
 
 #[derive(Clone)]
 pub struct PgAuthRepositoryManager {

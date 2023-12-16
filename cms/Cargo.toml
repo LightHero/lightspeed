@@ -14,11 +14,12 @@ keywords = []
 lightspeed_cache = { workspace = true }
 lightspeed_core = { workspace = true, features = ["c3p0"] }
 async-trait = { workspace = true }
-c3p0 = { workspace = true, features = ["postgres", "migrate"] }
+c3p0 = { workspace = true }
 log = { workspace = true }
 once_cell = { workspace = true }
 regex = { workspace = true }
 serde = { workspace = true }
+sqlx = { workspace = true }
 
 
 [dev-dependencies]

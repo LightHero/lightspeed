@@ -1,13 +1,14 @@
 use crate::model::content::ContentData;
 use crate::repository::ContentRepository;
-use c3p0::postgres::*;
+use c3p0::sqlx::{*, error::into_c3p0_error};
 use c3p0::*;
-use lightspeed_core::error::LsError;
+use lightspeed_core::error::{ErrorCodes, LsError};
+use ::sqlx::Row;
 use std::ops::Deref;
 
 #[derive(Clone)]
 pub struct PgContentRepository {
-    repo: PgC3p0Json<ContentData, DefaultJsonCodec>,
+    repo: SqlxPgC3p0Json<ContentData, DefaultJsonCodec>,
 }
 
 impl PgContentRepository {
@@ -17,7 +18,7 @@ impl PgContentRepository {
 }
 
 impl Deref for PgContentRepository {
-    type Target = PgC3p0Json<ContentData, DefaultJsonCodec>;
+    type Target = SqlxPgC3p0Json<ContentData, DefaultJsonCodec>;
 
     fn deref(&self) -> &Self::Target {
         &self.repo
@@ -26,7 +27,7 @@ impl Deref for PgContentRepository {
 
 #[async_trait::async_trait]
 impl ContentRepository for PgContentRepository {
-    type Conn = PgConnection;
+    type Conn = SqlxPgConnection;
 
     async fn create_table(&self, conn: &mut Self::Conn) -> Result<(), LsError> {
         Ok(self.repo.create_table_if_not_exists(conn).await?)
@@ -46,17 +47,31 @@ impl ContentRepository for PgContentRepository {
         field_name: &str,
         field_value: &str,
     ) -> Result<u64, LsError> {
-        Ok(conn
-            .fetch_one_value(
-                &format!(
+        let sql = format!(
             "SELECT COUNT(*) FROM {} WHERE  (DATA -> 'content' -> 'fields' -> '{}' -> 'value' ->> 'value') = $1 ",
             self.repo.queries().qualified_table_name,
             field_name
-        ),
-                &[&field_value],
-            )
-            .await
-            .map(|val: i64| val as u64)?)
+        );
+        let res = ::sqlx::query(&sql).bind(field_value)
+        .fetch_one(&mut **conn.get_conn())
+        .await
+        .and_then(|row| {
+            row.try_get(0).map(|val: i64| val as u64)
+        })
+        .map_err(into_c3p0_error)?;
+    Ok(res)
+
+        // Ok(conn
+        //     .fetch_one_value(
+        //         &format!(
+        //     "SELECT COUNT(*) FROM {} WHERE  (DATA -> 'content' -> 'fields' -> '{}' -> 'value' ->> 'value') = $1 ",
+        //     self.repo.queries().qualified_table_name,
+        //     field_name
+        // ),
+        //         &[&field_value],
+        //     )
+        //     .await
+        //     .map(|val: i64| val as u64)?)
     }
 
     async fn create_unique_constraint(

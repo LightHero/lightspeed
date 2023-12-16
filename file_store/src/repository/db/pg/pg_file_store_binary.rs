@@ -38,14 +38,6 @@ impl DBFileStoreBinaryRepository for PgFileStoreBinaryRepository {
         .map(|content| BinaryContent::InMemory { content: Cow::Owned(content) })
         .map_err(into_c3p0_error)?;
     Ok(res)
-        // })
-        // let content = conn
-        //     .fetch_one(sql, &[&repository_name, &file_path], |row| {
-        //         let content: Vec<u8> = row.try_get(0).map_err(into_c3p0_error)?;
-        //         Ok(content)
-        //     })
-        //     .await?;
-        // Ok(BinaryContent::InMemory { content: Cow::Owned(content) })
     }
 
     async fn save_file<'a>(
@@ -87,7 +79,6 @@ impl DBFileStoreBinaryRepository for PgFileStoreBinaryRepository {
             .map_err(into_c3p0_error)?;
         Ok(res.rows_affected())
 
-        //Ok(conn.execute(sql, &[&repository_name, &file_path, &binary_content.as_ref().as_ref()]).await?)
     }
 
     async fn delete_file(
@@ -102,6 +93,5 @@ impl DBFileStoreBinaryRepository for PgFileStoreBinaryRepository {
         .await
         .map_err(into_c3p0_error)?;
     Ok(res.rows_affected())
-        // Ok(conn.execute(sql, &[&repository_name, &file_path]).await?)
     }
 }

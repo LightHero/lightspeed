@@ -10,7 +10,6 @@ use lightspeed_file_store::repository::db::pg::PgFileStoreRepositoryManager;
 use lightspeed_file_store::LsFileStoreModule;
 use once_cell::sync::OnceCell;
 use testcontainers::testcontainers::Container;
-use tokio::time::Duration;
 
 mod tests;
 

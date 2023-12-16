@@ -17,6 +17,7 @@ c3p0 = { workspace = true }
 log = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }
+sqlx = { workspace = true }
 strum = { workspace = true }
 tokio = { workspace = true, features = ["fs", "io-util"] }
 
@@ -29,7 +30,6 @@ axum = { workspace = true, optional = true }
 tokio-util = { workspace = true, optional = true, features = ["io"] }
 
 # TO BE REMOVED
-sqlx = { version = "0.7", features = ["migrate"] }
 
 [dev-dependencies]
 actix-rt = { workspace = true }

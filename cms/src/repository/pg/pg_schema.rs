@@ -1,17 +1,18 @@
 use crate::model::schema::SchemaData;
 use crate::repository::SchemaRepository;
-use c3p0::postgres::*;
+use c3p0::sqlx::{*, error::into_c3p0_error};
 use c3p0::*;
-use lightspeed_core::error::LsError;
+use lightspeed_core::error::{ErrorCodes, LsError};
+use ::sqlx::Row;
 use std::ops::Deref;
 
 #[derive(Clone)]
 pub struct PgSchemaRepository {
-    repo: PgC3p0Json<SchemaData, DefaultJsonCodec>,
+    repo: SqlxPgC3p0Json<SchemaData, DefaultJsonCodec>,
 }
 
 impl Deref for PgSchemaRepository {
-    type Target = PgC3p0Json<SchemaData, DefaultJsonCodec>;
+    type Target = SqlxPgC3p0Json<SchemaData, DefaultJsonCodec>;
 
     fn deref(&self) -> &Self::Target {
         &self.repo
@@ -26,7 +27,7 @@ impl Default for PgSchemaRepository {
 
 #[async_trait::async_trait]
 impl SchemaRepository for PgSchemaRepository {
-    type Conn = PgConnection;
+    type Conn = SqlxPgConnection;
 
     async fn fetch_by_id(&self, conn: &mut Self::Conn, id: i64) -> Result<Model<SchemaData>, LsError> {
         Ok(self.repo.fetch_one_by_id(conn, &id).await?)
@@ -39,15 +40,23 @@ impl SchemaRepository for PgSchemaRepository {
         project_id: i64,
     ) -> Result<bool, LsError> {
         let sql = r#"
-            select count(*) from LS_CMS_SCHEMA
-            where DATA ->> 'name' = $1 AND (DATA ->> 'project_id')::bigint = $2
+        SELECT EXISTS (SELECT 1 from LS_CMS_SCHEMA
+            where DATA ->> 'name' = $1 AND (DATA ->> 'project_id')::bigint = $2 )
         "#;
-        Ok(conn
-            .fetch_one(sql, &[&name, &project_id], |row| {
-                let count: i64 = row.get(0);
-                Ok(count > 0)
-            })
-            .await?)
+
+        let res = ::sqlx::query(sql).bind(name).bind(project_id)
+        .fetch_one(&mut **conn.get_conn())
+        .await
+        .and_then(|row| {row.try_get(0)        })
+        .map_err(into_c3p0_error)?;
+    Ok(res)
+
+        // Ok(conn
+        //     .fetch_one(sql, &[&name, &project_id], |row| {
+        //         let count: i64 = row.get(0);
+        //         Ok(count > 0)
+        //     })
+        //     .await?)
     }
 
     async fn save(
@@ -79,6 +88,13 @@ impl SchemaRepository for PgSchemaRepository {
             delete from LS_CMS_SCHEMA
             where (DATA ->> 'project_id')::bigint = $1
         "#;
-        Ok(conn.execute(sql, &[&project_id]).await?)
+
+        let res = ::sqlx::query(sql).bind(project_id)
+        .execute(&mut **conn.get_conn())
+        .await
+        .map_err(into_c3p0_error)?;
+    Ok(res.rows_affected())
+
+        // Ok(conn.execute(sql, &[&project_id]).await?)
     }
 }
