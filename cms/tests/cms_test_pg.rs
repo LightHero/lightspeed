@@ -10,7 +10,6 @@ use once_cell::sync::OnceCell;
 use testcontainers::postgres::Postgres;
 use testcontainers::testcontainers::clients::Cli;
 use testcontainers::testcontainers::Container;
-use tokio::time::Duration;
 
 mod tests;
 

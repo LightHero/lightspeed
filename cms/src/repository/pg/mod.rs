@@ -3,7 +3,6 @@ use crate::repository::pg::pg_project::PgProjectRepository;
 use crate::repository::pg::pg_schema::PgSchemaRepository;
 use crate::repository::CmsRepositoryManager;
 use c3p0::sqlx::*;
-use c3p0::*;
 use lightspeed_core::error::LsError;
 use ::sqlx::{*, migrate::Migrator};
 

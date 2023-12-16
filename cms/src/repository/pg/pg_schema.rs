@@ -2,7 +2,7 @@ use crate::model::schema::SchemaData;
 use crate::repository::SchemaRepository;
 use c3p0::sqlx::{*, error::into_c3p0_error};
 use c3p0::*;
-use lightspeed_core::error::{ErrorCodes, LsError};
+use lightspeed_core::error::LsError;
 use ::sqlx::Row;
 use std::ops::Deref;
 
