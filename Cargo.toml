@@ -75,3 +75,16 @@ tracing-futures = "0.2"
 tracing-subscriber = { version = "0.3", default-features = false }
 uuid = { version = "1", features = ["v4"] }
 validator = "0.16"
+
+[profile.dev]
+debug = false
+
+# Set the settings for all dependencies (but not this crate itself or any workspace member).
+# This includes build dependencies.
+# Level range is from 0 (default for dev) to 3 (default for release)
+[profile.dev.package."*"]
+opt-level = 1
+
+# Set the settings for build scripts and proc-macros.
+[profile.dev.build-override]
+opt-level = 2
