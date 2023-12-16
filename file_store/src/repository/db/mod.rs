@@ -1,6 +1,6 @@
 use crate::model::{BinaryContent, FileStoreDataData, FileStoreDataModel, Repository, RepositoryFile};
 use c3p0::*;
-use lightspeed_core::error::LightSpeedError;
+use lightspeed_core::error::LsError;
 
 pub mod pg;
 
@@ -12,7 +12,7 @@ pub trait DBFileStoreRepositoryManager: Clone + Send + Sync {
     type FileStoreDataRepo: FileStoreDataRepository<Conn = Self::Conn>;
 
     fn c3p0(&self) -> &Self::C3P0;
-    async fn start(&self) -> Result<(), LightSpeedError>;
+    async fn start(&self) -> Result<(), LsError>;
 
     fn file_store_binary_repo(&self) -> Self::FileStoreBinaryRepo;
     fn file_store_data_repo(&self) -> Self::FileStoreDataRepo;
@@ -27,7 +27,7 @@ pub trait DBFileStoreBinaryRepository: Clone + Send + Sync {
         conn: &mut Self::Conn,
         repository_name: &str,
         file_path: &str,
-    ) -> Result<BinaryContent<'a>, LightSpeedError>;
+    ) -> Result<BinaryContent<'a>, LsError>;
 
     async fn save_file<'a>(
         &self,
@@ -35,14 +35,14 @@ pub trait DBFileStoreBinaryRepository: Clone + Send + Sync {
         repository_name: &str,
         file_path: &str,
         content: &'a BinaryContent<'a>,
-    ) -> Result<u64, LightSpeedError>;
+    ) -> Result<u64, LsError>;
 
     async fn delete_file(
         &self,
         conn: &mut Self::Conn,
         repository_name: &str,
         file_path: &str,
-    ) -> Result<u64, LightSpeedError>;
+    ) -> Result<u64, LsError>;
 }
 
 #[async_trait::async_trait]
@@ -53,15 +53,15 @@ pub trait FileStoreDataRepository: Clone + Send + Sync {
         &self,
         conn: &mut Self::Conn,
         repository: &RepositoryFile,
-    ) -> Result<bool, LightSpeedError>;
+    ) -> Result<bool, LsError>;
 
-    async fn fetch_one_by_id(&self, conn: &mut Self::Conn, id: IdType) -> Result<FileStoreDataModel, LightSpeedError>;
+    async fn fetch_one_by_id(&self, conn: &mut Self::Conn, id: IdType) -> Result<FileStoreDataModel, LsError>;
 
     async fn fetch_one_by_repository(
         &self,
         conn: &mut Self::Conn,
         repository: &RepositoryFile,
-    ) -> Result<FileStoreDataModel, LightSpeedError>;
+    ) -> Result<FileStoreDataModel, LsError>;
 
     async fn fetch_all_by_repository(
         &self,
@@ -70,13 +70,13 @@ pub trait FileStoreDataRepository: Clone + Send + Sync {
         offset: usize,
         max: usize,
         sort: &OrderBy,
-    ) -> Result<Vec<FileStoreDataModel>, LightSpeedError>;
+    ) -> Result<Vec<FileStoreDataModel>, LsError>;
 
     async fn save(
         &self,
         conn: &mut Self::Conn,
         model: NewModel<FileStoreDataData>,
-    ) -> Result<FileStoreDataModel, LightSpeedError>;
+    ) -> Result<FileStoreDataModel, LsError>;
 
-    async fn delete_by_id(&self, conn: &mut Self::Conn, id: IdType) -> Result<u64, LightSpeedError>;
+    async fn delete_by_id(&self, conn: &mut Self::Conn, id: IdType) -> Result<u64, LsError>;
 }

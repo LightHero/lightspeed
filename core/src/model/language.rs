@@ -1,4 +1,4 @@
-use crate::error::LightSpeedError;
+use crate::error::LsError;
 use serde::{Deserialize, Serialize};
 use std::str::FromStr;
 use strum::{AsRefStr, Display, EnumIter};
@@ -14,7 +14,7 @@ pub enum Language {
 }
 
 impl FromStr for Language {
-    type Err = LightSpeedError;
+    type Err = LsError;
 
     fn from_str(language: &str) -> Result<Self, Self::Err> {
         match language.to_lowercase().as_ref() {
@@ -23,7 +23,7 @@ impl FromStr for Language {
             "es" => Ok(Language::Es),
             "fr" => Ok(Language::Fr),
             "it" => Ok(Language::It),
-            _ => Err(LightSpeedError::ConfigurationError { message: format!("Could not parse language [{language}]") }),
+            _ => Err(LsError::ConfigurationError { message: format!("Could not parse language [{language}]") }),
         }
     }
 }

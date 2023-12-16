@@ -2,7 +2,7 @@ use crate::model::schema::SchemaData;
 use crate::repository::SchemaRepository;
 use c3p0::postgres::*;
 use c3p0::*;
-use lightspeed_core::error::LightSpeedError;
+use lightspeed_core::error::LsError;
 use std::ops::Deref;
 
 #[derive(Clone)]
@@ -28,7 +28,7 @@ impl Default for PgSchemaRepository {
 impl SchemaRepository for PgSchemaRepository {
     type Conn = PgConnection;
 
-    async fn fetch_by_id(&self, conn: &mut Self::Conn, id: i64) -> Result<Model<SchemaData>, LightSpeedError> {
+    async fn fetch_by_id(&self, conn: &mut Self::Conn, id: i64) -> Result<Model<SchemaData>, LsError> {
         Ok(self.repo.fetch_one_by_id(conn, &id).await?)
     }
 
@@ -37,7 +37,7 @@ impl SchemaRepository for PgSchemaRepository {
         conn: &mut Self::Conn,
         name: &str,
         project_id: i64,
-    ) -> Result<bool, LightSpeedError> {
+    ) -> Result<bool, LsError> {
         let sql = r#"
             select count(*) from LS_CMS_SCHEMA
             where DATA ->> 'name' = $1 AND (DATA ->> 'project_id')::bigint = $2
@@ -54,7 +54,7 @@ impl SchemaRepository for PgSchemaRepository {
         &self,
         conn: &mut Self::Conn,
         model: NewModel<SchemaData>,
-    ) -> Result<Model<SchemaData>, LightSpeedError> {
+    ) -> Result<Model<SchemaData>, LsError> {
         Ok(self.repo.save(conn, model).await?)
     }
 
@@ -62,7 +62,7 @@ impl SchemaRepository for PgSchemaRepository {
         &self,
         conn: &mut Self::Conn,
         model: Model<SchemaData>,
-    ) -> Result<Model<SchemaData>, LightSpeedError> {
+    ) -> Result<Model<SchemaData>, LsError> {
         Ok(self.repo.update(conn, model).await?)
     }
 
@@ -70,11 +70,11 @@ impl SchemaRepository for PgSchemaRepository {
         &self,
         conn: &mut Self::Conn,
         model: Model<SchemaData>,
-    ) -> Result<Model<SchemaData>, LightSpeedError> {
+    ) -> Result<Model<SchemaData>, LsError> {
         Ok(self.repo.delete(conn, model).await?)
     }
 
-    async fn delete_by_project_id(&self, conn: &mut Self::Conn, project_id: i64) -> Result<u64, LightSpeedError> {
+    async fn delete_by_project_id(&self, conn: &mut Self::Conn, project_id: i64) -> Result<u64, LsError> {
         let sql = r#"
             delete from LS_CMS_SCHEMA
             where (DATA ->> 'project_id')::bigint = $1

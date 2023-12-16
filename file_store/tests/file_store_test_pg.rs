@@ -5,10 +5,10 @@ use maybe_single::nio::*;
 
 use ::testcontainers::postgres::Postgres;
 use ::testcontainers::testcontainers::clients::Cli;
-use lightspeed_core::module::Module;
+use lightspeed_core::module::LsModule;
 use lightspeed_file_store::config::FileStoreConfig;
 use lightspeed_file_store::repository::db::pg::PgFileStoreRepositoryManager;
-use lightspeed_file_store::FileStoreModule;
+use lightspeed_file_store::LsFileStoreModule;
 use once_cell::sync::OnceCell;
 use testcontainers::testcontainers::Container;
 use tokio::time::Duration;
@@ -17,7 +17,7 @@ mod tests;
 
 pub type RepoManager = PgFileStoreRepositoryManager;
 
-pub type MaybeType = (FileStoreModule<RepoManager>, Container<'static, Postgres>);
+pub type MaybeType = (LsFileStoreModule<RepoManager>, Container<'static, Postgres>);
 
 async fn init() -> MaybeType {
     static DOCKER: OnceCell<Cli> = OnceCell::new();
@@ -47,7 +47,7 @@ async fn init() -> MaybeType {
     file_store_config.fs_repo_base_folders.push(("REPO_ONE".to_owned(), "../target/repo_one".to_owned()));
     file_store_config.fs_repo_base_folders.push(("REPO_TWO".to_owned(), "../target/repo_two".to_owned()));
 
-    let mut file_store_module = FileStoreModule::new(repo_manager, file_store_config).unwrap();
+    let mut file_store_module = LsFileStoreModule::new(repo_manager, file_store_config).unwrap();
     {
         file_store_module.start().await.unwrap();
     }

@@ -1,11 +1,11 @@
 use crate::init;
 use chrono::prelude::*;
-use lightspeed_core::error::LightSpeedError;
+use lightspeed_core::error::LsError;
 use lightspeed_core::model::language::Language;
 use lightspeed_hash::dto::{ValidationCodeRequestDto, VerifyValidationCodeRequestDto};
 
 #[tokio::test]
-async fn should_generate_validation_code() -> Result<(), LightSpeedError> {
+async fn should_generate_validation_code() -> Result<(), LsError> {
     // Arrange
     let hash_module = init().await;
     let validation_code_service = &hash_module.validation_code_service;

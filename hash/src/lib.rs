@@ -1,7 +1,7 @@
-use crate::service::hash_service::HashService;
-use crate::service::validation_code_service::ValidationCodeService;
-use lightspeed_core::error::LightSpeedError;
-use lightspeed_core::CoreModule;
+use crate::service::hash_service::LsHashService;
+use crate::service::validation_code_service::LsValidationCodeService;
+use lightspeed_core::error::LsError;
+use lightspeed_core::LsCoreModule;
 use log::*;
 use std::sync::Arc;
 
@@ -9,29 +9,29 @@ pub mod dto;
 pub mod service;
 
 #[derive(Clone)]
-pub struct HashModule {
-    pub hash_service: Arc<HashService>,
-    pub validation_code_service: Arc<ValidationCodeService>,
+pub struct LsHashModule {
+    pub hash_service: Arc<LsHashService>,
+    pub validation_code_service: Arc<LsValidationCodeService>,
 }
 
-impl HashModule {
-    pub fn new(core_module: &CoreModule) -> Result<Self, LightSpeedError> {
-        println!("Creating HashModule");
-        info!("Creating HashModule");
+impl LsHashModule {
+    pub fn new(core_module: &LsCoreModule) -> Result<Self, LsError> {
+        println!("Creating LsHashModule");
+        info!("Creating LsHashModule");
 
-        let hash_service = Arc::new(HashService::new());
+        let hash_service = Arc::new(LsHashService::new());
 
         let validation_code_service =
-            Arc::new(ValidationCodeService::new(hash_service.clone(), core_module.jwt.clone()));
+            Arc::new(LsValidationCodeService::new(hash_service.clone(), core_module.jwt.clone()));
 
-        Ok(HashModule { hash_service, validation_code_service })
+        Ok(LsHashModule { hash_service, validation_code_service })
     }
 }
 
 #[async_trait::async_trait]
-impl lightspeed_core::module::Module for HashModule {
-    async fn start(&mut self) -> Result<(), LightSpeedError> {
-        info!("Starting HashModule");
+impl lightspeed_core::module::LsModule for LsHashModule {
+    async fn start(&mut self) -> Result<(), LsError> {
+        info!("Starting LsHashModule");
         Ok(())
     }
 }

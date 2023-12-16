@@ -1,5 +1,5 @@
 use crate::model::BinaryContent;
-use lightspeed_core::error::{ErrorCodes, LightSpeedError};
+use lightspeed_core::error::{ErrorCodes, LsError};
 use log::*;
 use std::path::Path;
 
@@ -17,16 +17,16 @@ impl FsFileStoreBinaryRepository {
         format!("{}/{}", &self.base_folder, file_path)
     }
 
-    pub async fn read_file(&self, file_path: &str) -> Result<BinaryContent<'_>, LightSpeedError> {
+    pub async fn read_file(&self, file_path: &str) -> Result<BinaryContent<'_>, LsError> {
         Ok(BinaryContent::FromFs { file_path: self.get_fs_file_path(file_path).into() })
     }
 
-    pub async fn save_file<'a>(&self, file_path: &str, content: &'a BinaryContent<'a>) -> Result<(), LightSpeedError> {
+    pub async fn save_file<'a>(&self, file_path: &str, content: &'a BinaryContent<'a>) -> Result<(), LsError> {
         let destination_file_path = self.get_fs_file_path(file_path);
         let destination_path = Path::new(&destination_file_path);
 
         if destination_path.exists() {
-            return Err(LightSpeedError::BadRequest {
+            return Err(LsError::BadRequest {
                 message: format!(
                     "FsFileStoreDataRepository - Cannot save file [{destination_file_path}] because it already exists.",
                 ),
@@ -36,7 +36,7 @@ impl FsFileStoreBinaryRepository {
 
         match destination_path.parent() {
             Some(parent_path) => {
-                tokio::fs::create_dir_all(parent_path).await.map_err(|err| LightSpeedError::BadRequest {
+                tokio::fs::create_dir_all(parent_path).await.map_err(|err| LsError::BadRequest {
                     message: format!(
                         "FsFileStoreDataRepository - Create directory structure for file [{destination_file_path}]. Err: {err:?}"
                     ),
@@ -52,7 +52,7 @@ impl FsFileStoreBinaryRepository {
         match content {
             BinaryContent::InMemory { content } => {
                 tokio::fs::write(destination_path, content.as_ref()).await.map_err(|err| {
-                    LightSpeedError::BadRequest {
+                    LsError::BadRequest {
                         message: format!(
                             "FsFileStoreDataRepository - Cannot write data to [{destination_file_path}]. Err: {err:?}"
                         ),
@@ -62,7 +62,7 @@ impl FsFileStoreBinaryRepository {
                 Ok(())
             }
             BinaryContent::FromFs { file_path } => {
-                tokio::fs::copy(file_path, destination_path).await.map_err(|err| LightSpeedError::BadRequest {
+                tokio::fs::copy(file_path, destination_path).await.map_err(|err| LsError::BadRequest {
                     message: format!(
                         "FsFileStoreDataRepository - Cannot copy file from [{file_path:?}] to [{destination_file_path}]. Err: {err:?}"
                     ),
@@ -73,10 +73,10 @@ impl FsFileStoreBinaryRepository {
         }
     }
 
-    pub async fn delete_by_filename(&self, file_name: &str) -> Result<u64, LightSpeedError> {
+    pub async fn delete_by_filename(&self, file_name: &str) -> Result<u64, LsError> {
         let to = self.get_fs_file_path(file_name);
         if std::path::Path::new(&to).exists() {
-            tokio::fs::remove_file(&to).await.map_err(|err| LightSpeedError::BadRequest {
+            tokio::fs::remove_file(&to).await.map_err(|err| LsError::BadRequest {
                 message: format!("FsFileStoreDataRepository - Cannot delete file [{to}]. Err: {err:?}"),
                 code: ErrorCodes::IO_ERROR,
             })?;
@@ -91,13 +91,13 @@ impl FsFileStoreBinaryRepository {
 mod test {
     use super::*;
     use crate::utils::read_file;
-    use lightspeed_core::error::LightSpeedError;
+    use lightspeed_core::error::LsError;
     use std::borrow::Cow;
 
     const SOURCE_FILE: &str = "./Cargo.toml";
 
     #[tokio::test]
-    async fn should_save_file_from_fs() -> Result<(), LightSpeedError> {
+    async fn should_save_file_from_fs() -> Result<(), LsError> {
         let random: u32 = rand::random();
         let file_name = format!("file_{random}");
         let binary_content = BinaryContent::FromFs { file_path: SOURCE_FILE.to_owned().into() };
@@ -120,7 +120,7 @@ mod test {
     }
 
     #[tokio::test]
-    async fn should_save_file_from_memory() -> Result<(), LightSpeedError> {
+    async fn should_save_file_from_memory() -> Result<(), LsError> {
         let random: u32 = rand::random();
         let file_name = format!("file_{random}");
 
@@ -141,7 +141,7 @@ mod test {
     }
 
     #[tokio::test]
-    async fn save_file_should_fail_if_file_exists() -> Result<(), LightSpeedError> {
+    async fn save_file_should_fail_if_file_exists() -> Result<(), LsError> {
         let random: u32 = rand::random();
         let file_name = format!("file_{random}");
         let binary_content = BinaryContent::FromFs { file_path: SOURCE_FILE.to_owned().into() };
@@ -157,7 +157,7 @@ mod test {
     }
 
     #[tokio::test]
-    async fn should_save_file_with_relative_folder() -> Result<(), LightSpeedError> {
+    async fn should_save_file_with_relative_folder() -> Result<(), LsError> {
         let random: u32 = rand::random();
         let file_name = format!("test/temp/file_{random}");
         let binary_content = BinaryContent::FromFs { file_path: SOURCE_FILE.to_owned().into() };
@@ -180,7 +180,7 @@ mod test {
     }
 
     #[tokio::test]
-    async fn should_delete_file_with_relative_folder() -> Result<(), LightSpeedError> {
+    async fn should_delete_file_with_relative_folder() -> Result<(), LsError> {
         let random: u32 = rand::random();
         let file_name = format!("/test/temp/file_{random}");
         let binary_content = BinaryContent::FromFs { file_path: SOURCE_FILE.to_owned().into() };
@@ -199,7 +199,7 @@ mod test {
     }
 
     #[tokio::test]
-    async fn should_read_a_saved_file() -> Result<(), LightSpeedError> {
+    async fn should_read_a_saved_file() -> Result<(), LsError> {
         let random: u32 = rand::random();
         let file_name = format!("file_{random}");
         let binary_content = BinaryContent::FromFs { file_path: SOURCE_FILE.to_owned().into() };

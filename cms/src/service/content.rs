@@ -5,25 +5,25 @@ use crate::repository::CmsRepositoryManager;
 use crate::repository::ContentRepository;
 use c3p0::*;
 use lightspeed_cache::Cache;
-use lightspeed_core::error::LightSpeedError;
+use lightspeed_core::error::LsError;
 use lightspeed_core::service::validator::{Validator, ERR_NOT_UNIQUE};
 use std::sync::Arc;
 
 const CMS_CONTENT_TABLE_PREFIX: &str = "LS_CMS_CONTENT_";
 
 #[derive(Clone)]
-pub struct ContentService<RepoManager: CmsRepositoryManager> {
+pub struct LsContentService<RepoManager: CmsRepositoryManager> {
     c3p0: RepoManager::C3P0,
     repo_factory: RepoManager,
     content_repos: Cache<i64, RepoManager::ContentRepo>,
 }
 
-impl<RepoManager: CmsRepositoryManager> ContentService<RepoManager> {
+impl<RepoManager: CmsRepositoryManager> LsContentService<RepoManager> {
     pub fn new(c3p0: RepoManager::C3P0, repo_factory: RepoManager) -> Self {
-        ContentService { c3p0, repo_factory, content_repos: Cache::new(u32::max_value()) }
+        LsContentService { c3p0, repo_factory, content_repos: Cache::new(u32::max_value()) }
     }
 
-    pub async fn create_content_table(&self, schema: &SchemaModel) -> Result<(), LightSpeedError> {
+    pub async fn create_content_table(&self, schema: &SchemaModel) -> Result<(), LsError> {
         self.c3p0
             .transaction(|conn| async {
                 let schema_id = schema.id;
@@ -41,7 +41,7 @@ impl<RepoManager: CmsRepositoryManager> ContentService<RepoManager> {
             .await
     }
 
-    pub async fn drop_content_table(&self, schema_id: i64) -> Result<(), LightSpeedError> {
+    pub async fn drop_content_table(&self, schema_id: i64) -> Result<(), LsError> {
         self.c3p0
             .transaction(|conn| async {
                 let repo = self.get_content_repo_by_schema_id(schema_id).await;
@@ -50,7 +50,7 @@ impl<RepoManager: CmsRepositoryManager> ContentService<RepoManager> {
             .await
     }
 
-    pub async fn count_all_by_schema_id(&self, schema_id: i64) -> Result<u64, LightSpeedError> {
+    pub async fn count_all_by_schema_id(&self, schema_id: i64) -> Result<u64, LsError> {
         self.c3p0
             .transaction(|conn| async {
                 let repo = self.get_content_repo_by_schema_id(schema_id).await;
@@ -63,7 +63,7 @@ impl<RepoManager: CmsRepositoryManager> ContentService<RepoManager> {
         &self,
         schema: &Schema,
         create_content_dto: CreateContentDto,
-    ) -> Result<ContentModel, LightSpeedError> {
+    ) -> Result<ContentModel, LsError> {
         self.c3p0
             .transaction(|conn| async {
                 let repo = self.get_content_repo_by_schema_id(create_content_dto.schema_id).await;
@@ -116,7 +116,7 @@ impl<RepoManager: CmsRepositoryManager> ContentService<RepoManager> {
             .await
     }
 
-    pub async fn delete_content(&self, content_model: ContentModel) -> Result<ContentModel, LightSpeedError> {
+    pub async fn delete_content(&self, content_model: ContentModel) -> Result<ContentModel, LsError> {
         self.c3p0
             .transaction(|conn| async {
                 let repo = self.get_content_repo_by_schema_id(content_model.data.schema_id).await;

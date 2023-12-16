@@ -5,7 +5,7 @@ use lettre::message::header::ContentType;
 use lettre::message::{Attachment, Mailbox, MultiPart, SinglePart};
 use lettre::transport::smtp::authentication::Credentials;
 use lettre::{AsyncSmtpTransport, AsyncTransport, Message, Tokio1Executor};
-use lightspeed_core::error::{ErrorCodes, LightSpeedError};
+use lightspeed_core::error::{ErrorCodes, LsError};
 use log::*;
 use std::path::Path;
 use std::sync::Arc;
@@ -18,10 +18,10 @@ pub struct FullEmailClient {
 }
 
 impl FullEmailClient {
-    pub fn new(email_config: EmailClientConfig) -> Result<Self, LightSpeedError> {
+    pub fn new(email_config: EmailClientConfig) -> Result<Self, LsError> {
         let mut smtp_transport_builder = if email_config.email_server_use_tls {
             AsyncSmtpTransport::<Tokio1Executor>::relay(&email_config.email_server_address).map_err(|err| {
-                LightSpeedError::InternalServerError {
+                LsError::InternalServerError {
                     message: format!(
                         "FullEmailService.new - Cannot build SmtpTransport with TLS to the server [{}]. Err: {:?}",
                         email_config.email_server_address, err
@@ -50,7 +50,7 @@ impl FullEmailClient {
 
 #[async_trait::async_trait]
 impl EmailClient for FullEmailClient {
-    async fn send(&self, email_message: EmailMessage) -> Result<(), LightSpeedError> {
+    async fn send(&self, email_message: EmailMessage) -> Result<(), LsError> {
         let client = self.client.clone();
         debug!("Sending email {:?}", email_message);
 
@@ -96,7 +96,7 @@ impl EmailClient for FullEmailClient {
                         Path::new(&path).file_name().and_then(|os_str| os_str.to_str()).unwrap_or("")
                     });
 
-                    let body = std::fs::read(&path).map_err(|err| LightSpeedError::BadRequest {
+                    let body = std::fs::read(&path).map_err(|err| LsError::BadRequest {
                         message: format!("Cannot attach the requested attachment from file [{path}]. Err: {err:?}"),
                         code: "",
                     })?;
@@ -106,11 +106,11 @@ impl EmailClient for FullEmailClient {
             }
         }
 
-        let email = builder.multipart(multipart).map_err(|err| LightSpeedError::InternalServerError {
+        let email = builder.multipart(multipart).map_err(|err| LsError::InternalServerError {
             message: format!("FullEmailService.send - Cannot build the email. Err: {err:?}"),
         })?;
 
-        let response = client.send(email).await.map_err(|err| LightSpeedError::InternalServerError {
+        let response = client.send(email).await.map_err(|err| LsError::InternalServerError {
             message: format!("FullEmailService.send - Cannot send email to the SMTP server. Err: {err:?}"),
         })?;
 
@@ -118,34 +118,34 @@ impl EmailClient for FullEmailClient {
         Ok(())
     }
 
-    fn get_emails(&self) -> Result<Vec<EmailMessage>, LightSpeedError> {
-        Err(LightSpeedError::InternalServerError {
+    fn get_emails(&self) -> Result<Vec<EmailMessage>, LsError> {
+        Err(LsError::InternalServerError {
             message: "FullEmailService.get_emails - Cannot return sent email".to_owned(),
         })
     }
 
-    fn clear_emails(&self) -> Result<(), LightSpeedError> {
-        Err(LightSpeedError::InternalServerError {
+    fn clear_emails(&self) -> Result<(), LsError> {
+        Err(LsError::InternalServerError {
             message: "FullEmailService.clear_emails - Cannot clear_emails".to_owned(),
         })
     }
 
-    fn retain_emails(&self, _: Box<dyn FnMut(&EmailMessage) -> bool>) -> Result<(), LightSpeedError> {
-        Err(LightSpeedError::InternalServerError {
+    fn retain_emails(&self, _: Box<dyn FnMut(&EmailMessage) -> bool>) -> Result<(), LsError> {
+        Err(LsError::InternalServerError {
             message: "FullEmailService.clear_emails - Cannot retain_emails".to_owned(),
         })
     }
 }
 
-fn parse_mailbox(address: &str) -> Result<Mailbox, LightSpeedError> {
-    address.parse::<Mailbox>().map_err(|err| LightSpeedError::BadRequest {
+fn parse_mailbox(address: &str) -> Result<Mailbox, LsError> {
+    address.parse::<Mailbox>().map_err(|err| LsError::BadRequest {
         message: format!("Cannot parse email address [{address}]. Err: {err:?}"),
         code: ErrorCodes::PARSE_ERROR,
     })
 }
 
-fn to_content_type(mime_type: &str) -> Result<ContentType, LightSpeedError> {
-    ContentType::parse(mime_type).map_err(|err| LightSpeedError::BadRequest {
+fn to_content_type(mime_type: &str) -> Result<ContentType, LsError> {
+    ContentType::parse(mime_type).map_err(|err| LsError::BadRequest {
         message: format!("Cannot parse the mime type [{mime_type}]. Err: {err:?}"),
         code: "",
     })

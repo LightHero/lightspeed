@@ -1,6 +1,6 @@
 use crate::{data, test};
 use c3p0::*;
-use lightspeed_core::error::LightSpeedError;
+use lightspeed_core::error::LsError;
 use lightspeed_file_store::model::BinaryContent;
 use lightspeed_file_store::repository::db::{DBFileStoreBinaryRepository, DBFileStoreRepositoryManager};
 use std::borrow::Cow;
@@ -8,7 +8,7 @@ use std::borrow::Cow;
 const SOURCE_FILE: &str = "./Cargo.toml";
 
 #[test]
-fn should_save_file_from_fs() -> Result<(), LightSpeedError> {
+fn should_save_file_from_fs() -> Result<(), LsError> {
     test(async {
         let data = data(false).await;
         let repo_manager = &data.0.repo_manager;
@@ -37,7 +37,7 @@ fn should_save_file_from_fs() -> Result<(), LightSpeedError> {
 }
 
 #[test]
-fn should_save_file_from_memory() -> Result<(), LightSpeedError> {
+fn should_save_file_from_memory() -> Result<(), LsError> {
     test(async {
         let data = data(false).await;
         let repo_manager = &data.0.repo_manager;
@@ -65,7 +65,7 @@ fn should_save_file_from_memory() -> Result<(), LightSpeedError> {
 }
 
 #[test]
-fn save_file_should_fail_if_file_exists_in_same_repository() -> Result<(), LightSpeedError> {
+fn save_file_should_fail_if_file_exists_in_same_repository() -> Result<(), LsError> {
     test(async {
         let data = data(false).await;
         let repo_manager = &data.0.repo_manager;
@@ -86,7 +86,7 @@ fn save_file_should_fail_if_file_exists_in_same_repository() -> Result<(), Light
 }
 
 #[test]
-fn save_file_not_should_fail_if_file_exists_in_different_repository() -> Result<(), LightSpeedError> {
+fn save_file_not_should_fail_if_file_exists_in_different_repository() -> Result<(), LsError> {
     test(async {
         let data = data(false).await;
         let repo_manager = &data.0.repo_manager;

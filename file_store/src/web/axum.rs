@@ -3,7 +3,7 @@ use axum::{
     body::{boxed, Body, BoxBody, StreamBody},
     http::{header, response::Builder, Response},
 };
-use lightspeed_core::error::LightSpeedError;
+use lightspeed_core::error::LsError;
 use log::*;
 use std::borrow::Cow;
 use tokio_util::io::ReaderStream;
@@ -12,12 +12,12 @@ pub async fn into_response(
     content: BinaryContent<'_>,
     file_name: Option<&str>,
     set_content_disposition: bool,
-) -> Result<Response<BoxBody>, LightSpeedError> {
+) -> Result<Response<BoxBody>, LsError> {
     let (file_name, ct, body) = match content {
         BinaryContent::FromFs { file_path } => {
             debug!("Create HttpResponse from FS content");
             let ct = mime_guess::from_path(&file_path).first_or_octet_stream();
-            let file = tokio::fs::File::open(&file_path).await.map_err(|err| LightSpeedError::BadRequest {
+            let file = tokio::fs::File::open(&file_path).await.map_err(|err| LsError::BadRequest {
                 message: format!("Cannot open file {}. Err {:?}", file_path.display(), err),
                 code: "",
             })?;
@@ -32,7 +32,7 @@ pub async fn into_response(
                 match file_path.file_name().to_owned() {
                     Some(name) => Cow::Owned(name.to_string_lossy().as_ref().to_owned()),
                     None => {
-                        return Err(LightSpeedError::BadRequest {
+                        return Err(LsError::BadRequest {
                             message: "Provided path has no filename".to_owned(),
                             code: "",
                         })?;
@@ -85,7 +85,7 @@ pub async fn into_response(
         debug!("Ignore content disposition");
     };
 
-    response_builder.body(body).map_err(|err| LightSpeedError::InternalServerError {
+    response_builder.body(body).map_err(|err| LsError::InternalServerError {
         message: format!("Cannot set body request. Err: {:?}", err),
     })
 }
@@ -100,7 +100,7 @@ mod test {
     use std::sync::Arc;
     use tower::ServiceExt; // for `app.oneshot()`
 
-    async fn download(Extension(data): Extension<Arc<AppData>>) -> Result<Response<BoxBody>, LightSpeedError> {
+    async fn download(Extension(data): Extension<Arc<AppData>>) -> Result<Response<BoxBody>, LsError> {
         println!("Download called");
         into_response(data.content.clone(), data.file_name, data.set_content_disposition).await
     }

@@ -1,4 +1,4 @@
-use lightspeed_core::error::{ErrorDetails, LightSpeedError};
+use lightspeed_core::error::{ErrorDetails, LsError};
 use lightspeed_core::service::auth::Owned;
 use lightspeed_core::service::validator::must_match::validate_must_be_equals;
 use lightspeed_core::service::validator::Validable;
@@ -20,7 +20,7 @@ impl Owned for ChangePasswordDto {
 }
 
 impl Validable for ChangePasswordDto {
-    fn validate(&self, error_details: &mut ErrorDetails) -> Result<(), LightSpeedError> {
+    fn validate(&self, error_details: &mut ErrorDetails) -> Result<(), LsError> {
         validate_must_be_equals(
             error_details,
             "new_password",

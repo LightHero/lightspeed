@@ -1,18 +1,18 @@
 use crate::dto::{
     ValidationCodeDataDto, ValidationCodeRequestDto, VerifyValidationCodeRequestDto, VerifyValidationCodeResponseDto,
 };
-use crate::service::hash_service::HashService;
-use lightspeed_core::error::LightSpeedError;
-use lightspeed_core::service::jwt::{JwtService, JWT};
+use crate::service::hash_service::LsHashService;
+use lightspeed_core::error::LsError;
+use lightspeed_core::service::jwt::{LsJwtService, JWT};
 use lightspeed_core::utils::current_epoch_seconds;
 use log::*;
 use serde::Serialize;
 use std::sync::Arc;
 
 #[derive(Clone)]
-pub struct ValidationCodeService {
-    jwt_service: Arc<JwtService>,
-    hash_service: Arc<HashService>,
+pub struct LsValidationCodeService {
+    jwt_service: Arc<LsJwtService>,
+    hash_service: Arc<LsHashService>,
 }
 
 #[derive(Clone, Serialize)]
@@ -23,15 +23,15 @@ struct ValidationCodeData<'a, Data: Serialize> {
     expiration_ts_seconds: i64,
 }
 
-impl ValidationCodeService {
-    pub fn new(hash_service: Arc<HashService>, jwt_service: Arc<JwtService>) -> Self {
+impl LsValidationCodeService {
+    pub fn new(hash_service: Arc<LsHashService>, jwt_service: Arc<LsJwtService>) -> Self {
         Self { jwt_service, hash_service }
     }
 
     pub fn generate_validation_code<Data: Serialize>(
         &self,
         request: ValidationCodeRequestDto<Data>,
-    ) -> Result<ValidationCodeDataDto<Data>, LightSpeedError> {
+    ) -> Result<ValidationCodeDataDto<Data>, LsError> {
         info!("Generate validation code");
 
         let created_ts_seconds = current_epoch_seconds();
@@ -55,7 +55,7 @@ impl ValidationCodeService {
     pub fn verify_validation_code<Data: Serialize>(
         &self,
         request: VerifyValidationCodeRequestDto<Data>,
-    ) -> Result<VerifyValidationCodeResponseDto<Data>, LightSpeedError> {
+    ) -> Result<VerifyValidationCodeResponseDto<Data>, LsError> {
         debug!("Verify code {}", request.code);
         let calculated_token_hash = self.hash(ValidationCodeData {
             expiration_ts_seconds: request.data.expiration_ts_seconds,
@@ -69,7 +69,7 @@ impl ValidationCodeService {
         })
     }
 
-    fn hash<Data: Serialize>(&self, data: ValidationCodeData<Data>) -> Result<String, LightSpeedError> {
+    fn hash<Data: Serialize>(&self, data: ValidationCodeData<Data>) -> Result<String, LsError> {
         let jwt =
             JWT { iat: data.created_ts_seconds, exp: data.expiration_ts_seconds, sub: "".to_owned(), payload: data };
         let token = self.jwt_service.generate_from_token(&jwt)?;

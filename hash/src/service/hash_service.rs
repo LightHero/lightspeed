@@ -2,9 +2,9 @@ use base64::{engine::general_purpose, Engine as _};
 use sha2::Digest;
 
 #[derive(Clone, Default)]
-pub struct HashService {}
+pub struct LsHashService {}
 
-impl HashService {
+impl LsHashService {
     pub fn new() -> Self {
         Self::default()
     }
@@ -30,7 +30,7 @@ mod test {
     #[test]
     fn should_hash_a_string() {
         let template = format!("Hello {}!!", new_hyphenated_uuid());
-        let hash_service = HashService::new();
+        let hash_service = LsHashService::new();
 
         let first_hash = hash_service.hash(&template);
         let second_hash = hash_service.hash(&template);

@@ -1,6 +1,6 @@
-use crate::error::LightSpeedError;
-use crate::service::auth::{Auth, AuthContext, AuthService, RolesProvider};
-use crate::service::jwt::JwtService;
+use crate::error::LsError;
+use crate::service::auth::{Auth, AuthContext, LsAuthService, RolesProvider};
+use crate::service::jwt::LsJwtService;
 use http::{HeaderMap, HeaderValue, Request};
 use log::*;
 use std::sync::Arc;
@@ -34,43 +34,43 @@ impl<T> Headers for Request<T> {
 
 #[derive(Clone)]
 pub struct WebAuthService<T: RolesProvider> {
-    auth_service: Arc<AuthService<T>>,
-    jwt_service: Arc<JwtService>,
+    auth_service: Arc<LsAuthService<T>>,
+    jwt_service: Arc<LsJwtService>,
 }
 
 impl<T: RolesProvider> WebAuthService<T> {
-    pub fn new(auth_service: Arc<AuthService<T>>, jwt_service: Arc<JwtService>) -> Self {
+    pub fn new(auth_service: Arc<LsAuthService<T>>, jwt_service: Arc<LsJwtService>) -> Self {
         Self { auth_service, jwt_service }
     }
 
-    pub fn token_string_from_request<'a, H: Headers>(&self, req: &'a H) -> Result<&'a str, LightSpeedError> {
+    pub fn token_string_from_request<'a, H: Headers>(&self, req: &'a H) -> Result<&'a str, LsError> {
         if let Some(header) = req.get(JWT_TOKEN_HEADER) {
             return header
                 .to_str()
-                .map_err(|err| LightSpeedError::ParseAuthHeaderError { message: format!("{:?}", err) })
+                .map_err(|err| LsError::ParseAuthHeaderError { message: format!("{:?}", err) })
                 .and_then(|header| {
                     trace!("Token found in request: [{}]", header);
                     if header.len() > JWT_TOKEN_HEADER_SUFFIX_LEN {
                         Ok(&header[JWT_TOKEN_HEADER_SUFFIX_LEN..])
                     } else {
-                        Err(LightSpeedError::ParseAuthHeaderError {
+                        Err(LsError::ParseAuthHeaderError {
                             message: format!("Unexpected auth header: {}", header),
                         })
                     }
                 });
         };
-        Err(LightSpeedError::MissingAuthTokenError)
+        Err(LsError::MissingAuthTokenError)
     }
 
-    pub fn token_from_auth(&self, auth: &Auth) -> Result<String, LightSpeedError> {
+    pub fn token_from_auth(&self, auth: &Auth) -> Result<String, LsError> {
         Ok(self.jwt_service.generate_from_payload(auth)?.1)
     }
 
-    pub fn auth_from_request<H: Headers>(&self, req: &H) -> Result<AuthContext, LightSpeedError> {
+    pub fn auth_from_request<H: Headers>(&self, req: &H) -> Result<AuthContext, LsError> {
         self.token_string_from_request(req).and_then(|token| self.auth_from_token_string(token))
     }
 
-    pub fn auth_from_token_string(&self, token: &str) -> Result<AuthContext, LightSpeedError> {
+    pub fn auth_from_token_string(&self, token: &str) -> Result<AuthContext, LsError> {
         let auth = self.jwt_service.parse_payload::<Auth>(token);
         trace!("Auth built from request: [{:?}]", auth);
         Ok(self.auth_service.auth(auth?))

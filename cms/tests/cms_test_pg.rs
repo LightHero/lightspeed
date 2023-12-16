@@ -6,8 +6,8 @@ use maybe_single::nio::*;
 
 use lightspeed_cms::config::CmsConfig;
 use lightspeed_cms::repository::pg::PgCmsRepositoryManager;
-use lightspeed_cms::CmsModule;
-use lightspeed_core::module::Module;
+use lightspeed_cms::LsCmsModule;
+use lightspeed_core::module::LsModule;
 use once_cell::sync::OnceCell;
 use testcontainers::postgres::Postgres;
 use testcontainers::testcontainers::clients::Cli;
@@ -18,7 +18,7 @@ mod tests;
 
 pub type RepoManager = PgCmsRepositoryManager;
 
-pub type MaybeType = (CmsModule<RepoManager>, Container<'static, Postgres>);
+pub type MaybeType = (LsCmsModule<RepoManager>, Container<'static, Postgres>);
 
 async fn init() -> MaybeType {
     static DOCKER: OnceCell<Cli> = OnceCell::new();
@@ -46,7 +46,7 @@ async fn init() -> MaybeType {
 
     let cms_config = CmsConfig::default();
 
-    let mut cms_module = CmsModule::new(repo_manager, cms_config);
+    let mut cms_module = LsCmsModule::new(repo_manager, cms_config);
     cms_module.start().await.unwrap();
 
     (cms_module, node)

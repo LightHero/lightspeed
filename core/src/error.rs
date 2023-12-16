@@ -19,7 +19,7 @@ impl ErrorCodes {
 }
 
 #[derive(Debug)]
-pub enum LightSpeedError {
+pub enum LsError {
     InvalidTokenError {
         message: String,
     },
@@ -83,85 +83,85 @@ pub enum LightSpeedError {
     },
 }
 
-impl Display for LightSpeedError {
+impl Display for LsError {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         match self {
-            LightSpeedError::InvalidTokenError { message } => write!(f, "InvalidTokenError: [{message}]"),
-            LightSpeedError::ExpiredTokenError { message } => write!(f, "ExpiredTokenError: [{message}]"),
-            LightSpeedError::GenerateTokenError { message } => write!(f, "GenerateTokenError: [{message}]"),
-            LightSpeedError::MissingAuthTokenError => write!(f, "MissingAuthTokenError"),
-            LightSpeedError::ParseAuthHeaderError { message } => write!(f, "ParseAuthHeaderError: [{message}]"),
+            LsError::InvalidTokenError { message } => write!(f, "InvalidTokenError: [{message}]"),
+            LsError::ExpiredTokenError { message } => write!(f, "ExpiredTokenError: [{message}]"),
+            LsError::GenerateTokenError { message } => write!(f, "GenerateTokenError: [{message}]"),
+            LsError::MissingAuthTokenError => write!(f, "MissingAuthTokenError"),
+            LsError::ParseAuthHeaderError { message } => write!(f, "ParseAuthHeaderError: [{message}]"),
 
             // Module
-            LightSpeedError::ModuleBuilderError { message } => write!(f, "ModuleBuilderError: [{message}]"),
-            LightSpeedError::ModuleStartError { message } => write!(f, "ModuleStartError: [{message}]"),
-            LightSpeedError::ConfigurationError { message } => write!(f, "ConfigurationError: [{message}]"),
+            LsError::ModuleBuilderError { message } => write!(f, "ModuleBuilderError: [{message}]"),
+            LsError::ModuleStartError { message } => write!(f, "ModuleStartError: [{message}]"),
+            LsError::ConfigurationError { message } => write!(f, "ConfigurationError: [{message}]"),
 
             // Auth
-            LightSpeedError::UnauthenticatedError => write!(f, "UnauthenticatedError"),
-            LightSpeedError::ForbiddenError { message } => write!(f, "ForbiddenError: [{message}]"),
-            LightSpeedError::PasswordEncryptionError { message } => write!(f, "PasswordEncryptionError: [{message}]"),
+            LsError::UnauthenticatedError => write!(f, "UnauthenticatedError"),
+            LsError::ForbiddenError { message } => write!(f, "ForbiddenError: [{message}]"),
+            LsError::PasswordEncryptionError { message } => write!(f, "PasswordEncryptionError: [{message}]"),
 
-            LightSpeedError::InternalServerError { message } => write!(f, "InternalServerError: [{message}]"),
+            LsError::InternalServerError { message } => write!(f, "InternalServerError: [{message}]"),
 
             #[cfg(feature = "c3p0")]
-            LightSpeedError::C3p0Error { .. } => write!(f, "C3p0Error"),
+            LsError::C3p0Error { .. } => write!(f, "C3p0Error"),
 
-            LightSpeedError::ValidationError { details } => write!(f, "ValidationError: [{details:?}]"),
+            LsError::ValidationError { details } => write!(f, "ValidationError: [{details:?}]"),
 
-            LightSpeedError::BadRequest { message, code } => {
+            LsError::BadRequest { message, code } => {
                 write!(f, "BadRequest. Code [{code}]. Message [{message}]")
             }
 
-            LightSpeedError::RequestConflict { message, code } => {
+            LsError::RequestConflict { message, code } => {
                 write!(f, "RequestConflict. Code [{code}]. Message [{message}]")
             }
 
-            LightSpeedError::ServiceUnavailable { message, code } => {
+            LsError::ServiceUnavailable { message, code } => {
                 write!(f, "ServiceUnavailable. Code [{code}]. Message [{message}]")
             }
         }
     }
 }
 
-impl Error for LightSpeedError {
+impl Error for LsError {
     fn source(&self) -> Option<&(dyn Error + 'static)> {
         match self {
-            LightSpeedError::InvalidTokenError { .. } |
-            LightSpeedError::ExpiredTokenError{ .. } |
-            LightSpeedError::GenerateTokenError { .. } |
-            LightSpeedError::MissingAuthTokenError { .. } |
-            LightSpeedError::ParseAuthHeaderError { .. } |
+            LsError::InvalidTokenError { .. } |
+            LsError::ExpiredTokenError{ .. } |
+            LsError::GenerateTokenError { .. } |
+            LsError::MissingAuthTokenError { .. } |
+            LsError::ParseAuthHeaderError { .. } |
 
-            LightSpeedError::ModuleBuilderError { .. } |
-            LightSpeedError::ModuleStartError { .. } |
-            LightSpeedError::ConfigurationError { .. } |
+            LsError::ModuleBuilderError { .. } |
+            LsError::ModuleStartError { .. } |
+            LsError::ConfigurationError { .. } |
 
             // Auth
-            LightSpeedError::UnauthenticatedError { .. } |
-            LightSpeedError::ForbiddenError { .. } |
-            LightSpeedError::PasswordEncryptionError { .. } |
+            LsError::UnauthenticatedError { .. } |
+            LsError::ForbiddenError { .. } |
+            LsError::PasswordEncryptionError { .. } |
 
-            LightSpeedError::InternalServerError { .. } |
+            LsError::InternalServerError { .. } |
 
 
-            LightSpeedError::ValidationError { .. } |
+            LsError::ValidationError { .. } |
 
-            LightSpeedError::BadRequest { .. } |
+            LsError::BadRequest { .. } |
 
-            LightSpeedError::RequestConflict { .. } |
-            LightSpeedError::ServiceUnavailable { .. } => None,
+            LsError::RequestConflict { .. } |
+            LsError::ServiceUnavailable { .. } => None,
 
             #[cfg(feature = "c3p0")]
-            LightSpeedError::C3p0Error { source } => Some(source),
+            LsError::C3p0Error { source } => Some(source),
         }
     }
 }
 
 #[cfg(feature = "c3p0")]
-impl From<c3p0_common::error::C3p0Error> for LightSpeedError {
+impl From<c3p0_common::error::C3p0Error> for LsError {
     fn from(err: c3p0_common::error::C3p0Error) -> Self {
-        LightSpeedError::C3p0Error { source: err }
+        LsError::C3p0Error { source: err }
     }
 }
 
@@ -302,9 +302,9 @@ impl<'a> ScopedErrorDetails<'a> {
     }
 }
 
-impl From<serde_json::Error> for LightSpeedError {
+impl From<serde_json::Error> for LsError {
     fn from(err: serde_json::Error) -> Self {
-        LightSpeedError::BadRequest { message: format!("{err:?}"), code: ErrorCodes::JSON_PARSE_ERROR }
+        LsError::BadRequest { message: format!("{err:?}"), code: ErrorCodes::JSON_PARSE_ERROR }
     }
 }
 

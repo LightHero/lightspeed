@@ -5,8 +5,8 @@ use maybe_single::nio::*;
 
 use lightspeed_auth::config::AuthConfig;
 use lightspeed_auth::repository::pg::PgAuthRepositoryManager;
-use lightspeed_auth::AuthModule;
-use lightspeed_core::module::Module;
+use lightspeed_auth::LsAuthModule;
+use lightspeed_core::module::LsModule;
 use once_cell::sync::OnceCell;
 use testcontainers::postgres::Postgres;
 use testcontainers::testcontainers::clients::Cli;
@@ -17,7 +17,7 @@ mod tests;
 
 pub type RepoManager = PgAuthRepositoryManager;
 
-pub type MaybeType = (AuthModule<RepoManager>, Container<'static, Postgres>);
+pub type MaybeType = (LsAuthModule<RepoManager>, Container<'static, Postgres>);
 
 async fn init() -> MaybeType {
     static DOCKER: OnceCell<Cli> = OnceCell::new();
@@ -45,7 +45,7 @@ async fn init() -> MaybeType {
 
     let auth_config = AuthConfig { bcrypt_password_hash_cost: 4, ..Default::default() };
 
-    let mut auth_module = AuthModule::new(repo_manager, auth_config);
+    let mut auth_module = LsAuthModule::new(repo_manager, auth_config);
     {
         auth_module.start().await.unwrap();
     }

@@ -1,7 +1,7 @@
 use crate::config::FileStoreConfig;
 use crate::repository::db::DBFileStoreRepositoryManager;
-use crate::service::file_store::FileStoreService;
-use lightspeed_core::error::LightSpeedError;
+use crate::service::file_store::LsFileStoreService;
+use lightspeed_core::error::LsError;
 use log::*;
 use std::sync::Arc;
 
@@ -14,33 +14,33 @@ pub mod utils;
 pub mod web;
 
 #[derive(Clone)]
-pub struct FileStoreModule<RepoManager: DBFileStoreRepositoryManager> {
+pub struct LsFileStoreModule<RepoManager: DBFileStoreRepositoryManager> {
     pub config: FileStoreConfig,
 
     pub repo_manager: RepoManager,
-    pub file_store_service: Arc<service::file_store::FileStoreService<RepoManager>>,
+    pub file_store_service: Arc<service::file_store::LsFileStoreService<RepoManager>>,
 }
 
-impl<RepoManager: DBFileStoreRepositoryManager> FileStoreModule<RepoManager> {
-    pub fn new(repo_manager: RepoManager, config: FileStoreConfig) -> Result<Self, LightSpeedError> {
-        println!("Creating FileStoreModule");
-        info!("Creating FileStoreModule");
+impl<RepoManager: DBFileStoreRepositoryManager> LsFileStoreModule<RepoManager> {
+    pub fn new(repo_manager: RepoManager, config: FileStoreConfig) -> Result<Self, LsError> {
+        println!("Creating LsFileStoreModule");
+        info!("Creating LsFileStoreModule");
         /*
                let file_store_repo_manager =
                    FileStoreRepoManager::new(config.clone(), &repo_manager)?;
 
 
         */
-        let file_store_service = Arc::new(FileStoreService::new(&repo_manager, config.fs_repo_base_folders.clone()));
+        let file_store_service = Arc::new(LsFileStoreService::new(&repo_manager, config.fs_repo_base_folders.clone()));
 
-        Ok(FileStoreModule { config, repo_manager, file_store_service })
+        Ok(LsFileStoreModule { config, repo_manager, file_store_service })
     }
 }
 
 #[async_trait::async_trait]
-impl<RepoManager: DBFileStoreRepositoryManager> lightspeed_core::module::Module for FileStoreModule<RepoManager> {
-    async fn start(&mut self) -> Result<(), LightSpeedError> {
-        info!("Starting FileStoreModule");
+impl<RepoManager: DBFileStoreRepositoryManager> lightspeed_core::module::LsModule for LsFileStoreModule<RepoManager> {
+    async fn start(&mut self) -> Result<(), LsError> {
+        info!("Starting LsFileStoreModule");
         self.repo_manager.start().await?;
         Ok(())
     }

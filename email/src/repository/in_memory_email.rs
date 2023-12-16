@@ -1,6 +1,6 @@
 use crate::model::email::EmailMessage;
 use crate::repository::email::EmailClient;
-use lightspeed_core::error::LightSpeedError;
+use lightspeed_core::error::LsError;
 use log::warn;
 use parking_lot::Mutex;
 use std::sync::Arc;
@@ -21,7 +21,7 @@ impl InMemoryEmailClient {
 
 #[async_trait::async_trait]
 impl EmailClient for InMemoryEmailClient {
-    async fn send(&self, email_message: EmailMessage) -> Result<(), LightSpeedError> {
+    async fn send(&self, email_message: EmailMessage) -> Result<(), LsError> {
         warn!("InMemoryEmailService - Received an email. The email is NOT going to be sent but kept in memory");
 
         let mut lock = self.emails.lock();
@@ -30,18 +30,18 @@ impl EmailClient for InMemoryEmailClient {
         Ok(())
     }
 
-    fn get_emails(&self) -> Result<Vec<EmailMessage>, LightSpeedError> {
+    fn get_emails(&self) -> Result<Vec<EmailMessage>, LsError> {
         let lock = self.emails.lock();
         Ok(lock.clone())
     }
 
-    fn clear_emails(&self) -> Result<(), LightSpeedError> {
+    fn clear_emails(&self) -> Result<(), LsError> {
         let mut lock = self.emails.lock();
         lock.clear();
         Ok(())
     }
 
-    fn retain_emails(&self, mut retain: Box<dyn FnMut(&EmailMessage) -> bool>) -> Result<(), LightSpeedError> {
+    fn retain_emails(&self, mut retain: Box<dyn FnMut(&EmailMessage) -> bool>) -> Result<(), LsError> {
         let mut lock = self.emails.lock();
         lock.retain(|email| retain(email));
         Ok(())

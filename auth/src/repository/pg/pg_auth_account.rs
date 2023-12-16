@@ -2,7 +2,7 @@ use crate::model::auth_account::{AuthAccountData, AuthAccountDataCodec, AuthAcco
 use crate::repository::AuthAccountRepository;
 use c3p0::postgres::*;
 use c3p0::*;
-use lightspeed_core::error::{ErrorCodes, LightSpeedError};
+use lightspeed_core::error::{ErrorCodes, LsError};
 use std::ops::Deref;
 
 #[derive(Clone)]
@@ -28,7 +28,7 @@ impl AuthAccountRepository for PgAuthAccountRepository {
         status: AuthAccountStatus,
         start_user_id: i64,
         limit: u32,
-    ) -> Result<Vec<AuthAccountModel>, LightSpeedError> {
+    ) -> Result<Vec<AuthAccountModel>, LsError> {
         let sql = format!(
             r#"
             {}
@@ -45,7 +45,7 @@ impl AuthAccountRepository for PgAuthAccountRepository {
         &self,
         conn: &mut Self::Conn,
         user_id: i64,
-    ) -> Result<Model<AuthAccountData>, LightSpeedError> {
+    ) -> Result<Model<AuthAccountData>, LsError> {
         Ok(self.repo.fetch_one_by_id(conn, &user_id).await?)
     }
 
@@ -53,8 +53,8 @@ impl AuthAccountRepository for PgAuthAccountRepository {
         &self,
         conn: &mut PgConnection,
         username: &str,
-    ) -> Result<AuthAccountModel, LightSpeedError> {
-        self.fetch_by_username_optional(conn, username).await?.ok_or_else(|| LightSpeedError::BadRequest {
+    ) -> Result<AuthAccountModel, LsError> {
+        self.fetch_by_username_optional(conn, username).await?.ok_or_else(|| LsError::BadRequest {
             message: format!("No user found with username [{username}]"),
             code: ErrorCodes::NOT_FOUND,
         })
@@ -64,7 +64,7 @@ impl AuthAccountRepository for PgAuthAccountRepository {
         &self,
         conn: &mut Self::Conn,
         username: &str,
-    ) -> Result<Option<Model<AuthAccountData>>, LightSpeedError> {
+    ) -> Result<Option<Model<AuthAccountData>>, LsError> {
         let sql = format!(
             r#"
             {}
@@ -80,7 +80,7 @@ impl AuthAccountRepository for PgAuthAccountRepository {
         &self,
         conn: &mut PgConnection,
         email: &str,
-    ) -> Result<Option<AuthAccountModel>, LightSpeedError> {
+    ) -> Result<Option<AuthAccountModel>, LsError> {
         let sql = format!(
             r#"
             {}
@@ -96,7 +96,7 @@ impl AuthAccountRepository for PgAuthAccountRepository {
         &self,
         conn: &mut Self::Conn,
         model: NewModel<AuthAccountData>,
-    ) -> Result<Model<AuthAccountData>, LightSpeedError> {
+    ) -> Result<Model<AuthAccountData>, LsError> {
         Ok(self.repo.save(conn, model).await?)
     }
 
@@ -104,7 +104,7 @@ impl AuthAccountRepository for PgAuthAccountRepository {
         &self,
         conn: &mut Self::Conn,
         model: Model<AuthAccountData>,
-    ) -> Result<Model<AuthAccountData>, LightSpeedError> {
+    ) -> Result<Model<AuthAccountData>, LsError> {
         Ok(self.repo.update(conn, model).await?)
     }
 
@@ -112,11 +112,11 @@ impl AuthAccountRepository for PgAuthAccountRepository {
         &self,
         conn: &mut Self::Conn,
         model: Model<AuthAccountData>,
-    ) -> Result<Model<AuthAccountData>, LightSpeedError> {
+    ) -> Result<Model<AuthAccountData>, LsError> {
         Ok(self.repo.delete(conn, model).await?)
     }
 
-    async fn delete_by_id(&self, conn: &mut Self::Conn, user_id: i64) -> Result<u64, LightSpeedError> {
+    async fn delete_by_id(&self, conn: &mut Self::Conn, user_id: i64) -> Result<u64, LsError> {
         Ok(self.repo.delete_by_id(conn, &user_id).await?)
     }
 }

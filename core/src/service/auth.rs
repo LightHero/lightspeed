@@ -1,4 +1,4 @@
-use crate::error::LightSpeedError;
+use crate::error::LsError;
 use crate::utils::current_epoch_seconds;
 use serde::{Deserialize, Serialize};
 use std::borrow::Cow;
@@ -66,15 +66,15 @@ impl<T: Owned + Clone + serde::ser::Serialize + Send> Owned for c3p0_common::Mod
 }
 
 #[derive(Clone)]
-pub struct AuthService<T: RolesProvider> {
+pub struct LsAuthService<T: RolesProvider> {
     roles_provider: T,
     permission_roles_map: BTreeMap<String, Vec<String>>,
 }
 
-impl<T: RolesProvider> AuthService<T> {
-    pub fn new(roles_provider: T) -> AuthService<T> {
-        AuthService {
-            permission_roles_map: AuthService::<T>::roles_map_to_permissions_map(roles_provider.fetch_all().as_ref()),
+impl<T: RolesProvider> LsAuthService<T> {
+    pub fn new(roles_provider: T) -> LsAuthService<T> {
+        LsAuthService {
+            permission_roles_map: LsAuthService::<T>::roles_map_to_permissions_map(roles_provider.fetch_all().as_ref()),
             roles_provider,
         }
     }
@@ -101,40 +101,40 @@ pub struct AuthContext<'a> {
 }
 
 impl<'a> AuthContext<'a> {
-    pub fn is_authenticated(&self) -> Result<&AuthContext, LightSpeedError> {
+    pub fn is_authenticated(&self) -> Result<&AuthContext, LsError> {
         if self.auth.username.is_empty() || self.auth.expiration_ts_seconds < current_epoch_seconds() {
-            return Err(LightSpeedError::UnauthenticatedError {});
+            return Err(LsError::UnauthenticatedError {});
         };
         Ok(self)
     }
 
-    pub fn has_role(&self, role: &str) -> Result<&AuthContext, LightSpeedError> {
+    pub fn has_role(&self, role: &str) -> Result<&AuthContext, LsError> {
         self.is_authenticated()?;
         if !self.has_role_bool(role) {
-            return Err(LightSpeedError::ForbiddenError {
+            return Err(LsError::ForbiddenError {
                 message: format!("User [{}] does not have the required role [{}]", self.auth.id, role),
             });
         };
         Ok(self)
     }
 
-    pub fn has_any_role(&self, roles: &[&str]) -> Result<&AuthContext, LightSpeedError> {
+    pub fn has_any_role(&self, roles: &[&str]) -> Result<&AuthContext, LsError> {
         self.is_authenticated()?;
         for role in roles {
             if self.has_role_bool(role) {
                 return Ok(self);
             };
         }
-        Err(LightSpeedError::ForbiddenError {
+        Err(LsError::ForbiddenError {
             message: format!("User [{}] does not have the required role", self.auth.id),
         })
     }
 
-    pub fn has_all_roles(&self, roles: &[&str]) -> Result<&AuthContext, LightSpeedError> {
+    pub fn has_all_roles(&self, roles: &[&str]) -> Result<&AuthContext, LsError> {
         self.is_authenticated()?;
         for role in roles {
             if !self.has_role_bool(role) {
-                return Err(LightSpeedError::ForbiddenError {
+                return Err(LsError::ForbiddenError {
                     message: format!("User [{}] does not have the required role [{}]", self.auth.id, role),
                 });
             };
@@ -142,18 +142,18 @@ impl<'a> AuthContext<'a> {
         Ok(self)
     }
 
-    pub fn has_permission(&self, permission: &str) -> Result<&AuthContext, LightSpeedError> {
+    pub fn has_permission(&self, permission: &str) -> Result<&AuthContext, LsError> {
         self.is_authenticated()?;
 
         if !self.has_permission_bool(permission) {
-            return Err(LightSpeedError::ForbiddenError {
+            return Err(LsError::ForbiddenError {
                 message: format!("User [{}] does not have the required permission [{}]", self.auth.id, permission),
             });
         };
         Ok(self)
     }
 
-    pub fn has_any_permission(&self, permissions: &[&str]) -> Result<&AuthContext, LightSpeedError> {
+    pub fn has_any_permission(&self, permissions: &[&str]) -> Result<&AuthContext, LsError> {
         self.is_authenticated()?;
 
         for permission in permissions {
@@ -161,16 +161,16 @@ impl<'a> AuthContext<'a> {
                 return Ok(self);
             };
         }
-        Err(LightSpeedError::ForbiddenError {
+        Err(LsError::ForbiddenError {
             message: format!("User [{}] does not have the required permission", self.auth.id),
         })
     }
 
-    pub fn has_all_permissions(&self, permissions: &[&str]) -> Result<&AuthContext, LightSpeedError> {
+    pub fn has_all_permissions(&self, permissions: &[&str]) -> Result<&AuthContext, LsError> {
         self.is_authenticated()?;
         for permission in permissions {
             if !self.has_permission_bool(permission) {
-                return Err(LightSpeedError::ForbiddenError {
+                return Err(LsError::ForbiddenError {
                     message: format!("User [{}] does not have the required permission [{}]", self.auth.id, permission),
                 });
             };
@@ -178,11 +178,11 @@ impl<'a> AuthContext<'a> {
         Ok(self)
     }
 
-    pub fn is_owner<T: Owned>(&self, obj: &T) -> Result<&AuthContext, LightSpeedError> {
+    pub fn is_owner<T: Owned>(&self, obj: &T) -> Result<&AuthContext, LsError> {
         if self.auth.id == obj.get_owner_id() {
             Ok(self)
         } else {
-            Err(LightSpeedError::ForbiddenError {
+            Err(LsError::ForbiddenError {
                 message: format!(
                     "User [{}] is not the owner. User id [{}], owner id: [{}]",
                     self.auth.id,
@@ -193,11 +193,11 @@ impl<'a> AuthContext<'a> {
         }
     }
 
-    pub fn is_owner_or_has_role<T: Owned>(&self, obj: &T, role: &str) -> Result<&AuthContext, LightSpeedError> {
+    pub fn is_owner_or_has_role<T: Owned>(&self, obj: &T, role: &str) -> Result<&AuthContext, LsError> {
         if (self.auth.id == obj.get_owner_id()) || self.has_role_bool(role) {
             Ok(self)
         } else {
-            Err(LightSpeedError::ForbiddenError {
+            Err(LsError::ForbiddenError {
                 message: format!(
                     "User [{}] is not the owner and does not have role [{}]. User id [{}], owner id: [{}]",
                     self.auth.id,
@@ -213,11 +213,11 @@ impl<'a> AuthContext<'a> {
         &self,
         obj: &T,
         permission: &str,
-    ) -> Result<&AuthContext, LightSpeedError> {
+    ) -> Result<&AuthContext, LsError> {
         if (self.auth.id == obj.get_owner_id()) || self.has_permission_bool(permission) {
             Ok(self)
         } else {
-            Err(LightSpeedError::ForbiddenError {
+            Err(LsError::ForbiddenError {
                 message: format!(
                     "User [{}] is not the owner and does not have permission [{}]. User id [{}], owner id: [{}]",
                     self.auth.id,
@@ -282,7 +282,7 @@ mod test {
     #[test]
     fn service_should_be_send_and_sync() {
         let provider = super::InMemoryRolesProvider::new(vec![].into());
-        let auth_service = super::AuthService::new(provider);
+        let auth_service = super::LsAuthService::new(provider);
 
         call_me_with_send_and_sync(auth_service);
     }
@@ -299,7 +299,7 @@ mod test {
     #[test]
     fn should_be_authenticated() {
         let provider = super::InMemoryRolesProvider::new(vec![].into());
-        let auth_service = super::AuthService::new(provider);
+        let auth_service = super::LsAuthService::new(provider);
         let user = Auth {
             id: 0,
             username: "name".to_string(),
@@ -315,7 +315,7 @@ mod test {
     #[test]
     fn should_be_not_authenticated_if_no_username() {
         let provider = super::InMemoryRolesProvider::new(vec![].into());
-        let auth_service = super::AuthService::new(provider);
+        let auth_service = super::LsAuthService::new(provider);
         let user = Auth {
             id: 0,
             username: "".to_string(),
@@ -327,7 +327,7 @@ mod test {
         let auth_context = auth_service.auth(user);
 
         match auth_context.is_authenticated() {
-            Err(LightSpeedError::UnauthenticatedError) => {}
+            Err(LsError::UnauthenticatedError) => {}
             _ => panic!("Should return UnauthenticatedError if no username"),
         }
     }
@@ -335,7 +335,7 @@ mod test {
     #[test]
     fn should_be_not_authenticated_if_expired() {
         let provider = super::InMemoryRolesProvider::new(vec![].into());
-        let auth_service = super::AuthService::new(provider);
+        let auth_service = super::LsAuthService::new(provider);
         let user = Auth {
             id: 10,
             username: "name".to_string(),
@@ -347,7 +347,7 @@ mod test {
         let auth_context = auth_service.auth(user);
 
         match auth_context.is_authenticated() {
-            Err(LightSpeedError::UnauthenticatedError) => {}
+            Err(LsError::UnauthenticatedError) => {}
             _ => panic!("Should return UnauthenticatedError if expired"),
         }
     }
@@ -355,7 +355,7 @@ mod test {
     #[test]
     fn should_be_not_authenticated_even_if_has_role() {
         let provider = super::InMemoryRolesProvider::new(vec![].into());
-        let auth_service = super::AuthService::new(provider);
+        let auth_service = super::LsAuthService::new(provider);
         let user = Auth {
             id: 0,
             username: "".to_string(),
@@ -371,7 +371,7 @@ mod test {
     #[test]
     fn should_have_role() {
         let provider = super::InMemoryRolesProvider::new(vec![].into());
-        let auth_service = super::AuthService::new(provider);
+        let auth_service = super::LsAuthService::new(provider);
         let user = Auth {
             id: 0,
             username: "name".to_string(),
@@ -387,7 +387,7 @@ mod test {
     #[test]
     fn should_have_role_2() {
         let provider = super::InMemoryRolesProvider::new(vec![].into());
-        let auth_service = super::AuthService::new(provider);
+        let auth_service = super::LsAuthService::new(provider);
         let user = Auth {
             id: 0,
             username: "name".to_string(),
@@ -403,7 +403,7 @@ mod test {
     #[test]
     fn should_have_role_chained() {
         let provider = super::InMemoryRolesProvider::new(vec![].into());
-        let auth_service = super::AuthService::new(provider);
+        let auth_service = super::LsAuthService::new(provider);
         let user = Auth {
             id: 0,
             username: "name".to_string(),
@@ -419,7 +419,7 @@ mod test {
     #[test]
     fn should_not_have_role() {
         let provider = super::InMemoryRolesProvider::new(vec![].into());
-        let auth_service = super::AuthService::new(provider);
+        let auth_service = super::LsAuthService::new(provider);
         let user = Auth {
             id: 0,
             username: "name".to_string(),
@@ -435,7 +435,7 @@ mod test {
     #[test]
     fn should_have_any_role() {
         let provider = super::InMemoryRolesProvider::new(vec![].into());
-        let auth_service = super::AuthService::new(provider);
+        let auth_service = super::LsAuthService::new(provider);
         let user = Auth {
             id: 0,
             username: "name".to_string(),
@@ -451,7 +451,7 @@ mod test {
     #[test]
     fn should_not_have_any_role() {
         let provider = super::InMemoryRolesProvider::new(vec![].into());
-        let auth_service = super::AuthService::new(provider);
+        let auth_service = super::LsAuthService::new(provider);
         let user = Auth {
             id: 0,
             username: "name".to_string(),
@@ -467,7 +467,7 @@ mod test {
     #[test]
     fn should_have_all_roles() {
         let provider = super::InMemoryRolesProvider::new(vec![].into());
-        let auth_service = super::AuthService::new(provider);
+        let auth_service = super::LsAuthService::new(provider);
         let user = Auth {
             id: 0,
             username: "name".to_string(),
@@ -483,7 +483,7 @@ mod test {
     #[test]
     fn should_not_have_all_roles() {
         let provider = super::InMemoryRolesProvider::new(vec![].into());
-        let auth_service = super::AuthService::new(provider);
+        let auth_service = super::LsAuthService::new(provider);
         let user = Auth {
             id: 0,
             username: "name".to_string(),
@@ -500,7 +500,7 @@ mod test {
     fn should_be_not_authenticated_even_if_has_permission() {
         let roles = vec![Role { name: "ADMIN".to_string(), permissions: vec!["delete".to_string()] }];
         let provider = super::InMemoryRolesProvider::new(roles.into());
-        let auth_service = super::AuthService::new(provider);
+        let auth_service = super::LsAuthService::new(provider);
         let user = Auth {
             id: 0,
             username: "".to_string(),
@@ -520,7 +520,7 @@ mod test {
             Role { name: "OWNER".to_string(), permissions: vec!["create".to_string()] },
         ];
         let provider = super::InMemoryRolesProvider::new(roles.into());
-        let auth_service = super::AuthService::new(provider);
+        let auth_service = super::LsAuthService::new(provider);
         let user = Auth {
             id: 0,
             username: "name".to_string(),
@@ -540,7 +540,7 @@ mod test {
             Role { name: "OWNER".to_string(), permissions: vec!["delete".to_string()] },
         ];
         let provider = super::InMemoryRolesProvider::new(roles.into());
-        let auth_service = super::AuthService::new(provider);
+        let auth_service = super::LsAuthService::new(provider);
         let user = Auth {
             id: 0,
             username: "name".to_string(),
@@ -560,7 +560,7 @@ mod test {
             Role { name: "OWNER".to_string(), permissions: vec!["delete".to_string()] },
         ];
         let provider = super::InMemoryRolesProvider::new(roles.into());
-        let auth_service = super::AuthService::new(provider);
+        let auth_service = super::LsAuthService::new(provider);
         let user = Auth {
             id: 0,
             username: "name".to_string(),
@@ -580,7 +580,7 @@ mod test {
             Role { name: "OWNER".to_string(), permissions: vec!["delete".to_string()] },
         ];
         let provider = super::InMemoryRolesProvider::new(roles.into());
-        let auth_service = super::AuthService::new(provider);
+        let auth_service = super::LsAuthService::new(provider);
         let user = Auth {
             id: 0,
             username: "name".to_string(),
@@ -600,7 +600,7 @@ mod test {
             Role { name: "OWNER".to_string(), permissions: vec!["delete".to_string()] },
         ];
         let provider = super::InMemoryRolesProvider::new(roles.into());
-        let auth_service = super::AuthService::new(provider);
+        let auth_service = super::LsAuthService::new(provider);
         let user = Auth {
             id: 0,
             username: "name".to_string(),
@@ -621,7 +621,7 @@ mod test {
             Role { name: "USER".to_string(), permissions: vec!["delete".to_string()] },
         ];
         let provider = super::InMemoryRolesProvider::new(roles.into());
-        let auth_service = super::AuthService::new(provider);
+        let auth_service = super::LsAuthService::new(provider);
         let user = Auth {
             id: 0,
             username: "name".to_string(),
@@ -641,7 +641,7 @@ mod test {
             Role { name: "OWNER".to_string(), permissions: vec!["delete".to_string()] },
         ];
         let provider = super::InMemoryRolesProvider::new(roles.into());
-        let auth_service = super::AuthService::new(provider);
+        let auth_service = super::LsAuthService::new(provider);
         let user = Auth {
             id: 0,
             username: "name".to_string(),
@@ -658,7 +658,7 @@ mod test {
     fn should_be_the_owner() {
         let roles = vec![];
         let provider = super::InMemoryRolesProvider::new(roles.into());
-        let auth_service = super::AuthService::new(provider);
+        let auth_service = super::LsAuthService::new(provider);
         let user = Auth {
             id: 0,
             username: "name".to_string(),
@@ -675,7 +675,7 @@ mod test {
     fn should_not_be_the_owner() {
         let roles = vec![];
         let provider = super::InMemoryRolesProvider::new(roles.into());
-        let auth_service = super::AuthService::new(provider);
+        let auth_service = super::LsAuthService::new(provider);
         let user = Auth {
             id: 0,
             username: "name".to_string(),
@@ -692,7 +692,7 @@ mod test {
     fn should_be_allowed_if_not_the_owner_but_has_role() {
         let roles = vec![Role { name: "ROLE_1".to_string(), permissions: vec!["access_1".to_string()] }];
         let provider = super::InMemoryRolesProvider::new(roles.into());
-        let auth_service = super::AuthService::new(provider);
+        let auth_service = super::LsAuthService::new(provider);
         let user = Auth {
             id: 0,
             username: "name".to_string(),
@@ -709,7 +709,7 @@ mod test {
     fn should_be_allowed_if_the_owner_but_not_has_role() {
         let roles = vec![Role { name: "ROLE_1".to_string(), permissions: vec!["access_1".to_string()] }];
         let provider = super::InMemoryRolesProvider::new(roles.into());
-        let auth_service = super::AuthService::new(provider);
+        let auth_service = super::LsAuthService::new(provider);
         let user = Auth {
             id: 0,
             username: "name".to_string(),
@@ -726,7 +726,7 @@ mod test {
     fn should_not_be_allowed_if_not_the_owner_and_not_has_role() {
         let roles = vec![Role { name: "ROLE_1".to_string(), permissions: vec!["access_1".to_string()] }];
         let provider = super::InMemoryRolesProvider::new(roles.into());
-        let auth_service = super::AuthService::new(provider);
+        let auth_service = super::LsAuthService::new(provider);
         let user = Auth {
             id: 0,
             username: "name".to_string(),
@@ -743,7 +743,7 @@ mod test {
     fn should_be_allowed_if_not_the_owner_but_has_permission() {
         let roles = vec![Role { name: "ROLE_1".to_string(), permissions: vec!["access_1".to_string()] }];
         let provider = super::InMemoryRolesProvider::new(roles.into());
-        let auth_service = super::AuthService::new(provider);
+        let auth_service = super::LsAuthService::new(provider);
         let user = Auth {
             id: 0,
             username: "name".to_string(),
@@ -760,7 +760,7 @@ mod test {
     fn should_be_allowed_if_the_owner_but_not_has_permission() {
         let roles = vec![Role { name: "ROLE_1".to_string(), permissions: vec!["access_1".to_string()] }];
         let provider = super::InMemoryRolesProvider::new(roles.into());
-        let auth_service = super::AuthService::new(provider);
+        let auth_service = super::LsAuthService::new(provider);
         let user = Auth {
             id: 0,
             username: "name".to_string(),
@@ -777,7 +777,7 @@ mod test {
     fn should_not_be_allowed_if_not_the_owner_and_not_has_permission() {
         let roles = vec![Role { name: "ROLE_1".to_string(), permissions: vec!["access_1".to_string()] }];
         let provider = super::InMemoryRolesProvider::new(roles.into());
-        let auth_service = super::AuthService::new(provider);
+        let auth_service = super::LsAuthService::new(provider);
         let user = Auth {
             id: 0,
             username: "name".to_string(),
@@ -791,10 +791,10 @@ mod test {
     }
 
     #[test]
-    fn should_return_true_if_all_matches() -> Result<(), LightSpeedError> {
+    fn should_return_true_if_all_matches() -> Result<(), LsError> {
         let roles = vec![Role { name: "ROLE_1".to_string(), permissions: vec!["access_1".to_string()] }];
         let provider = super::InMemoryRolesProvider::new(roles.into());
-        let auth_service = super::AuthService::new(provider);
+        let auth_service = super::LsAuthService::new(provider);
         let user = Auth {
             id: 0,
             username: "name".to_string(),
@@ -814,10 +814,10 @@ mod test {
     }
 
     #[test]
-    fn should_return_true_if_any_matches() -> Result<(), LightSpeedError> {
+    fn should_return_true_if_any_matches() -> Result<(), LsError> {
         let roles = vec![Role { name: "ROLE_1".to_string(), permissions: vec!["access_1".to_string()] }];
         let provider = super::InMemoryRolesProvider::new(roles.into());
-        let auth_service = super::AuthService::new(provider);
+        let auth_service = super::LsAuthService::new(provider);
         let user = Auth {
             id: 0,
             username: "name".to_string(),

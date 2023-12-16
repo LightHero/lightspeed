@@ -2,7 +2,7 @@ use crate::model::BinaryContent;
 use actix_files::NamedFile;
 use actix_web::http::header::DispositionType;
 use actix_web::{http, HttpRequest, HttpResponse};
-use lightspeed_core::error::LightSpeedError;
+use lightspeed_core::error::LsError;
 use log::*;
 
 pub async fn into_response(
@@ -31,7 +31,7 @@ pub async fn into_response(
             let filename = match path.file_name() {
                 Some(name) => name.to_string_lossy(),
                 None => {
-                    return Err(LightSpeedError::BadRequest {
+                    return Err(LsError::BadRequest {
                         message: "Provided path has no filename".to_owned(),
                         code: "",
                     })?;

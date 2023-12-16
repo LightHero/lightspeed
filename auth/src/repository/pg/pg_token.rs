@@ -2,7 +2,7 @@ use crate::model::token::{TokenData, TokenDataCodec, TokenModel};
 use crate::repository::TokenRepository;
 use c3p0::postgres::*;
 use c3p0::*;
-use lightspeed_core::error::LightSpeedError;
+use lightspeed_core::error::LsError;
 use std::ops::Deref;
 
 #[derive(Clone)]
@@ -28,7 +28,7 @@ impl Default for PgTokenRepository {
 impl TokenRepository for PgTokenRepository {
     type Conn = PgConnection;
 
-    async fn fetch_by_token(&self, conn: &mut PgConnection, token_string: &str) -> Result<TokenModel, LightSpeedError> {
+    async fn fetch_by_token(&self, conn: &mut PgConnection, token_string: &str) -> Result<TokenModel, LsError> {
         let sql = format!(
             r#"
             {}
@@ -44,7 +44,7 @@ impl TokenRepository for PgTokenRepository {
         &self,
         conn: &mut PgConnection,
         username: &str,
-    ) -> Result<Vec<TokenModel>, LightSpeedError> {
+    ) -> Result<Vec<TokenModel>, LsError> {
         let sql = format!(
             r#"
             {}
@@ -59,7 +59,7 @@ impl TokenRepository for PgTokenRepository {
         &self,
         conn: &mut Self::Conn,
         model: NewModel<TokenData>,
-    ) -> Result<Model<TokenData>, LightSpeedError> {
+    ) -> Result<Model<TokenData>, LsError> {
         Ok(self.repo.save(conn, model).await?)
     }
 
@@ -67,7 +67,7 @@ impl TokenRepository for PgTokenRepository {
         &self,
         conn: &mut Self::Conn,
         model: Model<TokenData>,
-    ) -> Result<Model<TokenData>, LightSpeedError> {
+    ) -> Result<Model<TokenData>, LsError> {
         Ok(self.repo.delete(conn, model).await?)
     }
 }

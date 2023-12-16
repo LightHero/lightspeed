@@ -1,4 +1,4 @@
-use crate::error::{LightSpeedError, RootErrorDetails, WebErrorDetails};
+use crate::error::{LsError, RootErrorDetails, WebErrorDetails};
 use crate::web::Headers;
 use http::HeaderValue;
 use log::*;
@@ -11,28 +11,28 @@ impl Headers for Request {
     }
 }
 
-impl ResponseError for LightSpeedError {
+impl ResponseError for LsError {
     fn status(&self) -> StatusCode {
         match self {
-            LightSpeedError::InvalidTokenError { .. }
-            | LightSpeedError::ExpiredTokenError { .. }
-            | LightSpeedError::GenerateTokenError { .. }
-            | LightSpeedError::MissingAuthTokenError { .. }
-            | LightSpeedError::ParseAuthHeaderError { .. }
-            | LightSpeedError::UnauthenticatedError => StatusCode::UNAUTHORIZED,
-            LightSpeedError::ForbiddenError { .. } => StatusCode::FORBIDDEN,
-            LightSpeedError::ValidationError { .. } => StatusCode::UNPROCESSABLE_ENTITY,
-            LightSpeedError::BadRequest { .. } => StatusCode::BAD_REQUEST,
+            LsError::InvalidTokenError { .. }
+            | LsError::ExpiredTokenError { .. }
+            | LsError::GenerateTokenError { .. }
+            | LsError::MissingAuthTokenError { .. }
+            | LsError::ParseAuthHeaderError { .. }
+            | LsError::UnauthenticatedError => StatusCode::UNAUTHORIZED,
+            LsError::ForbiddenError { .. } => StatusCode::FORBIDDEN,
+            LsError::ValidationError { .. } => StatusCode::UNPROCESSABLE_ENTITY,
+            LsError::BadRequest { .. } => StatusCode::BAD_REQUEST,
             #[cfg(feature = "c3p0")]
-            LightSpeedError::C3p0Error { .. } => StatusCode::BAD_REQUEST,
-            LightSpeedError::RequestConflict { .. } | LightSpeedError::ServiceUnavailable { .. } => {
+            LsError::C3p0Error { .. } => StatusCode::BAD_REQUEST,
+            LsError::RequestConflict { .. } | LsError::ServiceUnavailable { .. } => {
                 StatusCode::CONFLICT
             }
-            LightSpeedError::InternalServerError { .. }
-            | LightSpeedError::ModuleBuilderError { .. }
-            | LightSpeedError::ModuleStartError { .. }
-            | LightSpeedError::ConfigurationError { .. }
-            | LightSpeedError::PasswordEncryptionError { .. } => http::StatusCode::INTERNAL_SERVER_ERROR,
+            LsError::InternalServerError { .. }
+            | LsError::ModuleBuilderError { .. }
+            | LsError::ModuleStartError { .. }
+            | LsError::ConfigurationError { .. }
+            | LsError::PasswordEncryptionError { .. } => http::StatusCode::INTERNAL_SERVER_ERROR,
         }
     }
 
@@ -42,25 +42,25 @@ impl ResponseError for LightSpeedError {
     {
         error!("Converting error into poem response. Err: {:?}", self);
         match self {
-            LightSpeedError::InvalidTokenError { .. }
-            | LightSpeedError::ExpiredTokenError { .. }
-            | LightSpeedError::GenerateTokenError { .. }
-            | LightSpeedError::MissingAuthTokenError { .. }
-            | LightSpeedError::ParseAuthHeaderError { .. }
-            | LightSpeedError::UnauthenticatedError => response_with_code(self.status()),
-            LightSpeedError::ForbiddenError { .. } => response_with_code(self.status()),
-            LightSpeedError::ValidationError { details } => response_with_error_details(self.status(), details.clone()),
-            LightSpeedError::BadRequest { code, .. } => response_with_message(self.status(), Some((code).to_string())),
+            LsError::InvalidTokenError { .. }
+            | LsError::ExpiredTokenError { .. }
+            | LsError::GenerateTokenError { .. }
+            | LsError::MissingAuthTokenError { .. }
+            | LsError::ParseAuthHeaderError { .. }
+            | LsError::UnauthenticatedError => response_with_code(self.status()),
+            LsError::ForbiddenError { .. } => response_with_code(self.status()),
+            LsError::ValidationError { details } => response_with_error_details(self.status(), details.clone()),
+            LsError::BadRequest { code, .. } => response_with_message(self.status(), Some((code).to_string())),
             #[cfg(feature = "c3p0")]
-            LightSpeedError::C3p0Error { .. } => response_with_message(self.status(), None),
-            LightSpeedError::RequestConflict { code, .. } | LightSpeedError::ServiceUnavailable { code, .. } => {
+            LsError::C3p0Error { .. } => response_with_message(self.status(), None),
+            LsError::RequestConflict { code, .. } | LsError::ServiceUnavailable { code, .. } => {
                 response_with_message(self.status(), Some((code).to_string()))
             }
-            LightSpeedError::InternalServerError { .. }
-            | LightSpeedError::ModuleBuilderError { .. }
-            | LightSpeedError::ModuleStartError { .. }
-            | LightSpeedError::ConfigurationError { .. }
-            | LightSpeedError::PasswordEncryptionError { .. } => response_with_code(self.status()),
+            LsError::InternalServerError { .. }
+            | LsError::ModuleBuilderError { .. }
+            | LsError::ModuleStartError { .. }
+            | LsError::ConfigurationError { .. }
+            | LsError::PasswordEncryptionError { .. } => response_with_code(self.status()),
         }
     }
 }
@@ -96,7 +96,7 @@ fn response(http_code: StatusCode, details: &WebErrorDetails) -> Response {
 
 #[cfg(feature = "poem_openapi")]
 pub mod openapi {
-    use crate::error::{LightSpeedError, WebErrorDetails};
+    use crate::error::{LsError, WebErrorDetails};
     use log::error;
     use poem::http::StatusCode;
     use poem_openapi::payload::Json;
@@ -118,38 +118,38 @@ pub mod openapi {
         InternalServerError,
     }
 
-    impl From<LightSpeedError> for LightSpeedErrorResponse {
-        fn from(err: LightSpeedError) -> Self {
+    impl From<LsError> for LightSpeedErrorResponse {
+        fn from(err: LsError) -> Self {
             error!("Converting error into poem response. Err: {:?}", err);
             match err {
-                LightSpeedError::InvalidTokenError { .. }
-                | LightSpeedError::ExpiredTokenError { .. }
-                | LightSpeedError::GenerateTokenError { .. }
-                | LightSpeedError::MissingAuthTokenError { .. }
-                | LightSpeedError::ParseAuthHeaderError { .. }
-                | LightSpeedError::UnauthenticatedError => LightSpeedErrorResponse::Unauthorized,
-                LightSpeedError::ForbiddenError { .. } => LightSpeedErrorResponse::Forbidden,
-                LightSpeedError::ValidationError { details } => LightSpeedErrorResponse::UnprocessableEntity(Json(
+                LsError::InvalidTokenError { .. }
+                | LsError::ExpiredTokenError { .. }
+                | LsError::GenerateTokenError { .. }
+                | LsError::MissingAuthTokenError { .. }
+                | LsError::ParseAuthHeaderError { .. }
+                | LsError::UnauthenticatedError => LightSpeedErrorResponse::Unauthorized,
+                LsError::ForbiddenError { .. } => LightSpeedErrorResponse::Forbidden,
+                LsError::ValidationError { details } => LightSpeedErrorResponse::UnprocessableEntity(Json(
                     WebErrorDetails::from_error_details(StatusCode::UNPROCESSABLE_ENTITY.as_u16(), details),
                 )),
-                LightSpeedError::BadRequest { code, .. } => LightSpeedErrorResponse::BadRequest(Json(
+                LsError::BadRequest { code, .. } => LightSpeedErrorResponse::BadRequest(Json(
                     WebErrorDetails::from_message(StatusCode::BAD_REQUEST.as_u16(), Some((code).to_string())),
                 )),
                 #[cfg(feature = "c3p0")]
-                LightSpeedError::C3p0Error { .. } => LightSpeedErrorResponse::BadRequest(Json(
+                LsError::C3p0Error { .. } => LightSpeedErrorResponse::BadRequest(Json(
                     WebErrorDetails::from_message(StatusCode::BAD_REQUEST.as_u16(), None),
                 )),
-                LightSpeedError::RequestConflict { code, .. } | LightSpeedError::ServiceUnavailable { code, .. } => {
+                LsError::RequestConflict { code, .. } | LsError::ServiceUnavailable { code, .. } => {
                     LightSpeedErrorResponse::Conflict(Json(WebErrorDetails::from_message(
                         StatusCode::CONFLICT.as_u16(),
                         Some((code).to_string()),
                     )))
                 }
-                LightSpeedError::InternalServerError { .. }
-                | LightSpeedError::ModuleBuilderError { .. }
-                | LightSpeedError::ModuleStartError { .. }
-                | LightSpeedError::ConfigurationError { .. }
-                | LightSpeedError::PasswordEncryptionError { .. } => LightSpeedErrorResponse::InternalServerError,
+                LsError::InternalServerError { .. }
+                | LsError::ModuleBuilderError { .. }
+                | LsError::ModuleStartError { .. }
+                | LsError::ConfigurationError { .. }
+                | LsError::PasswordEncryptionError { .. } => LightSpeedErrorResponse::InternalServerError,
             }
         }
     }
@@ -160,8 +160,8 @@ mod test {
 
     use super::*;
     use crate::config::JwtConfig;
-    use crate::service::auth::{Auth, AuthService, InMemoryRolesProvider, Role};
-    use crate::service::jwt::{JwtService, JWT};
+    use crate::service::auth::{Auth, LsAuthService, InMemoryRolesProvider, Role};
+    use crate::service::jwt::{LsJwtService, JWT};
     use crate::web::{WebAuthService, JWT_TOKEN_HEADER, JWT_TOKEN_HEADER_SUFFIX};
     use jsonwebtoken::Algorithm;
     use poem::http::HeaderMap;
@@ -278,7 +278,7 @@ mod test {
     }
 
     #[handler]
-    async fn admin(req: &HeaderMap) -> Result<String, LightSpeedError> {
+    async fn admin(req: &HeaderMap) -> Result<String, LsError> {
         let auth_service = new_service();
         let auth_context = auth_service.auth_from_request(req)?;
         auth_context.has_role("admin")?;
@@ -286,26 +286,26 @@ mod test {
     }
 
     #[handler]
-    async fn username(req: &Request) -> Result<String, LightSpeedError> {
+    async fn username(req: &Request) -> Result<String, LsError> {
         let auth_service = new_service();
         let auth_context = auth_service.auth_from_request(req)?;
         Ok(auth_context.auth.username)
     }
 
     #[handler]
-    async fn web_error() -> Result<String, LightSpeedError> {
-        Err(LightSpeedError::ValidationError {
+    async fn web_error() -> Result<String, LsError> {
+        Err(LsError::ValidationError {
             details: RootErrorDetails { details: Default::default(), message: Some("error".to_owned()) },
         })
     }
 
     fn new_service() -> WebAuthService<InMemoryRolesProvider> {
         WebAuthService {
-            auth_service: Arc::new(AuthService::new(InMemoryRolesProvider::new(
+            auth_service: Arc::new(LsAuthService::new(InMemoryRolesProvider::new(
                 vec![Role { name: "admin".to_owned(), permissions: vec![] }].into(),
             ))),
             jwt_service: Arc::new(
-                JwtService::new(&JwtConfig {
+                LsJwtService::new(&JwtConfig {
                     secret: "secret".to_owned(),
                     signature_algorithm: Algorithm::HS256,
                     token_validity_minutes: 10,
@@ -528,7 +528,7 @@ mod test {
 
             #[oai(path = "/web_error", method = "get")]
             async fn web_error(&self) -> Result<PlainText<String>, LightSpeedErrorResponse> {
-                Err(LightSpeedError::ValidationError {
+                Err(LsError::ValidationError {
                     details: RootErrorDetails { details: Default::default(), message: Some("error".to_owned()) },
                 })?
             }

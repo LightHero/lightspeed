@@ -1,4 +1,4 @@
-use crate::error::{LightSpeedError, WebErrorDetails};
+use crate::error::{LsError, WebErrorDetails};
 use crate::web::Headers;
 use ::http::HeaderValue;
 use actix_web::HttpResponseBuilder;
@@ -10,41 +10,41 @@ impl Headers for HttpRequest {
     }
 }
 
-impl ResponseError for LightSpeedError {
+impl ResponseError for LsError {
     fn error_response(&self) -> HttpResponse {
         match self {
-            LightSpeedError::InvalidTokenError { .. }
-            | LightSpeedError::ExpiredTokenError { .. }
-            | LightSpeedError::GenerateTokenError { .. }
-            | LightSpeedError::MissingAuthTokenError { .. }
-            | LightSpeedError::ParseAuthHeaderError { .. }
-            | LightSpeedError::UnauthenticatedError => HttpResponse::Unauthorized().finish(),
-            LightSpeedError::ForbiddenError { .. } => HttpResponse::Forbidden().finish(),
-            LightSpeedError::ValidationError { details } => {
+            LsError::InvalidTokenError { .. }
+            | LsError::ExpiredTokenError { .. }
+            | LsError::GenerateTokenError { .. }
+            | LsError::MissingAuthTokenError { .. }
+            | LsError::ParseAuthHeaderError { .. }
+            | LsError::UnauthenticatedError => HttpResponse::Unauthorized().finish(),
+            LsError::ForbiddenError { .. } => HttpResponse::Forbidden().finish(),
+            LsError::ValidationError { details } => {
                 let http_code = http::StatusCode::UNPROCESSABLE_ENTITY;
                 HttpResponseBuilder::new(http_code)
                     .json(&WebErrorDetails::from_error_details(http_code.as_u16(), details.clone()))
             }
-            LightSpeedError::BadRequest { code, .. } => {
+            LsError::BadRequest { code, .. } => {
                 let http_code = http::StatusCode::BAD_REQUEST;
                 HttpResponseBuilder::new(http_code)
                     .json(&WebErrorDetails::from_message(http_code.as_u16(), Some((*code).into())))
             }
             #[cfg(feature = "c3p0")]
-            LightSpeedError::C3p0Error { .. } => {
+            LsError::C3p0Error { .. } => {
                 let http_code = http::StatusCode::BAD_REQUEST;
                 HttpResponseBuilder::new(http_code).json(WebErrorDetails::from_message(http_code.as_u16(), None))
             }
-            LightSpeedError::RequestConflict { code, .. } | LightSpeedError::ServiceUnavailable { code, .. } => {
+            LsError::RequestConflict { code, .. } | LsError::ServiceUnavailable { code, .. } => {
                 let http_code = http::StatusCode::CONFLICT;
                 HttpResponseBuilder::new(http_code)
                     .json(&WebErrorDetails::from_message(http_code.as_u16(), Some((*code).into())))
             }
-            LightSpeedError::InternalServerError { .. }
-            | LightSpeedError::ModuleBuilderError { .. }
-            | LightSpeedError::ModuleStartError { .. }
-            | LightSpeedError::ConfigurationError { .. }
-            | LightSpeedError::PasswordEncryptionError { .. } => HttpResponse::InternalServerError().finish(),
+            LsError::InternalServerError { .. }
+            | LsError::ModuleBuilderError { .. }
+            | LsError::ModuleStartError { .. }
+            | LsError::ConfigurationError { .. }
+            | LsError::PasswordEncryptionError { .. } => HttpResponse::InternalServerError().finish(),
         }
     }
 }
@@ -55,8 +55,8 @@ mod test {
     use super::*;
     use crate::config::JwtConfig;
     use crate::error::RootErrorDetails;
-    use crate::service::auth::{Auth, AuthService, InMemoryRolesProvider, Role};
-    use crate::service::jwt::{JwtService, JWT};
+    use crate::service::auth::{Auth, LsAuthService, InMemoryRolesProvider, Role};
+    use crate::service::jwt::{LsJwtService, JWT};
     use crate::web::{WebAuthService, JWT_TOKEN_HEADER, JWT_TOKEN_HEADER_SUFFIX};
     use actix_web::dev::Service;
     use actix_web::test::{init_service, read_body_json, TestRequest};
@@ -198,19 +198,19 @@ mod test {
         Ok(auth_context.auth.username)
     }
 
-    async fn web_error() -> Result<String, LightSpeedError> {
-        Err(LightSpeedError::ValidationError {
+    async fn web_error() -> Result<String, LsError> {
+        Err(LsError::ValidationError {
             details: RootErrorDetails { details: Default::default(), message: Some("error".to_owned()) },
         })
     }
 
     fn new_service() -> WebAuthService<InMemoryRolesProvider> {
         WebAuthService {
-            auth_service: Arc::new(AuthService::new(InMemoryRolesProvider::new(
+            auth_service: Arc::new(LsAuthService::new(InMemoryRolesProvider::new(
                 vec![Role { name: "admin".to_owned(), permissions: vec![] }].into(),
             ))),
             jwt_service: Arc::new(
-                JwtService::new(&JwtConfig {
+                LsJwtService::new(&JwtConfig {
                     secret: "secret".to_owned(),
                     signature_algorithm: Algorithm::HS256,
                     token_validity_minutes: 10,

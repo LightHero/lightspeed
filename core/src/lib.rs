@@ -8,32 +8,32 @@ pub mod utils;
 #[cfg(feature = "web")]
 pub mod web;
 
-use crate::error::LightSpeedError;
+use crate::error::LsError;
 use crate::service::auth::InMemoryRolesProvider;
 use log::info;
 use std::sync::Arc;
 
 #[derive(Clone)]
-pub struct CoreModule {
-    pub auth: Arc<service::auth::AuthService<InMemoryRolesProvider>>,
-    pub jwt: Arc<service::jwt::JwtService>,
+pub struct LsCoreModule {
+    pub auth: Arc<service::auth::LsAuthService<InMemoryRolesProvider>>,
+    pub jwt: Arc<service::jwt::LsJwtService>,
 }
 
-impl CoreModule {
-    pub fn new(config: config::CoreConfig) -> Result<CoreModule, LightSpeedError> {
-        println!("Creating CoreModule");
-        info!("Creating CoreModule");
+impl LsCoreModule {
+    pub fn new(config: config::CoreConfig) -> Result<LsCoreModule, LsError> {
+        println!("Creating LsCoreModule");
+        info!("Creating LsCoreModule");
 
-        let jwt = Arc::new(service::jwt::JwtService::new(&config.jwt)?);
-        let auth = Arc::new(service::auth::AuthService::new(InMemoryRolesProvider::new(vec![].into())));
-        Ok(CoreModule { jwt, auth })
+        let jwt = Arc::new(service::jwt::LsJwtService::new(&config.jwt)?);
+        let auth = Arc::new(service::auth::LsAuthService::new(InMemoryRolesProvider::new(vec![].into())));
+        Ok(LsCoreModule { jwt, auth })
     }
 }
 
 #[async_trait::async_trait]
-impl module::Module for CoreModule {
-    async fn start(&mut self) -> Result<(), LightSpeedError> {
-        info!("Starting CoreModule");
+impl module::LsModule for LsCoreModule {
+    async fn start(&mut self) -> Result<(), LsError> {
+        info!("Starting LsCoreModule");
         Ok(())
     }
 }

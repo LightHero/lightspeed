@@ -1,35 +1,35 @@
-use crate::error::{LightSpeedError, RootErrorDetails, WebErrorDetails};
+use crate::error::{LsError, RootErrorDetails, WebErrorDetails};
 use axum::body::{boxed, Body, BoxBody};
 use axum::http::{header, HeaderValue, Response, StatusCode};
 use axum::response::IntoResponse;
 use log::*;
 
-impl IntoResponse for LightSpeedError {
+impl IntoResponse for LsError {
     fn into_response(self) -> Response<BoxBody> {
         match self {
-            LightSpeedError::InvalidTokenError { .. }
-            | LightSpeedError::ExpiredTokenError { .. }
-            | LightSpeedError::GenerateTokenError { .. }
-            | LightSpeedError::MissingAuthTokenError { .. }
-            | LightSpeedError::ParseAuthHeaderError { .. }
-            | LightSpeedError::UnauthenticatedError => response_with_code(StatusCode::UNAUTHORIZED),
-            LightSpeedError::ForbiddenError { .. } => response_with_code(StatusCode::FORBIDDEN),
-            LightSpeedError::ValidationError { details } => {
+            LsError::InvalidTokenError { .. }
+            | LsError::ExpiredTokenError { .. }
+            | LsError::GenerateTokenError { .. }
+            | LsError::MissingAuthTokenError { .. }
+            | LsError::ParseAuthHeaderError { .. }
+            | LsError::UnauthenticatedError => response_with_code(StatusCode::UNAUTHORIZED),
+            LsError::ForbiddenError { .. } => response_with_code(StatusCode::FORBIDDEN),
+            LsError::ValidationError { details } => {
                 response_with_error_details(StatusCode::UNPROCESSABLE_ENTITY, details)
             }
-            LightSpeedError::BadRequest { code, .. } => {
+            LsError::BadRequest { code, .. } => {
                 response_with_message(StatusCode::BAD_REQUEST, Some((code).to_string()))
             }
             #[cfg(feature = "c3p0")]
-            LightSpeedError::C3p0Error { .. } => response_with_message(StatusCode::BAD_REQUEST, None),
-            LightSpeedError::RequestConflict { code, .. } | LightSpeedError::ServiceUnavailable { code, .. } => {
+            LsError::C3p0Error { .. } => response_with_message(StatusCode::BAD_REQUEST, None),
+            LsError::RequestConflict { code, .. } | LsError::ServiceUnavailable { code, .. } => {
                 response_with_message(StatusCode::CONFLICT, Some((code).to_string()))
             }
-            LightSpeedError::InternalServerError { .. }
-            | LightSpeedError::ModuleBuilderError { .. }
-            | LightSpeedError::ModuleStartError { .. }
-            | LightSpeedError::ConfigurationError { .. }
-            | LightSpeedError::PasswordEncryptionError { .. } => {
+            LsError::InternalServerError { .. }
+            | LsError::ModuleBuilderError { .. }
+            | LsError::ModuleStartError { .. }
+            | LsError::ConfigurationError { .. }
+            | LsError::PasswordEncryptionError { .. } => {
                 response_with_code(http::StatusCode::INTERNAL_SERVER_ERROR)
             }
         }
@@ -76,8 +76,8 @@ mod test {
 
     use super::*;
     use crate::config::JwtConfig;
-    use crate::service::auth::{Auth, AuthService, InMemoryRolesProvider, Role};
-    use crate::service::jwt::{JwtService, JWT};
+    use crate::service::auth::{Auth, LsAuthService, InMemoryRolesProvider, Role};
+    use crate::service::jwt::{LsJwtService, JWT};
     use crate::web::{WebAuthService, JWT_TOKEN_HEADER, JWT_TOKEN_HEADER_SUFFIX};
     use axum::http::{header, HeaderMap, Request};
     use axum::routing::get;
@@ -224,32 +224,32 @@ mod test {
         assert_eq!("error", body.message.unwrap());
     }
 
-    async fn admin(req: HeaderMap) -> Result<String, LightSpeedError> {
+    async fn admin(req: HeaderMap) -> Result<String, LsError> {
         let auth_service = new_service();
         let auth_context = auth_service.auth_from_request(&req)?;
         auth_context.has_role("admin")?;
         Ok(auth_context.auth.username.clone())
     }
 
-    async fn username(req: Request<Body>) -> Result<String, LightSpeedError> {
+    async fn username(req: Request<Body>) -> Result<String, LsError> {
         let auth_service = new_service();
         let auth_context = auth_service.auth_from_request(&req)?;
         Ok(auth_context.auth.username)
     }
 
-    async fn web_error() -> Result<String, LightSpeedError> {
-        Err(LightSpeedError::ValidationError {
+    async fn web_error() -> Result<String, LsError> {
+        Err(LsError::ValidationError {
             details: RootErrorDetails { details: Default::default(), message: Some("error".to_owned()) },
         })
     }
 
     fn new_service() -> WebAuthService<InMemoryRolesProvider> {
         WebAuthService {
-            auth_service: Arc::new(AuthService::new(InMemoryRolesProvider::new(
+            auth_service: Arc::new(LsAuthService::new(InMemoryRolesProvider::new(
                 vec![Role { name: "admin".to_owned(), permissions: vec![] }].into(),
             ))),
             jwt_service: Arc::new(
-                JwtService::new(&JwtConfig {
+                LsJwtService::new(&JwtConfig {
                     secret: "secret".to_owned(),
                     signature_algorithm: Algorithm::HS256,
                     token_validity_minutes: 10,

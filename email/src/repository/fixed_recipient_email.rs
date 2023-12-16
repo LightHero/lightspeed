@@ -1,6 +1,6 @@
 use crate::model::email::EmailMessage;
 use crate::repository::email::EmailClient;
-use lightspeed_core::error::LightSpeedError;
+use lightspeed_core::error::LsError;
 use log::warn;
 use std::sync::Arc;
 
@@ -21,7 +21,7 @@ impl FixedRecipientEmailClient {
 
 #[async_trait::async_trait]
 impl EmailClient for FixedRecipientEmailClient {
-    async fn send(&self, mut email_message: EmailMessage) -> Result<(), LightSpeedError> {
+    async fn send(&self, mut email_message: EmailMessage) -> Result<(), LsError> {
         warn!("FixedRecipientEmailClient - Received an email. The email recipients will be substituted by the configured one(s)");
 
         email_message.subject = Some(to_subject(&email_message.subject.unwrap_or_default(), &email_message.to));
@@ -46,15 +46,15 @@ impl EmailClient for FixedRecipientEmailClient {
         self.client.send(email_message).await
     }
 
-    fn get_emails(&self) -> Result<Vec<EmailMessage>, LightSpeedError> {
+    fn get_emails(&self) -> Result<Vec<EmailMessage>, LsError> {
         self.client.get_emails()
     }
 
-    fn clear_emails(&self) -> Result<(), LightSpeedError> {
+    fn clear_emails(&self) -> Result<(), LsError> {
         self.client.clear_emails()
     }
 
-    fn retain_emails(&self, retain: Box<dyn FnMut(&EmailMessage) -> bool>) -> Result<(), LightSpeedError> {
+    fn retain_emails(&self, retain: Box<dyn FnMut(&EmailMessage) -> bool>) -> Result<(), LsError> {
         self.client.retain_emails(retain)
     }
 }

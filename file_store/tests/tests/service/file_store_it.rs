@@ -1,6 +1,6 @@
 use crate::{data, test};
 use c3p0::*;
-use lightspeed_core::error::LightSpeedError;
+use lightspeed_core::error::LsError;
 use lightspeed_core::utils::new_hyphenated_uuid;
 use lightspeed_file_store::model::{BinaryContent, Repository, RepositoryFile, SaveRepository};
 use lightspeed_file_store::repository::db::{DBFileStoreBinaryRepository, DBFileStoreRepositoryManager};
@@ -9,7 +9,7 @@ use std::path::{Path, PathBuf};
 const SOURCE_FILE: &str = "./Cargo.toml";
 
 #[test]
-fn should_save_file_to_db() -> Result<(), LightSpeedError> {
+fn should_save_file_to_db() -> Result<(), LsError> {
     test(async {
         let data = data(false).await;
         let file_store = &data.0.file_store_service;
@@ -45,7 +45,7 @@ fn should_save_file_to_db() -> Result<(), LightSpeedError> {
 }
 
 #[test]
-fn should_save_file_to_fs() -> Result<(), LightSpeedError> {
+fn should_save_file_to_fs() -> Result<(), LsError> {
     test(async {
         let data = data(false).await;
         let file_store = &data.0.file_store_service;
@@ -85,7 +85,7 @@ fn should_save_file_to_fs() -> Result<(), LightSpeedError> {
 }
 
 #[test]
-fn should_save_file_to_db_with_specific_repo() -> Result<(), LightSpeedError> {
+fn should_save_file_to_db_with_specific_repo() -> Result<(), LsError> {
     test(async {
         let data = data(false).await;
         let file_store = &data.0.file_store_service;
@@ -136,7 +136,7 @@ fn should_save_file_to_db_with_specific_repo() -> Result<(), LightSpeedError> {
 }
 
 #[test]
-fn should_save_file_to_fs_with_specific_repo() -> Result<(), LightSpeedError> {
+fn should_save_file_to_fs_with_specific_repo() -> Result<(), LsError> {
     test(async {
         let data = data(false).await;
         let file_store = &data.0.file_store_service;
@@ -182,7 +182,7 @@ fn should_save_file_to_fs_with_specific_repo() -> Result<(), LightSpeedError> {
 }
 
 #[test]
-fn save_should_fails_if_fs_repo_does_not_exist() -> Result<(), LightSpeedError> {
+fn save_should_fails_if_fs_repo_does_not_exist() -> Result<(), LsError> {
     test(async {
         let data = data(false).await;
         let file_store = &data.0.file_store_service;
@@ -203,7 +203,7 @@ fn save_should_fails_if_fs_repo_does_not_exist() -> Result<(), LightSpeedError> 
 }
 
 #[test]
-fn should_save_file_to_db_with_relative_folder() -> Result<(), LightSpeedError> {
+fn should_save_file_to_db_with_relative_folder() -> Result<(), LsError> {
     test(async {
         let data = data(false).await;
         let file_store = &data.0.file_store_service;
@@ -239,7 +239,7 @@ fn should_save_file_to_db_with_relative_folder() -> Result<(), LightSpeedError> 
 }
 
 #[test]
-fn should_save_file_to_fs_with_relative_folder() -> Result<(), LightSpeedError> {
+fn should_save_file_to_fs_with_relative_folder() -> Result<(), LsError> {
     test(async {
         let data = data(false).await;
         let file_store = &data.0.file_store_service;
@@ -278,7 +278,7 @@ fn should_save_file_to_fs_with_relative_folder() -> Result<(), LightSpeedError> 
 }
 
 #[test]
-fn should_save_file_to_db_with_relative_folder_in_repository() -> Result<(), LightSpeedError> {
+fn should_save_file_to_db_with_relative_folder_in_repository() -> Result<(), LsError> {
     test(async {
         let data = data(false).await;
         let file_store = &data.0.file_store_service;
@@ -315,7 +315,7 @@ fn should_save_file_to_db_with_relative_folder_in_repository() -> Result<(), Lig
 }
 
 #[test]
-fn should_save_file_to_fs_with_relative_folder_in_repository() -> Result<(), LightSpeedError> {
+fn should_save_file_to_fs_with_relative_folder_in_repository() -> Result<(), LsError> {
     test(async {
         let data = data(false).await;
         let file_store = &data.0.file_store_service;
@@ -355,7 +355,7 @@ fn should_save_file_to_fs_with_relative_folder_in_repository() -> Result<(), Lig
 }
 
 #[test]
-fn should_delete_file_from_db() -> Result<(), LightSpeedError> {
+fn should_delete_file_from_db() -> Result<(), LsError> {
     test(async {
         let data = data(false).await;
         let file_store = &data.0.file_store_service;
@@ -381,7 +381,7 @@ fn should_delete_file_from_db() -> Result<(), LightSpeedError> {
         data.0
             .repo_manager
             .c3p0()
-            .transaction::<_, LightSpeedError, _, _>(|conn| async {
+            .transaction::<_, LsError, _, _>(|conn| async {
                 assert!(db_file_binary_repo.read_file(conn, repository_name, file_path).await.is_ok());
                 Ok(())
             })
@@ -394,7 +394,7 @@ fn should_delete_file_from_db() -> Result<(), LightSpeedError> {
         data.0
             .repo_manager
             .c3p0()
-            .transaction::<_, LightSpeedError, _, _>(|conn| async {
+            .transaction::<_, LsError, _, _>(|conn| async {
                 assert!(db_file_binary_repo.read_file(conn, repository_name, file_path).await.is_err());
                 Ok(())
             })
@@ -406,7 +406,7 @@ fn should_delete_file_from_db() -> Result<(), LightSpeedError> {
 }
 
 #[test]
-fn should_delete_file_from_fs() -> Result<(), LightSpeedError> {
+fn should_delete_file_from_fs() -> Result<(), LsError> {
     test(async {
         let data = data(false).await;
         let file_store = &data.0.file_store_service;
@@ -441,7 +441,7 @@ fn should_delete_file_from_fs() -> Result<(), LightSpeedError> {
 
 #[test]
 fn should_allow_same_files_with_same_repository_name_and_path_but_different_repository_type(
-) -> Result<(), LightSpeedError> {
+) -> Result<(), LsError> {
     test(async {
         let data = data(false).await;
         let file_store = &data.0.file_store_service;
@@ -501,7 +501,7 @@ fn should_allow_same_files_with_same_repository_name_and_path_but_different_repo
 }
 
 #[test]
-fn should_fail_if_file_already_exists_in_db() -> Result<(), LightSpeedError> {
+fn should_fail_if_file_already_exists_in_db() -> Result<(), LsError> {
     test(async {
         let data = data(false).await;
         let file_store = &data.0.file_store_service;
@@ -576,7 +576,7 @@ fn should_fail_if_file_already_exists_in_db() -> Result<(), LightSpeedError> {
 }
 
 #[test]
-fn should_fail_if_file_already_exists_in_fs() -> Result<(), LightSpeedError> {
+fn should_fail_if_file_already_exists_in_fs() -> Result<(), LsError> {
     test(async {
         let data = data(false).await;
         let file_store = &data.0.file_store_service;
@@ -651,7 +651,7 @@ fn should_fail_if_file_already_exists_in_fs() -> Result<(), LightSpeedError> {
 }
 
 #[test]
-fn should_read_all_file_data_by_repository() -> Result<(), LightSpeedError> {
+fn should_read_all_file_data_by_repository() -> Result<(), LsError> {
     test(async {
         let data = data(false).await;
         let file_store = &data.0.file_store_service;
@@ -709,7 +709,7 @@ fn should_read_all_file_data_by_repository() -> Result<(), LightSpeedError> {
 }
 
 #[test]
-fn should_return_if_file_exists_by_repository() -> Result<(), LightSpeedError> {
+fn should_return_if_file_exists_by_repository() -> Result<(), LsError> {
     test(async {
         let data = data(false).await;
         let file_store = &data.0.file_store_service;

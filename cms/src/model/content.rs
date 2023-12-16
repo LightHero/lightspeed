@@ -280,7 +280,7 @@ fn validate_string<S: Into<String> + Clone>(
 mod test {
     use super::*;
     use crate::model::schema::{SchemaField, SchemaFieldArity, SchemaFieldType};
-    use lightspeed_core::error::{ErrorDetail, LightSpeedError};
+    use lightspeed_core::error::{ErrorDetail, LsError};
     use lightspeed_core::service::validator::order::{MUST_BE_GREATER_OR_EQUAL, MUST_BE_LESS_OR_EQUAL};
     use lightspeed_core::service::validator::Validator;
 
@@ -384,7 +384,7 @@ mod test {
         let result = validate_content(&schema, &content);
         assert!(result.is_err());
         match result {
-            Err(LightSpeedError::ValidationError { details }) => {
+            Err(LsError::ValidationError { details }) => {
                 println!("details: {details:#?}");
                 assert_eq!(details.details["fields[two]"], vec![ErrorDetail::new(ERR_UNKNOWN_FIELD, vec![])])
             }
@@ -436,7 +436,7 @@ mod test {
         let result = validate_content(&schema, &content);
         assert!(result.is_err());
         match result {
-            Err(LightSpeedError::ValidationError { details }) => assert_eq!(
+            Err(LsError::ValidationError { details }) => assert_eq!(
                 details.details["fields"],
                 vec![ErrorDetail::new(ERR_VALUE_REQUIRED, vec!["four".to_owned(), "one".to_owned()])]
             ),
@@ -471,7 +471,7 @@ mod test {
         assert!(result.is_err());
         println!("{result:?}");
         match result {
-            Err(LightSpeedError::ValidationError { details }) => assert_eq!(
+            Err(LsError::ValidationError { details }) => assert_eq!(
                 details.details["fields[one].value"],
                 vec![ErrorDetail::new(MUST_BE_OF_TYPE_BOOLEAN, vec![])]
             ),
@@ -508,7 +508,7 @@ mod test {
         let result = validate_content(&schema, &content);
         assert!(result.is_err());
         match result {
-            Err(LightSpeedError::ValidationError { details }) => {
+            Err(LsError::ValidationError { details }) => {
                 assert_eq!(details.details["fields[one].value"], vec![ErrorDetail::new(MUST_BE_OF_TYPE_STRING, vec![])])
             }
             _ => panic!(),
@@ -539,7 +539,7 @@ mod test {
         let result = validate_content(&schema, &content);
         assert!(result.is_err());
         match result {
-            Err(LightSpeedError::ValidationError { details }) => {
+            Err(LsError::ValidationError { details }) => {
                 assert_eq!(details.details["fields[one].value"], vec![ErrorDetail::new(MUST_BE_OF_TYPE_SLUG, vec![])])
             }
             _ => panic!(),
@@ -577,7 +577,7 @@ mod test {
         let result = validate_content(&schema, &content);
         assert!(result.is_err());
         match result {
-            Err(LightSpeedError::ValidationError { details }) => {
+            Err(LsError::ValidationError { details }) => {
                 assert_eq!(details.details["fields[one].value"], vec![ErrorDetail::new(MUST_BE_OF_TYPE_NUMBER, vec![])])
             }
             _ => panic!(),
@@ -613,7 +613,7 @@ mod test {
         let result = validate_content(&schema, &content);
         assert!(result.is_err());
         match result {
-            Err(LightSpeedError::ValidationError { details }) => assert_eq!(
+            Err(LsError::ValidationError { details }) => assert_eq!(
                 details.details["fields[one].value"],
                 vec![ErrorDetail::new(MUST_BE_GREATER_OR_EQUAL, vec!["100".to_owned()])]
             ),
@@ -650,7 +650,7 @@ mod test {
         let result = validate_content(&schema, &content);
         assert!(result.is_err());
         match result {
-            Err(LightSpeedError::ValidationError { details }) => assert_eq!(
+            Err(LsError::ValidationError { details }) => assert_eq!(
                 details.details["fields[one].value"],
                 vec![ErrorDetail::new(MUST_BE_LESS_OR_EQUAL, vec!["1000".to_owned()])]
             ),
@@ -689,7 +689,7 @@ mod test {
         let result = validate_content(&schema, &content);
         assert!(result.is_err());
         match result {
-            Err(LightSpeedError::ValidationError { details }) => assert_eq!(
+            Err(LsError::ValidationError { details }) => assert_eq!(
                 details.details["fields[one].value"],
                 vec![ErrorDetail::new(MUST_BE_GREATER_OR_EQUAL, vec!["1000".to_owned()])]
             ),
@@ -728,7 +728,7 @@ mod test {
         let result = validate_content(&schema, &content);
         assert!(result.is_err());
         match result {
-            Err(LightSpeedError::ValidationError { details }) => assert_eq!(
+            Err(LsError::ValidationError { details }) => assert_eq!(
                 details.details["fields[one].value"],
                 vec![ErrorDetail::new(MUST_BE_LESS_OR_EQUAL, vec!["10".to_owned()])]
             ),
@@ -774,7 +774,7 @@ mod test {
         let result = validate_content(&schema, &content);
         assert!(result.is_err());
         match result {
-            Err(LightSpeedError::ValidationError { details }) => {
+            Err(LsError::ValidationError { details }) => {
                 assert_eq!(details.details["fields[one].value"], vec![ErrorDetail::new(ERR_VALUE_REQUIRED, vec![])])
             }
             _ => panic!(),
@@ -806,7 +806,7 @@ mod test {
         assert!(result.is_err());
         println!("{result:?}");
         match result {
-            Err(LightSpeedError::ValidationError { details }) => assert_eq!(
+            Err(LsError::ValidationError { details }) => assert_eq!(
                 details.details["fields[one].value"],
                 vec![ErrorDetail::new(SHOULD_HAVE_SINGLE_VALUE_ARITY, vec![])]
             ),
@@ -844,7 +844,7 @@ mod test {
         assert!(result.is_err());
         println!("{result:?}");
         match result {
-            Err(LightSpeedError::ValidationError { details }) => assert_eq!(
+            Err(LsError::ValidationError { details }) => assert_eq!(
                 details.details["fields[one].value"],
                 vec![ErrorDetail::new(SHOULD_HAVE_LOCALIZABLE_ARITY, vec![])]
             ),
@@ -888,7 +888,7 @@ mod test {
         assert!(result.is_err());
         println!("{result:?}");
         match result {
-            Err(LightSpeedError::ValidationError { details }) => {
+            Err(LsError::ValidationError { details }) => {
                 assert_eq!(
                     details.details["fields[one].value[FR]"],
                     vec![ErrorDetail::new(ERR_VALUE_REQUIRED, vec![])]
@@ -956,7 +956,7 @@ mod test {
         assert!(result.is_err());
         println!("{result:?}");
         match result {
-            Err(LightSpeedError::ValidationError { details }) => {
+            Err(LsError::ValidationError { details }) => {
                 assert_eq!(details.details["fields[slug].value"], vec![ErrorDetail::new(NOT_VALID_SLUG, vec![])])
             }
             _ => panic!(),
@@ -987,7 +987,7 @@ mod test {
         assert!(result.is_err());
         println!("{result:?}");
         match result {
-            Err(LightSpeedError::ValidationError { details }) => assert_eq!(
+            Err(LsError::ValidationError { details }) => assert_eq!(
                 details.details["fields[slug].value"],
                 vec![ErrorDetail::new(SHOULD_HAVE_SINGLE_VALUE_ARITY, vec![])]
             ),
@@ -995,7 +995,7 @@ mod test {
         };
     }
 
-    pub fn validate_content(schema: &Schema, content: &Content) -> Result<(), LightSpeedError> {
+    pub fn validate_content(schema: &Schema, content: &Content) -> Result<(), LsError> {
         Validator::validate(&|error_details: &mut ErrorDetails| {
             content.validate(schema, error_details);
             Ok(())

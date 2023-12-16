@@ -2,7 +2,7 @@ use crate::model::project::ProjectData;
 use crate::repository::ProjectRepository;
 use c3p0::postgres::*;
 use c3p0::*;
-use lightspeed_core::error::LightSpeedError;
+use lightspeed_core::error::LsError;
 use std::ops::Deref;
 
 #[derive(Clone)]
@@ -28,11 +28,11 @@ impl Default for PgProjectRepository {
 impl ProjectRepository for PgProjectRepository {
     type Conn = PgConnection;
 
-    async fn fetch_by_id(&self, conn: &mut Self::Conn, id: i64) -> Result<Model<ProjectData>, LightSpeedError> {
+    async fn fetch_by_id(&self, conn: &mut Self::Conn, id: i64) -> Result<Model<ProjectData>, LsError> {
         Ok(self.repo.fetch_one_by_id(conn, &id).await?)
     }
 
-    async fn exists_by_name(&self, conn: &mut Self::Conn, name: &str) -> Result<bool, LightSpeedError> {
+    async fn exists_by_name(&self, conn: &mut Self::Conn, name: &str) -> Result<bool, LsError> {
         let sql = r#"
             select count(*) from LS_CMS_PROJECT
             where LS_CMS_PROJECT.DATA ->> 'name' = $1
@@ -49,7 +49,7 @@ impl ProjectRepository for PgProjectRepository {
         &self,
         conn: &mut Self::Conn,
         model: NewModel<ProjectData>,
-    ) -> Result<Model<ProjectData>, LightSpeedError> {
+    ) -> Result<Model<ProjectData>, LsError> {
         Ok(self.repo.save(conn, model).await?)
     }
 
@@ -57,7 +57,7 @@ impl ProjectRepository for PgProjectRepository {
         &self,
         conn: &mut Self::Conn,
         model: Model<ProjectData>,
-    ) -> Result<Model<ProjectData>, LightSpeedError> {
+    ) -> Result<Model<ProjectData>, LsError> {
         Ok(self.repo.update(conn, model).await?)
     }
 
@@ -65,7 +65,7 @@ impl ProjectRepository for PgProjectRepository {
         &self,
         conn: &mut Self::Conn,
         model: Model<ProjectData>,
-    ) -> Result<Model<ProjectData>, LightSpeedError> {
+    ) -> Result<Model<ProjectData>, LsError> {
         Ok(self.repo.delete(conn, model).await?)
     }
 }

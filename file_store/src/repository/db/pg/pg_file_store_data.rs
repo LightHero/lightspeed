@@ -2,7 +2,7 @@ use crate::model::{FileStoreDataData, FileStoreDataDataCodec, FileStoreDataModel
 use crate::repository::db::FileStoreDataRepository;
 use c3p0::postgres::*;
 use c3p0::*;
-use lightspeed_core::error::LightSpeedError;
+use lightspeed_core::error::LsError;
 
 #[derive(Clone)]
 pub struct PgFileStoreDataRepository {
@@ -25,7 +25,7 @@ impl FileStoreDataRepository for PgFileStoreDataRepository {
         &self,
         conn: &mut Self::Conn,
         repository: &RepositoryFile,
-    ) -> Result<bool, LightSpeedError> {
+    ) -> Result<bool, LsError> {
         let sql =
             "SELECT EXISTS (SELECT 1 FROM LS_FILE_STORE_DATA WHERE (data -> 'repository' ->> '_json_tag') = $1 AND (data -> 'repository' ->> 'repository_name') = $2 AND (data -> 'repository' ->> 'file_path') = $3)";
 
@@ -34,7 +34,7 @@ impl FileStoreDataRepository for PgFileStoreDataRepository {
         Ok(conn.fetch_one_value(sql, &[&repo_info.repo_type, &repo_info.repository_name, &repo_info.file_path]).await?)
     }
 
-    async fn fetch_one_by_id(&self, conn: &mut Self::Conn, id: IdType) -> Result<FileStoreDataModel, LightSpeedError> {
+    async fn fetch_one_by_id(&self, conn: &mut Self::Conn, id: IdType) -> Result<FileStoreDataModel, LsError> {
         Ok(self.repo.fetch_one_by_id(conn, &id).await?)
     }
 
@@ -42,7 +42,7 @@ impl FileStoreDataRepository for PgFileStoreDataRepository {
         &self,
         conn: &mut Self::Conn,
         repository: &RepositoryFile,
-    ) -> Result<FileStoreDataModel, LightSpeedError> {
+    ) -> Result<FileStoreDataModel, LsError> {
         let sql = format!(
             r#"
             {}
@@ -65,7 +65,7 @@ impl FileStoreDataRepository for PgFileStoreDataRepository {
         offset: usize,
         max: usize,
         sort: &OrderBy,
-    ) -> Result<Vec<FileStoreDataModel>, LightSpeedError> {
+    ) -> Result<Vec<FileStoreDataModel>, LsError> {
         let sql = format!(
             r#"{}
                WHERE (data -> 'repository' ->> '_json_tag') = $1 AND (data -> 'repository' ->> 'repository_name') = $2
@@ -88,11 +88,11 @@ impl FileStoreDataRepository for PgFileStoreDataRepository {
         &self,
         conn: &mut Self::Conn,
         model: NewModel<FileStoreDataData>,
-    ) -> Result<FileStoreDataModel, LightSpeedError> {
+    ) -> Result<FileStoreDataModel, LsError> {
         Ok(self.repo.save(conn, model).await?)
     }
 
-    async fn delete_by_id(&self, conn: &mut Self::Conn, id: IdType) -> Result<u64, LightSpeedError> {
+    async fn delete_by_id(&self, conn: &mut Self::Conn, id: IdType) -> Result<u64, LsError> {
         Ok(self.repo.delete_by_id(conn, &id).await?)
     }
 }

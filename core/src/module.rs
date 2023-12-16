@@ -1,17 +1,17 @@
-use crate::error::LightSpeedError;
+use crate::error::LsError;
 use log::info;
 
 #[async_trait::async_trait]
-pub trait ModuleBuilder<T: Module> {
-    async fn build(&self) -> Result<T, LightSpeedError>;
+pub trait ModuleBuilder<T: LsModule> {
+    async fn build(&self) -> Result<T, LsError>;
 }
 
 #[async_trait::async_trait]
-pub trait Module {
-    async fn start(&mut self) -> Result<(), LightSpeedError>;
+pub trait LsModule {
+    async fn start(&mut self) -> Result<(), LsError>;
 }
 
-pub async fn start(modules: &mut [&mut dyn Module]) -> Result<(), LightSpeedError> {
+pub async fn start(modules: &mut [&mut dyn LsModule]) -> Result<(), LsError> {
     info!("Begin modules 'start' phase");
     for module in modules.iter_mut() {
         module.start().await?;
@@ -22,7 +22,7 @@ pub async fn start(modules: &mut [&mut dyn Module]) -> Result<(), LightSpeedErro
 #[cfg(test)]
 mod test {
 
-    use crate::LightSpeedError;
+    use crate::LsError;
     use std::sync::Arc;
     use tokio::sync::Mutex;
 
@@ -33,7 +33,7 @@ mod test {
         let mut mod1 = SimpleModOne { output: output.clone(), name: "one".to_string() };
         let mut mod2 = SimpleModTwo { output: output.clone(), name: "two".to_string(), fail: false };
 
-        let mut modules: Vec<&mut dyn super::Module> = vec![&mut mod1, &mut mod2];
+        let mut modules: Vec<&mut dyn super::LsModule> = vec![&mut mod1, &mut mod2];
 
         let result = super::start(modules.as_mut()).await;
 
@@ -50,14 +50,14 @@ mod test {
         let mut mod1 = SimpleModOne { output: output.clone(), name: "one".to_string() };
         let mut mod2 = SimpleModTwo { output: output.clone(), name: "two".to_string(), fail: true };
 
-        let mut modules: Vec<&mut dyn super::Module> = vec![&mut mod1, &mut mod2];
+        let mut modules: Vec<&mut dyn super::LsModule> = vec![&mut mod1, &mut mod2];
 
         let result = super::start(&mut modules).await;
 
         assert!(result.is_err());
 
         match result {
-            Err(LightSpeedError::ModuleStartError { message }) => {
+            Err(LsError::ModuleStartError { message }) => {
                 assert_eq!("test_failure", message)
             }
             _ => panic!(),
@@ -74,8 +74,8 @@ mod test {
     }
 
     #[async_trait::async_trait]
-    impl super::Module for SimpleModOne {
-        async fn start(&mut self) -> Result<(), LightSpeedError> {
+    impl super::LsModule for SimpleModOne {
+        async fn start(&mut self) -> Result<(), LsError> {
             let mut owned = self.name.to_owned();
             owned.push_str("-start");
             self.output.lock().await.push(owned);
@@ -91,10 +91,10 @@ mod test {
     }
 
     #[async_trait::async_trait]
-    impl super::Module for SimpleModTwo {
-        async fn start(&mut self) -> Result<(), LightSpeedError> {
+    impl super::LsModule for SimpleModTwo {
+        async fn start(&mut self) -> Result<(), LsError> {
             if self.fail {
-                return Err(LightSpeedError::ModuleStartError { message: "test_failure".to_owned() });
+                return Err(LsError::ModuleStartError { message: "test_failure".to_owned() });
             }
 
             let mut owned = self.name.to_owned();

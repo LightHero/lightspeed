@@ -3,7 +3,7 @@ use crate::repository::db::pg::pg_file_store_data::PgFileStoreDataRepository;
 use crate::repository::db::DBFileStoreRepositoryManager;
 use c3p0::postgres::*;
 use c3p0::*;
-use lightspeed_core::error::LightSpeedError;
+use lightspeed_core::error::LsError;
 
 pub mod pg_file_store_binary;
 pub mod pg_file_store_data;
@@ -32,17 +32,17 @@ impl DBFileStoreRepositoryManager for PgFileStoreRepositoryManager {
         &self.c3p0
     }
 
-    async fn start(&self) -> Result<(), LightSpeedError> {
+    async fn start(&self) -> Result<(), LsError> {
         let migrate_table_name = format!("LS_FILE_STORE_{C3P0_MIGRATE_TABLE_DEFAULT}");
 
         let migrate = C3p0MigrateBuilder::new(self.c3p0().clone())
             .with_table_name(migrate_table_name)
-            .with_migrations(from_embed(&MIGRATIONS).map_err(|err| LightSpeedError::ModuleStartError {
+            .with_migrations(from_embed(&MIGRATIONS).map_err(|err| LsError::ModuleStartError {
                 message: format!("PgFileStoreRepositoryManager - failed to read db migrations: {err:?}"),
             })?)
             .build();
 
-        migrate.migrate().await.map_err(|err| LightSpeedError::ModuleStartError {
+        migrate.migrate().await.map_err(|err| LsError::ModuleStartError {
             message: format!("PgFileStoreRepositoryManager - db migration failed: {err:?}"),
         })
     }

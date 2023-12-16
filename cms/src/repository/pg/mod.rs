@@ -4,7 +4,7 @@ use crate::repository::pg::pg_schema::PgSchemaRepository;
 use crate::repository::CmsRepositoryManager;
 use c3p0::postgres::*;
 use c3p0::*;
-use lightspeed_core::error::LightSpeedError;
+use lightspeed_core::error::LsError;
 
 pub mod pg_content;
 pub mod pg_project;
@@ -35,17 +35,17 @@ impl CmsRepositoryManager for PgCmsRepositoryManager {
         &self.c3p0
     }
 
-    async fn start(&self) -> Result<(), LightSpeedError> {
+    async fn start(&self) -> Result<(), LsError> {
         let migrate_table_name = format!("LS_CMS_{C3P0_MIGRATE_TABLE_DEFAULT}");
 
         let migrate = C3p0MigrateBuilder::new(self.c3p0().clone())
             .with_table_name(migrate_table_name)
-            .with_migrations(from_embed(&MIGRATIONS).map_err(|err| LightSpeedError::ModuleStartError {
+            .with_migrations(from_embed(&MIGRATIONS).map_err(|err| LsError::ModuleStartError {
                 message: format!("PgCmsRepositoryManager - failed to read db migrations: {err:?}"),
             })?)
             .build();
 
-        migrate.migrate().await.map_err(|err| LightSpeedError::ModuleStartError {
+        migrate.migrate().await.map_err(|err| LsError::ModuleStartError {
             message: format!("PgCmsRepositoryManager - db migration failed: {err:?}"),
         })
     }
