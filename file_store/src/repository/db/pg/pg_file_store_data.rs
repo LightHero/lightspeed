@@ -1,8 +1,9 @@
 use crate::model::{FileStoreDataData, FileStoreDataDataCodec, FileStoreDataModel, Repository, RepositoryFile};
 use crate::repository::db::FileStoreDataRepository;
-use c3p0::sqlx::*;
-use c3p0::*;
-use lightspeed_core::error::LsError;
+use c3p0::sqlx::error::into_c3p0_error;
+use c3p0::{*, sqlx::*};
+use lightspeed_core::error::{ErrorCodes, LsError};
+use ::sqlx::{query, Row};
 
 #[derive(Clone)]
 pub struct PgFileStoreDataRepository {
@@ -31,7 +32,14 @@ impl FileStoreDataRepository for PgFileStoreDataRepository {
 
         let repo_info = RepoFileInfo::new(repository);
 
-        Ok(conn.fetch_one_value(sql, &[&repo_info.repo_type, &repo_info.repository_name, &repo_info.file_path]).await?)
+        let res = query(sql).bind(repo_info.repo_type).bind(repo_info.repository_name).bind(repo_info.file_path)
+        .fetch_one(&mut **conn.get_conn())
+        .await
+        .and_then(|row| {row.try_get(0)        })
+        .map_err(into_c3p0_error)?;
+    Ok(res)
+
+        //  Ok(conn.fetch_one_value(sql, &[&repo_info.repo_type, &repo_info.repository_name, &repo_info.file_path]).await?)
     }
 
     async fn fetch_one_by_id(&self, conn: &mut Self::Conn, id: IdType) -> Result<FileStoreDataModel, LsError> {
@@ -54,7 +62,7 @@ impl FileStoreDataRepository for PgFileStoreDataRepository {
 
         Ok(self
             .repo
-            .fetch_one_with_sql(conn, &sql, &[&repo_info.repo_type, &repo_info.repository_name, &repo_info.file_path])
+            .fetch_one_with_sql(conn, ::sqlx::query(&sql).bind(repo_info.repo_type).bind(repo_info.repository_name).bind(repo_info.file_path))
             .await?)
     }
 
@@ -81,7 +89,7 @@ impl FileStoreDataRepository for PgFileStoreDataRepository {
 
         let repo_info = RepoInfo::new(repository);
 
-        Ok(self.repo.fetch_all_with_sql(conn, &sql, &[&repo_info.repo_type, &repo_info.repository_name]).await?)
+        Ok(self.repo.fetch_all_with_sql(conn, ::sqlx::query(&sql).bind(&repo_info.repo_type).bind(&repo_info.repository_name)).await?)
     }
 
     async fn save(

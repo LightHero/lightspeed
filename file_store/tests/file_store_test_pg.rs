@@ -1,6 +1,5 @@
-use c3p0::postgres::deadpool::{self, Runtime};
-use c3p0::postgres::tokio_postgres::NoTls;
-use c3p0::postgres::*;
+use c3p0::sqlx::sqlx::postgres::*;
+use c3p0::sqlx::*;
 use maybe_single::tokio::*;
 
 use ::testcontainers::postgres::Postgres;
@@ -24,22 +23,16 @@ async fn init() -> MaybeType {
 
     let node = DOCKER.get_or_init(Cli::default).run(Postgres::default());
 
-    let mut pool_config = deadpool::managed::PoolConfig::default();
-    pool_config.timeouts.create = Some(Duration::from_secs(5));
-    pool_config.timeouts.recycle = Some(Duration::from_secs(5));
-    pool_config.timeouts.wait = Some(Duration::from_secs(5));
+    let options = PgConnectOptions::new()
+    .username("postgres")
+    .password("postgres")
+    .database("postgres")
+    .host("127.0.0.1")
+    .port(node.get_host_port_ipv4(5432));
 
-    let config = c3p0::postgres::deadpool::postgres::Config {
-        user: Some("postgres".to_owned()),
-        password: Some("postgres".to_owned()),
-        dbname: Some("postgres".to_owned()),
-        host: Some("127.0.0.1".to_string()),
-        port: Some(node.get_host_port_ipv4(5432)),
-        pool: Some(pool_config),
-        ..Default::default()
-    };
+    let pool = PgPool::connect_with(options).await.unwrap();
 
-    let c3p0 = PgC3p0Pool::new(config.create_pool(Some(Runtime::Tokio1), NoTls).unwrap());
+    let c3p0 = SqlxPgC3p0Pool::new(pool);
 
     let repo_manager = RepoManager::new(c3p0.clone());
 
