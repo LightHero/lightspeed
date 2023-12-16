@@ -1,5 +1,5 @@
 [workspace]
-
+resolver = "2"
 members = [
     "auth",
     "cache",
@@ -75,19 +75,3 @@ tracing-futures = "0.2"
 tracing-subscriber = { version = "0.3", default-features = false }
 uuid = { version = "1", features = ["v4"] }
 validator = "0.16"
-
-
-# Link-time optimization (LTO) is a feature that lets the optimizer run on the entire program at once
-# (including all its external crates), instead of just one crate at a time. This can produce better-optimized code
-# However, it can take a very long time and use a huge amount of memory during compilation, so it is disabled by default.
-[profile.release]
-#lto = true
-
-# To perform a CPU specific build, launch cargo with RUSTFLAGS='-C target-cpu=native'
-# E.g.:
-# > RUSTFLAGS='-C target-cpu=native' cargo bench
-[profile.bench]
-#debug = true
-# When lto is enabled the profiler results are less clear.
-# It should be taken into account a performance penalty of at least the 15% without the lto.
-#lto = true
