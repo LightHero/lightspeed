@@ -245,8 +245,7 @@ pub mod test {
 
     #[test]
     pub fn validator_should_return_validable_internal_error() {
-        let result =
-            Validator::validate(&|_error_details: &mut ErrorDetails| Err(LsError::UnauthenticatedError));
+        let result = Validator::validate(&|_error_details: &mut ErrorDetails| Err(LsError::UnauthenticatedError));
 
         assert!(result.is_err());
         match result {

@@ -53,9 +53,7 @@ impl<T: RolesProvider> WebAuthService<T> {
                     if header.len() > JWT_TOKEN_HEADER_SUFFIX_LEN {
                         Ok(&header[JWT_TOKEN_HEADER_SUFFIX_LEN..])
                     } else {
-                        Err(LsError::ParseAuthHeaderError {
-                            message: format!("Unexpected auth header: {}", header),
-                        })
+                        Err(LsError::ParseAuthHeaderError { message: format!("Unexpected auth header: {}", header) })
                     }
                 });
         };

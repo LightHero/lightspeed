@@ -51,13 +51,11 @@ impl FsFileStoreBinaryRepository {
 
         match content {
             BinaryContent::InMemory { content } => {
-                tokio::fs::write(destination_path, content.as_ref()).await.map_err(|err| {
-                    LsError::BadRequest {
-                        message: format!(
-                            "FsFileStoreDataRepository - Cannot write data to [{destination_file_path}]. Err: {err:?}"
-                        ),
-                        code: ErrorCodes::IO_ERROR,
-                    }
+                tokio::fs::write(destination_path, content.as_ref()).await.map_err(|err| LsError::BadRequest {
+                    message: format!(
+                        "FsFileStoreDataRepository - Cannot write data to [{destination_file_path}]. Err: {err:?}"
+                    ),
+                    code: ErrorCodes::IO_ERROR,
                 })?;
                 Ok(())
             }

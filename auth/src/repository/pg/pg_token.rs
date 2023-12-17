@@ -40,11 +40,7 @@ impl TokenRepository for PgTokenRepository {
         Ok(self.repo.fetch_one_with_sql(tx, ::sqlx::query(&sql).bind(token_string)).await?)
     }
 
-    async fn fetch_by_username(
-        &self,
-        tx: &mut Self::Tx,
-        username: &str,
-    ) -> Result<Vec<TokenModel>, LsError> {
+    async fn fetch_by_username(&self, tx: &mut Self::Tx, username: &str) -> Result<Vec<TokenModel>, LsError> {
         let sql = format!(
             r#"
             {}
@@ -52,23 +48,15 @@ impl TokenRepository for PgTokenRepository {
         "#,
             self.queries().find_base_sql_query
         );
-        
+
         Ok(self.repo.fetch_all_with_sql(tx, ::sqlx::query(&sql).bind(username)).await?)
     }
 
-    async fn save(
-        &self,
-        tx: &mut Self::Tx,
-        model: NewModel<TokenData>,
-    ) -> Result<Model<TokenData>, LsError> {
+    async fn save(&self, tx: &mut Self::Tx, model: NewModel<TokenData>) -> Result<Model<TokenData>, LsError> {
         Ok(self.repo.save(tx, model).await?)
     }
 
-    async fn delete(
-        &self,
-        tx: &mut Self::Tx,
-        model: Model<TokenData>,
-    ) -> Result<Model<TokenData>, LsError> {
+    async fn delete(&self, tx: &mut Self::Tx, model: Model<TokenData>) -> Result<Model<TokenData>, LsError> {
         Ok(self.repo.delete(tx, model).await?)
     }
 }

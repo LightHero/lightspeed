@@ -1,9 +1,9 @@
 use crate::repository::db::pg::pg_file_store_binary::PgFileStoreBinaryRepository;
 use crate::repository::db::pg::pg_file_store_data::PgFileStoreDataRepository;
 use crate::repository::db::DBFileStoreRepositoryManager;
+use ::sqlx::{migrate::Migrator, *};
 use c3p0::sqlx::*;
 use lightspeed_core::error::LsError;
-use ::sqlx::{*, migrate::Migrator};
 
 pub mod pg_file_store_binary;
 pub mod pg_file_store_data;

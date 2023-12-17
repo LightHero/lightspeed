@@ -19,7 +19,6 @@ pub enum Scheduler {
 }
 
 impl Scheduler {
-    
     pub fn from(schedule: &[&dyn TryToScheduler]) -> Result<Scheduler, SchedulerError> {
         schedule.to_scheduler()
     }

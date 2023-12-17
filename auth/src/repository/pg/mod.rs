@@ -1,9 +1,9 @@
 use crate::repository::pg::pg_auth_account::PgAuthAccountRepository;
 use crate::repository::pg::pg_token::PgTokenRepository;
 use crate::repository::AuthRepositoryManager;
+use ::sqlx::{migrate::Migrator, *};
 use c3p0::sqlx::*;
 use lightspeed_core::error::LsError;
-use ::sqlx::{*, migrate::Migrator};
 
 pub mod pg_auth_account;
 pub mod pg_token;

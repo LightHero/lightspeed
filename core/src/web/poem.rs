@@ -25,9 +25,7 @@ impl ResponseError for LsError {
             LsError::BadRequest { .. } => StatusCode::BAD_REQUEST,
             #[cfg(feature = "c3p0")]
             LsError::C3p0Error { .. } => StatusCode::BAD_REQUEST,
-            LsError::RequestConflict { .. } | LsError::ServiceUnavailable { .. } => {
-                StatusCode::CONFLICT
-            }
+            LsError::RequestConflict { .. } | LsError::ServiceUnavailable { .. } => StatusCode::CONFLICT,
             LsError::InternalServerError { .. }
             | LsError::ModuleBuilderError { .. }
             | LsError::ModuleStartError { .. }
@@ -136,9 +134,10 @@ pub mod openapi {
                     WebErrorDetails::from_message(StatusCode::BAD_REQUEST.as_u16(), Some((code).to_string())),
                 )),
                 #[cfg(feature = "c3p0")]
-                LsError::C3p0Error { .. } => LightSpeedErrorResponse::BadRequest(Json(
-                    WebErrorDetails::from_message(StatusCode::BAD_REQUEST.as_u16(), None),
-                )),
+                LsError::C3p0Error { .. } => LightSpeedErrorResponse::BadRequest(Json(WebErrorDetails::from_message(
+                    StatusCode::BAD_REQUEST.as_u16(),
+                    None,
+                ))),
                 LsError::RequestConflict { code, .. } | LsError::ServiceUnavailable { code, .. } => {
                     LightSpeedErrorResponse::Conflict(Json(WebErrorDetails::from_message(
                         StatusCode::CONFLICT.as_u16(),
@@ -160,7 +159,7 @@ mod test {
 
     use super::*;
     use crate::config::JwtConfig;
-    use crate::service::auth::{Auth, LsAuthService, InMemoryRolesProvider, Role};
+    use crate::service::auth::{Auth, InMemoryRolesProvider, LsAuthService, Role};
     use crate::service::jwt::{LsJwtService, JWT};
     use crate::web::{WebAuthService, JWT_TOKEN_HEADER, JWT_TOKEN_HEADER_SUFFIX};
     use jsonwebtoken::Algorithm;

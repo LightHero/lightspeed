@@ -25,7 +25,6 @@ fn should_delete_token() -> Result<(), LsError> {
         };
 
         c3p0.transaction(|conn| async {
-
             let saved_token = token_repo.save(conn, token).await?;
 
             assert!(token_repo.exists_by_id(conn, &saved_token.id).await?);

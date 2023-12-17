@@ -38,25 +38,18 @@ impl AuthAccountRepository for PgAuthAccountRepository {
         "#,
             self.queries().find_base_sql_query
         );
-        
-        Ok(self.repo.fetch_all_with_sql(tx, ::sqlx::query(&sql).bind(start_user_id)
-        .bind(status.as_ref())
-        .bind(limit as i64)).await?)
+
+        Ok(self
+            .repo
+            .fetch_all_with_sql(tx, ::sqlx::query(&sql).bind(start_user_id).bind(status.as_ref()).bind(limit as i64))
+            .await?)
     }
 
-    async fn fetch_by_id(
-        &self,
-        tx: &mut Self::Tx,
-        user_id: i64,
-    ) -> Result<Model<AuthAccountData>, LsError> {
+    async fn fetch_by_id(&self, tx: &mut Self::Tx, user_id: i64) -> Result<Model<AuthAccountData>, LsError> {
         Ok(self.repo.fetch_one_by_id(tx, &user_id).await?)
     }
 
-    async fn fetch_by_username(
-        &self,
-        tx: &mut Self::Tx,
-        username: &str,
-    ) -> Result<AuthAccountModel, LsError> {
+    async fn fetch_by_username(&self, tx: &mut Self::Tx, username: &str) -> Result<AuthAccountModel, LsError> {
         self.fetch_by_username_optional(tx, username).await?.ok_or_else(|| LsError::BadRequest {
             message: format!("No user found with username [{username}]"),
             code: ErrorCodes::NOT_FOUND,
@@ -92,8 +85,7 @@ impl AuthAccountRepository for PgAuthAccountRepository {
         "#,
             self.queries().find_base_sql_query
         );
-        Ok(self.repo.fetch_one_optional_with_sql(tx, ::sqlx::query(&sql)
-        .bind(email)).await?)
+        Ok(self.repo.fetch_one_optional_with_sql(tx, ::sqlx::query(&sql).bind(email)).await?)
     }
 
     async fn save(

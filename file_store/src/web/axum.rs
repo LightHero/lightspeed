@@ -85,9 +85,9 @@ pub async fn into_response(
         debug!("Ignore content disposition");
     };
 
-    response_builder.body(body).map_err(|err| LsError::InternalServerError {
-        message: format!("Cannot set body request. Err: {:?}", err),
-    })
+    response_builder
+        .body(body)
+        .map_err(|err| LsError::InternalServerError { message: format!("Cannot set body request. Err: {:?}", err) })
 }
 
 #[cfg(test)]

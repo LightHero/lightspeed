@@ -1,9 +1,9 @@
 use crate::model::BinaryContent;
 use crate::repository::db::DBFileStoreBinaryRepository;
+use ::sqlx::{query, Row};
 use c3p0::sqlx::error::into_c3p0_error;
 use c3p0::sqlx::*;
 use lightspeed_core::error::{ErrorCodes, LsError};
-use ::sqlx::{query, Row};
 use std::borrow::Cow;
 use tokio::fs::File;
 use tokio::io::AsyncReadExt;
@@ -31,13 +31,15 @@ impl DBFileStoreBinaryRepository for PgFileStoreBinaryRepository {
     ) -> Result<BinaryContent<'a>, LsError> {
         let sql = &format!("SELECT DATA FROM {} WHERE repository = $1 AND filepath = $2", self.table_name);
 
-        let res = query(sql).bind(repository_name).bind(file_path)
-        .fetch_one(tx.conn())
-        .await
-        .and_then(|row| {row.try_get(0)        })
-        .map(|content| BinaryContent::InMemory { content: Cow::Owned(content) })
-        .map_err(into_c3p0_error)?;
-    Ok(res)
+        let res = query(sql)
+            .bind(repository_name)
+            .bind(file_path)
+            .fetch_one(tx.conn())
+            .await
+            .and_then(|row| row.try_get(0))
+            .map(|content| BinaryContent::InMemory { content: Cow::Owned(content) })
+            .map_err(into_c3p0_error)?;
+        Ok(res)
     }
 
     async fn save_file<'a>(
@@ -73,25 +75,19 @@ impl DBFileStoreBinaryRepository for PgFileStoreBinaryRepository {
 
         let sql = &format!("INSERT INTO {} (repository, filepath, data) VALUES ($1, $2, $3)", self.table_name);
 
-        let res = query(sql).bind(repository_name).bind(file_path).bind(binary_content.as_ref().as_ref())
+        let res = query(sql)
+            .bind(repository_name)
+            .bind(file_path)
+            .bind(binary_content.as_ref().as_ref())
             .execute(tx.conn())
             .await
             .map_err(into_c3p0_error)?;
         Ok(res.rows_affected())
-
     }
 
-    async fn delete_file(
-        &self,
-        tx: &mut Self::Tx,
-        repository_name: &str,
-        file_path: &str,
-    ) -> Result<u64, LsError> {
+    async fn delete_file(&self, tx: &mut Self::Tx, repository_name: &str, file_path: &str) -> Result<u64, LsError> {
         let sql = &format!("DELETE FROM {} WHERE repository = $1 AND filepath = $2", self.table_name);
-        let res = query(sql).bind(repository_name).bind(file_path)
-        .execute(tx.conn())
-        .await
-        .map_err(into_c3p0_error)?;
-    Ok(res.rows_affected())
+        let res = query(sql).bind(repository_name).bind(file_path).execute(tx.conn()).await.map_err(into_c3p0_error)?;
+        Ok(res.rows_affected())
     }
 }

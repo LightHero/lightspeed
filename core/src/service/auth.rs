@@ -125,9 +125,7 @@ impl<'a> AuthContext<'a> {
                 return Ok(self);
             };
         }
-        Err(LsError::ForbiddenError {
-            message: format!("User [{}] does not have the required role", self.auth.id),
-        })
+        Err(LsError::ForbiddenError { message: format!("User [{}] does not have the required role", self.auth.id) })
     }
 
     pub fn has_all_roles(&self, roles: &[&str]) -> Result<&AuthContext, LsError> {
@@ -209,11 +207,7 @@ impl<'a> AuthContext<'a> {
         }
     }
 
-    pub fn is_owner_or_has_permission<T: Owned>(
-        &self,
-        obj: &T,
-        permission: &str,
-    ) -> Result<&AuthContext, LsError> {
+    pub fn is_owner_or_has_permission<T: Owned>(&self, obj: &T, permission: &str) -> Result<&AuthContext, LsError> {
         if (self.auth.id == obj.get_owner_id()) || self.has_permission_bool(permission) {
             Ok(self)
         } else {

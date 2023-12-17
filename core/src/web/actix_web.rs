@@ -55,7 +55,7 @@ mod test {
     use super::*;
     use crate::config::JwtConfig;
     use crate::error::RootErrorDetails;
-    use crate::service::auth::{Auth, LsAuthService, InMemoryRolesProvider, Role};
+    use crate::service::auth::{Auth, InMemoryRolesProvider, LsAuthService, Role};
     use crate::service::jwt::{LsJwtService, JWT};
     use crate::web::{WebAuthService, JWT_TOKEN_HEADER, JWT_TOKEN_HEADER_SUFFIX};
     use actix_web::dev::Service;

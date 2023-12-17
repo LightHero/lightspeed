@@ -1,9 +1,9 @@
 use crate::model::schema::SchemaData;
 use crate::repository::SchemaRepository;
-use c3p0::sqlx::{*, error::into_c3p0_error};
+use ::sqlx::Row;
+use c3p0::sqlx::{error::into_c3p0_error, *};
 use c3p0::*;
 use lightspeed_core::error::LsError;
-use ::sqlx::Row;
 use std::ops::Deref;
 
 #[derive(Clone)]
@@ -44,35 +44,25 @@ impl SchemaRepository for PgSchemaRepository {
             where DATA ->> 'name' = $1 AND (DATA ->> 'project_id')::bigint = $2 )
         "#;
 
-        let res = ::sqlx::query(sql).bind(name).bind(project_id)
-        .fetch_one(tx.conn())
-        .await
-        .and_then(|row| {row.try_get(0)        })
-        .map_err(into_c3p0_error)?;
-    Ok(res)
+        let res = ::sqlx::query(sql)
+            .bind(name)
+            .bind(project_id)
+            .fetch_one(tx.conn())
+            .await
+            .and_then(|row| row.try_get(0))
+            .map_err(into_c3p0_error)?;
+        Ok(res)
     }
 
-    async fn save(
-        &self,
-        tx: &mut Self::Tx,
-        model: NewModel<SchemaData>,
-    ) -> Result<Model<SchemaData>, LsError> {
+    async fn save(&self, tx: &mut Self::Tx, model: NewModel<SchemaData>) -> Result<Model<SchemaData>, LsError> {
         Ok(self.repo.save(tx, model).await?)
     }
 
-    async fn update(
-        &self,
-        tx: &mut Self::Tx,
-        model: Model<SchemaData>,
-    ) -> Result<Model<SchemaData>, LsError> {
+    async fn update(&self, tx: &mut Self::Tx, model: Model<SchemaData>) -> Result<Model<SchemaData>, LsError> {
         Ok(self.repo.update(tx, model).await?)
     }
 
-    async fn delete(
-        &self,
-        tx: &mut Self::Tx,
-        model: Model<SchemaData>,
-    ) -> Result<Model<SchemaData>, LsError> {
+    async fn delete(&self, tx: &mut Self::Tx, model: Model<SchemaData>) -> Result<Model<SchemaData>, LsError> {
         Ok(self.repo.delete(tx, model).await?)
     }
 
@@ -82,10 +72,7 @@ impl SchemaRepository for PgSchemaRepository {
             where (DATA ->> 'project_id')::bigint = $1
         "#;
 
-        let res = ::sqlx::query(sql).bind(project_id)
-        .execute(tx.conn())
-        .await
-        .map_err(into_c3p0_error)?;
-    Ok(res.rows_affected())
+        let res = ::sqlx::query(sql).bind(project_id).execute(tx.conn()).await.map_err(into_c3p0_error)?;
+        Ok(res.rows_affected())
     }
 }

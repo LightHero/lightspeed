@@ -32,11 +32,7 @@ pub trait AuthAccountRepository: Clone + Send + Sync {
 
     async fn fetch_by_id(&self, tx: &mut Self::Tx, user_id: i64) -> Result<AuthAccountModel, LsError>;
 
-    async fn fetch_by_username(
-        &self,
-        tx: &mut Self::Tx,
-        username: &str,
-    ) -> Result<AuthAccountModel, LsError>;
+    async fn fetch_by_username(&self, tx: &mut Self::Tx, username: &str) -> Result<AuthAccountModel, LsError>;
 
     async fn fetch_by_username_optional(
         &self,
@@ -50,20 +46,11 @@ pub trait AuthAccountRepository: Clone + Send + Sync {
         email: &str,
     ) -> Result<Option<AuthAccountModel>, LsError>;
 
-    async fn save(
-        &self,
-        tx: &mut Self::Tx,
-        model: NewModel<AuthAccountData>,
-    ) -> Result<AuthAccountModel, LsError>;
+    async fn save(&self, tx: &mut Self::Tx, model: NewModel<AuthAccountData>) -> Result<AuthAccountModel, LsError>;
 
-    async fn update(
-        &self,
-        tx: &mut Self::Tx,
-        model: Model<AuthAccountData>,
-    ) -> Result<AuthAccountModel, LsError>;
+    async fn update(&self, tx: &mut Self::Tx, model: Model<AuthAccountData>) -> Result<AuthAccountModel, LsError>;
 
-    async fn delete(&self, tx: &mut Self::Tx, model: AuthAccountModel)
-        -> Result<AuthAccountModel, LsError>;
+    async fn delete(&self, tx: &mut Self::Tx, model: AuthAccountModel) -> Result<AuthAccountModel, LsError>;
 
     async fn delete_by_id(&self, tx: &mut Self::Tx, user_id: i64) -> Result<u64, LsError>;
 }
@@ -74,11 +61,7 @@ pub trait TokenRepository: Clone + Send + Sync {
 
     async fn fetch_by_token(&self, tx: &mut Self::Tx, token_string: &str) -> Result<TokenModel, LsError>;
 
-    async fn fetch_by_username(
-        &self,
-        tx: &mut Self::Tx,
-        username: &str,
-    ) -> Result<Vec<TokenModel>, LsError>;
+    async fn fetch_by_username(&self, tx: &mut Self::Tx, username: &str) -> Result<Vec<TokenModel>, LsError>;
 
     async fn save(&self, tx: &mut Self::Tx, model: NewModel<TokenData>) -> Result<TokenModel, LsError>;
 

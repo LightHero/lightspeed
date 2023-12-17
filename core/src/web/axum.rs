@@ -29,9 +29,7 @@ impl IntoResponse for LsError {
             | LsError::ModuleBuilderError { .. }
             | LsError::ModuleStartError { .. }
             | LsError::ConfigurationError { .. }
-            | LsError::PasswordEncryptionError { .. } => {
-                response_with_code(http::StatusCode::INTERNAL_SERVER_ERROR)
-            }
+            | LsError::PasswordEncryptionError { .. } => response_with_code(http::StatusCode::INTERNAL_SERVER_ERROR),
         }
     }
 }
@@ -76,7 +74,7 @@ mod test {
 
     use super::*;
     use crate::config::JwtConfig;
-    use crate::service::auth::{Auth, LsAuthService, InMemoryRolesProvider, Role};
+    use crate::service::auth::{Auth, InMemoryRolesProvider, LsAuthService, Role};
     use crate::service::jwt::{LsJwtService, JWT};
     use crate::web::{WebAuthService, JWT_TOKEN_HEADER, JWT_TOKEN_HEADER_SUFFIX};
     use axum::http::{header, HeaderMap, Request};

@@ -440,8 +440,7 @@ fn should_delete_file_from_fs() -> Result<(), LsError> {
 }
 
 #[test]
-fn should_allow_same_files_with_same_repository_name_and_path_but_different_repository_type(
-) -> Result<(), LsError> {
+fn should_allow_same_files_with_same_repository_name_and_path_but_different_repository_type() -> Result<(), LsError> {
     test(async {
         let data = data(false).await;
         let file_store = &data.0.file_store_service;

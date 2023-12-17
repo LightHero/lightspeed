@@ -31,10 +31,7 @@ pub async fn into_response(
             let filename = match path.file_name() {
                 Some(name) => name.to_string_lossy(),
                 None => {
-                    return Err(LsError::BadRequest {
-                        message: "Provided path has no filename".to_owned(),
-                        code: "",
-                    })?;
+                    return Err(LsError::BadRequest { message: "Provided path has no filename".to_owned(), code: "" })?;
                 }
             };
 

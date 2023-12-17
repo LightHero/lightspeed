@@ -14,8 +14,7 @@ impl LsPasswordCodecService {
     }
 
     pub fn verify_match(&self, plain_password: &str, hash: &str) -> Result<bool, LsError> {
-        verify(plain_password, hash)
-            .map_err(|err| LsError::PasswordEncryptionError { message: format!("{err:?}") })
+        verify(plain_password, hash).map_err(|err| LsError::PasswordEncryptionError { message: format!("{err:?}") })
     }
 
     pub fn hash_password(&self, plain_password: &str) -> Result<String, LsError> {

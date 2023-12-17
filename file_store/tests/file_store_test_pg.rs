@@ -23,11 +23,11 @@ async fn init() -> MaybeType {
     let node = DOCKER.get_or_init(Cli::default).run(Postgres::default());
 
     let options = PgConnectOptions::new()
-    .username("postgres")
-    .password("postgres")
-    .database("postgres")
-    .host("127.0.0.1")
-    .port(node.get_host_port_ipv4(5432));
+        .username("postgres")
+        .password("postgres")
+        .database("postgres")
+        .host("127.0.0.1")
+        .port(node.get_host_port_ipv4(5432));
 
     let pool = PgPool::connect_with(options).await.unwrap();
 

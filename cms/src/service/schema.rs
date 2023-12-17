@@ -45,11 +45,7 @@ impl<RepoManager: CmsRepositoryManager> LsSchemaService<RepoManager> {
         self.c3p0.transaction(|conn| async { self.schema_repo.delete(conn, schema_model).await }).await
     }
 
-    pub async fn delete_by_project_id(
-        &self,
-        conn: &mut RepoManager::Tx,
-        project_id: i64,
-    ) -> Result<u64, LsError> {
+    pub async fn delete_by_project_id(&self, conn: &mut RepoManager::Tx, project_id: i64) -> Result<u64, LsError> {
         self.schema_repo.delete_by_project_id(conn, project_id).await
     }
 }

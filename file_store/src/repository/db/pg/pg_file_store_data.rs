@@ -1,9 +1,9 @@
 use crate::model::{FileStoreDataData, FileStoreDataDataCodec, FileStoreDataModel, Repository, RepositoryFile};
 use crate::repository::db::FileStoreDataRepository;
-use c3p0::sqlx::error::into_c3p0_error;
-use c3p0::{*, sqlx::*};
-use lightspeed_core::error::LsError;
 use ::sqlx::{query, Row};
+use c3p0::sqlx::error::into_c3p0_error;
+use c3p0::{sqlx::*, *};
+use lightspeed_core::error::LsError;
 
 #[derive(Clone)]
 pub struct PgFileStoreDataRepository {
@@ -22,22 +22,21 @@ impl Default for PgFileStoreDataRepository {
 impl FileStoreDataRepository for PgFileStoreDataRepository {
     type Tx = PgTx;
 
-    async fn exists_by_repository(
-        &self,
-        tx: &mut Self::Tx,
-        repository: &RepositoryFile,
-    ) -> Result<bool, LsError> {
+    async fn exists_by_repository(&self, tx: &mut Self::Tx, repository: &RepositoryFile) -> Result<bool, LsError> {
         let sql =
             "SELECT EXISTS (SELECT 1 FROM LS_FILE_STORE_DATA WHERE (data -> 'repository' ->> '_json_tag') = $1 AND (data -> 'repository' ->> 'repository_name') = $2 AND (data -> 'repository' ->> 'file_path') = $3)";
 
         let repo_info = RepoFileInfo::new(repository);
 
-        let res = query(sql).bind(repo_info.repo_type).bind(repo_info.repository_name).bind(repo_info.file_path)
-        .fetch_one(tx.conn())
-        .await
-        .and_then(|row| {row.try_get(0)        })
-        .map_err(into_c3p0_error)?;
-    Ok(res)
+        let res = query(sql)
+            .bind(repo_info.repo_type)
+            .bind(repo_info.repository_name)
+            .bind(repo_info.file_path)
+            .fetch_one(tx.conn())
+            .await
+            .and_then(|row| row.try_get(0))
+            .map_err(into_c3p0_error)?;
+        Ok(res)
     }
 
     async fn fetch_one_by_id(&self, tx: &mut Self::Tx, id: IdType) -> Result<FileStoreDataModel, LsError> {
@@ -60,7 +59,10 @@ impl FileStoreDataRepository for PgFileStoreDataRepository {
 
         Ok(self
             .repo
-            .fetch_one_with_sql(tx, ::sqlx::query(&sql).bind(repo_info.repo_type).bind(repo_info.repository_name).bind(repo_info.file_path))
+            .fetch_one_with_sql(
+                tx,
+                ::sqlx::query(&sql).bind(repo_info.repo_type).bind(repo_info.repository_name).bind(repo_info.file_path),
+            )
             .await?)
     }
 
@@ -87,14 +89,13 @@ impl FileStoreDataRepository for PgFileStoreDataRepository {
 
         let repo_info = RepoInfo::new(repository);
 
-        Ok(self.repo.fetch_all_with_sql(tx, ::sqlx::query(&sql).bind(&repo_info.repo_type).bind(&repo_info.repository_name)).await?)
+        Ok(self
+            .repo
+            .fetch_all_with_sql(tx, ::sqlx::query(&sql).bind(&repo_info.repo_type).bind(&repo_info.repository_name))
+            .await?)
     }
 
-    async fn save(
-        &self,
-        tx: &mut Self::Tx,
-        model: NewModel<FileStoreDataData>,
-    ) -> Result<FileStoreDataModel, LsError> {
+    async fn save(&self, tx: &mut Self::Tx, model: NewModel<FileStoreDataData>) -> Result<FileStoreDataModel, LsError> {
         Ok(self.repo.save(tx, model).await?)
     }
 

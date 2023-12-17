@@ -103,8 +103,7 @@ fn should_return_user_by_id() -> Result<(), LsError> {
             .repo_manager
             .c3p0()
             .transaction(|conn| async {
-                let user_by_id =
-                    auth_module.auth_account_service.fetch_by_user_id_with_conn(conn, user.id).await?;
+                let user_by_id = auth_module.auth_account_service.fetch_by_user_id_with_conn(conn, user.id).await?;
 
                 assert_eq!(user.data.username, user_by_id.data.username);
 
@@ -126,10 +125,8 @@ fn should_return_user_by_username() -> Result<(), LsError> {
             .repo_manager
             .c3p0()
             .transaction(|conn| async {
-                let user_by_id = auth_module
-                    .auth_account_service
-                    .fetch_by_username_with_conn(conn, &user.data.username)
-                    .await?;
+                let user_by_id =
+                    auth_module.auth_account_service.fetch_by_username_with_conn(conn, &user.data.username).await?;
 
                 assert_eq!(user.id, user_by_id.id);
 
@@ -367,9 +364,7 @@ fn should_regenerate_activation_token_even_if_token_expired() -> Result<(), LsEr
         let token_model = &auth_module
             .repo_manager
             .c3p0()
-            .transaction(|conn| async {
-                auth_module.repo_manager.token_repo().update(conn, token.clone()).await
-            })
+            .transaction(|conn| async { auth_module.repo_manager.token_repo().update(conn, token.clone()).await })
             .await?;
 
         assert!(auth_module

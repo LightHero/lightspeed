@@ -42,9 +42,7 @@ impl<RepoManager: DBFileStoreRepositoryManager> LsFileStoreService<RepoManager> 
     }
 
     pub async fn exists_by_repository(&self, repository: &RepositoryFile) -> Result<bool, LsError> {
-        self.c3p0
-            .transaction(|conn| async { self.exists_by_repository_with_conn(conn, repository).await })
-            .await
+        self.c3p0.transaction(|conn| async { self.exists_by_repository_with_conn(conn, repository).await }).await
     }
 
     pub async fn exists_by_repository_with_conn(
@@ -61,9 +59,7 @@ impl<RepoManager: DBFileStoreRepositoryManager> LsFileStoreService<RepoManager> 
         repository: &RepositoryFile,
     ) -> Result<FileStoreDataModel, LsError> {
         self.c3p0
-            .transaction(
-                |conn| async { self.read_file_data_by_repository_with_conn(conn, repository).await },
-            )
+            .transaction(|conn| async { self.read_file_data_by_repository_with_conn(conn, repository).await })
             .await
     }
 
@@ -107,9 +103,7 @@ impl<RepoManager: DBFileStoreRepositoryManager> LsFileStoreService<RepoManager> 
         match repository {
             RepositoryFile::DB { file_path, repository_name } => {
                 self.c3p0
-                    .transaction(|conn| async {
-                        self.db_binary_repo.read_file(conn, repository_name, file_path).await
-                    })
+                    .transaction(|conn| async { self.db_binary_repo.read_file(conn, repository_name, file_path).await })
                     .await
             }
             RepositoryFile::FS { file_path, repository_name } => {
@@ -191,11 +185,7 @@ impl<RepoManager: DBFileStoreRepositoryManager> LsFileStoreService<RepoManager> 
         self.c3p0.transaction(|conn| async { self.delete_file_by_id_with_conn(conn, id).await }).await
     }
 
-    pub async fn delete_file_by_id_with_conn(
-        &self,
-        conn: &mut RepoManager::Tx,
-        id: IdType,
-    ) -> Result<u64, LsError> {
+    pub async fn delete_file_by_id_with_conn(&self, conn: &mut RepoManager::Tx, id: IdType) -> Result<u64, LsError> {
         info!("LsFileStoreService - Delete file by id [{}]", id);
 
         let file_data = self.read_file_data_by_id_with_conn(conn, id).await?;
