@@ -27,23 +27,23 @@ impl Deref for PgContentRepository {
 
 #[async_trait::async_trait]
 impl ContentRepository for PgContentRepository {
-    type Conn = SqlxPgConnection;
+    type Tx = PgTx;
 
-    async fn create_table(&self, conn: &mut Self::Conn) -> Result<(), LsError> {
-        Ok(self.repo.create_table_if_not_exists(conn).await?)
+    async fn create_table(&self, tx: &mut Self::Tx) -> Result<(), LsError> {
+        Ok(self.repo.create_table_if_not_exists(tx).await?)
     }
 
-    async fn drop_table(&self, conn: &mut Self::Conn) -> Result<(), LsError> {
-        Ok(self.repo.drop_table_if_exists(conn, true).await?)
+    async fn drop_table(&self, tx: &mut Self::Tx) -> Result<(), LsError> {
+        Ok(self.repo.drop_table_if_exists(tx, true).await?)
     }
 
-    async fn count_all(&self, conn: &mut Self::Conn) -> Result<u64, LsError> {
-        Ok(self.repo.count_all(conn).await?)
+    async fn count_all(&self, tx: &mut Self::Tx) -> Result<u64, LsError> {
+        Ok(self.repo.count_all(tx).await?)
     }
 
     async fn count_all_by_field_value(
         &self,
-        conn: &mut Self::Conn,
+        tx: &mut Self::Tx,
         field_name: &str,
         field_value: &str,
     ) -> Result<u64, LsError> {
@@ -53,7 +53,7 @@ impl ContentRepository for PgContentRepository {
             field_name
         );
         let res = ::sqlx::query(&sql).bind(field_value)
-        .fetch_one(&mut **conn.get_conn())
+        .fetch_one(tx.conn())
         .await
         .and_then(|row| {
             row.try_get(0).map(|val: i64| val as u64)
@@ -61,26 +61,15 @@ impl ContentRepository for PgContentRepository {
         .map_err(into_c3p0_error)?;
     Ok(res)
 
-        // Ok(conn
-        //     .fetch_one_value(
-        //         &format!(
-        //     "SELECT COUNT(*) FROM {} WHERE  (DATA -> 'content' -> 'fields' -> '{}' -> 'value' ->> 'value') = $1 ",
-        //     self.repo.queries().qualified_table_name,
-        //     field_name
-        // ),
-        //         &[&field_value],
-        //     )
-        //     .await
-        //     .map(|val: i64| val as u64)?)
     }
 
     async fn create_unique_constraint(
         &self,
-        conn: &mut Self::Conn,
+        tx: &mut Self::Tx,
         index_name: &str,
         field_name: &str,
     ) -> Result<(), LsError> {
-        Ok(conn
+        Ok(tx
             .batch_execute(&format!(
                 "CREATE UNIQUE INDEX {} ON {}( (DATA -> 'content' -> 'fields' -> '{}' -> 'value' ->> 'value') )",
                 index_name,
@@ -90,35 +79,35 @@ impl ContentRepository for PgContentRepository {
             .await?)
     }
 
-    async fn drop_unique_constraint(&self, conn: &mut Self::Conn, index_name: &str) -> Result<(), LsError> {
-        Ok(conn.batch_execute(&format!("DROP INDEX {index_name} IF EXISTS")).await?)
+    async fn drop_unique_constraint(&self, tx: &mut Self::Tx, index_name: &str) -> Result<(), LsError> {
+        Ok(tx.batch_execute(&format!("DROP INDEX {index_name} IF EXISTS")).await?)
     }
 
-    async fn fetch_by_id(&self, conn: &mut Self::Conn, id: i64) -> Result<Model<ContentData>, LsError> {
-        Ok(self.repo.fetch_one_by_id(conn, &id).await?)
+    async fn fetch_by_id(&self, tx: &mut Self::Tx, id: i64) -> Result<Model<ContentData>, LsError> {
+        Ok(self.repo.fetch_one_by_id(tx, &id).await?)
     }
 
     async fn save(
         &self,
-        conn: &mut Self::Conn,
+        tx: &mut Self::Tx,
         model: NewModel<ContentData>,
     ) -> Result<Model<ContentData>, LsError> {
-        Ok(self.repo.save(conn, model).await?)
+        Ok(self.repo.save(tx, model).await?)
     }
 
     async fn update(
         &self,
-        conn: &mut Self::Conn,
+        tx: &mut Self::Tx,
         model: Model<ContentData>,
     ) -> Result<Model<ContentData>, LsError> {
-        Ok(self.repo.update(conn, model).await?)
+        Ok(self.repo.update(tx, model).await?)
     }
 
     async fn delete(
         &self,
-        conn: &mut Self::Conn,
+        tx: &mut Self::Tx,
         model: Model<ContentData>,
     ) -> Result<Model<ContentData>, LsError> {
-        Ok(self.repo.delete(conn, model).await?)
+        Ok(self.repo.delete(tx, model).await?)
     }
 }

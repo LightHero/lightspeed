@@ -20,11 +20,11 @@ impl Default for PgFileStoreDataRepository {
 
 #[async_trait::async_trait]
 impl FileStoreDataRepository for PgFileStoreDataRepository {
-    type Conn = SqlxPgConnection;
+    type Tx = PgTx;
 
     async fn exists_by_repository(
         &self,
-        conn: &mut Self::Conn,
+        tx: &mut Self::Tx,
         repository: &RepositoryFile,
     ) -> Result<bool, LsError> {
         let sql =
@@ -33,22 +33,20 @@ impl FileStoreDataRepository for PgFileStoreDataRepository {
         let repo_info = RepoFileInfo::new(repository);
 
         let res = query(sql).bind(repo_info.repo_type).bind(repo_info.repository_name).bind(repo_info.file_path)
-        .fetch_one(&mut **conn.get_conn())
+        .fetch_one(tx.conn())
         .await
         .and_then(|row| {row.try_get(0)        })
         .map_err(into_c3p0_error)?;
     Ok(res)
-
-        //  Ok(conn.fetch_one_value(sql, &[&repo_info.repo_type, &repo_info.repository_name, &repo_info.file_path]).await?)
     }
 
-    async fn fetch_one_by_id(&self, conn: &mut Self::Conn, id: IdType) -> Result<FileStoreDataModel, LsError> {
-        Ok(self.repo.fetch_one_by_id(conn, &id).await?)
+    async fn fetch_one_by_id(&self, tx: &mut Self::Tx, id: IdType) -> Result<FileStoreDataModel, LsError> {
+        Ok(self.repo.fetch_one_by_id(tx, &id).await?)
     }
 
     async fn fetch_one_by_repository(
         &self,
-        conn: &mut Self::Conn,
+        tx: &mut Self::Tx,
         repository: &RepositoryFile,
     ) -> Result<FileStoreDataModel, LsError> {
         let sql = format!(
@@ -62,13 +60,13 @@ impl FileStoreDataRepository for PgFileStoreDataRepository {
 
         Ok(self
             .repo
-            .fetch_one_with_sql(conn, ::sqlx::query(&sql).bind(repo_info.repo_type).bind(repo_info.repository_name).bind(repo_info.file_path))
+            .fetch_one_with_sql(tx, ::sqlx::query(&sql).bind(repo_info.repo_type).bind(repo_info.repository_name).bind(repo_info.file_path))
             .await?)
     }
 
     async fn fetch_all_by_repository(
         &self,
-        conn: &mut Self::Conn,
+        tx: &mut Self::Tx,
         repository: &Repository,
         offset: usize,
         max: usize,
@@ -89,19 +87,19 @@ impl FileStoreDataRepository for PgFileStoreDataRepository {
 
         let repo_info = RepoInfo::new(repository);
 
-        Ok(self.repo.fetch_all_with_sql(conn, ::sqlx::query(&sql).bind(&repo_info.repo_type).bind(&repo_info.repository_name)).await?)
+        Ok(self.repo.fetch_all_with_sql(tx, ::sqlx::query(&sql).bind(&repo_info.repo_type).bind(&repo_info.repository_name)).await?)
     }
 
     async fn save(
         &self,
-        conn: &mut Self::Conn,
+        tx: &mut Self::Tx,
         model: NewModel<FileStoreDataData>,
     ) -> Result<FileStoreDataModel, LsError> {
-        Ok(self.repo.save(conn, model).await?)
+        Ok(self.repo.save(tx, model).await?)
     }
 
-    async fn delete_by_id(&self, conn: &mut Self::Conn, id: IdType) -> Result<u64, LsError> {
-        Ok(self.repo.delete_by_id(conn, &id).await?)
+    async fn delete_by_id(&self, tx: &mut Self::Tx, id: IdType) -> Result<u64, LsError> {
+        Ok(self.repo.delete_by_id(tx, &id).await?)
     }
 }
 

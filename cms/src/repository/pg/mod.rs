@@ -25,7 +25,7 @@ impl PgCmsRepositoryManager {
 
 #[async_trait::async_trait]
 impl CmsRepositoryManager for PgCmsRepositoryManager {
-    type Conn = SqlxPgConnection;
+    type Tx = PgTx;
     type C3P0 = SqlxPgC3p0Pool;
     type ContentRepo = PgContentRepository;
     type ProjectRepo = PgProjectRepository;

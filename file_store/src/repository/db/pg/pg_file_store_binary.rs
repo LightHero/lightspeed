@@ -21,18 +21,18 @@ impl Default for PgFileStoreBinaryRepository {
 
 #[async_trait::async_trait]
 impl DBFileStoreBinaryRepository for PgFileStoreBinaryRepository {
-    type Conn = SqlxPgConnection;
+    type Tx = PgTx;
 
     async fn read_file<'a>(
         &self,
-        conn: &mut Self::Conn,
+        tx: &mut Self::Tx,
         repository_name: &str,
         file_path: &str,
     ) -> Result<BinaryContent<'a>, LsError> {
         let sql = &format!("SELECT DATA FROM {} WHERE repository = $1 AND filepath = $2", self.table_name);
 
         let res = query(sql).bind(repository_name).bind(file_path)
-        .fetch_one(&mut **conn.get_conn())
+        .fetch_one(tx.conn())
         .await
         .and_then(|row| {row.try_get(0)        })
         .map(|content| BinaryContent::InMemory { content: Cow::Owned(content) })
@@ -42,7 +42,7 @@ impl DBFileStoreBinaryRepository for PgFileStoreBinaryRepository {
 
     async fn save_file<'a>(
         &self,
-        conn: &mut Self::Conn,
+        tx: &mut Self::Tx,
         repository_name: &str,
         file_path: &str,
         content: &'a BinaryContent<'a>,
@@ -74,7 +74,7 @@ impl DBFileStoreBinaryRepository for PgFileStoreBinaryRepository {
         let sql = &format!("INSERT INTO {} (repository, filepath, data) VALUES ($1, $2, $3)", self.table_name);
 
         let res = query(sql).bind(repository_name).bind(file_path).bind(binary_content.as_ref().as_ref())
-            .execute(&mut **conn.get_conn())
+            .execute(tx.conn())
             .await
             .map_err(into_c3p0_error)?;
         Ok(res.rows_affected())
@@ -83,13 +83,13 @@ impl DBFileStoreBinaryRepository for PgFileStoreBinaryRepository {
 
     async fn delete_file(
         &self,
-        conn: &mut Self::Conn,
+        tx: &mut Self::Tx,
         repository_name: &str,
         file_path: &str,
     ) -> Result<u64, LsError> {
         let sql = &format!("DELETE FROM {} WHERE repository = $1 AND filepath = $2", self.table_name);
         let res = query(sql).bind(repository_name).bind(file_path)
-        .execute(&mut **conn.get_conn())
+        .execute(tx.conn())
         .await
         .map_err(into_c3p0_error)?;
     Ok(res.rows_affected())

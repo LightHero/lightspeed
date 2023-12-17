@@ -26,9 +26,9 @@ impl Default for PgTokenRepository {
 
 #[async_trait::async_trait]
 impl TokenRepository for PgTokenRepository {
-    type Conn = SqlxPgConnection;
+    type Tx = PgTx;
 
-    async fn fetch_by_token(&self, conn: &mut Self::Conn, token_string: &str) -> Result<TokenModel, LsError> {
+    async fn fetch_by_token(&self, tx: &mut Self::Tx, token_string: &str) -> Result<TokenModel, LsError> {
         let sql = &format!(
             r#"
             {}
@@ -37,12 +37,12 @@ impl TokenRepository for PgTokenRepository {
         "#,
             self.queries().find_base_sql_query
         );
-        Ok(self.repo.fetch_one_with_sql(conn, ::sqlx::query(&sql).bind(token_string)).await?)
+        Ok(self.repo.fetch_one_with_sql(tx, ::sqlx::query(&sql).bind(token_string)).await?)
     }
 
     async fn fetch_by_username(
         &self,
-        conn: &mut Self::Conn,
+        tx: &mut Self::Tx,
         username: &str,
     ) -> Result<Vec<TokenModel>, LsError> {
         let sql = format!(
@@ -53,22 +53,22 @@ impl TokenRepository for PgTokenRepository {
             self.queries().find_base_sql_query
         );
         
-        Ok(self.repo.fetch_all_with_sql(conn, ::sqlx::query(&sql).bind(username)).await?)
+        Ok(self.repo.fetch_all_with_sql(tx, ::sqlx::query(&sql).bind(username)).await?)
     }
 
     async fn save(
         &self,
-        conn: &mut Self::Conn,
+        tx: &mut Self::Tx,
         model: NewModel<TokenData>,
     ) -> Result<Model<TokenData>, LsError> {
-        Ok(self.repo.save(conn, model).await?)
+        Ok(self.repo.save(tx, model).await?)
     }
 
     async fn delete(
         &self,
-        conn: &mut Self::Conn,
+        tx: &mut Self::Tx,
         model: Model<TokenData>,
     ) -> Result<Model<TokenData>, LsError> {
-        Ok(self.repo.delete(conn, model).await?)
+        Ok(self.repo.delete(tx, model).await?)
     }
 }

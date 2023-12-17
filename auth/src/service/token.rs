@@ -20,7 +20,7 @@ impl<RepoManager: AuthRepositoryManager> LsTokenService<RepoManager> {
 
     pub async fn generate_and_save_token_with_conn<S: Into<String>>(
         &self,
-        conn: &mut RepoManager::Conn,
+        conn: &mut RepoManager::Tx,
         username: S,
         token_type: TokenType,
     ) -> Result<TokenModel, LsError> {
@@ -40,7 +40,7 @@ impl<RepoManager: AuthRepositoryManager> LsTokenService<RepoManager> {
 
     pub async fn fetch_by_token_with_conn(
         &self,
-        conn: &mut RepoManager::Conn,
+        conn: &mut RepoManager::Tx,
         token: &str,
         validate: bool,
     ) -> Result<TokenModel, LsError> {
@@ -56,7 +56,7 @@ impl<RepoManager: AuthRepositoryManager> LsTokenService<RepoManager> {
 
     pub async fn fetch_all_by_username_with_conn(
         &self,
-        conn: &mut RepoManager::Conn,
+        conn: &mut RepoManager::Tx,
         username: &str,
     ) -> Result<Vec<TokenModel>, LsError> {
         debug!("Fetch by username [{}]", username);
@@ -65,7 +65,7 @@ impl<RepoManager: AuthRepositoryManager> LsTokenService<RepoManager> {
 
     pub async fn delete_with_conn(
         &self,
-        conn: &mut RepoManager::Conn,
+        conn: &mut RepoManager::Tx,
         token_model: TokenModel,
     ) -> Result<TokenModel, LsError> {
         debug!("Delete token_model with id [{}] and token [{}]", token_model.id, token_model.data.token);

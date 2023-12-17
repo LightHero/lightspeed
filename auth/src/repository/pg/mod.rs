@@ -23,7 +23,7 @@ impl PgAuthRepositoryManager {
 
 #[async_trait::async_trait]
 impl AuthRepositoryManager for PgAuthRepositoryManager {
-    type Conn = SqlxPgConnection;
+    type Tx = PgTx;
     type C3P0 = SqlxPgC3p0Pool;
     type AuthAccountRepo = PgAuthAccountRepository;
     type TokenRepo = PgTokenRepository;

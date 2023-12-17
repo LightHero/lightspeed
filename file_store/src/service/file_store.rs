@@ -34,7 +34,7 @@ impl<RepoManager: DBFileStoreRepositoryManager> LsFileStoreService<RepoManager> 
 
     pub async fn read_file_data_by_id_with_conn(
         &self,
-        conn: &mut RepoManager::Conn,
+        conn: &mut RepoManager::Tx,
         id: IdType,
     ) -> Result<FileStoreDataModel, LsError> {
         debug!("LsFileStoreService - Read file by id [{}]", id);
@@ -49,7 +49,7 @@ impl<RepoManager: DBFileStoreRepositoryManager> LsFileStoreService<RepoManager> 
 
     pub async fn exists_by_repository_with_conn(
         &self,
-        conn: &mut RepoManager::Conn,
+        conn: &mut RepoManager::Tx,
         repository: &RepositoryFile,
     ) -> Result<bool, LsError> {
         debug!("LsFileStoreService - Check if file exists by repository [{:?}]", repository);
@@ -69,7 +69,7 @@ impl<RepoManager: DBFileStoreRepositoryManager> LsFileStoreService<RepoManager> 
 
     pub async fn read_file_data_by_repository_with_conn(
         &self,
-        conn: &mut RepoManager::Conn,
+        conn: &mut RepoManager::Tx,
         repository: &RepositoryFile,
     ) -> Result<FileStoreDataModel, LsError> {
         debug!("LsFileStoreService - Read file data by repository [{:?}]", repository);
@@ -92,7 +92,7 @@ impl<RepoManager: DBFileStoreRepositoryManager> LsFileStoreService<RepoManager> 
 
     pub async fn read_all_file_data_by_repository_with_conn(
         &self,
-        conn: &mut RepoManager::Conn,
+        conn: &mut RepoManager::Tx,
         repository: &Repository,
         offset: usize,
         max: usize,
@@ -120,7 +120,7 @@ impl<RepoManager: DBFileStoreRepositoryManager> LsFileStoreService<RepoManager> 
 
     pub async fn read_file_content_with_conn(
         &self,
-        conn: &mut RepoManager::Conn,
+        conn: &mut RepoManager::Tx,
         repository: &RepositoryFile,
     ) -> Result<BinaryContent<'_>, LsError> {
         debug!("LsFileStoreService - Read file [{:?}]", repository);
@@ -136,7 +136,7 @@ impl<RepoManager: DBFileStoreRepositoryManager> LsFileStoreService<RepoManager> 
 
     pub async fn save_file_with_conn<'a>(
         &self,
-        conn: &mut RepoManager::Conn,
+        conn: &mut RepoManager::Tx,
         filename: String,
         content_type: String,
         content: &'a BinaryContent<'a>,
@@ -193,7 +193,7 @@ impl<RepoManager: DBFileStoreRepositoryManager> LsFileStoreService<RepoManager> 
 
     pub async fn delete_file_by_id_with_conn(
         &self,
-        conn: &mut RepoManager::Conn,
+        conn: &mut RepoManager::Tx,
         id: IdType,
     ) -> Result<u64, LsError> {
         info!("LsFileStoreService - Delete file by id [{}]", id);

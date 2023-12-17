@@ -43,7 +43,7 @@ impl<RepoManager: AuthRepositoryManager> LsAuthAccountService<RepoManager> {
 
     pub async fn login_with_conn(
         &self,
-        conn: &mut RepoManager::Conn,
+        conn: &mut RepoManager::Tx,
         username: &str,
         password: &str,
     ) -> Result<Auth, LsError> {
@@ -93,7 +93,7 @@ impl<RepoManager: AuthRepositoryManager> LsAuthAccountService<RepoManager> {
 
     pub async fn create_user_with_conn(
         &self,
-        conn: &mut RepoManager::Conn,
+        conn: &mut RepoManager::Tx,
         create_login_dto: CreateLoginDto,
     ) -> Result<(AuthAccountModel, TokenModel), LsError> {
         info!(
@@ -147,7 +147,7 @@ impl<RepoManager: AuthRepositoryManager> LsAuthAccountService<RepoManager> {
 
     async fn generate_activation_token_with_conn(
         &self,
-        conn: &mut RepoManager::Conn,
+        conn: &mut RepoManager::Tx,
         username: &str,
     ) -> Result<TokenModel, LsError> {
         debug!("Generate activation token for username [{}]", username);
@@ -168,7 +168,7 @@ impl<RepoManager: AuthRepositoryManager> LsAuthAccountService<RepoManager> {
 
     pub async fn generate_new_activation_token_by_username_and_email_with_conn(
         &self,
-        conn: &mut RepoManager::Conn,
+        conn: &mut RepoManager::Tx,
         username: &str,
         email: &str,
     ) -> Result<(AuthAccountModel, TokenModel), LsError> {
@@ -212,7 +212,7 @@ impl<RepoManager: AuthRepositoryManager> LsAuthAccountService<RepoManager> {
 
     pub async fn generate_new_activation_token_by_token_with_conn(
         &self,
-        conn: &mut RepoManager::Conn,
+        conn: &mut RepoManager::Tx,
         previous_activation_token: &str,
     ) -> Result<(AuthAccountModel, TokenModel), LsError> {
         debug!("Generate new activation token from previous token [{}]", previous_activation_token);
@@ -254,7 +254,7 @@ impl<RepoManager: AuthRepositoryManager> LsAuthAccountService<RepoManager> {
 
     pub async fn activate_user_with_conn(
         &self,
-        conn: &mut RepoManager::Conn,
+        conn: &mut RepoManager::Tx,
         activation_token: &str,
     ) -> Result<AuthAccountModel, LsError> {
         debug!("Activate user called with token [{}]", activation_token);
@@ -303,7 +303,7 @@ impl<RepoManager: AuthRepositoryManager> LsAuthAccountService<RepoManager> {
 
     pub async fn generate_reset_password_token_with_conn(
         &self,
-        conn: &mut RepoManager::Conn,
+        conn: &mut RepoManager::Tx,
         username: &str,
     ) -> Result<(AuthAccountModel, TokenModel), LsError> {
         info!("Generate reset password token for username [{}]", username);
@@ -339,7 +339,7 @@ impl<RepoManager: AuthRepositoryManager> LsAuthAccountService<RepoManager> {
 
     pub async fn reset_password_by_token_with_conn(
         &self,
-        conn: &mut RepoManager::Conn,
+        conn: &mut RepoManager::Tx,
         reset_password_dto: ResetPasswordDto,
     ) -> Result<AuthAccountModel, LsError> {
         debug!("Reset password called with token [{}]", reset_password_dto.token);
@@ -382,7 +382,7 @@ impl<RepoManager: AuthRepositoryManager> LsAuthAccountService<RepoManager> {
 
     pub async fn change_password_with_conn(
         &self,
-        conn: &mut RepoManager::Conn,
+        conn: &mut RepoManager::Tx,
         dto: ChangePasswordDto,
     ) -> Result<AuthAccountModel, LsError> {
         info!("Reset password of user_id [{}]", dto.user_id);
@@ -421,7 +421,7 @@ impl<RepoManager: AuthRepositoryManager> LsAuthAccountService<RepoManager> {
 
     pub async fn fetch_by_user_id_with_conn(
         &self,
-        conn: &mut RepoManager::Conn,
+        conn: &mut RepoManager::Tx,
         user_id: i64,
     ) -> Result<AuthAccountModel, LsError> {
         debug!("Fetch user with user_id [{}]", user_id);
@@ -436,7 +436,7 @@ impl<RepoManager: AuthRepositoryManager> LsAuthAccountService<RepoManager> {
 
     pub async fn fetch_by_username_with_conn(
         &self,
-        conn: &mut RepoManager::Conn,
+        conn: &mut RepoManager::Tx,
         username: &str,
     ) -> Result<AuthAccountModel, LsError> {
         debug!("Fetch user with username [{}]", username);
@@ -458,7 +458,7 @@ impl<RepoManager: AuthRepositoryManager> LsAuthAccountService<RepoManager> {
 
     pub async fn fetch_all_by_status_with_conn(
         &self,
-        conn: &mut RepoManager::Conn,
+        conn: &mut RepoManager::Tx,
         status: AuthAccountStatus,
         start_user_id: i64,
         limit: u32,
@@ -473,7 +473,7 @@ impl<RepoManager: AuthRepositoryManager> LsAuthAccountService<RepoManager> {
 
     pub async fn add_roles_with_conn(
         &self,
-        conn: &mut RepoManager::Conn,
+        conn: &mut RepoManager::Tx,
         user_id: i64,
         roles: &[String],
     ) -> Result<AuthAccountModel, LsError> {
@@ -496,7 +496,7 @@ impl<RepoManager: AuthRepositoryManager> LsAuthAccountService<RepoManager> {
 
     pub async fn delete_roles_with_conn(
         &self,
-        conn: &mut RepoManager::Conn,
+        conn: &mut RepoManager::Tx,
         user_id: i64,
         roles: &[String],
     ) -> Result<AuthAccountModel, LsError> {
@@ -524,7 +524,7 @@ impl<RepoManager: AuthRepositoryManager> LsAuthAccountService<RepoManager> {
 
     pub async fn change_user_data_with_conn(
         &self,
-        conn: &mut RepoManager::Conn,
+        conn: &mut RepoManager::Tx,
         user_id: i64,
         new_username: Option<String>,
         new_email: Option<String>,
@@ -560,7 +560,7 @@ impl<RepoManager: AuthRepositoryManager> LsAuthAccountService<RepoManager> {
 
     pub async fn disable_by_user_id_with_conn(
         &self,
-        conn: &mut RepoManager::Conn,
+        conn: &mut RepoManager::Tx,
         user_id: i64,
     ) -> Result<AuthAccountModel, LsError> {
         debug!("Disable user with user_id [{}]", user_id);
@@ -590,7 +590,7 @@ impl<RepoManager: AuthRepositoryManager> LsAuthAccountService<RepoManager> {
 
     pub async fn reactivate_disabled_user_by_user_id_with_conn(
         &self,
-        conn: &mut RepoManager::Conn,
+        conn: &mut RepoManager::Tx,
         user_id: i64,
     ) -> Result<AuthAccountModel, LsError> {
         debug!("Reactivate disabled user with user_id [{}]", user_id);
@@ -618,7 +618,7 @@ impl<RepoManager: AuthRepositoryManager> LsAuthAccountService<RepoManager> {
 
     pub async fn delete_by_user_id_with_conn(
         &self,
-        conn: &mut RepoManager::Conn,
+        conn: &mut RepoManager::Tx,
         user_id: i64,
     ) -> Result<u64, LsError> {
         debug!("Delete user with user_id [{}]", user_id);
