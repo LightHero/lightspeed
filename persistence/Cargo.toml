@@ -13,37 +13,11 @@ keywords = []
 [dependencies]
 lightspeed_core = { workspace = true, features = ["c3p0"] }
 async-trait = { workspace = true }
-c3p0 = { workspace = true }
 log = { workspace = true }
-serde = { workspace = true }
-serde_json = { workspace = true }
-strum = { workspace = true }
-tokio = { workspace = true, features = ["fs", "io-util"] }
-
-actix-files = { workspace = true, optional = true }
-actix-web = { workspace = true, optional = true }
-mime = { workspace = true, optional = true }
-mime_guess = { workspace = true, optional = true }
-
-axum = { workspace = true, optional = true }
-tokio-util = { workspace = true, optional = true, features = ["io"] }
+opendal = { workspace = true }
 
 
 [dev-dependencies]
-actix-rt = { workspace = true }
-config = { workspace = true }
-hyper = { workspace = true }
-lightspeed_logger = { workspace = true }
-maybe-single = { workspace = true }
-once_cell = { workspace = true }
-rand = { workspace = true }
+opendal = { workspace = true, default-features = true, features = ["services-redis"] }
 tempfile = { workspace = true }
-testcontainers = { workspace = true }
 tokio = { workspace = true, features = ["macros", "rt-multi-thread"] }
-tower = { workspace = true }
-
-[features]
-default = []
-
-actix_web = ["dep:actix-files", "dep:actix-web", "lightspeed_core/actix_web", "mime", "mime_guess"]
-axum = ["dep:axum", "lightspeed_core/axum", "mime", "mime_guess", "tokio-util"]
