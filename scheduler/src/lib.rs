@@ -89,7 +89,7 @@ impl JobExecutorInternal {
                     let timestamp = Utc::now().timestamp();
                     let group = job_clone.job.group();
                     let name = job_clone.job.name();
-                    let span = tracing::error_span!("run_pending", group, name, timestamp);
+                    let span = tracing::trace_span!("run_pending", group, name, timestamp);
 
                     let fut = async move {
                         let group = job_clone.job.group();
