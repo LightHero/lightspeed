@@ -66,6 +66,8 @@ mod test {
     use jsonwebtoken::Algorithm;
     use std::sync::Arc;
 
+    type AuthIdType = u64;
+
     #[actix_web::rt::test]
     async fn access_protected_url_should_return_unauthorized_if_no_token() {
         // Arrange
@@ -84,7 +86,7 @@ mod test {
     async fn access_protected_url_should_return_unauthorized_if_expired_token() {
         // Arrange
         let token = JWT {
-            payload: Auth {
+            payload: Auth::<AuthIdType> {
                 username: "Amelia".to_owned(),
                 id: 100,
                 session_id: "a_0".to_owned(),
@@ -115,7 +117,7 @@ mod test {
     #[actix_web::rt::test]
     async fn access_protected_url_should_return_ok_if_valid_token() {
         // Arrange
-        let auth = Auth {
+        let auth = Auth::<AuthIdType> {
             username: "Amelia".to_owned(),
             id: 100,
             session_id: "a_0".to_owned(),
@@ -142,7 +144,7 @@ mod test {
     #[actix_web::rt::test]
     async fn access_admin_url_should_return_forbidden_if_not_admin_role() {
         // Arrange
-        let auth = Auth {
+        let auth = Auth::<AuthIdType> {
             username: "Amelia".to_owned(),
             id: 100,
             session_id: "a_0".to_owned(),
@@ -203,12 +205,12 @@ mod test {
         })
     }
 
-    fn new_service() -> WebAuthService<InMemoryRolesProvider> {
-        WebAuthService {
-            auth_service: Arc::new(LsAuthService::new(InMemoryRolesProvider::new(
+    fn new_service() -> WebAuthService<AuthIdType, InMemoryRolesProvider> {
+        WebAuthService::new(
+            Arc::new(LsAuthService::new(InMemoryRolesProvider::new(
                 vec![Role { name: "admin".to_owned(), permissions: vec![] }].into(),
             ))),
-            jwt_service: Arc::new(
+            Arc::new(
                 LsJwtService::new(&JwtConfig {
                     secret: "secret".to_owned(),
                     signature_algorithm: Algorithm::HS256,
@@ -216,6 +218,6 @@ mod test {
                 })
                 .unwrap(),
             ),
-        }
+        )
     }
 }

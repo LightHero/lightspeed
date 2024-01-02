@@ -1,4 +1,4 @@
-use c3p0::{IdType, DataType, VersionType};
+use c3p0::{IdType, VersionType};
 
 use crate::error::ErrorDetails;
 use crate::service::auth::Owned;
@@ -7,14 +7,14 @@ pub const WRONG_OWNER: &str = "WRONG_OWNER";
 pub const WRONG_ID: &str = "WRONG_ID";
 pub const WRONG_VERSION: &str = "WRONG_VERSION";
 
-pub trait WithIdAndVersion<Id: IdType> {
-    fn get_id(&self) -> Id;
+pub trait WithIdAndVersion<Id> {
+    fn get_id(&self) -> &Id;
     fn get_version(&self) -> VersionType;
 }
 
-impl<Id: IdType, Data: DataType> WithIdAndVersion<Id> for c3p0::Model<Id, Data> {
-    fn get_id(&self) -> Id {
-        self.id
+impl<Id, Data> WithIdAndVersion<Id> for c3p0::Model<Id, Data> {
+    fn get_id(&self) -> &Id {
+        &self.id
     }
 
     fn get_version(&self) -> VersionType {
@@ -22,7 +22,7 @@ impl<Id: IdType, Data: DataType> WithIdAndVersion<Id> for c3p0::Model<Id, Data> 
     }
 }
 
-pub fn validate_ownership<Id: IdType, F: Owned<Id>, S: Owned<Id>>(error_details: &mut ErrorDetails, owner: &F, owned: &S) {
+pub fn validate_ownership<Id: Eq, F: Owned<Id>, S: Owned<Id>>(error_details: &mut ErrorDetails, owner: &F, owned: &S) {
     if owner.get_owner_id() != owned.get_owner_id() {
         error_details.add_detail("owner_id", WRONG_OWNER)
     }
@@ -56,13 +56,21 @@ mod tests {
     use super::*;
     use crate::error::{ErrorDetail, ErrorDetails};
 
+    struct Data(i32);
+
+    impl Owned<i32> for Data {
+        fn get_owner_id(&self) -> &i32 {
+            &self.0
+        }
+    }
+
     #[test]
     fn should_validate_ownership_1() {
         // Arrange
         let mut error_details = ErrorDetails::default();
 
-        let first = 61;
-        let second = 61;
+        let first = Data(61);
+        let second = Data(61);
 
         // Act
         validate_ownership(&mut error_details, &first, &second);
@@ -77,9 +85,9 @@ mod tests {
         let mut error_details = ErrorDetails::default();
 
         let first =
-            c3p0::Model { id: 13, version: 1, data: 1000, update_epoch_millis: 0, create_epoch_millis: 0 };
+            c3p0::Model { id: 13, version: 1, data: Data(1000), update_epoch_millis: 0, create_epoch_millis: 0 };
         let second =
-            c3p0::Model { id: 12, version: 0, data: 1000, update_epoch_millis: 0, create_epoch_millis: 0 };
+            c3p0::Model { id: 12, version: 0, data: Data(1000), update_epoch_millis: 0, create_epoch_millis: 0 };
 
         // Act
         validate_ownership(&mut error_details, &first, &second);
@@ -94,9 +102,9 @@ mod tests {
         let mut error_details = ErrorDetails::default();
 
         let first =
-            c3p0::Model { id: 13, version: 1, data: 1001, update_epoch_millis: 0, create_epoch_millis: 0 };
+            c3p0::Model { id: 13, version: 1, data: Data(1001), update_epoch_millis: 0, create_epoch_millis: 0 };
         let second =
-            c3p0::Model { id: 12, version: 0, data: 1000, update_epoch_millis: 0, create_epoch_millis: 0 };
+            c3p0::Model { id: 12, version: 0, data: Data(1000), update_epoch_millis: 0, create_epoch_millis: 0 };
 
         // Act
         validate_ownership(&mut error_details, &first, &second);
@@ -112,9 +120,9 @@ mod tests {
         let mut error_details = ErrorDetails::default();
 
         let first =
-            c3p0::Model { id: 12, version: 0, data: 1001, update_epoch_millis: 0, create_epoch_millis: 0 };
+            c3p0::Model { id: 12, version: 0, data: Data(1001), update_epoch_millis: 0, create_epoch_millis: 0 };
         let second =
-            c3p0::Model { id: 12, version: 0, data: 1000, update_epoch_millis: 0, create_epoch_millis: 0 };
+            c3p0::Model { id: 12, version: 0, data: Data(1000), update_epoch_millis: 0, create_epoch_millis: 0 };
 
         // Act
         validate_id_and_version(&mut error_details, &first, &second);
@@ -129,9 +137,9 @@ mod tests {
         let mut error_details = ErrorDetails::default();
 
         let first =
-            c3p0::Model { id: 13, version: 1, data: 1001, update_epoch_millis: 0, create_epoch_millis: 0 };
+            c3p0::Model { id: 13, version: 1, data: Data(1001), update_epoch_millis: 0, create_epoch_millis: 0 };
         let second =
-            c3p0::Model { id: 12, version: 0, data: 1000, update_epoch_millis: 0, create_epoch_millis: 0 };
+            c3p0::Model { id: 12, version: 0, data: Data(1000), update_epoch_millis: 0, create_epoch_millis: 0 };
 
         // Act
         validate_id_and_version(&mut error_details, &first, &second);
@@ -148,9 +156,9 @@ mod tests {
         let mut error_details = ErrorDetails::default();
 
         let first =
-            c3p0::Model { id: 12, version: 0, data: 1000, update_epoch_millis: 0, create_epoch_millis: 0 };
+            c3p0::Model { id: 12, version: 0, data: Data(1000), update_epoch_millis: 0, create_epoch_millis: 0 };
         let second =
-            c3p0::Model { id: 12, version: 0, data: 1000, update_epoch_millis: 0, create_epoch_millis: 0 };
+            c3p0::Model { id: 12, version: 0, data: Data(1000), update_epoch_millis: 0, create_epoch_millis: 0 };
 
         // Act
         validate_ownership_id_and_version(&mut error_details, &first, &second);
@@ -165,9 +173,9 @@ mod tests {
         let mut error_details = ErrorDetails::default();
 
         let first =
-            c3p0::Model { id: 13, version: 0, data: 1000, update_epoch_millis: 0, create_epoch_millis: 0 };
+            c3p0::Model { id: 13, version: 0, data: Data(1000), update_epoch_millis: 0, create_epoch_millis: 0 };
         let second =
-            c3p0::Model { id: 12, version: 0, data: 1000, update_epoch_millis: 0, create_epoch_millis: 0 };
+            c3p0::Model { id: 12, version: 0, data: Data(1000), update_epoch_millis: 0, create_epoch_millis: 0 };
 
         // Act
         validate_ownership_id_and_version(&mut error_details, &first, &second);
@@ -183,9 +191,9 @@ mod tests {
         let mut error_details = ErrorDetails::default();
 
         let first =
-            c3p0::Model { id: 12, version: 1, data: 1000, update_epoch_millis: 0, create_epoch_millis: 0 };
+            c3p0::Model { id: 12, version: 1, data: Data(1000), update_epoch_millis: 0, create_epoch_millis: 0 };
         let second =
-            c3p0::Model { id: 12, version: 0, data: 1000, update_epoch_millis: 0, create_epoch_millis: 0 };
+            c3p0::Model { id: 12, version: 0, data: Data(1000), update_epoch_millis: 0, create_epoch_millis: 0 };
 
         // Act
         validate_ownership_id_and_version(&mut error_details, &first, &second);
@@ -201,9 +209,9 @@ mod tests {
         let mut error_details = ErrorDetails::default();
 
         let first =
-            c3p0::Model { id: 12, version: 0, data: 1001, update_epoch_millis: 0, create_epoch_millis: 0 };
+            c3p0::Model { id: 12, version: 0, data: Data(1001), update_epoch_millis: 0, create_epoch_millis: 0 };
         let second =
-            c3p0::Model { id: 12, version: 0, data: 1000, update_epoch_millis: 0, create_epoch_millis: 0 };
+            c3p0::Model { id: 12, version: 0, data: Data(1000), update_epoch_millis: 0, create_epoch_millis: 0 };
 
         // Act
         validate_ownership_id_and_version(&mut error_details, &first, &second);

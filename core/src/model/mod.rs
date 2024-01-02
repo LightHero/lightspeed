@@ -16,14 +16,14 @@ pub struct ModelWithOwner<Id, Data> {
 }
 
 impl<Id: IdType, Data: DataType> Owned<Id> for ModelWithOwner<Id, Data> {
-    fn get_owner_id(&self) -> Id {
-        self.user_id
+    fn get_owner_id(&self) -> &Id {
+        &self.user_id
     }
 }
 
 impl<Id: IdType, Data: DataType> WithIdAndVersion<Id> for ModelWithOwner<Id, Data> {
-    fn get_id(&self) -> Id {
-        self.id
+    fn get_id(&self) -> &Id {
+        &self.id
     }
 
     fn get_version(&self) -> VersionType {
@@ -33,12 +33,12 @@ impl<Id: IdType, Data: DataType> WithIdAndVersion<Id> for ModelWithOwner<Id, Dat
 
 impl<Id: IdType, Data: DataType, T: Owned<Id> + WithIdAndVersion<Id>> From<(&T, Data)> for ModelWithOwner<Id, Data> {
     fn from((model, data): (&T, Data)) -> Self {
-        ModelWithOwner { id: model.get_id(), version: model.get_version(), user_id: model.get_owner_id(), data }
+        ModelWithOwner { id: model.get_id().clone(), version: model.get_version(), user_id: model.get_owner_id().clone(), data }
     }
 }
 
 impl<Id: IdType, T: Owned<Id> + WithIdAndVersion<Id>> From<&T> for ModelWithOwner<Id, ()> {
     fn from(model: &T) -> Self {
-        ModelWithOwner { id: model.get_id(), version: model.get_version(), user_id: model.get_owner_id(), data: () }
+        ModelWithOwner { id: model.get_id().clone(), version: model.get_version(), user_id: model.get_owner_id().clone(), data: () }
     }
 }

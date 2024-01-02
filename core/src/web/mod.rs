@@ -34,14 +34,15 @@ impl<T> Headers for Request<T> {
 }
 
 #[derive(Clone)]
-pub struct WebAuthService<T: RolesProvider> {
+pub struct WebAuthService<Id, T: RolesProvider> {
+    phantom_id: std::marker::PhantomData<Id>,
     auth_service: Arc<LsAuthService<T>>,
     jwt_service: Arc<LsJwtService>,
 }
 
-impl<T: RolesProvider> WebAuthService<T> {
+impl<Id: IdType, T: RolesProvider> WebAuthService<Id, T> {
     pub fn new(auth_service: Arc<LsAuthService<T>>, jwt_service: Arc<LsJwtService>) -> Self {
-        Self { auth_service, jwt_service }
+        Self { phantom_id: std::marker::PhantomData, auth_service, jwt_service }
     }
 
     pub fn token_string_from_request<'a, H: Headers>(&self, req: &'a H) -> Result<&'a str, LsError> {
@@ -61,16 +62,16 @@ impl<T: RolesProvider> WebAuthService<T> {
         Err(LsError::MissingAuthTokenError)
     }
 
-    pub fn token_from_auth<Id: IdType>(&self, auth: &Auth<Id>) -> Result<String, LsError> {
+    pub fn token_from_auth(&self, auth: &Auth<Id>) -> Result<String, LsError> {
         Ok(self.jwt_service.generate_from_payload(auth)?.1)
     }
 
-    pub fn auth_from_request<H: Headers, Id: IdType>(&self, req: &H) -> Result<AuthContext<Id>, LsError> {
+    pub fn auth_from_request<H: Headers>(&self, req: &H) -> Result<AuthContext<Id>, LsError> {
         self.token_string_from_request(req).and_then(|token| self.auth_from_token_string(token))
     }
 
-    pub fn auth_from_token_string<Id: IdType>(&self, token: &str) -> Result<AuthContext<Id>, LsError> {
-        let auth = self.jwt_service.parse_payload::<Auth>(token);
+    pub fn auth_from_token_string(&self, token: &str) -> Result<AuthContext<Id>, LsError> {
+        let auth = self.jwt_service.parse_payload::<Auth<Id>>(token);
         trace!("Auth built from request: [{:?}]", auth);
         Ok(self.auth_service.auth(auth?))
     }

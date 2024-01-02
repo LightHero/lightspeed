@@ -1,14 +1,13 @@
 use crate::error::LsError;
 use crate::utils::current_epoch_seconds;
-use c3p0::{IdType, DataType};
+use c3p0::IdType;
 use serde::{Deserialize, Serialize};
 use std::borrow::Cow;
 use std::collections::{BTreeMap, HashMap};
 use std::sync::Arc;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-#[cfg_attr(feature = "poem_openapi", derive(poem_openapi::Object))]
-pub struct Auth<Id: IdType> {
+pub struct Auth<Id> {
     pub id: Id,
     pub username: String,
     pub session_id: String,
@@ -25,7 +24,7 @@ impl <Id: IdType> Auth<Id> {
         creation_ts_seconds: i64,
         expiration_ts_seconds: i64,
     ) -> Self {
-        let session_id = format!("{id}_{creation_ts_seconds}");
+        let session_id = format!("{id:?}_{creation_ts_seconds}");
         Self { id, username: username.into(), session_id, roles, creation_ts_seconds, expiration_ts_seconds }
     }
 }
@@ -36,12 +35,12 @@ pub struct Role {
     pub permissions: Vec<String>,
 }
 
-pub trait Owned<Id> {
-    fn get_owner_id(&self) -> Id;
+pub trait Owned<Id: Eq> {
+    fn get_owner_id(&self) -> &Id;
 }
 
-impl<Id: IdType, Data: Owned<Id> + DataType> Owned<Id> for c3p0::Model<Id, Data> {
-    fn get_owner_id(&self) -> Id {
+impl<Id: Eq, Data: Owned<Id>> Owned<Id> for c3p0::Model<Id, Data> {
+    fn get_owner_id(&self) -> &Id {
         self.data.get_owner_id()
     }
 }
@@ -93,7 +92,7 @@ impl<'a, Id: IdType> AuthContext<'a, Id> {
         self.is_authenticated()?;
         if !self.has_role_bool(role) {
             return Err(LsError::ForbiddenError {
-                message: format!("User [{}] does not have the required role [{}]", self.auth.id, role),
+                message: format!("User [{:?}] does not have the required role [{}]", self.auth.id, role),
             });
         };
         Ok(self)
@@ -106,7 +105,7 @@ impl<'a, Id: IdType> AuthContext<'a, Id> {
                 return Ok(self);
             };
         }
-        Err(LsError::ForbiddenError { message: format!("User [{}] does not have the required role", self.auth.id) })
+        Err(LsError::ForbiddenError { message: format!("User [{:?}] does not have the required role", self.auth.id) })
     }
 
     pub fn has_all_roles(&self, roles: &[&str]) -> Result<&AuthContext<Id>, LsError> {
@@ -114,7 +113,7 @@ impl<'a, Id: IdType> AuthContext<'a, Id> {
         for role in roles {
             if !self.has_role_bool(role) {
                 return Err(LsError::ForbiddenError {
-                    message: format!("User [{}] does not have the required role [{}]", self.auth.id, role),
+                    message: format!("User [{:?}] does not have the required role [{}]", self.auth.id, role),
                 });
             };
         }
@@ -126,7 +125,7 @@ impl<'a, Id: IdType> AuthContext<'a, Id> {
 
         if !self.has_permission_bool(permission) {
             return Err(LsError::ForbiddenError {
-                message: format!("User [{}] does not have the required permission [{}]", self.auth.id, permission),
+                message: format!("User [{:?}] does not have the required permission [{}]", self.auth.id, permission),
             });
         };
         Ok(self)
@@ -141,7 +140,7 @@ impl<'a, Id: IdType> AuthContext<'a, Id> {
             };
         }
         Err(LsError::ForbiddenError {
-            message: format!("User [{}] does not have the required permission", self.auth.id),
+            message: format!("User [{:?}] does not have the required permission", self.auth.id),
         })
     }
 
@@ -150,7 +149,7 @@ impl<'a, Id: IdType> AuthContext<'a, Id> {
         for permission in permissions {
             if !self.has_permission_bool(permission) {
                 return Err(LsError::ForbiddenError {
-                    message: format!("User [{}] does not have the required permission [{}]", self.auth.id, permission),
+                    message: format!("User [{:?}] does not have the required permission [{}]", self.auth.id, permission),
                 });
             };
         }
@@ -158,13 +157,12 @@ impl<'a, Id: IdType> AuthContext<'a, Id> {
     }
 
     pub fn is_owner<T: Owned<Id>>(&self, obj: &T) -> Result<&AuthContext<Id>, LsError> {
-        if self.auth.id == obj.get_owner_id() {
+        if &self.auth.id == obj.get_owner_id() {
             Ok(self)
         } else {
             Err(LsError::ForbiddenError {
                 message: format!(
-                    "User [{}] is not the owner. User id [{}], owner id: [{}]",
-                    self.auth.id,
+                    "User [{:?}] is not the expected owner. Owner id: [{:?}]",
                     self.auth.id,
                     obj.get_owner_id()
                 ),
@@ -173,15 +171,14 @@ impl<'a, Id: IdType> AuthContext<'a, Id> {
     }
 
     pub fn is_owner_or_has_role<T: Owned<Id>>(&self, obj: &T, role: &str) -> Result<&AuthContext<Id>, LsError> {
-        if (self.auth.id == obj.get_owner_id()) || self.has_role_bool(role) {
+        if (&self.auth.id == obj.get_owner_id()) || self.has_role_bool(role) {
             Ok(self)
         } else {
             Err(LsError::ForbiddenError {
                 message: format!(
-                    "User [{}] is not the owner and does not have role [{}]. User id [{}], owner id: [{}]",
+                    "User [{:?}] is not the owner and does not have role [{}]. Owner id: [{:?}]",
                     self.auth.id,
                     role,
-                    self.auth.id,
                     obj.get_owner_id()
                 ),
             })
@@ -189,15 +186,14 @@ impl<'a, Id: IdType> AuthContext<'a, Id> {
     }
 
     pub fn is_owner_or_has_permission<T: Owned<Id>>(&self, obj: &T, permission: &str) -> Result<&AuthContext<Id>, LsError> {
-        if (self.auth.id == obj.get_owner_id()) || self.has_permission_bool(permission) {
+        if (&self.auth.id == obj.get_owner_id()) || self.has_permission_bool(permission) {
             Ok(self)
         } else {
             Err(LsError::ForbiddenError {
                 message: format!(
-                    "User [{}] is not the owner and does not have permission [{}]. User id [{}], owner id: [{}]",
+                    "User [{:?}] is not the owner and does not have permission [{}]. Owner id: [{:?}]",
                     self.auth.id,
                     permission,
-                    self.auth.id,
                     obj.get_owner_id()
                 ),
             })
@@ -830,8 +826,8 @@ mod test {
     }
 
     impl Owned<i64> for Ownable {
-        fn get_owner_id(&self) -> i64 {
-            self.owner_id
+        fn get_owner_id(&self) -> &i64 {
+            &self.owner_id
         }
     }
 }
