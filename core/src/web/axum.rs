@@ -20,7 +20,6 @@ impl IntoResponse for LsError {
             LsError::BadRequest { code, .. } => {
                 response_with_message(StatusCode::BAD_REQUEST, Some((code).to_string()))
             }
-            #[cfg(feature = "c3p0")]
             LsError::C3p0Error { .. } => response_with_message(StatusCode::BAD_REQUEST, None),
             LsError::RequestConflict { code, .. } | LsError::ServiceUnavailable { code, .. } => {
                 response_with_message(StatusCode::CONFLICT, Some((code).to_string()))

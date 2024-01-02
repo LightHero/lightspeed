@@ -1,23 +1,15 @@
-use c3p0_common::json::model::{IdType, VersionType};
-use c3p0_common::Model;
+use c3p0::{Model, IdType, VersionType, DataType};
 use serde::{Deserialize, Serialize};
 
 #[derive(Clone, Serialize, Deserialize)]
-pub struct ModelDto<DATA>
-where
-    DATA: Clone + serde::ser::Serialize + Send,
-{
-    pub id: IdType,
+pub struct ModelDto<Id, Data> {
+    pub id: Id,
     pub version: VersionType,
-    #[serde(bound(deserialize = "DATA: serde::Deserialize<'de>"))]
-    pub data: DATA,
+    pub data: Data,
 }
 
-impl<DATA> From<Model<DATA>> for ModelDto<DATA>
-where
-    DATA: Clone + serde::ser::Serialize + serde::de::DeserializeOwned + Send,
-{
-    fn from(model: Model<DATA>) -> Self {
+impl <Id: IdType, Data: DataType> From<Model<Id, Data>> for ModelDto<Id, Data> {
+    fn from(model: Model<Id, Data>) -> Self {
         Self { id: model.id, version: model.version, data: model.data }
     }
 }

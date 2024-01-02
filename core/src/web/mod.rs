@@ -1,6 +1,7 @@
 use crate::error::LsError;
 use crate::service::auth::{Auth, AuthContext, LsAuthService, RolesProvider};
 use crate::service::jwt::LsJwtService;
+use c3p0::IdType;
 use http::{HeaderMap, HeaderValue, Request};
 use log::*;
 use std::sync::Arc;
@@ -60,15 +61,15 @@ impl<T: RolesProvider> WebAuthService<T> {
         Err(LsError::MissingAuthTokenError)
     }
 
-    pub fn token_from_auth(&self, auth: &Auth) -> Result<String, LsError> {
+    pub fn token_from_auth<Id: IdType>(&self, auth: &Auth<Id>) -> Result<String, LsError> {
         Ok(self.jwt_service.generate_from_payload(auth)?.1)
     }
 
-    pub fn auth_from_request<H: Headers>(&self, req: &H) -> Result<AuthContext, LsError> {
+    pub fn auth_from_request<H: Headers, Id: IdType>(&self, req: &H) -> Result<AuthContext<Id>, LsError> {
         self.token_string_from_request(req).and_then(|token| self.auth_from_token_string(token))
     }
 
-    pub fn auth_from_token_string(&self, token: &str) -> Result<AuthContext, LsError> {
+    pub fn auth_from_token_string<Id: IdType>(&self, token: &str) -> Result<AuthContext<Id>, LsError> {
         let auth = self.jwt_service.parse_payload::<Auth>(token);
         trace!("Auth built from request: [{:?}]", auth);
         Ok(self.auth_service.auth(auth?))

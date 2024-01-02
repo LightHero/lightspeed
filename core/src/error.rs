@@ -58,9 +58,8 @@ pub enum LsError {
         message: String,
     },
 
-    #[cfg(feature = "c3p0")]
     C3p0Error {
-        source: c3p0_common::error::C3p0Error,
+        source: c3p0::error::C3p0Error,
     },
 
     ValidationError {
@@ -104,7 +103,6 @@ impl Display for LsError {
 
             LsError::InternalServerError { message } => write!(f, "InternalServerError: [{message}]"),
 
-            #[cfg(feature = "c3p0")]
             LsError::C3p0Error { .. } => write!(f, "C3p0Error"),
 
             LsError::ValidationError { details } => write!(f, "ValidationError: [{details:?}]"),
@@ -152,15 +150,13 @@ impl Error for LsError {
             LsError::RequestConflict { .. } |
             LsError::ServiceUnavailable { .. } => None,
 
-            #[cfg(feature = "c3p0")]
             LsError::C3p0Error { source } => Some(source),
         }
     }
 }
 
-#[cfg(feature = "c3p0")]
-impl From<c3p0_common::error::C3p0Error> for LsError {
-    fn from(err: c3p0_common::error::C3p0Error) -> Self {
+impl From<c3p0::error::C3p0Error> for LsError {
+    fn from(err: c3p0::error::C3p0Error) -> Self {
         LsError::C3p0Error { source: err }
     }
 }

@@ -1,43 +1,43 @@
 use crate::service::auth::Owned;
 use crate::service::validator::ownership::WithIdAndVersion;
+use c3p0::{IdType, DataType, VersionType};
 use serde::{Deserialize, Serialize};
 
 pub mod language;
-#[cfg(feature = "c3p0")]
 pub mod model_dto;
 
 #[derive(Clone, Debug, PartialEq, Deserialize, Serialize)]
 
-pub struct ModelWithOwner<D> {
-    pub id: i64,
-    pub version: i32,
-    pub user_id: i64,
-    pub data: D,
+pub struct ModelWithOwner<Id, Data> {
+    pub id: Id,
+    pub version: VersionType,
+    pub user_id: Id,
+    pub data: Data,
 }
 
-impl<D> Owned for ModelWithOwner<D> {
-    fn get_owner_id(&self) -> i64 {
+impl<Id: IdType, Data: DataType> Owned<Id> for ModelWithOwner<Id, Data> {
+    fn get_owner_id(&self) -> Id {
         self.user_id
     }
 }
 
-impl<D> WithIdAndVersion for ModelWithOwner<D> {
-    fn get_id(&self) -> i64 {
+impl<Id: IdType, Data: DataType> WithIdAndVersion<Id> for ModelWithOwner<Id, Data> {
+    fn get_id(&self) -> Id {
         self.id
     }
 
-    fn get_version(&self) -> i32 {
+    fn get_version(&self) -> VersionType {
         self.version
     }
 }
 
-impl<T: Owned + WithIdAndVersion, D> From<(&T, D)> for ModelWithOwner<D> {
-    fn from((model, data): (&T, D)) -> Self {
+impl<Id: IdType, Data: DataType, T: Owned<Id> + WithIdAndVersion<Id>> From<(&T, Data)> for ModelWithOwner<Id, Data> {
+    fn from((model, data): (&T, Data)) -> Self {
         ModelWithOwner { id: model.get_id(), version: model.get_version(), user_id: model.get_owner_id(), data }
     }
 }
 
-impl<T: Owned + WithIdAndVersion> From<&T> for ModelWithOwner<()> {
+impl<Id: IdType, T: Owned<Id> + WithIdAndVersion<Id>> From<&T> for ModelWithOwner<Id, ()> {
     fn from(model: &T) -> Self {
         ModelWithOwner { id: model.get_id(), version: model.get_version(), user_id: model.get_owner_id(), data: () }
     }

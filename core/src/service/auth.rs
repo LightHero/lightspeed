@@ -1,5 +1,6 @@
 use crate::error::LsError;
 use crate::utils::current_epoch_seconds;
+use c3p0::{IdType, DataType};
 use serde::{Deserialize, Serialize};
 use std::borrow::Cow;
 use std::collections::{BTreeMap, HashMap};
@@ -7,8 +8,8 @@ use std::sync::Arc;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[cfg_attr(feature = "poem_openapi", derive(poem_openapi::Object))]
-pub struct Auth {
-    pub id: i64,
+pub struct Auth<Id: IdType> {
+    pub id: Id,
     pub username: String,
     pub session_id: String,
     pub roles: Vec<String>,
@@ -16,9 +17,9 @@ pub struct Auth {
     pub expiration_ts_seconds: i64,
 }
 
-impl Auth {
+impl <Id: IdType> Auth<Id> {
     pub fn new<S: Into<String>>(
-        id: i64,
+        id: Id,
         username: S,
         roles: Vec<String>,
         creation_ts_seconds: i64,
@@ -29,38 +30,18 @@ impl Auth {
     }
 }
 
-impl Default for Auth {
-    fn default() -> Self {
-        Self {
-            id: -1,
-            username: "".to_owned(),
-            session_id: "".to_owned(),
-            roles: vec![],
-            creation_ts_seconds: 0,
-            expiration_ts_seconds: 0,
-        }
-    }
-}
-
 #[derive(Clone)]
 pub struct Role {
     pub name: String,
     pub permissions: Vec<String>,
 }
 
-pub trait Owned {
-    fn get_owner_id(&self) -> i64;
+pub trait Owned<Id> {
+    fn get_owner_id(&self) -> Id;
 }
 
-impl Owned for i64 {
-    fn get_owner_id(&self) -> i64 {
-        *self
-    }
-}
-
-#[cfg(feature = "c3p0")]
-impl<T: Owned + Clone + serde::ser::Serialize + Send> Owned for c3p0_common::Model<T> {
-    fn get_owner_id(&self) -> i64 {
+impl<Id: IdType, Data: Owned<Id> + DataType> Owned<Id> for c3p0::Model<Id, Data> {
+    fn get_owner_id(&self) -> Id {
         self.data.get_owner_id()
     }
 }
@@ -79,7 +60,7 @@ impl<T: RolesProvider> LsAuthService<T> {
         }
     }
 
-    pub fn auth(&self, auth: Auth) -> AuthContext {
+    pub fn auth<Id: IdType>(&self, auth: Auth<Id>) -> AuthContext<Id> {
         AuthContext { auth, permission_roles_map: &self.permission_roles_map }
     }
 
@@ -95,20 +76,20 @@ impl<T: RolesProvider> LsAuthService<T> {
     }
 }
 
-pub struct AuthContext<'a> {
-    pub auth: Auth,
+pub struct AuthContext<'a, Id: IdType> {
+    pub auth: Auth<Id>,
     permission_roles_map: &'a BTreeMap<String, Vec<String>>,
 }
 
-impl<'a> AuthContext<'a> {
-    pub fn is_authenticated(&self) -> Result<&AuthContext, LsError> {
+impl<'a, Id: IdType> AuthContext<'a, Id> {
+    pub fn is_authenticated(&self) -> Result<&AuthContext<Id>, LsError> {
         if self.auth.username.is_empty() || self.auth.expiration_ts_seconds < current_epoch_seconds() {
             return Err(LsError::UnauthenticatedError {});
         };
         Ok(self)
     }
 
-    pub fn has_role(&self, role: &str) -> Result<&AuthContext, LsError> {
+    pub fn has_role(&self, role: &str) -> Result<&AuthContext<Id>, LsError> {
         self.is_authenticated()?;
         if !self.has_role_bool(role) {
             return Err(LsError::ForbiddenError {
@@ -118,7 +99,7 @@ impl<'a> AuthContext<'a> {
         Ok(self)
     }
 
-    pub fn has_any_role(&self, roles: &[&str]) -> Result<&AuthContext, LsError> {
+    pub fn has_any_role(&self, roles: &[&str]) -> Result<&AuthContext<Id>, LsError> {
         self.is_authenticated()?;
         for role in roles {
             if self.has_role_bool(role) {
@@ -128,7 +109,7 @@ impl<'a> AuthContext<'a> {
         Err(LsError::ForbiddenError { message: format!("User [{}] does not have the required role", self.auth.id) })
     }
 
-    pub fn has_all_roles(&self, roles: &[&str]) -> Result<&AuthContext, LsError> {
+    pub fn has_all_roles(&self, roles: &[&str]) -> Result<&AuthContext<Id>, LsError> {
         self.is_authenticated()?;
         for role in roles {
             if !self.has_role_bool(role) {
@@ -140,7 +121,7 @@ impl<'a> AuthContext<'a> {
         Ok(self)
     }
 
-    pub fn has_permission(&self, permission: &str) -> Result<&AuthContext, LsError> {
+    pub fn has_permission(&self, permission: &str) -> Result<&AuthContext<Id>, LsError> {
         self.is_authenticated()?;
 
         if !self.has_permission_bool(permission) {
@@ -151,7 +132,7 @@ impl<'a> AuthContext<'a> {
         Ok(self)
     }
 
-    pub fn has_any_permission(&self, permissions: &[&str]) -> Result<&AuthContext, LsError> {
+    pub fn has_any_permission(&self, permissions: &[&str]) -> Result<&AuthContext<Id>, LsError> {
         self.is_authenticated()?;
 
         for permission in permissions {
@@ -164,7 +145,7 @@ impl<'a> AuthContext<'a> {
         })
     }
 
-    pub fn has_all_permissions(&self, permissions: &[&str]) -> Result<&AuthContext, LsError> {
+    pub fn has_all_permissions(&self, permissions: &[&str]) -> Result<&AuthContext<Id>, LsError> {
         self.is_authenticated()?;
         for permission in permissions {
             if !self.has_permission_bool(permission) {
@@ -176,7 +157,7 @@ impl<'a> AuthContext<'a> {
         Ok(self)
     }
 
-    pub fn is_owner<T: Owned>(&self, obj: &T) -> Result<&AuthContext, LsError> {
+    pub fn is_owner<T: Owned<Id>>(&self, obj: &T) -> Result<&AuthContext<Id>, LsError> {
         if self.auth.id == obj.get_owner_id() {
             Ok(self)
         } else {
@@ -191,7 +172,7 @@ impl<'a> AuthContext<'a> {
         }
     }
 
-    pub fn is_owner_or_has_role<T: Owned>(&self, obj: &T, role: &str) -> Result<&AuthContext, LsError> {
+    pub fn is_owner_or_has_role<T: Owned<Id>>(&self, obj: &T, role: &str) -> Result<&AuthContext<Id>, LsError> {
         if (self.auth.id == obj.get_owner_id()) || self.has_role_bool(role) {
             Ok(self)
         } else {
@@ -207,7 +188,7 @@ impl<'a> AuthContext<'a> {
         }
     }
 
-    pub fn is_owner_or_has_permission<T: Owned>(&self, obj: &T, permission: &str) -> Result<&AuthContext, LsError> {
+    pub fn is_owner_or_has_permission<T: Owned<Id>>(&self, obj: &T, permission: &str) -> Result<&AuthContext<Id>, LsError> {
         if (self.auth.id == obj.get_owner_id()) || self.has_permission_bool(permission) {
             Ok(self)
         } else {
@@ -848,7 +829,7 @@ mod test {
         owner_id: i64,
     }
 
-    impl Owned for Ownable {
+    impl Owned<i64> for Ownable {
         fn get_owner_id(&self) -> i64 {
             self.owner_id
         }

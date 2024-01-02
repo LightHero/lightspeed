@@ -39,7 +39,6 @@ axum = { version = "0.6" }
 base64 = "0.21"
 bcrypt = "0.15"
 c3p0 = { git = "https://github.com/ufoscout/c3p0", branch = "master", features = ["sqlx_postgres"] }
-c3p0_common = { git = "https://github.com/ufoscout/c3p0", branch = "master" }
 chrono = { version = "0.4", default-features = false, features = ["clock"] }
 chrono-tz = "0.8"
 config = "0.13"
@@ -54,7 +53,7 @@ maybe-single = { version = "0.16.0", features =["tokio"] }
 mime = { version = "0.3" }
 mime_guess = { version = "2.0" }
 once_cell = "1"
-opendal = { version = "0.43", default-features = false }
+opendal = { version = "0.44", default-features = false }
 parking_lot = "0.12"
 poem = { version = "1.3" }
 poem-openapi = { version = "3" }

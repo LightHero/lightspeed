@@ -11,7 +11,7 @@ repository = "https://github.com/LightHero/lightspeed"
 keywords = []
 
 [dependencies]
-lightspeed_core = { workspace = true, features = ["c3p0"] }
+lightspeed_core = { workspace = true }
 async-trait = { workspace = true }
 c3p0 = { workspace = true }
 log = { workspace = true }

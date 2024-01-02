@@ -23,7 +23,6 @@ impl ResponseError for LsError {
             LsError::ForbiddenError { .. } => StatusCode::FORBIDDEN,
             LsError::ValidationError { .. } => StatusCode::UNPROCESSABLE_ENTITY,
             LsError::BadRequest { .. } => StatusCode::BAD_REQUEST,
-            #[cfg(feature = "c3p0")]
             LsError::C3p0Error { .. } => StatusCode::BAD_REQUEST,
             LsError::RequestConflict { .. } | LsError::ServiceUnavailable { .. } => StatusCode::CONFLICT,
             LsError::InternalServerError { .. }
@@ -49,7 +48,6 @@ impl ResponseError for LsError {
             LsError::ForbiddenError { .. } => response_with_code(self.status()),
             LsError::ValidationError { details } => response_with_error_details(self.status(), details.clone()),
             LsError::BadRequest { code, .. } => response_with_message(self.status(), Some((code).to_string())),
-            #[cfg(feature = "c3p0")]
             LsError::C3p0Error { .. } => response_with_message(self.status(), None),
             LsError::RequestConflict { code, .. } | LsError::ServiceUnavailable { code, .. } => {
                 response_with_message(self.status(), Some((code).to_string()))
@@ -133,7 +131,6 @@ pub mod openapi {
                 LsError::BadRequest { code, .. } => LightSpeedErrorResponse::BadRequest(Json(
                     WebErrorDetails::from_message(StatusCode::BAD_REQUEST.as_u16(), Some((code).to_string())),
                 )),
-                #[cfg(feature = "c3p0")]
                 LsError::C3p0Error { .. } => LightSpeedErrorResponse::BadRequest(Json(WebErrorDetails::from_message(
                     StatusCode::BAD_REQUEST.as_u16(),
                     None,
