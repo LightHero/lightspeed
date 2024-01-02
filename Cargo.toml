@@ -15,20 +15,20 @@ members = [
 ]
 
 [workspace.package]
-version = "0.55.0"
+version = "0.55.1"
 edition = "2021"
 
 [workspace.dependencies]
-lightspeed_auth = { version = "0.55.0", path = "./auth" }
-lightspeed_cache = { version = "0.55.0", path = "./cache" }
-lightspeed_cms = { version = "0.55.0", path = "./cms" }
-lightspeed_core = { version = "0.55.0", path = "./core" }
-lightspeed_email = { version = "0.55.0", path = "./email" }
-lightspeed_file_store = { version = "0.55.0", path = "./file_store" }
-lightspeed_hash = { version = "0.55.0", path = "./hash" }
-lightspeed_logger = { version = "0.55.0", path = "./logger" }
-lightspeed_persistence = { version = "0.55.0", path = "./persistence" }
-lightspeed_scheduler = { version = "0.55.0", path = "./scheduler" }
+lightspeed_auth = { version = "0.55.1", path = "./auth" }
+lightspeed_cache = { version = "0.55.1", path = "./cache" }
+lightspeed_cms = { version = "0.55.1", path = "./cms" }
+lightspeed_core = { version = "0.55.1", path = "./core" }
+lightspeed_email = { version = "0.55.1", path = "./email" }
+lightspeed_file_store = { version = "0.55.1", path = "./file_store" }
+lightspeed_hash = { version = "0.55.1", path = "./hash" }
+lightspeed_logger = { version = "0.55.1", path = "./logger" }
+lightspeed_persistence = { version = "0.55.1", path = "./persistence" }
+lightspeed_scheduler = { version = "0.55.1", path = "./scheduler" }
 
 actix-files = { version = "0.6.0" }
 actix-rt = "2"
@@ -67,15 +67,15 @@ strum = { version = "0.25", features = ["derive"] }
 tempfile = "3"
 testcontainers = { package = "testcontainers-modules", version = "0.2", features = ["postgres"] }
 thiserror = { version = "1" }
-tokio = { version = "1" }
-tokio-util = { version = "0.7" }
-tower = "0.4"
-tracing = "0.1"
-tracing-appender = "0.2"
+tokio = { version = "1", default-features = false }
+tokio-util = { version = "0.7", default-features = false }
+tower = { version = "0.4", default-features = false }
+tracing = { version = "0.1", default-features = false }
+tracing-appender = { version = "0.2", default-features = false }
 tracing-futures = "0.2"
 tracing-subscriber = { version = "0.3", default-features = false }
 uuid = { version = "1", features = ["v4"] }
-validator = "0.16"
+validator = { version = "0.16", default-features = false }
 
 [profile.dev]
 debug = false
