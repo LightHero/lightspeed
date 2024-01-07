@@ -6,7 +6,7 @@ pub mod pg;
 
 #[async_trait::async_trait]
 pub trait DBFileStoreRepositoryManager: Clone + Send + Sync {
-    type Tx: SqlTx;
+    type Tx: Send + Sync;
     type C3P0: C3p0Pool<Tx = Self::Tx>;
     type FileStoreBinaryRepo: DBFileStoreBinaryRepository<Tx = Self::Tx>;
     type FileStoreDataRepo: FileStoreDataRepository<Tx = Self::Tx>;
@@ -20,7 +20,7 @@ pub trait DBFileStoreRepositoryManager: Clone + Send + Sync {
 
 #[async_trait::async_trait]
 pub trait DBFileStoreBinaryRepository: Clone + Send + Sync {
-    type Tx: SqlTx;
+    type Tx: Send + Sync;
 
     async fn read_file<'a>(
         &self,
@@ -42,7 +42,7 @@ pub trait DBFileStoreBinaryRepository: Clone + Send + Sync {
 
 #[async_trait::async_trait]
 pub trait FileStoreDataRepository: Clone + Send + Sync {
-    type Tx: SqlTx;
+    type Tx: Send + Sync;
 
     async fn exists_by_repository(&self, tx: &mut Self::Tx, repository: &RepositoryFile) -> Result<bool, LsError>;
 

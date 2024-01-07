@@ -103,7 +103,7 @@ fn should_return_user_by_id() -> Result<(), LsError> {
             .repo_manager
             .c3p0()
             .transaction(|conn| async {
-                let user_by_id = auth_module.auth_account_service.fetch_by_user_id_with_conn(conn, user.id).await?;
+                let user_by_id = auth_module.auth_account_service.fetch_by_user_id_with_conn(conn, &user.id).await?;
 
                 assert_eq!(user.data.username, user_by_id.data.username);
 
@@ -1027,22 +1027,22 @@ fn should_add_and_remove_roles() -> Result<(), LsError> {
 
         assert!(user.data.roles.is_empty());
 
-        let user = auh_service.add_roles(user.id, &[]).await?;
+        let user = auh_service.add_roles(&user.id, &[]).await?;
         assert!(user.data.roles.is_empty());
 
-        let user = auh_service.delete_roles(user.id, &["one".to_owned()]).await?;
+        let user = auh_service.delete_roles(&user.id, &["one".to_owned()]).await?;
         assert!(user.data.roles.is_empty());
 
-        let user = auh_service.add_roles(user.id, &["one".to_owned()]).await?;
+        let user = auh_service.add_roles(&user.id, &["one".to_owned()]).await?;
         assert_eq!(vec!["one".to_owned()], user.data.roles);
 
-        let user = auh_service.add_roles(user.id, &["two".to_owned(), "three".to_owned()]).await?;
+        let user = auh_service.add_roles(&user.id, &["two".to_owned(), "three".to_owned()]).await?;
         assert_eq!(vec!["one".to_owned(), "two".to_owned(), "three".to_owned()], user.data.roles);
 
-        let user = auh_service.delete_roles(user.id, &["two".to_owned(), "four".to_owned()]).await?;
+        let user = auh_service.delete_roles(&user.id, &["two".to_owned(), "four".to_owned()]).await?;
         assert_eq!(vec!["one".to_owned(), "three".to_owned()], user.data.roles);
 
-        let user = auh_service.delete_roles(user.id, &["one".to_owned(), "three".to_owned()]).await?;
+        let user = auh_service.delete_roles(&user.id, &["one".to_owned(), "three".to_owned()]).await?;
         assert!(user.data.roles.is_empty());
 
         Ok(())
@@ -1063,7 +1063,7 @@ fn should_change_username() -> Result<(), LsError> {
         // Act
         let new_username = new_hyphenated_uuid();
         let updated_user =
-            auth_module.auth_account_service.change_user_data(user.id, Some(new_username.clone()), None).await.unwrap();
+            auth_module.auth_account_service.change_user_data(&user.id, Some(new_username.clone()), None).await.unwrap();
 
         // Assert
 
@@ -1096,7 +1096,7 @@ fn should_change_email() -> Result<(), LsError> {
         // Act
         let new_email = format!("{}@test.com", new_hyphenated_uuid());
         let updated_user =
-            auth_module.auth_account_service.change_user_data(user.id, None, Some(new_email.clone())).await.unwrap();
+            auth_module.auth_account_service.change_user_data(&user.id, None, Some(new_email.clone())).await.unwrap();
 
         // Assert
         assert_eq!(user.data.username, updated_user.data.username);
@@ -1128,7 +1128,7 @@ fn should_change_username_and_email() -> Result<(), LsError> {
         let new_email = format!("{new_username}@test.com");
         let updated_user = auth_module
             .auth_account_service
-            .change_user_data(user.id, Some(new_username.clone()), Some(new_email.clone()))
+            .change_user_data(&user.id, Some(new_username.clone()), Some(new_email.clone()))
             .await
             .unwrap();
 
@@ -1160,14 +1160,14 @@ fn should_disable_an_active_user() -> Result<(), LsError> {
         assert!(auth_module.auth_account_service.login(&user.data.username, password).await.is_ok());
 
         // Act
-        let updated_user = auth_module.auth_account_service.disable_by_user_id(user.id).await.unwrap();
+        let updated_user = auth_module.auth_account_service.disable_by_user_id(&user.id).await.unwrap();
 
         // Assert
         assert_eq!(AuthAccountStatus::Disabled, updated_user.data.status);
 
         assert!(auth_module.auth_account_service.login(&user.data.username, password).await.is_err());
 
-        let loaded_user = auth_module.auth_account_service.fetch_by_user_id(user.id).await.unwrap();
+        let loaded_user = auth_module.auth_account_service.fetch_by_user_id(&user.id).await.unwrap();
 
         assert_eq!(AuthAccountStatus::Disabled, loaded_user.data.status);
 
@@ -1187,7 +1187,7 @@ fn should_fail_disabling_a_pending_user() -> Result<(), LsError> {
         assert!(auth_module.auth_account_service.login(&user.data.username, password).await.is_err());
 
         // Act
-        let result = auth_module.auth_account_service.disable_by_user_id(user.id).await;
+        let result = auth_module.auth_account_service.disable_by_user_id(&user.id).await;
 
         // Assert
         assert!(result.is_err());
@@ -1207,10 +1207,10 @@ fn should_fail_disabling_a_disabled_user() -> Result<(), LsError> {
 
         assert!(auth_module.auth_account_service.login(&user.data.username, password).await.is_ok());
 
-        auth_module.auth_account_service.disable_by_user_id(user.id).await.unwrap();
+        auth_module.auth_account_service.disable_by_user_id(&user.id).await.unwrap();
 
         // Act
-        let result = auth_module.auth_account_service.disable_by_user_id(user.id).await;
+        let result = auth_module.auth_account_service.disable_by_user_id(&user.id).await;
 
         // Assert
         assert!(result.is_err());
@@ -1228,17 +1228,17 @@ fn should_activate_a_disabled_user() -> Result<(), LsError> {
         let password = "123456789";
         let (user, _) = create_user_with_password(auth_module, password, true).await?;
 
-        assert!(auth_module.auth_account_service.disable_by_user_id(user.id).await.is_ok());
+        assert!(auth_module.auth_account_service.disable_by_user_id(&user.id).await.is_ok());
 
         // Act
-        let updated_user = auth_module.auth_account_service.reactivate_disabled_user_by_user_id(user.id).await.unwrap();
+        let updated_user = auth_module.auth_account_service.reactivate_disabled_user_by_user_id(&user.id).await.unwrap();
 
         // Assert
         assert_eq!(AuthAccountStatus::Active, updated_user.data.status);
 
         assert!(auth_module.auth_account_service.login(&user.data.username, password).await.is_ok());
 
-        let loaded_user = auth_module.auth_account_service.fetch_by_user_id(user.id).await.unwrap();
+        let loaded_user = auth_module.auth_account_service.fetch_by_user_id(&user.id).await.unwrap();
 
         assert_eq!(AuthAccountStatus::Active, loaded_user.data.status);
 
@@ -1258,7 +1258,7 @@ fn should_fail_reactivating_a_pending_user() -> Result<(), LsError> {
         assert!(auth_module.auth_account_service.login(&user.data.username, password).await.is_err());
 
         // Act
-        let result = auth_module.auth_account_service.reactivate_disabled_user_by_user_id(user.id).await;
+        let result = auth_module.auth_account_service.reactivate_disabled_user_by_user_id(&user.id).await;
 
         // Assert
         assert!(result.is_err());
@@ -1279,7 +1279,7 @@ fn should_fail_reactivating_an_active_user() -> Result<(), LsError> {
         assert!(auth_module.auth_account_service.login(&user.data.username, password).await.is_ok());
 
         // Act
-        let result = auth_module.auth_account_service.reactivate_disabled_user_by_user_id(user.id).await;
+        let result = auth_module.auth_account_service.reactivate_disabled_user_by_user_id(&user.id).await;
 
         // Assert
         assert!(result.is_err());
@@ -1298,14 +1298,14 @@ fn should_delete_a_user() -> Result<(), LsError> {
         let (user, _) = create_user_with_password(auth_module, password, true).await?;
 
         // Act
-        let deleted_user_count = auth_module.auth_account_service.delete_by_user_id(user.id).await.unwrap();
+        let deleted_user_count = auth_module.auth_account_service.delete_by_user_id(&user.id).await.unwrap();
 
         // Assert
         assert_eq!(1, deleted_user_count);
 
         assert!(auth_module.auth_account_service.login(&user.data.username, password).await.is_err());
 
-        assert!(auth_module.auth_account_service.fetch_by_user_id(user.id).await.is_err());
+        assert!(auth_module.auth_account_service.fetch_by_user_id(&user.id).await.is_err());
 
         Ok(())
     })
@@ -1320,10 +1320,10 @@ fn should_not_fail_deleting_a_deleted_user() -> Result<(), LsError> {
         let password = "123456789";
         let (user, _) = create_user_with_password(auth_module, password, true).await?;
 
-        auth_module.auth_account_service.delete_by_user_id(user.id).await.unwrap();
+        auth_module.auth_account_service.delete_by_user_id(&user.id).await.unwrap();
 
         // Act
-        let result = auth_module.auth_account_service.delete_by_user_id(user.id).await.unwrap();
+        let result = auth_module.auth_account_service.delete_by_user_id(&user.id).await.unwrap();
 
         // Assert
         assert_eq!(0, result);
@@ -1345,24 +1345,24 @@ fn should_return_users_by_status() -> Result<(), LsError> {
         let (user_pending_2, _) = create_user(auth_module, false).await?;
         let (user_disabled_1, _) = create_user(auth_module, true).await?;
 
-        assert!(auth_module.auth_account_service.disable_by_user_id(user_disabled_1.id).await.is_ok());
+        assert!(auth_module.auth_account_service.disable_by_user_id(&user_disabled_1.id).await.is_ok());
 
         // Act
         let all_active_users = auth_module
             .auth_account_service
-            .fetch_all_by_status(AuthAccountStatus::Active, 0, u32::max_value())
+            .fetch_all_by_status(AuthAccountStatus::Active, &0, u32::max_value())
             .await
             .unwrap();
 
         let all_pending_users = auth_module
             .auth_account_service
-            .fetch_all_by_status(AuthAccountStatus::PendingActivation, 0, u32::max_value())
+            .fetch_all_by_status(AuthAccountStatus::PendingActivation, &0, u32::max_value())
             .await
             .unwrap();
 
         let all_disabled_users = auth_module
             .auth_account_service
-            .fetch_all_by_status(AuthAccountStatus::Disabled, 0, u32::max_value())
+            .fetch_all_by_status(AuthAccountStatus::Disabled, &0, u32::max_value())
             .await
             .unwrap();
 
@@ -1406,19 +1406,19 @@ fn should_return_users_by_status_with_offset_and_limit() -> Result<(), LsError> 
         // Act
         let all_users = auth_module
             .auth_account_service
-            .fetch_all_by_status(AuthAccountStatus::Active, user_1.id, u32::max_value())
+            .fetch_all_by_status(AuthAccountStatus::Active, &user_1.id, u32::max_value())
             .await
             .unwrap();
 
         let offset_one_users = auth_module
             .auth_account_service
-            .fetch_all_by_status(AuthAccountStatus::Active, user_2.id, u32::max_value())
+            .fetch_all_by_status(AuthAccountStatus::Active, &user_2.id, u32::max_value())
             .await
             .unwrap();
 
         let limit_two_users = auth_module
             .auth_account_service
-            .fetch_all_by_status(AuthAccountStatus::Active, user_2.id, 2)
+            .fetch_all_by_status(AuthAccountStatus::Active, &user_2.id, 2)
             .await
             .unwrap();
 

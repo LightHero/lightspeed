@@ -13,9 +13,10 @@ use testcontainers::testcontainers::Container;
 
 mod tests;
 
-pub type RepoManager = PgAuthRepositoryManager;
+pub type Id = u64;
+pub type RepoManager = PgAuthRepositoryManager<Id>;
 
-pub type MaybeType = (LsAuthModule<RepoManager>, Container<'static, Postgres>);
+pub type MaybeType = (LsAuthModule<Id, RepoManager>, Container<'static, Postgres>);
 
 async fn init() -> MaybeType {
     static DOCKER: OnceCell<Cli> = OnceCell::new();

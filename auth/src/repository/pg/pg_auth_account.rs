@@ -4,16 +4,17 @@ use c3p0::sqlx::*;
 use c3p0::*;
 use lightspeed_core::error::{ErrorCodes, LsError};
 use std::ops::Deref;
+use std::sync::Arc;
 
 #[derive(Clone)]
 pub struct PgAuthAccountRepository<Id: IdType> {
     repo: SqlxPgC3p0Json<Id, AuthAccountData, AuthAccountDataCodec>,
 }
 
-impl <Id: IdType> Default for PgAuthAccountRepository<Id> {
-    fn default() -> Self {
-        PgAuthAccountRepository {
-            repo: C3p0JsonBuilder::new("LS_AUTH_ACCOUNT").build_with_codec(AuthAccountDataCodec {}),
+impl <Id: IdType> PgAuthAccountRepository<Id> {
+    pub fn new(id_generator: Arc<dyn PostgresIdGenerator<Id>>) -> Self {
+        Self {
+            repo: SqlxPgC3p0JsonBuilder::new("LS_AUTH_ACCOUNT").with_id_generator(id_generator).build_with_codec(AuthAccountDataCodec {}),
         }
     }
 }

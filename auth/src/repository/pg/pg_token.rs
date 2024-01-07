@@ -4,6 +4,7 @@ use c3p0::sqlx::*;
 use c3p0::*;
 use lightspeed_core::error::LsError;
 use std::ops::Deref;
+use std::sync::Arc;
 
 #[derive(Clone)]
 pub struct PgTokenRepository<Id: IdType> {
@@ -18,9 +19,11 @@ impl <Id: IdType> Deref for PgTokenRepository<Id> {
     }
 }
 
-impl <Id: IdType> Default for PgTokenRepository<Id> {
-    fn default() -> Self {
-        PgTokenRepository { repo: C3p0JsonBuilder::new("LS_AUTH_TOKEN").build_with_codec(TokenDataCodec {}) }
+impl <Id: IdType> PgTokenRepository<Id> {
+    pub fn new(id_generator: Arc<dyn PostgresIdGenerator<Id>>) -> Self {
+        Self {
+            repo: SqlxPgC3p0JsonBuilder::new("LS_AUTH_TOKEN").with_id_generator(id_generator).build_with_codec(TokenDataCodec {}),
+        }
     }
 }
 
