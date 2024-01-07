@@ -26,11 +26,11 @@ pub trait AuthAccountRepository<Id: IdType>: Clone + Send + Sync {
         &self,
         tx: &mut Self::Tx,
         status: AuthAccountStatus,
-        start_user_id: i64,
+        start_user_id: &Id,
         limit: u32,
     ) -> Result<Vec<AuthAccountModel<Id>>, LsError>;
 
-    async fn fetch_by_id(&self, tx: &mut Self::Tx, user_id: i64) -> Result<AuthAccountModel<Id>, LsError>;
+    async fn fetch_by_id(&self, tx: &mut Self::Tx, user_id: &Id) -> Result<AuthAccountModel<Id>, LsError>;
 
     async fn fetch_by_username(&self, tx: &mut Self::Tx, username: &str) -> Result<AuthAccountModel<Id>, LsError>;
 
@@ -52,7 +52,7 @@ pub trait AuthAccountRepository<Id: IdType>: Clone + Send + Sync {
 
     async fn delete(&self, tx: &mut Self::Tx, model: AuthAccountModel<Id>) -> Result<AuthAccountModel<Id>, LsError>;
 
-    async fn delete_by_id(&self, tx: &mut Self::Tx, user_id: i64) -> Result<u64, LsError>;
+    async fn delete_by_id(&self, tx: &mut Self::Tx, user_id: &Id) -> Result<u64, LsError>;
 }
 
 #[async_trait::async_trait]

@@ -26,7 +26,7 @@ impl <Id: IdType> AuthAccountRepository<Id> for PgAuthAccountRepository<Id> {
         &self,
         tx: &mut Self::Tx,
         status: AuthAccountStatus,
-        start_user_id: i64,
+        start_user_id: &Id,
         limit: u32,
     ) -> Result<Vec<AuthAccountModel<Id>>, LsError> {
         let sql = format!(
@@ -45,8 +45,8 @@ impl <Id: IdType> AuthAccountRepository<Id> for PgAuthAccountRepository<Id> {
             .await?)
     }
 
-    async fn fetch_by_id(&self, tx: &mut Self::Tx, user_id: i64) -> Result<Model<Id, AuthAccountData>, LsError> {
-        Ok(self.repo.fetch_one_by_id(tx, &user_id).await?)
+    async fn fetch_by_id(&self, tx: &mut Self::Tx, user_id: &Id) -> Result<Model<Id, AuthAccountData>, LsError> {
+        Ok(self.repo.fetch_one_by_id(tx, user_id).await?)
     }
 
     async fn fetch_by_username(&self, tx: &mut Self::Tx, username: &str) -> Result<AuthAccountModel<Id>, LsError> {
@@ -112,8 +112,8 @@ impl <Id: IdType> AuthAccountRepository<Id> for PgAuthAccountRepository<Id> {
         Ok(self.repo.delete(tx, model).await?)
     }
 
-    async fn delete_by_id(&self, tx: &mut Self::Tx, user_id: i64) -> Result<u64, LsError> {
-        Ok(self.repo.delete_by_id(tx, &user_id).await?)
+    async fn delete_by_id(&self, tx: &mut Self::Tx, user_id: &Id) -> Result<u64, LsError> {
+        Ok(self.repo.delete_by_id(tx, user_id).await?)
     }
 }
 

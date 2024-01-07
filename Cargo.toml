@@ -38,7 +38,7 @@ atomic = "0.5"
 axum = { version = "0.6" }
 base64 = "0.21"
 bcrypt = "0.15"
-c3p0 = { version = "0.69", features = ["sqlx_postgres"] }
+c3p0 = { git = "https://github.com/ufoscout/c3p0", branch = "master", features = ["sqlx_postgres"] }
 chrono = { version = "0.4", default-features = false, features = ["clock"] }
 chrono-tz = "0.8"
 config = "0.13"
@@ -65,7 +65,7 @@ sha2 = "0.10"
 sqlx = { version = "0.7", default-features = false, features = ["macros", "migrate"] }
 strum = { version = "0.25", features = ["derive"] }
 tempfile = "3"
-testcontainers = { package = "testcontainers-modules", version = "0.2", features = ["postgres"] }
+testcontainers = { package = "testcontainers-modules", version = "0.3", features = ["postgres"] }
 thiserror = { version = "1" }
 tokio = { version = "1", default-features = false }
 tokio-util = { version = "0.7", default-features = false }

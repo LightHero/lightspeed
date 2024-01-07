@@ -12,12 +12,16 @@ static MIGRATOR: Migrator = ::sqlx::migrate!("src_resources/db/pg/migrations");
 
 #[derive(Clone)]
 pub struct PgAuthRepositoryManager<Id: IdType> {
+    phantom_id: std::marker::PhantomData<Id>,
     c3p0: SqlxPgC3p0Pool,
 }
 
 impl <Id: IdType> PgAuthRepositoryManager<Id> {
     pub fn new(c3p0: SqlxPgC3p0Pool) -> Self {
-        Self { c3p0 }
+        Self { 
+            phantom_id: std::marker::PhantomData,
+            c3p0
+        }
     }
 }
 
