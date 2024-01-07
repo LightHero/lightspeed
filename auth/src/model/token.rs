@@ -6,7 +6,7 @@ use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use std::borrow::Cow;
 
-pub type TokenModel = Model<TokenData>;
+pub type TokenModel<Id> = Model<Id, TokenData>;
 
 #[derive(Clone, Serialize, Deserialize)]
 pub struct TokenData {

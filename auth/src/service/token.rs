@@ -8,12 +8,12 @@ use lightspeed_core::utils::*;
 use log::*;
 
 #[derive(Clone)]
-pub struct LsTokenService<RepoManager: AuthRepositoryManager> {
+pub struct LsTokenService<Id: IdType, RepoManager: AuthRepositoryManager<Id>> {
     auth_config: AuthConfig,
     token_repo: RepoManager::TokenRepo,
 }
 
-impl<RepoManager: AuthRepositoryManager> LsTokenService<RepoManager> {
+impl<Id: IdType, RepoManager: AuthRepositoryManager<Id>> LsTokenService<Id, RepoManager> {
     pub fn new(auth_config: AuthConfig, token_repo: RepoManager::TokenRepo) -> Self {
         LsTokenService { auth_config, token_repo }
     }
@@ -23,7 +23,7 @@ impl<RepoManager: AuthRepositoryManager> LsTokenService<RepoManager> {
         conn: &mut RepoManager::Tx,
         username: S,
         token_type: TokenType,
-    ) -> Result<TokenModel, LsError> {
+    ) -> Result<TokenModel<Id>, LsError> {
         let username = username.into();
         info!("Generate and save token of type [{:?}] for username [{}]", token_type, username);
 
@@ -43,7 +43,7 @@ impl<RepoManager: AuthRepositoryManager> LsTokenService<RepoManager> {
         conn: &mut RepoManager::Tx,
         token: &str,
         validate: bool,
-    ) -> Result<TokenModel, LsError> {
+    ) -> Result<TokenModel<Id>, LsError> {
         debug!("Fetch by token [{}]", token);
         let token_model = self.token_repo.fetch_by_token(conn, token).await?;
 
@@ -58,7 +58,7 @@ impl<RepoManager: AuthRepositoryManager> LsTokenService<RepoManager> {
         &self,
         conn: &mut RepoManager::Tx,
         username: &str,
-    ) -> Result<Vec<TokenModel>, LsError> {
+    ) -> Result<Vec<TokenModel<Id>>, LsError> {
         debug!("Fetch by username [{}]", username);
         self.token_repo.fetch_by_username(conn, username).await
     }
@@ -66,9 +66,9 @@ impl<RepoManager: AuthRepositoryManager> LsTokenService<RepoManager> {
     pub async fn delete_with_conn(
         &self,
         conn: &mut RepoManager::Tx,
-        token_model: TokenModel,
-    ) -> Result<TokenModel, LsError> {
-        debug!("Delete token_model with id [{}] and token [{}]", token_model.id, token_model.data.token);
+        token_model: TokenModel<Id>,
+    ) -> Result<TokenModel<Id>, LsError> {
+        debug!("Delete token_model with id [{:?}] and token [{}]", token_model.id, token_model.data.token);
         self.token_repo.delete(conn, token_model).await
     }
 }

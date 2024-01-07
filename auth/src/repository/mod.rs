@@ -6,11 +6,11 @@ use lightspeed_core::error::LsError;
 pub mod pg;
 
 #[async_trait::async_trait]
-pub trait AuthRepositoryManager: Clone + Send + Sync {
-    type Tx: SqlTx;
+pub trait AuthRepositoryManager<Id: IdType>: Clone + Send + Sync {
+    type Tx: Send + Sync;
     type C3P0: C3p0Pool<Tx = Self::Tx>;
-    type AuthAccountRepo: AuthAccountRepository<Tx = Self::Tx>;
-    type TokenRepo: TokenRepository<Tx = Self::Tx>;
+    type AuthAccountRepo: AuthAccountRepository<Id, Tx = Self::Tx>;
+    type TokenRepo: TokenRepository<Id, Tx = Self::Tx>;
 
     fn c3p0(&self) -> &Self::C3P0;
     async fn start(&self) -> Result<(), LsError>;
@@ -19,8 +19,8 @@ pub trait AuthRepositoryManager: Clone + Send + Sync {
 }
 
 #[async_trait::async_trait]
-pub trait AuthAccountRepository: Clone + Send + Sync {
-    type Tx: SqlTx;
+pub trait AuthAccountRepository<Id: IdType>: Clone + Send + Sync {
+    type Tx: Send + Sync;
 
     async fn fetch_all_by_status(
         &self,
@@ -28,42 +28,43 @@ pub trait AuthAccountRepository: Clone + Send + Sync {
         status: AuthAccountStatus,
         start_user_id: i64,
         limit: u32,
-    ) -> Result<Vec<AuthAccountModel>, LsError>;
+    ) -> Result<Vec<AuthAccountModel<Id>>, LsError>;
 
-    async fn fetch_by_id(&self, tx: &mut Self::Tx, user_id: i64) -> Result<AuthAccountModel, LsError>;
+    async fn fetch_by_id(&self, tx: &mut Self::Tx, user_id: i64) -> Result<AuthAccountModel<Id>, LsError>;
 
-    async fn fetch_by_username(&self, tx: &mut Self::Tx, username: &str) -> Result<AuthAccountModel, LsError>;
+    async fn fetch_by_username(&self, tx: &mut Self::Tx, username: &str) -> Result<AuthAccountModel<Id>, LsError>;
 
     async fn fetch_by_username_optional(
         &self,
         tx: &mut Self::Tx,
         username: &str,
-    ) -> Result<Option<AuthAccountModel>, LsError>;
+    ) -> Result<Option<AuthAccountModel<Id>>, LsError>;
 
     async fn fetch_by_email_optional(
         &self,
         tx: &mut Self::Tx,
         email: &str,
-    ) -> Result<Option<AuthAccountModel>, LsError>;
+    ) -> Result<Option<AuthAccountModel<Id>>, LsError>;
 
-    async fn save(&self, tx: &mut Self::Tx, model: NewModel<AuthAccountData>) -> Result<AuthAccountModel, LsError>;
+    async fn save(&self, tx: &mut Self::Tx, model: NewModel<AuthAccountData>) -> Result<AuthAccountModel<Id>, LsError>;
 
-    async fn update(&self, tx: &mut Self::Tx, model: Model<AuthAccountData>) -> Result<AuthAccountModel, LsError>;
+    async fn update(&self, tx: &mut Self::Tx, model: Model<Id, AuthAccountData>) -> Result<AuthAccountModel<Id>, LsError>;
 
-    async fn delete(&self, tx: &mut Self::Tx, model: AuthAccountModel) -> Result<AuthAccountModel, LsError>;
+    async fn delete(&self, tx: &mut Self::Tx, model: AuthAccountModel<Id>) -> Result<AuthAccountModel<Id>, LsError>;
 
     async fn delete_by_id(&self, tx: &mut Self::Tx, user_id: i64) -> Result<u64, LsError>;
 }
 
 #[async_trait::async_trait]
-pub trait TokenRepository: Clone + Send + Sync {
-    type Tx: SqlTx;
+pub trait TokenRepository<Id: IdType>: Clone + Send + Sync {
+    
+    type Tx: Send + Sync;
 
-    async fn fetch_by_token(&self, tx: &mut Self::Tx, token_string: &str) -> Result<TokenModel, LsError>;
+    async fn fetch_by_token(&self, tx: &mut Self::Tx, token_string: &str) -> Result<TokenModel<Id>, LsError>;
 
-    async fn fetch_by_username(&self, tx: &mut Self::Tx, username: &str) -> Result<Vec<TokenModel>, LsError>;
+    async fn fetch_by_username(&self, tx: &mut Self::Tx, username: &str) -> Result<Vec<TokenModel<Id>>, LsError>;
 
-    async fn save(&self, tx: &mut Self::Tx, model: NewModel<TokenData>) -> Result<TokenModel, LsError>;
+    async fn save(&self, tx: &mut Self::Tx, model: NewModel<TokenData>) -> Result<TokenModel<Id>, LsError>;
 
-    async fn delete(&self, tx: &mut Self::Tx, model: TokenModel) -> Result<TokenModel, LsError>;
+    async fn delete(&self, tx: &mut Self::Tx, model: TokenModel<Id>) -> Result<TokenModel<Id>, LsError>;
 }

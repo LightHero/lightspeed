@@ -35,7 +35,7 @@ pub struct Role {
     pub permissions: Vec<String>,
 }
 
-pub trait Owned<Id: Eq> {
+pub trait Owned<Id> {
     fn get_owner_id(&self) -> &Id;
 }
 
