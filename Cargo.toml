@@ -33,13 +33,13 @@ lightspeed_scheduler = { version = "0.56.0", path = "./scheduler" }
 actix-files = { version = "0.6.0" }
 actix-rt = "2"
 actix-web = { version = "4.0.1" }
-async-trait = "0.1"
 atomic = "0.5"
 axum = { version = "0.6" }
 base64 = "0.21"
 bcrypt = "0.15"
-c3p0 = { version = "0.69.1", features = ["sqlx_postgres"] }
+# c3p0 = { version = "0.69.1", features = ["sqlx_postgres"] }
 # c3p0 = { git = "https://github.com/ufoscout/c3p0", branch = "master", features = ["sqlx_postgres"] }
+c3p0 = { path = "../../github_ufoscout/c3p0/c3p0", features = ["sqlx_postgres"] }
 chrono = { version = "0.4", default-features = false, features = ["clock"] }
 chrono-tz = "0.8"
 config = "0.13"

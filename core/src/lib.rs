@@ -30,7 +30,6 @@ impl LsCoreModule {
     }
 }
 
-#[async_trait::async_trait]
 impl module::LsModule for LsCoreModule {
     async fn start(&mut self) -> Result<(), LsError> {
         info!("Starting LsCoreModule");

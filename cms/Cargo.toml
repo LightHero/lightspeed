@@ -13,7 +13,6 @@ keywords = []
 [dependencies]
 lightspeed_cache = { workspace = true }
 lightspeed_core = { workspace = true }
-async-trait = { workspace = true }
 c3p0 = { workspace = true }
 log = { workspace = true }
 once_cell = { workspace = true }

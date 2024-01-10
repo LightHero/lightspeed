@@ -26,7 +26,6 @@ impl LsEmailClientModule {
     }
 }
 
-#[async_trait::async_trait]
 impl lightspeed_core::module::LsModule for LsEmailClientModule {
     async fn start(&mut self) -> Result<(), LsError> {
         info!("Starting LsEmailClientModule");

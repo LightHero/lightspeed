@@ -19,7 +19,6 @@ impl <Id: IdType> PgAuthAccountRepository<Id> {
     }
 }
 
-#[async_trait::async_trait]
 impl <Id: IdType> AuthAccountRepository<Id> for PgAuthAccountRepository<Id> {
     type Tx = PgTx;
 

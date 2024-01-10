@@ -248,7 +248,7 @@ fn should_activate_user_only_if_activation_token_type() -> Result<(), LsError> {
                     .generate_and_save_token_with_conn(conn, &user.data.username, TokenType::ResetPassword)
                     .await?;
 
-                let activation_result = auth_module.auth_account_service.activate_user(&token.data.token).await;
+                let activation_result = auth_module.auth_account_service.activate_user_with_conn(conn, &token.data.token).await;
 
                 assert!(activation_result.is_err());
 
@@ -276,7 +276,7 @@ fn should_activate_user_only_if_pending_activation() -> Result<(), LsError> {
                     .generate_and_save_token_with_conn(conn, &user.data.username, TokenType::AccountActivation)
                     .await?;
 
-                let activation_result = auth_module.auth_account_service.activate_user(&token.data.token).await;
+                let activation_result = auth_module.auth_account_service.activate_user_with_conn(conn, &token.data.token).await;
 
                 assert!(activation_result.is_err());
 

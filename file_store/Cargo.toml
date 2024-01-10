@@ -12,7 +12,6 @@ keywords = []
 
 [dependencies]
 lightspeed_core = { workspace = true }
-async-trait = { workspace = true }
 c3p0 = { workspace = true }
 log = { workspace = true }
 serde = { workspace = true }

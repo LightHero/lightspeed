@@ -34,7 +34,6 @@ impl <Id: IdType> PgAuthRepositoryManager<Id> {
     }
 }
 
-#[async_trait::async_trait]
 impl <Id: IdType> AuthRepositoryManager<Id> for PgAuthRepositoryManager<Id> {
     type Tx = PgTx;
     type C3P0 = SqlxPgC3p0Pool;

@@ -1,3 +1,5 @@
+use std::future::Future;
+
 use crate::model::auth_account::{AuthAccountData, AuthAccountModel, AuthAccountStatus};
 use crate::model::token::{TokenData, TokenModel};
 use c3p0::*;
@@ -5,7 +7,6 @@ use lightspeed_core::error::LsError;
 
 pub mod pg;
 
-#[async_trait::async_trait]
 pub trait AuthRepositoryManager<Id: IdType>: Clone + Send + Sync {
     type Tx: Send + Sync;
     type C3P0: C3p0Pool<Tx = Self::Tx>;
@@ -13,58 +14,56 @@ pub trait AuthRepositoryManager<Id: IdType>: Clone + Send + Sync {
     type TokenRepo: TokenRepository<Id, Tx = Self::Tx>;
 
     fn c3p0(&self) -> &Self::C3P0;
-    async fn start(&self) -> Result<(), LsError>;
+    fn start(&self) -> impl Future<Output = Result<(), LsError>> + Send;
     fn auth_account_repo(&self) -> Self::AuthAccountRepo;
     fn token_repo(&self) -> Self::TokenRepo;
 }
 
-#[async_trait::async_trait]
 pub trait AuthAccountRepository<Id: IdType>: Clone + Send + Sync {
     type Tx: Send + Sync;
 
-    async fn fetch_all_by_status(
+    fn fetch_all_by_status(
         &self,
         tx: &mut Self::Tx,
         status: AuthAccountStatus,
         start_user_id: &Id,
         limit: u32,
-    ) -> Result<Vec<AuthAccountModel<Id>>, LsError>;
+    ) -> impl Future<Output = Result<Vec<AuthAccountModel<Id>>, LsError>> + Send;
 
-    async fn fetch_by_id(&self, tx: &mut Self::Tx, user_id: &Id) -> Result<AuthAccountModel<Id>, LsError>;
+    fn fetch_by_id(&self, tx: &mut Self::Tx, user_id: &Id) -> impl Future<Output = Result<AuthAccountModel<Id>, LsError>> + Send;
 
-    async fn fetch_by_username(&self, tx: &mut Self::Tx, username: &str) -> Result<AuthAccountModel<Id>, LsError>;
+    fn fetch_by_username(&self, tx: &mut Self::Tx, username: &str) -> impl Future<Output = Result<AuthAccountModel<Id>, LsError>> + Send;
 
-    async fn fetch_by_username_optional(
+    fn fetch_by_username_optional(
         &self,
         tx: &mut Self::Tx,
         username: &str,
-    ) -> Result<Option<AuthAccountModel<Id>>, LsError>;
+    ) -> impl Future<Output = Result<Option<AuthAccountModel<Id>>, LsError>> + Send;
 
-    async fn fetch_by_email_optional(
+    fn fetch_by_email_optional(
         &self,
         tx: &mut Self::Tx,
         email: &str,
-    ) -> Result<Option<AuthAccountModel<Id>>, LsError>;
+    ) -> impl Future<Output = Result<Option<AuthAccountModel<Id>>, LsError>> + Send;
 
-    async fn save(&self, tx: &mut Self::Tx, model: NewModel<AuthAccountData>) -> Result<AuthAccountModel<Id>, LsError>;
+    fn save(&self, tx: &mut Self::Tx, model: NewModel<AuthAccountData>) -> impl Future<Output = Result<AuthAccountModel<Id>, LsError>> + Send;
 
-    async fn update(&self, tx: &mut Self::Tx, model: Model<Id, AuthAccountData>) -> Result<AuthAccountModel<Id>, LsError>;
+    fn update(&self, tx: &mut Self::Tx, model: Model<Id, AuthAccountData>) -> impl Future<Output = Result<AuthAccountModel<Id>, LsError>> + Send;
 
-    async fn delete(&self, tx: &mut Self::Tx, model: AuthAccountModel<Id>) -> Result<AuthAccountModel<Id>, LsError>;
+    fn delete(&self, tx: &mut Self::Tx, model: AuthAccountModel<Id>) -> impl Future<Output = Result<AuthAccountModel<Id>, LsError>> + Send;
 
-    async fn delete_by_id(&self, tx: &mut Self::Tx, user_id: &Id) -> Result<u64, LsError>;
+    fn delete_by_id(&self, tx: &mut Self::Tx, user_id: &Id) -> impl Future<Output = Result<u64, LsError>> + Send;
 }
 
-#[async_trait::async_trait]
 pub trait TokenRepository<Id: IdType>: Clone + Send + Sync {
     
     type Tx: Send + Sync;
 
-    async fn fetch_by_token(&self, tx: &mut Self::Tx, token_string: &str) -> Result<TokenModel<Id>, LsError>;
+    fn fetch_by_token(&self, tx: &mut Self::Tx, token_string: &str) -> impl Future<Output = Result<TokenModel<Id>, LsError>> + Send;
 
-    async fn fetch_by_username(&self, tx: &mut Self::Tx, username: &str) -> Result<Vec<TokenModel<Id>>, LsError>;
+    fn fetch_by_username(&self, tx: &mut Self::Tx, username: &str) -> impl Future<Output = Result<Vec<TokenModel<Id>>, LsError>> + Send;
 
-    async fn save(&self, tx: &mut Self::Tx, model: NewModel<TokenData>) -> Result<TokenModel<Id>, LsError>;
+    fn save(&self, tx: &mut Self::Tx, model: NewModel<TokenData>) -> impl Future<Output = Result<TokenModel<Id>, LsError>> + Send;
 
-    async fn delete(&self, tx: &mut Self::Tx, model: TokenModel<Id>) -> Result<TokenModel<Id>, LsError>;
+    fn delete(&self, tx: &mut Self::Tx, model: TokenModel<Id>) -> impl Future<Output = Result<TokenModel<Id>, LsError>> + Send;
 }

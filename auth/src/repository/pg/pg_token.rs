@@ -27,7 +27,6 @@ impl <Id: IdType> PgTokenRepository<Id> {
     }
 }
 
-#[async_trait::async_trait]
 impl <Id: IdType> TokenRepository<Id> for PgTokenRepository<Id> {
     type Tx = PgTx;
 
