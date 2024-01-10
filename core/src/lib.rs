@@ -15,7 +15,7 @@ use std::sync::Arc;
 
 #[derive(Clone)]
 pub struct LsCoreModule {
-    pub auth: Arc<service::auth::LsAuthService<InMemoryRolesProvider>>,
+    pub auth: Arc<service::auth::LsAuthService>,
     pub jwt: Arc<service::jwt::LsJwtService>,
 }
 

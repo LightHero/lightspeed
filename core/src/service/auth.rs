@@ -3,7 +3,7 @@ use crate::utils::current_epoch_seconds;
 use c3p0::IdType;
 use serde::{Deserialize, Serialize};
 use std::borrow::Cow;
-use std::collections::{BTreeMap, HashMap};
+use std::collections::BTreeMap;
 use std::sync::Arc;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -46,16 +46,14 @@ impl<Id: Eq, Data: Owned<Id>> Owned<Id> for c3p0::Model<Id, Data> {
 }
 
 #[derive(Clone)]
-pub struct LsAuthService<T: RolesProvider> {
-    roles_provider: T,
+pub struct LsAuthService {
     permission_roles_map: BTreeMap<String, Vec<String>>,
 }
 
-impl<T: RolesProvider> LsAuthService<T> {
-    pub fn new(roles_provider: T) -> LsAuthService<T> {
+impl LsAuthService {
+    pub fn new<T: RolesProvider>(roles_provider: T) -> LsAuthService {
         LsAuthService {
-            permission_roles_map: LsAuthService::<T>::roles_map_to_permissions_map(roles_provider.fetch_all().as_ref()),
-            roles_provider,
+            permission_roles_map: LsAuthService::roles_map_to_permissions_map(roles_provider.fetch_all().as_ref()),
         }
     }
 
@@ -223,18 +221,11 @@ pub trait RolesProvider: Send + Sync + Clone {
 #[derive(Clone)]
 pub struct InMemoryRolesProvider {
     all_roles: Arc<[Role]>,
-    roles_by_name: Arc<HashMap<String, Role>>,
 }
 
 impl InMemoryRolesProvider {
     pub fn new(all_roles: Arc<[Role]>) -> InMemoryRolesProvider {
-        let mut roles_by_name = HashMap::new();
-
-        for role in all_roles.iter() {
-            roles_by_name.insert(role.name.clone(), role.clone());
-        }
-
-        InMemoryRolesProvider { all_roles, roles_by_name: Arc::new(roles_by_name) }
+        InMemoryRolesProvider { all_roles }
     }
 }
 

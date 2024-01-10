@@ -205,7 +205,7 @@ mod test {
         })
     }
 
-    fn new_service() -> WebAuthService<AuthIdType, InMemoryRolesProvider> {
+    fn new_service() -> WebAuthService<AuthIdType> {
         WebAuthService::new(
             Arc::new(LsAuthService::new(InMemoryRolesProvider::new(
                 vec![Role { name: "admin".to_owned(), permissions: vec![] }].into(),

@@ -1,5 +1,5 @@
 use crate::error::LsError;
-use crate::service::auth::{Auth, AuthContext, LsAuthService, RolesProvider};
+use crate::service::auth::{Auth, AuthContext, LsAuthService};
 use crate::service::jwt::LsJwtService;
 use c3p0::IdType;
 use http::{HeaderMap, HeaderValue, Request};
@@ -34,14 +34,14 @@ impl<T> Headers for Request<T> {
 }
 
 #[derive(Clone)]
-pub struct WebAuthService<Id, T: RolesProvider> {
+pub struct WebAuthService<Id> {
     phantom_id: std::marker::PhantomData<Id>,
-    auth_service: Arc<LsAuthService<T>>,
+    auth_service: Arc<LsAuthService>,
     jwt_service: Arc<LsJwtService>,
 }
 
-impl<Id: IdType, T: RolesProvider> WebAuthService<Id, T> {
-    pub fn new(auth_service: Arc<LsAuthService<T>>, jwt_service: Arc<LsJwtService>) -> Self {
+impl<Id: IdType> WebAuthService<Id> {
+    pub fn new(auth_service: Arc<LsAuthService>, jwt_service: Arc<LsJwtService>) -> Self {
         Self { phantom_id: std::marker::PhantomData, auth_service, jwt_service }
     }
 
