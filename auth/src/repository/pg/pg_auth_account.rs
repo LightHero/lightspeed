@@ -74,7 +74,7 @@ impl<Id: IdType> AuthAccountRepository<Id> for PgAuthAccountRepository<Id> {
         "#,
             self.queries().find_base_sql_query
         );
-        Ok(self.repo.fetch_one_optional_with_sql(tx, ::sqlx::query(&sql).bind(username)).await?)
+        Ok(self.repo.fetch_one_optional_with_sql(tx, ::sqlx::query(sql).bind(username)).await?)
     }
 
     async fn fetch_by_email_optional(

@@ -41,7 +41,7 @@ impl<Id: IdType> TokenRepository<Id> for PgTokenRepository<Id> {
         "#,
             self.queries().find_base_sql_query
         );
-        Ok(self.repo.fetch_one_with_sql(tx, ::sqlx::query(&sql).bind(token_string)).await?)
+        Ok(self.repo.fetch_one_with_sql(tx, ::sqlx::query(sql).bind(token_string)).await?)
     }
 
     async fn fetch_by_username(&self, tx: &mut Self::Tx, username: &str) -> Result<Vec<TokenModel<Id>>, LsError> {
