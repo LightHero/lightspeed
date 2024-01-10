@@ -20,66 +20,33 @@ impl ErrorCodes {
 
 #[derive(Debug)]
 pub enum LsError {
-    InvalidTokenError {
-        message: String,
-    },
-    ExpiredTokenError {
-        message: String,
-    },
-    GenerateTokenError {
-        message: String,
-    },
+    InvalidTokenError { message: String },
+    ExpiredTokenError { message: String },
+    GenerateTokenError { message: String },
     MissingAuthTokenError,
-    ParseAuthHeaderError {
-        message: String,
-    },
+    ParseAuthHeaderError { message: String },
 
     // Module
-    ModuleBuilderError {
-        message: String,
-    },
-    ModuleStartError {
-        message: String,
-    },
-    ConfigurationError {
-        message: String,
-    },
+    ModuleBuilderError { message: String },
+    ModuleStartError { message: String },
+    ConfigurationError { message: String },
 
     // Auth
     UnauthenticatedError,
-    ForbiddenError {
-        message: String,
-    },
-    PasswordEncryptionError {
-        message: String,
-    },
+    ForbiddenError { message: String },
+    PasswordEncryptionError { message: String },
 
-    InternalServerError {
-        message: String,
-    },
+    InternalServerError { message: String },
 
-    C3p0Error {
-        source: c3p0::error::C3p0Error,
-    },
+    C3p0Error { source: c3p0::error::C3p0Error },
 
-    ValidationError {
-        details: RootErrorDetails,
-    },
+    ValidationError { details: RootErrorDetails },
 
-    BadRequest {
-        message: String,
-        code: &'static str,
-    },
+    BadRequest { message: String, code: &'static str },
 
-    RequestConflict {
-        message: String,
-        code: &'static str,
-    },
+    RequestConflict { message: String, code: &'static str },
 
-    ServiceUnavailable {
-        message: String,
-        code: &'static str,
-    },
+    ServiceUnavailable { message: String, code: &'static str },
 }
 
 impl Display for LsError {

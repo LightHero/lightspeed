@@ -54,71 +54,71 @@ impl EmailClient for FullEmailClient {
     fn send(&self, email_message: EmailMessage) -> Pin<Box<dyn Future<Output = Result<(), LsError>> + Send>> {
         let client = self.client.clone();
         Box::pin(async move {
-        debug!("Sending email {:?}", email_message);
+            debug!("Sending email {:?}", email_message);
 
-        let mut builder = Message::builder();
+            let mut builder = Message::builder();
 
-        if let Some(val) = email_message.subject {
-            builder = builder.subject(val)
-        }
-        if let Some(val) = email_message.from {
-            builder = builder.from(parse_mailbox(&val)?)
-        }
-
-        for to in email_message.to {
-            builder = builder.to(parse_mailbox(&to)?)
-        }
-        for cc in email_message.cc {
-            builder = builder.cc(parse_mailbox(&cc)?)
-        }
-        for bcc in email_message.bcc {
-            builder = builder.bcc(parse_mailbox(&bcc)?)
-        }
-
-        let mut multipart = MultiPart::mixed().build();
-
-        if let Some(html) = email_message.html {
-            if let Some(text) = email_message.text {
-                multipart = multipart.multipart(MultiPart::alternative_plain_html(text, html));
-            } else {
-                multipart = multipart.singlepart(SinglePart::html(html));
+            if let Some(val) = email_message.subject {
+                builder = builder.subject(val)
             }
-        } else if let Some(text) = email_message.text {
-            multipart = multipart.singlepart(SinglePart::plain(text));
-        };
+            if let Some(val) = email_message.from {
+                builder = builder.from(parse_mailbox(&val)?)
+            }
 
-        for attachment in email_message.attachments {
-            match attachment {
-                EmailAttachment::Binary { body, filename, mime_type } => {
-                    multipart =
-                        multipart.singlepart(Attachment::new(filename).body(body, to_content_type(&mime_type)?));
+            for to in email_message.to {
+                builder = builder.to(parse_mailbox(&to)?)
+            }
+            for cc in email_message.cc {
+                builder = builder.cc(parse_mailbox(&cc)?)
+            }
+            for bcc in email_message.bcc {
+                builder = builder.bcc(parse_mailbox(&bcc)?)
+            }
+
+            let mut multipart = MultiPart::mixed().build();
+
+            if let Some(html) = email_message.html {
+                if let Some(text) = email_message.text {
+                    multipart = multipart.multipart(MultiPart::alternative_plain_html(text, html));
+                } else {
+                    multipart = multipart.singlepart(SinglePart::html(html));
                 }
-                EmailAttachment::FromFile { path, filename, mime_type } => {
-                    let filename = filename.as_deref().unwrap_or_else(|| {
-                        Path::new(&path).file_name().and_then(|os_str| os_str.to_str()).unwrap_or("")
-                    });
+            } else if let Some(text) = email_message.text {
+                multipart = multipart.singlepart(SinglePart::plain(text));
+            };
 
-                    let body = std::fs::read(&path).map_err(|err| LsError::BadRequest {
-                        message: format!("Cannot attach the requested attachment from file [{path}]. Err: {err:?}"),
-                        code: "",
-                    })?;
-                    multipart = multipart
-                        .singlepart(Attachment::new(filename.to_owned()).body(body, to_content_type(&mime_type)?));
+            for attachment in email_message.attachments {
+                match attachment {
+                    EmailAttachment::Binary { body, filename, mime_type } => {
+                        multipart =
+                            multipart.singlepart(Attachment::new(filename).body(body, to_content_type(&mime_type)?));
+                    }
+                    EmailAttachment::FromFile { path, filename, mime_type } => {
+                        let filename = filename.as_deref().unwrap_or_else(|| {
+                            Path::new(&path).file_name().and_then(|os_str| os_str.to_str()).unwrap_or("")
+                        });
+
+                        let body = std::fs::read(&path).map_err(|err| LsError::BadRequest {
+                            message: format!("Cannot attach the requested attachment from file [{path}]. Err: {err:?}"),
+                            code: "",
+                        })?;
+                        multipart = multipart
+                            .singlepart(Attachment::new(filename.to_owned()).body(body, to_content_type(&mime_type)?));
+                    }
                 }
             }
-        }
 
-        let email = builder.multipart(multipart).map_err(|err| LsError::InternalServerError {
-            message: format!("FullEmailService.send - Cannot build the email. Err: {err:?}"),
-        })?;
+            let email = builder.multipart(multipart).map_err(|err| LsError::InternalServerError {
+                message: format!("FullEmailService.send - Cannot build the email. Err: {err:?}"),
+            })?;
 
-        let response = client.send(email).await.map_err(|err| LsError::InternalServerError {
-            message: format!("FullEmailService.send - Cannot send email to the SMTP server. Err: {err:?}"),
-        })?;
+            let response = client.send(email).await.map_err(|err| LsError::InternalServerError {
+                message: format!("FullEmailService.send - Cannot send email to the SMTP server. Err: {err:?}"),
+            })?;
 
-        debug!("FullEmailService.send - Email sent. Response code: {}", response.code());
-        Ok(())
-    })
+            debug!("FullEmailService.send - Email sent. Response code: {}", response.code());
+            Ok(())
+        })
     }
 
     fn get_emails(&self) -> Result<Vec<EmailMessage>, LsError> {

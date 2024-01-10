@@ -26,12 +26,12 @@ impl EmailClient for InMemoryEmailClient {
         let emails = self.emails.clone();
 
         Box::pin(async move {
-        warn!("InMemoryEmailService - Received an email. The email is NOT going to be sent but kept in memory");
+            warn!("InMemoryEmailService - Received an email. The email is NOT going to be sent but kept in memory");
 
-        let mut lock = emails.lock();
+            let mut lock = emails.lock();
 
-        lock.push(email_message);
-        Ok(())
+            lock.push(email_message);
+            Ok(())
         })
     }
 

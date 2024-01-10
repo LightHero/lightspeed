@@ -30,9 +30,17 @@ pub trait AuthAccountRepository<Id: IdType>: Clone + Send + Sync {
         limit: u32,
     ) -> impl Future<Output = Result<Vec<AuthAccountModel<Id>>, LsError>> + Send;
 
-    fn fetch_by_id(&self, tx: &mut Self::Tx, user_id: &Id) -> impl Future<Output = Result<AuthAccountModel<Id>, LsError>> + Send;
+    fn fetch_by_id(
+        &self,
+        tx: &mut Self::Tx,
+        user_id: &Id,
+    ) -> impl Future<Output = Result<AuthAccountModel<Id>, LsError>> + Send;
 
-    fn fetch_by_username(&self, tx: &mut Self::Tx, username: &str) -> impl Future<Output = Result<AuthAccountModel<Id>, LsError>> + Send;
+    fn fetch_by_username(
+        &self,
+        tx: &mut Self::Tx,
+        username: &str,
+    ) -> impl Future<Output = Result<AuthAccountModel<Id>, LsError>> + Send;
 
     fn fetch_by_username_optional(
         &self,
@@ -46,24 +54,51 @@ pub trait AuthAccountRepository<Id: IdType>: Clone + Send + Sync {
         email: &str,
     ) -> impl Future<Output = Result<Option<AuthAccountModel<Id>>, LsError>> + Send;
 
-    fn save(&self, tx: &mut Self::Tx, model: NewModel<AuthAccountData>) -> impl Future<Output = Result<AuthAccountModel<Id>, LsError>> + Send;
+    fn save(
+        &self,
+        tx: &mut Self::Tx,
+        model: NewModel<AuthAccountData>,
+    ) -> impl Future<Output = Result<AuthAccountModel<Id>, LsError>> + Send;
 
-    fn update(&self, tx: &mut Self::Tx, model: Model<Id, AuthAccountData>) -> impl Future<Output = Result<AuthAccountModel<Id>, LsError>> + Send;
+    fn update(
+        &self,
+        tx: &mut Self::Tx,
+        model: Model<Id, AuthAccountData>,
+    ) -> impl Future<Output = Result<AuthAccountModel<Id>, LsError>> + Send;
 
-    fn delete(&self, tx: &mut Self::Tx, model: AuthAccountModel<Id>) -> impl Future<Output = Result<AuthAccountModel<Id>, LsError>> + Send;
+    fn delete(
+        &self,
+        tx: &mut Self::Tx,
+        model: AuthAccountModel<Id>,
+    ) -> impl Future<Output = Result<AuthAccountModel<Id>, LsError>> + Send;
 
     fn delete_by_id(&self, tx: &mut Self::Tx, user_id: &Id) -> impl Future<Output = Result<u64, LsError>> + Send;
 }
 
 pub trait TokenRepository<Id: IdType>: Clone + Send + Sync {
-    
     type Tx: Send + Sync;
 
-    fn fetch_by_token(&self, tx: &mut Self::Tx, token_string: &str) -> impl Future<Output = Result<TokenModel<Id>, LsError>> + Send;
+    fn fetch_by_token(
+        &self,
+        tx: &mut Self::Tx,
+        token_string: &str,
+    ) -> impl Future<Output = Result<TokenModel<Id>, LsError>> + Send;
 
-    fn fetch_by_username(&self, tx: &mut Self::Tx, username: &str) -> impl Future<Output = Result<Vec<TokenModel<Id>>, LsError>> + Send;
+    fn fetch_by_username(
+        &self,
+        tx: &mut Self::Tx,
+        username: &str,
+    ) -> impl Future<Output = Result<Vec<TokenModel<Id>>, LsError>> + Send;
 
-    fn save(&self, tx: &mut Self::Tx, model: NewModel<TokenData>) -> impl Future<Output = Result<TokenModel<Id>, LsError>> + Send;
+    fn save(
+        &self,
+        tx: &mut Self::Tx,
+        model: NewModel<TokenData>,
+    ) -> impl Future<Output = Result<TokenModel<Id>, LsError>> + Send;
 
-    fn delete(&self, tx: &mut Self::Tx, model: TokenModel<Id>) -> impl Future<Output = Result<TokenModel<Id>, LsError>> + Send;
+    fn delete(
+        &self,
+        tx: &mut Self::Tx,
+        model: TokenModel<Id>,
+    ) -> impl Future<Output = Result<TokenModel<Id>, LsError>> + Send;
 }

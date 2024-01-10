@@ -19,8 +19,8 @@ impl NoOpsEmailClient {
 impl EmailClient for NoOpsEmailClient {
     fn send(&self, _email_message: EmailMessage) -> Pin<Box<dyn Future<Output = Result<(), LsError>> + Send>> {
         Box::pin(async move {
-        warn!("NoOpsEmailService.send - Received an email but the email is NOT going to be sent");
-        Ok(())
+            warn!("NoOpsEmailService.send - Received an email but the email is NOT going to be sent");
+            Ok(())
         })
     }
 

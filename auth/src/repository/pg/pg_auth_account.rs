@@ -11,15 +11,17 @@ pub struct PgAuthAccountRepository<Id: IdType> {
     repo: SqlxPgC3p0Json<Id, AuthAccountData, AuthAccountDataCodec>,
 }
 
-impl <Id: IdType> PgAuthAccountRepository<Id> {
+impl<Id: IdType> PgAuthAccountRepository<Id> {
     pub fn new(id_generator: Arc<dyn PostgresIdGenerator<Id>>) -> Self {
         Self {
-            repo: SqlxPgC3p0JsonBuilder::new("LS_AUTH_ACCOUNT").with_id_generator(id_generator).build_with_codec(AuthAccountDataCodec {}),
+            repo: SqlxPgC3p0JsonBuilder::new("LS_AUTH_ACCOUNT")
+                .with_id_generator(id_generator)
+                .build_with_codec(AuthAccountDataCodec {}),
         }
     }
 }
 
-impl <Id: IdType> AuthAccountRepository<Id> for PgAuthAccountRepository<Id> {
+impl<Id: IdType> AuthAccountRepository<Id> for PgAuthAccountRepository<Id> {
     type Tx = PgTx;
 
     async fn fetch_all_by_status(
@@ -41,7 +43,10 @@ impl <Id: IdType> AuthAccountRepository<Id> for PgAuthAccountRepository<Id> {
 
         Ok(self
             .repo
-            .fetch_all_with_sql(tx, self.repo.query_with_id(&sql, start_user_id).bind(status.as_ref()).bind(limit as i64))
+            .fetch_all_with_sql(
+                tx,
+                self.repo.query_with_id(&sql, start_user_id).bind(status.as_ref()).bind(limit as i64),
+            )
             .await?)
     }
 
@@ -117,7 +122,7 @@ impl <Id: IdType> AuthAccountRepository<Id> for PgAuthAccountRepository<Id> {
     }
 }
 
-impl <Id: IdType> Deref for PgAuthAccountRepository<Id> {
+impl<Id: IdType> Deref for PgAuthAccountRepository<Id> {
     type Target = SqlxPgC3p0Json<Id, AuthAccountData, AuthAccountDataCodec>;
 
     fn deref(&self) -> &Self::Target {

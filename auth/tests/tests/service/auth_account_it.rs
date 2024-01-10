@@ -248,7 +248,8 @@ fn should_activate_user_only_if_activation_token_type() -> Result<(), LsError> {
                     .generate_and_save_token_with_conn(conn, &user.data.username, TokenType::ResetPassword)
                     .await?;
 
-                let activation_result = auth_module.auth_account_service.activate_user_with_conn(conn, &token.data.token).await;
+                let activation_result =
+                    auth_module.auth_account_service.activate_user_with_conn(conn, &token.data.token).await;
 
                 assert!(activation_result.is_err());
 
@@ -276,7 +277,8 @@ fn should_activate_user_only_if_pending_activation() -> Result<(), LsError> {
                     .generate_and_save_token_with_conn(conn, &user.data.username, TokenType::AccountActivation)
                     .await?;
 
-                let activation_result = auth_module.auth_account_service.activate_user_with_conn(conn, &token.data.token).await;
+                let activation_result =
+                    auth_module.auth_account_service.activate_user_with_conn(conn, &token.data.token).await;
 
                 assert!(activation_result.is_err());
 
@@ -1062,8 +1064,11 @@ fn should_change_username() -> Result<(), LsError> {
 
         // Act
         let new_username = new_hyphenated_uuid();
-        let updated_user =
-            auth_module.auth_account_service.change_user_data(&user.id, Some(new_username.clone()), None).await.unwrap();
+        let updated_user = auth_module
+            .auth_account_service
+            .change_user_data(&user.id, Some(new_username.clone()), None)
+            .await
+            .unwrap();
 
         // Assert
 
@@ -1231,7 +1236,8 @@ fn should_activate_a_disabled_user() -> Result<(), LsError> {
         assert!(auth_module.auth_account_service.disable_by_user_id(&user.id).await.is_ok());
 
         // Act
-        let updated_user = auth_module.auth_account_service.reactivate_disabled_user_by_user_id(&user.id).await.unwrap();
+        let updated_user =
+            auth_module.auth_account_service.reactivate_disabled_user_by_user_id(&user.id).await.unwrap();
 
         // Assert
         assert_eq!(AuthAccountStatus::Active, updated_user.data.status);

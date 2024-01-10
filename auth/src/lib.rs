@@ -46,7 +46,9 @@ impl<Id: IdType, RepoManager: AuthRepositoryManager<Id>> LsAuthModule<Id, RepoMa
     }
 }
 
-impl<Id: IdType , RepoManager: AuthRepositoryManager<Id>> lightspeed_core::module::LsModule for LsAuthModule<Id, RepoManager> {
+impl<Id: IdType, RepoManager: AuthRepositoryManager<Id>> lightspeed_core::module::LsModule
+    for LsAuthModule<Id, RepoManager>
+{
     async fn start(&mut self) -> Result<(), LsError> {
         info!("Starting LsAuthModule");
         self.repo_manager.start().await?;

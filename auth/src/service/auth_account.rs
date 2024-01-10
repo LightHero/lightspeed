@@ -524,7 +524,10 @@ impl<Id: IdType, RepoManager: AuthRepositoryManager<Id>> LsAuthAccountService<Id
         }
 
         if let Some(email) = new_email {
-            info!("Change user data of user_id [{:?}]. Old email: [{}] New email: [{}]", user_id, user.data.email, email);
+            info!(
+                "Change user data of user_id [{:?}]. Old email: [{}] New email: [{}]",
+                user_id, user.data.email, email
+            );
             user.data.email = email;
         }
 

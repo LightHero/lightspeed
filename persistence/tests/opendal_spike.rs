@@ -1,4 +1,3 @@
-
 #[cfg(test)]
 mod test {
 
@@ -9,7 +8,6 @@ mod test {
 
     #[tokio::test]
     async fn test_opendal_0() -> Result<()> {
-
         // Pick a builder and configure it.
         let mut builder = services::Fs::default();
         builder.root("./");
@@ -36,6 +34,5 @@ mod test {
         // op.delete("hello.txt").await?;
 
         Ok(())
-
     }
 }

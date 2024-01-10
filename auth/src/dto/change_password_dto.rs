@@ -13,13 +13,13 @@ pub struct ChangePasswordDto<Id: Send + Sync> {
     pub new_password_confirm: String,
 }
 
-impl <Id: Send + Sync> Owned<Id> for ChangePasswordDto<Id> {
+impl<Id: Send + Sync> Owned<Id> for ChangePasswordDto<Id> {
     fn get_owner_id(&self) -> &Id {
         &self.user_id
     }
 }
 
-impl <Id: Send + Sync> Validable for ChangePasswordDto<Id> {
+impl<Id: Send + Sync> Validable for ChangePasswordDto<Id> {
     fn validate(&self, error_details: &mut ErrorDetails) -> Result<(), LsError> {
         validate_must_be_equals(
             error_details,

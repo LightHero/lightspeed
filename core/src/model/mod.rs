@@ -1,6 +1,6 @@
 use crate::service::auth::Owned;
 use crate::service::validator::ownership::WithIdAndVersion;
-use c3p0::{IdType, DataType, VersionType};
+use c3p0::{DataType, IdType, VersionType};
 use serde::{Deserialize, Serialize};
 
 pub mod language;
@@ -33,12 +33,22 @@ impl<Id: IdType, Data: DataType> WithIdAndVersion<Id> for ModelWithOwner<Id, Dat
 
 impl<Id: IdType, Data: DataType, T: Owned<Id> + WithIdAndVersion<Id>> From<(&T, Data)> for ModelWithOwner<Id, Data> {
     fn from((model, data): (&T, Data)) -> Self {
-        ModelWithOwner { id: model.get_id().clone(), version: model.get_version(), user_id: model.get_owner_id().clone(), data }
+        ModelWithOwner {
+            id: model.get_id().clone(),
+            version: model.get_version(),
+            user_id: model.get_owner_id().clone(),
+            data,
+        }
     }
 }
 
 impl<Id: IdType, T: Owned<Id> + WithIdAndVersion<Id>> From<&T> for ModelWithOwner<Id, ()> {
     fn from(model: &T) -> Self {
-        ModelWithOwner { id: model.get_id().clone(), version: model.get_version(), user_id: model.get_owner_id().clone(), data: () }
+        ModelWithOwner {
+            id: model.get_id().clone(),
+            version: model.get_version(),
+            user_id: model.get_owner_id().clone(),
+            data: (),
+        }
     }
 }

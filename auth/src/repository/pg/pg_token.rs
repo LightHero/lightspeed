@@ -11,7 +11,7 @@ pub struct PgTokenRepository<Id: IdType> {
     repo: SqlxPgC3p0Json<Id, TokenData, TokenDataCodec>,
 }
 
-impl <Id: IdType> Deref for PgTokenRepository<Id> {
+impl<Id: IdType> Deref for PgTokenRepository<Id> {
     type Target = SqlxPgC3p0Json<Id, TokenData, TokenDataCodec>;
 
     fn deref(&self) -> &Self::Target {
@@ -19,15 +19,17 @@ impl <Id: IdType> Deref for PgTokenRepository<Id> {
     }
 }
 
-impl <Id: IdType> PgTokenRepository<Id> {
+impl<Id: IdType> PgTokenRepository<Id> {
     pub fn new(id_generator: Arc<dyn PostgresIdGenerator<Id>>) -> Self {
         Self {
-            repo: SqlxPgC3p0JsonBuilder::new("LS_AUTH_TOKEN").with_id_generator(id_generator).build_with_codec(TokenDataCodec {}),
+            repo: SqlxPgC3p0JsonBuilder::new("LS_AUTH_TOKEN")
+                .with_id_generator(id_generator)
+                .build_with_codec(TokenDataCodec {}),
         }
     }
 }
 
-impl <Id: IdType> TokenRepository<Id> for PgTokenRepository<Id> {
+impl<Id: IdType> TokenRepository<Id> for PgTokenRepository<Id> {
     type Tx = PgTx;
 
     async fn fetch_by_token(&self, tx: &mut Self::Tx, token_string: &str) -> Result<TokenModel<Id>, LsError> {

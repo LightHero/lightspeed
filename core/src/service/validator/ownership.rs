@@ -41,7 +41,11 @@ pub fn validate_id_and_version<F: WithIdAndVersion<Id>, S: WithIdAndVersion<Id>,
     }
 }
 
-pub fn validate_ownership_id_and_version<Id: IdType, F: Owned<Id> + WithIdAndVersion<Id>, S: Owned<Id> + WithIdAndVersion<Id>>(
+pub fn validate_ownership_id_and_version<
+    Id: IdType,
+    F: Owned<Id> + WithIdAndVersion<Id>,
+    S: Owned<Id> + WithIdAndVersion<Id>,
+>(
     error_details: &mut ErrorDetails,
     first: &F,
     second: &S,

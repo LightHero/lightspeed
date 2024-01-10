@@ -16,7 +16,7 @@ pub struct Auth<Id> {
     pub expiration_ts_seconds: i64,
 }
 
-impl <Id: IdType> Auth<Id> {
+impl<Id: IdType> Auth<Id> {
     pub fn new<S: Into<String>>(
         id: Id,
         username: S,
@@ -147,7 +147,10 @@ impl<'a, Id: IdType> AuthContext<'a, Id> {
         for permission in permissions {
             if !self.has_permission_bool(permission) {
                 return Err(LsError::ForbiddenError {
-                    message: format!("User [{:?}] does not have the required permission [{}]", self.auth.id, permission),
+                    message: format!(
+                        "User [{:?}] does not have the required permission [{}]",
+                        self.auth.id, permission
+                    ),
                 });
             };
         }
@@ -183,7 +186,11 @@ impl<'a, Id: IdType> AuthContext<'a, Id> {
         }
     }
 
-    pub fn is_owner_or_has_permission<T: Owned<Id>>(&self, obj: &T, permission: &str) -> Result<&AuthContext<Id>, LsError> {
+    pub fn is_owner_or_has_permission<T: Owned<Id>>(
+        &self,
+        obj: &T,
+        permission: &str,
+    ) -> Result<&AuthContext<Id>, LsError> {
         if (&self.auth.id == obj.get_owner_id()) || self.has_permission_bool(permission) {
             Ok(self)
         } else {
