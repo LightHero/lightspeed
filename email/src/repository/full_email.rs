@@ -7,7 +7,9 @@ use lettre::transport::smtp::authentication::Credentials;
 use lettre::{AsyncSmtpTransport, AsyncTransport, Message, Tokio1Executor};
 use lightspeed_core::error::{ErrorCodes, LsError};
 use log::*;
+use std::future::Future;
 use std::path::Path;
+use std::pin::Pin;
 use std::sync::Arc;
 use std::time::Duration;
 
@@ -48,10 +50,10 @@ impl FullEmailClient {
     }
 }
 
-#[async_trait::async_trait]
 impl EmailClient for FullEmailClient {
-    async fn send(&self, email_message: EmailMessage) -> Result<(), LsError> {
+    fn send(&self, email_message: EmailMessage) -> Pin<Box<dyn Future<Output = Result<(), LsError>> + Send>> {
         let client = self.client.clone();
+        Box::pin(async move {
         debug!("Sending email {:?}", email_message);
 
         let mut builder = Message::builder();
@@ -116,6 +118,7 @@ impl EmailClient for FullEmailClient {
 
         debug!("FullEmailService.send - Email sent. Response code: {}", response.code());
         Ok(())
+    })
     }
 
     fn get_emails(&self) -> Result<Vec<EmailMessage>, LsError> {

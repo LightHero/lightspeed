@@ -2,6 +2,8 @@ use crate::model::email::EmailMessage;
 use crate::repository::email::EmailClient;
 use lightspeed_core::error::LsError;
 use log::warn;
+use std::future::Future;
+use std::pin::Pin;
 use std::sync::Arc;
 
 /// A EmailClient implementation that sends all the emails to a fixed recipient ignoring the original
@@ -19,33 +21,38 @@ impl FixedRecipientEmailClient {
     }
 }
 
-#[async_trait::async_trait]
 impl EmailClient for FixedRecipientEmailClient {
-    async fn send(&self, mut email_message: EmailMessage) -> Result<(), LsError> {
-        warn!("FixedRecipientEmailClient - Received an email. The email recipients will be substituted by the configured one(s)");
+    fn send(&self, mut email_message: EmailMessage) -> Pin<Box<dyn Future<Output = Result<(), LsError>> + Send>> {
+        let client = self.client.clone();
+        let fixed_to_recipients = self.fixed_to_recipients.clone();
 
-        email_message.subject = Some(to_subject(&email_message.subject.unwrap_or_default(), &email_message.to));
+        Box::pin(async move {
 
-        let original_data_info = to_text(&email_message.to, &email_message.cc, &email_message.bcc);
-        if let Some(text) = email_message.text {
-            email_message.text = Some(format!("{original_data_info}\n{text}"));
-        }
-
-        if let Some(html) = email_message.html {
-            email_message.html = Some(format!("<pre>\n{original_data_info}\n</pre>\n</br>\n{html}"));
-        }
-
-        if let (None, None) = (&email_message.text, &email_message.html) {
-            email_message.text = Some(original_data_info);
-        }
-
-        email_message.to = self.fixed_to_recipients.clone();
-        email_message.cc = vec![];
-        email_message.bcc = vec![];
-
-        self.client.send(email_message).await
+            warn!("FixedRecipientEmailClient - Received an email. The email recipients will be substituted by the configured one(s)");
+            
+            email_message.subject = Some(to_subject(&email_message.subject.unwrap_or_default(), &email_message.to));
+            
+            let original_data_info = to_text(&email_message.to, &email_message.cc, &email_message.bcc);
+            if let Some(text) = email_message.text {
+                email_message.text = Some(format!("{original_data_info}\n{text}"));
+            }
+            
+            if let Some(html) = email_message.html {
+                email_message.html = Some(format!("<pre>\n{original_data_info}\n</pre>\n</br>\n{html}"));
+            }
+            
+            if let (None, None) = (&email_message.text, &email_message.html) {
+                email_message.text = Some(original_data_info);
+            }
+            
+            email_message.to = fixed_to_recipients;
+            email_message.cc = vec![];
+            email_message.bcc = vec![];
+            
+            client.send(email_message).await
+        })
     }
-
+        
     fn get_emails(&self) -> Result<Vec<EmailMessage>, LsError> {
         self.client.get_emails()
     }
@@ -53,7 +60,7 @@ impl EmailClient for FixedRecipientEmailClient {
     fn clear_emails(&self) -> Result<(), LsError> {
         self.client.clear_emails()
     }
-
+    
     fn retain_emails(&self, retain: Box<dyn FnMut(&EmailMessage) -> bool>) -> Result<(), LsError> {
         self.client.retain_emails(retain)
     }

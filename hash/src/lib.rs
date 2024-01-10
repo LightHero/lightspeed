@@ -28,7 +28,6 @@ impl LsHashModule {
     }
 }
 
-#[async_trait::async_trait]
 impl lightspeed_core::module::LsModule for LsHashModule {
     async fn start(&mut self) -> Result<(), LsError> {
         info!("Starting LsHashModule");

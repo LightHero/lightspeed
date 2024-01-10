@@ -1,3 +1,6 @@
+use std::future::Future;
+use std::pin::Pin;
+
 use crate::model::email::EmailMessage;
 use crate::repository::email::EmailClient;
 use lightspeed_core::error::LsError;
@@ -13,11 +16,12 @@ impl NoOpsEmailClient {
     }
 }
 
-#[async_trait::async_trait]
 impl EmailClient for NoOpsEmailClient {
-    async fn send(&self, _email_message: EmailMessage) -> Result<(), LsError> {
+    fn send(&self, _email_message: EmailMessage) -> Pin<Box<dyn Future<Output = Result<(), LsError>> + Send>> {
+        Box::pin(async move {
         warn!("NoOpsEmailService.send - Received an email but the email is NOT going to be sent");
         Ok(())
+        })
     }
 
     fn get_emails(&self) -> Result<Vec<EmailMessage>, LsError> {

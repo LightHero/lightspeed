@@ -7,12 +7,13 @@ use crate::repository::no_ops_email::NoOpsEmailClient;
 use lightspeed_core::error::LsError;
 use log::*;
 use serde::Deserialize;
+use std::future::Future;
+use std::pin::Pin;
 use std::str::FromStr;
 use std::sync::Arc;
 
-#[async_trait::async_trait]
 pub trait EmailClient: Send + Sync {
-    async fn send(&self, email_message: EmailMessage) -> Result<(), LsError>;
+    fn send(&self, email_message: EmailMessage) -> Pin<Box<dyn Future<Output = Result<(), LsError>> + Send>>;
     fn get_emails(&self) -> Result<Vec<EmailMessage>, LsError>;
     fn clear_emails(&self) -> Result<(), LsError>;
     fn retain_emails(&self, retain: Box<dyn FnMut(&EmailMessage) -> bool>) -> Result<(), LsError>;
