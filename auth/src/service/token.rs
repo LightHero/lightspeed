@@ -2,28 +2,28 @@ use crate::config::AuthConfig;
 use crate::model::token::{TokenData, TokenModel, TokenType};
 use crate::repository::{AuthRepositoryManager, TokenRepository};
 use c3p0::*;
-use lightspeed_core::error::LightSpeedError;
+use lightspeed_core::error::LsError;
 use lightspeed_core::service::validator::Validator;
 use lightspeed_core::utils::*;
 use log::*;
 
 #[derive(Clone)]
-pub struct TokenService<RepoManager: AuthRepositoryManager> {
+pub struct LsTokenService<Id: IdType, RepoManager: AuthRepositoryManager<Id>> {
     auth_config: AuthConfig,
     token_repo: RepoManager::TokenRepo,
 }
 
-impl<RepoManager: AuthRepositoryManager> TokenService<RepoManager> {
+impl<Id: IdType, RepoManager: AuthRepositoryManager<Id>> LsTokenService<Id, RepoManager> {
     pub fn new(auth_config: AuthConfig, token_repo: RepoManager::TokenRepo) -> Self {
-        TokenService { auth_config, token_repo }
+        LsTokenService { auth_config, token_repo }
     }
 
     pub async fn generate_and_save_token_with_conn<S: Into<String>>(
         &self,
-        conn: &mut RepoManager::Conn,
+        conn: &mut RepoManager::Tx,
         username: S,
         token_type: TokenType,
-    ) -> Result<TokenModel, LightSpeedError> {
+    ) -> Result<TokenModel<Id>, LsError> {
         let username = username.into();
         info!("Generate and save token of type [{:?}] for username [{}]", token_type, username);
 
@@ -40,10 +40,10 @@ impl<RepoManager: AuthRepositoryManager> TokenService<RepoManager> {
 
     pub async fn fetch_by_token_with_conn(
         &self,
-        conn: &mut RepoManager::Conn,
+        conn: &mut RepoManager::Tx,
         token: &str,
         validate: bool,
-    ) -> Result<TokenModel, LightSpeedError> {
+    ) -> Result<TokenModel<Id>, LsError> {
         debug!("Fetch by token [{}]", token);
         let token_model = self.token_repo.fetch_by_token(conn, token).await?;
 
@@ -56,19 +56,19 @@ impl<RepoManager: AuthRepositoryManager> TokenService<RepoManager> {
 
     pub async fn fetch_all_by_username_with_conn(
         &self,
-        conn: &mut RepoManager::Conn,
+        conn: &mut RepoManager::Tx,
         username: &str,
-    ) -> Result<Vec<TokenModel>, LightSpeedError> {
+    ) -> Result<Vec<TokenModel<Id>>, LsError> {
         debug!("Fetch by username [{}]", username);
         self.token_repo.fetch_by_username(conn, username).await
     }
 
     pub async fn delete_with_conn(
         &self,
-        conn: &mut RepoManager::Conn,
-        token_model: TokenModel,
-    ) -> Result<TokenModel, LightSpeedError> {
-        debug!("Delete token_model with id [{}] and token [{}]", token_model.id, token_model.data.token);
+        conn: &mut RepoManager::Tx,
+        token_model: TokenModel<Id>,
+    ) -> Result<TokenModel<Id>, LsError> {
+        debug!("Delete token_model with id [{:?}] and token [{}]", token_model.id, token_model.data.token);
         self.token_repo.delete(conn, token_model).await
     }
 }

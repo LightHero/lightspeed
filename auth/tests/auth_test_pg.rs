@@ -1,51 +1,44 @@
-use c3p0::postgres::deadpool::{self, Runtime};
-use c3p0::postgres::tokio_postgres::NoTls;
-use c3p0::postgres::*;
-use maybe_single::nio::*;
+use c3p0::sqlx::sqlx::postgres::*;
+use c3p0::sqlx::*;
+use maybe_single::tokio::*;
 
 use lightspeed_auth::config::AuthConfig;
 use lightspeed_auth::repository::pg::PgAuthRepositoryManager;
-use lightspeed_auth::AuthModule;
-use lightspeed_core::module::Module;
+use lightspeed_auth::LsAuthModule;
+use lightspeed_core::module::LsModule;
 use once_cell::sync::OnceCell;
 use testcontainers::postgres::Postgres;
 use testcontainers::testcontainers::clients::Cli;
 use testcontainers::testcontainers::Container;
-use tokio::time::Duration;
 
 mod tests;
 
-pub type RepoManager = PgAuthRepositoryManager;
+pub type Id = u64;
+pub type RepoManager = PgAuthRepositoryManager<Id>;
 
-pub type MaybeType = (AuthModule<RepoManager>, Container<'static, Postgres>);
+pub type MaybeType = (LsAuthModule<Id, RepoManager>, Container<'static, Postgres>);
 
 async fn init() -> MaybeType {
     static DOCKER: OnceCell<Cli> = OnceCell::new();
 
     let node = DOCKER.get_or_init(Cli::default).run(Postgres::default());
 
-    let mut pool_config = deadpool::managed::PoolConfig::default();
-    pool_config.timeouts.create = Some(Duration::from_secs(5));
-    pool_config.timeouts.recycle = Some(Duration::from_secs(5));
-    pool_config.timeouts.wait = Some(Duration::from_secs(5));
+    let options = PgConnectOptions::new()
+        .username("postgres")
+        .password("postgres")
+        .database("postgres")
+        .host("127.0.0.1")
+        .port(node.get_host_port_ipv4(5432));
 
-    let config = c3p0::postgres::deadpool::postgres::Config {
-        user: Some("postgres".to_owned()),
-        password: Some("postgres".to_owned()),
-        dbname: Some("postgres".to_owned()),
-        host: Some("127.0.0.1".to_string()),
-        port: Some(node.get_host_port_ipv4(5432)),
-        pool: Some(pool_config),
-        ..Default::default()
-    };
+    let pool = PgPool::connect_with(options).await.unwrap();
 
-    let c3p0 = PgC3p0Pool::new(config.create_pool(Some(Runtime::Tokio1), NoTls).unwrap());
+    let c3p0 = SqlxPgC3p0Pool::new(pool);
 
     let repo_manager = RepoManager::new(c3p0.clone());
 
     let auth_config = AuthConfig { bcrypt_password_hash_cost: 4, ..Default::default() };
 
-    let mut auth_module = AuthModule::new(repo_manager, auth_config);
+    let mut auth_module = LsAuthModule::new(repo_manager, auth_config);
     {
         auth_module.start().await.unwrap();
     }

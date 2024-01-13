@@ -1,12 +1,12 @@
 use c3p0::*;
-use lightspeed_core::error::{ErrorDetails, LightSpeedError};
+use lightspeed_core::error::{ErrorDetails, LsError};
 use lightspeed_core::service::validator::Validable;
 use lightspeed_core::utils::current_epoch_seconds;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use std::borrow::Cow;
 
-pub type TokenModel = Model<TokenData>;
+pub type TokenModel<Id> = Model<Id, TokenData>;
 
 #[derive(Clone, Serialize, Deserialize)]
 pub struct TokenData {
@@ -46,7 +46,7 @@ impl JsonCodec<TokenData> for TokenDataCodec {
 }
 
 impl Validable for TokenData {
-    fn validate(&self, error_details: &mut ErrorDetails) -> Result<(), LightSpeedError> {
+    fn validate(&self, error_details: &mut ErrorDetails) -> Result<(), LsError> {
         if current_epoch_seconds() > self.expire_at_epoch_seconds {
             error_details.add_detail("expire_at_epoch", "expired");
         }
@@ -85,7 +85,7 @@ pub mod test {
 
         assert!(result.is_err());
         match result {
-            Err(LightSpeedError::ValidationError { details }) => {
+            Err(LsError::ValidationError { details }) => {
                 assert_eq!("expired", details.details["expire_at_epoch"][0])
             }
             _ => panic!(),

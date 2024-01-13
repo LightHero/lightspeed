@@ -2,11 +2,11 @@ use crate::{data, test};
 use c3p0::*;
 use lightspeed_auth::model::token::{TokenData, TokenType};
 use lightspeed_auth::repository::AuthRepositoryManager;
-use lightspeed_core::error::LightSpeedError;
+use lightspeed_core::error::LsError;
 use lightspeed_core::utils::{current_epoch_seconds, new_hyphenated_uuid};
 
 #[test]
-fn should_delete_token() -> Result<(), LightSpeedError> {
+fn should_delete_token() -> Result<(), LsError> {
     test(async {
         let data = data(false).await;
         let auth_module = &data.0;
@@ -25,7 +25,6 @@ fn should_delete_token() -> Result<(), LightSpeedError> {
         };
 
         c3p0.transaction(|conn| async {
-
             let saved_token = token_repo.save(conn, token).await?;
 
             assert!(token_repo.exists_by_id(conn, &saved_token.id).await?);
@@ -39,7 +38,7 @@ fn should_delete_token() -> Result<(), LightSpeedError> {
 }
 
 #[test]
-fn should_generate_token() -> Result<(), LightSpeedError> {
+fn should_generate_token() -> Result<(), LsError> {
     test(async {
         let data = data(false).await;
         let auth_module = &data.0;
@@ -77,7 +76,7 @@ fn should_generate_token() -> Result<(), LightSpeedError> {
 }
 
 #[test]
-fn should_validate_token_on_fetch() -> Result<(), LightSpeedError> {
+fn should_validate_token_on_fetch() -> Result<(), LsError> {
     test(async {
         let data = data(false).await;
         let auth_module = &data.0;
@@ -111,7 +110,7 @@ fn should_validate_token_on_fetch() -> Result<(), LightSpeedError> {
 }
 
 #[test]
-fn should_return_all_tokens_by_username() -> Result<(), LightSpeedError> {
+fn should_return_all_tokens_by_username() -> Result<(), LsError> {
     test(async {
         let data = data(false).await;
         let auth_module = &data.0;

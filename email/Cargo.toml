@@ -12,7 +12,6 @@ keywords = []
 
 [dependencies]
 lightspeed_core = { workspace = true }
-async-trait = { workspace = true }
 lettre = { workspace = true, features = ["smtp-transport", "builder", "hostname", "pool", "tokio1-rustls-tls"] }
 log = { workspace = true }
 parking_lot = { workspace = true }

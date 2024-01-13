@@ -3,12 +3,12 @@ use c3p0::*;
 use lightspeed_cms::dto::create_schema_dto::CreateSchemaDto;
 use lightspeed_cms::model::schema::Schema;
 use lightspeed_cms::repository::CmsRepositoryManager;
-use lightspeed_core::error::{ErrorDetail, LightSpeedError};
+use lightspeed_core::error::{ErrorDetail, LsError};
 use lightspeed_core::service::validator::ERR_NOT_UNIQUE;
 use lightspeed_core::utils::new_hyphenated_uuid;
 
 #[test]
-fn should_create_schema() -> Result<(), LightSpeedError> {
+fn should_create_schema() -> Result<(), LsError> {
     test(async {
         let data = data(false).await;
         let cms_module = &data.0;
@@ -36,7 +36,7 @@ fn should_create_schema() -> Result<(), LightSpeedError> {
 }
 
 #[test]
-fn schema_name_should_be_unique_per_project() -> Result<(), LightSpeedError> {
+fn schema_name_should_be_unique_per_project() -> Result<(), LsError> {
     test(async {
         let data = data(false).await;
         let cms_module = &data.0;
@@ -70,7 +70,7 @@ fn schema_name_should_be_unique_per_project() -> Result<(), LightSpeedError> {
 }
 
 #[test]
-fn should_return_not_unique_validation_error() -> Result<(), LightSpeedError> {
+fn should_return_not_unique_validation_error() -> Result<(), LsError> {
     test(async {
         let data = data(false).await;
         let cms_module = &data.0;
@@ -86,7 +86,7 @@ fn should_return_not_unique_validation_error() -> Result<(), LightSpeedError> {
         assert!(schema_service.create_schema(schema.clone()).await.is_ok());
 
         match schema_service.create_schema(schema).await {
-            Err(LightSpeedError::ValidationError { details }) => {
+            Err(LsError::ValidationError { details }) => {
                 assert_eq!(details.details.len(), 1);
                 assert_eq!(details.details.get("name").unwrap()[0], ErrorDetail::from(ERR_NOT_UNIQUE));
             }
@@ -98,7 +98,7 @@ fn should_return_not_unique_validation_error() -> Result<(), LightSpeedError> {
 }
 
 #[test]
-fn should_delete_schemas_by_project_id() -> Result<(), LightSpeedError> {
+fn should_delete_schemas_by_project_id() -> Result<(), LsError> {
     test(async {
         let data = data(false).await;
         let cms_module = &data.0;

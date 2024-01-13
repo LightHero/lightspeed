@@ -13,13 +13,12 @@ keywords = []
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-c3p0 = { workspace = true, features = ["postgres", "migrate"], optional = true }
 lightspeed_auth = { workspace = true, path = "../auth", optional = true }
 lightspeed_cache = { workspace = true, path = "../cache", optional = true }
-lightspeed_cms = { workspace = true, path = "../cms", optional = true }
+# lightspeed_cms = { workspace = true, path = "../cms", optional = true }
 lightspeed_core = { workspace = true, path = "../core", optional = true }
 lightspeed_email = { workspace = true, path = "../email", optional = true }
-lightspeed_file_store = { workspace = true, path = "../file_store", optional = true }
+# lightspeed_file_store = { workspace = true, path = "../file_store", optional = true }
 lightspeed_hash = { workspace = true, path = "../hash", optional = true }
 lightspeed_logger = { workspace = true, path = "../logger", optional = true }
 lightspeed_scheduler = { workspace = true, path = "../scheduler", optional = true }
@@ -29,16 +28,17 @@ default = ["core"]
 
 auth = ["dep:lightspeed_auth"]
 cache = ["dep:lightspeed_cache"]
-cms = ["dep:lightspeed_cms"]
+# cms = ["dep:lightspeed_cms"]
 core = ["dep:lightspeed_core"]
 email = ["dep:lightspeed_email"]
-file_store = ["dep:lightspeed_file_store"]
+# file_store = ["dep:lightspeed_file_store"]
 hash = ["dep:lightspeed_hash"]
 logger = ["dep:lightspeed_logger"]
 scheduler = ["dep:lightspeed_scheduler"]
 
-axum = ["lightspeed_core?/axum", "lightspeed_file_store?/axum"]
-actix_web = ["lightspeed_core?/actix_web", "lightspeed_file_store?/actix_web"]
-c3p0 = ["dep:c3p0", "lightspeed_core?/c3p0"]
-poem = ["lightspeed_core?/poem"]
-poem_openapi = ["lightspeed_core?/poem_openapi", "poem", "lightspeed_auth?/poem_openapi"]
+axum = ["lightspeed_core?/axum"]
+actix_web = ["lightspeed_core?/actix_web"]
+# axum = ["lightspeed_core?/axum", "lightspeed_file_store?/axum"]
+# actix_web = ["lightspeed_core?/actix_web", "lightspeed_file_store?/actix_web"]
+# poem = ["lightspeed_core?/poem"]
+# poem_openapi = ["lightspeed_core?/poem_openapi", "poem", "lightspeed_auth?/poem_openapi"]

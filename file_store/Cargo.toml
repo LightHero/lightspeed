@@ -11,12 +11,12 @@ repository = "https://github.com/LightHero/lightspeed"
 keywords = []
 
 [dependencies]
-lightspeed_core = { workspace = true, features = ["c3p0"] }
-async-trait = { workspace = true }
+lightspeed_core = { workspace = true }
 c3p0 = { workspace = true }
 log = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }
+sqlx = { workspace = true }
 strum = { workspace = true }
 tokio = { workspace = true, features = ["fs", "io-util"] }
 
@@ -28,6 +28,7 @@ mime_guess = { workspace = true, optional = true }
 axum = { workspace = true, optional = true }
 tokio-util = { workspace = true, optional = true, features = ["io"] }
 
+# TO BE REMOVED
 
 [dev-dependencies]
 actix-rt = { workspace = true }

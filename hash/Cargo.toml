@@ -15,7 +15,6 @@ keywords = ["hash", "validation"]
 [dependencies]
 lightspeed_core = { workspace = true }
 
-async-trait = { workspace = true }
 base64 = { workspace = true }
 log = { workspace = true }
 sha2 = { workspace = true }

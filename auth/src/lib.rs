@@ -1,8 +1,9 @@
 use crate::config::AuthConfig;
 use crate::repository::AuthRepositoryManager;
-use crate::service::auth_account::AuthAccountService;
-use crate::service::password_codec::PasswordCodecService;
-use lightspeed_core::error::LightSpeedError;
+use crate::service::auth_account::LsAuthAccountService;
+use crate::service::password_codec::LsPasswordCodecService;
+use c3p0::IdType;
+use lightspeed_core::error::LsError;
 use log::*;
 use std::sync::Arc;
 
@@ -13,26 +14,27 @@ pub mod repository;
 pub mod service;
 
 #[derive(Clone)]
-pub struct AuthModule<RepoManager: AuthRepositoryManager> {
+pub struct LsAuthModule<Id: IdType, RepoManager: AuthRepositoryManager<Id>> {
     pub auth_config: AuthConfig,
 
     pub repo_manager: RepoManager,
 
-    pub password_codec: Arc<service::password_codec::PasswordCodecService>,
-    pub auth_account_service: Arc<service::auth_account::AuthAccountService<RepoManager>>,
-    pub token_service: Arc<service::token::TokenService<RepoManager>>,
+    pub password_codec: Arc<service::password_codec::LsPasswordCodecService>,
+    pub auth_account_service: Arc<service::auth_account::LsAuthAccountService<Id, RepoManager>>,
+    pub token_service: Arc<service::token::LsTokenService<Id, RepoManager>>,
 }
 
-impl<RepoManager: AuthRepositoryManager> AuthModule<RepoManager> {
+impl<Id: IdType, RepoManager: AuthRepositoryManager<Id>> LsAuthModule<Id, RepoManager> {
     pub fn new(repo_manager: RepoManager, auth_config: AuthConfig) -> Self {
-        println!("Creating AuthModule");
-        info!("Creating AuthModule");
+        println!("Creating LsAuthModule");
+        info!("Creating LsAuthModule");
 
-        let password_codec = Arc::new(PasswordCodecService::new(auth_config.bcrypt_password_hash_cost));
+        let password_codec = Arc::new(LsPasswordCodecService::new(auth_config.bcrypt_password_hash_cost));
 
-        let token_service = Arc::new(service::token::TokenService::new(auth_config.clone(), repo_manager.token_repo()));
+        let token_service =
+            Arc::new(service::token::LsTokenService::new(auth_config.clone(), repo_manager.token_repo()));
 
-        let auth_account_service = Arc::new(AuthAccountService::new(
+        let auth_account_service = Arc::new(LsAuthAccountService::new(
             repo_manager.c3p0().clone(),
             auth_config.clone(),
             token_service.clone(),
@@ -40,14 +42,15 @@ impl<RepoManager: AuthRepositoryManager> AuthModule<RepoManager> {
             repo_manager.auth_account_repo(),
         ));
 
-        AuthModule { auth_config, repo_manager, password_codec, auth_account_service, token_service }
+        LsAuthModule { auth_config, repo_manager, password_codec, auth_account_service, token_service }
     }
 }
 
-#[async_trait::async_trait]
-impl<RepoManager: AuthRepositoryManager> lightspeed_core::module::Module for AuthModule<RepoManager> {
-    async fn start(&mut self) -> Result<(), LightSpeedError> {
-        info!("Starting AuthModule");
+impl<Id: IdType, RepoManager: AuthRepositoryManager<Id>> lightspeed_core::module::LsModule
+    for LsAuthModule<Id, RepoManager>
+{
+    async fn start(&mut self) -> Result<(), LsError> {
+        info!("Starting LsAuthModule");
         self.repo_manager.start().await?;
         Ok(())
     }

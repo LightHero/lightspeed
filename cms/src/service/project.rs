@@ -2,29 +2,29 @@ use crate::dto::create_project_dto::CreateProjectDto;
 use crate::model::project::{ProjectData, ProjectModel};
 use crate::repository::CmsRepositoryManager;
 use crate::repository::ProjectRepository;
-use crate::service::schema::SchemaService;
+use crate::service::schema::LsSchemaService;
 use c3p0::*;
-use lightspeed_core::error::{ErrorDetails, LightSpeedError};
+use lightspeed_core::error::{ErrorDetails, LsError};
 use lightspeed_core::service::validator::{Validator, ERR_NOT_UNIQUE};
 use std::sync::Arc;
 
 #[derive(Clone)]
-pub struct ProjectService<RepoManager: CmsRepositoryManager> {
+pub struct LsProjectService<RepoManager: CmsRepositoryManager> {
     c3p0: RepoManager::C3P0,
     project_repo: RepoManager::ProjectRepo,
-    schema_service: Arc<SchemaService<RepoManager>>,
+    schema_service: Arc<LsSchemaService<RepoManager>>,
 }
 
-impl<RepoManager: CmsRepositoryManager> ProjectService<RepoManager> {
+impl<RepoManager: CmsRepositoryManager> LsProjectService<RepoManager> {
     pub fn new(
         c3p0: RepoManager::C3P0,
         project_repo: RepoManager::ProjectRepo,
-        schema_service: Arc<SchemaService<RepoManager>>,
+        schema_service: Arc<LsSchemaService<RepoManager>>,
     ) -> Self {
-        ProjectService { c3p0, project_repo, schema_service }
+        LsProjectService { c3p0, project_repo, schema_service }
     }
 
-    pub async fn create_project(&self, create_project_dto: CreateProjectDto) -> Result<ProjectModel, LightSpeedError> {
+    pub async fn create_project(&self, create_project_dto: CreateProjectDto) -> Result<ProjectModel, LsError> {
         self.c3p0
             .transaction(|conn| async {
                 let name_already_exists = self.project_repo.exists_by_name(conn, &create_project_dto.name).await?;
@@ -41,7 +41,7 @@ impl<RepoManager: CmsRepositoryManager> ProjectService<RepoManager> {
             .await
     }
 
-    pub async fn delete(&self, project_model: ProjectModel) -> Result<ProjectModel, LightSpeedError> {
+    pub async fn delete(&self, project_model: ProjectModel) -> Result<ProjectModel, LsError> {
         self.c3p0
             .transaction(|conn| async {
                 self.schema_service.delete_by_project_id(conn, project_model.id).await?;

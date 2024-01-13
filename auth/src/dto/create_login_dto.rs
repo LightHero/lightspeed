@@ -1,4 +1,4 @@
-use lightspeed_core::error::{ErrorDetails, LightSpeedError};
+use lightspeed_core::error::{ErrorDetails, LsError};
 use lightspeed_core::model::language::Language;
 use lightspeed_core::service::validator::boolean::validate_is_true;
 use lightspeed_core::service::validator::email::validate_email;
@@ -20,7 +20,7 @@ pub struct CreateLoginDto {
 }
 
 impl Validable for CreateLoginDto {
-    fn validate(&self, error_details: &mut ErrorDetails) -> Result<(), LightSpeedError> {
+    fn validate(&self, error_details: &mut ErrorDetails) -> Result<(), LsError> {
         validate_must_be_equals(error_details, "password", &self.password, "password_confirm", &self.password_confirm);
         validate_is_true(error_details, "accept_privacy_policy", self.accept_privacy_policy);
         validate_email(error_details, "email", &self.email);

@@ -2,22 +2,22 @@ use crate::model::{BinaryContent, FileStoreDataData, FileStoreDataModel, Reposit
 use crate::repository::db::{DBFileStoreBinaryRepository, DBFileStoreRepositoryManager, FileStoreDataRepository};
 use crate::repository::filesystem::fs_file_store_binary::FsFileStoreBinaryRepository;
 use c3p0::*;
-use lightspeed_core::error::{ErrorCodes, LightSpeedError};
+use lightspeed_core::error::{ErrorCodes, LsError};
 use lightspeed_core::utils::current_epoch_seconds;
 use log::*;
 use std::collections::HashMap;
 
 #[derive(Clone)]
-pub struct FileStoreService<RepoManager: DBFileStoreRepositoryManager> {
+pub struct LsFileStoreService<RepoManager: DBFileStoreRepositoryManager> {
     c3p0: RepoManager::C3P0,
     db_binary_repo: RepoManager::FileStoreBinaryRepo,
     db_data_repo: RepoManager::FileStoreDataRepo,
     fs_repositories: HashMap<String, FsFileStoreBinaryRepository>,
 }
 
-impl<RepoManager: DBFileStoreRepositoryManager> FileStoreService<RepoManager> {
+impl<RepoManager: DBFileStoreRepositoryManager> LsFileStoreService<RepoManager> {
     pub fn new(repo_manager: &RepoManager, fs_repositories: Vec<(String, String)>) -> Self {
-        FileStoreService {
+        LsFileStoreService {
             c3p0: repo_manager.c3p0().clone(),
             db_binary_repo: repo_manager.file_store_binary_repo(),
             db_data_repo: repo_manager.file_store_data_repo(),
@@ -28,51 +28,47 @@ impl<RepoManager: DBFileStoreRepositoryManager> FileStoreService<RepoManager> {
         }
     }
 
-    pub async fn read_file_data_by_id(&self, id: IdType) -> Result<FileStoreDataModel, LightSpeedError> {
+    pub async fn read_file_data_by_id(&self, id: IdType) -> Result<FileStoreDataModel, LsError> {
         self.c3p0.transaction(|conn| async { self.read_file_data_by_id_with_conn(conn, id).await }).await
     }
 
     pub async fn read_file_data_by_id_with_conn(
         &self,
-        conn: &mut RepoManager::Conn,
+        conn: &mut RepoManager::Tx,
         id: IdType,
-    ) -> Result<FileStoreDataModel, LightSpeedError> {
-        debug!("FileStoreService - Read file by id [{}]", id);
+    ) -> Result<FileStoreDataModel, LsError> {
+        debug!("LsFileStoreService - Read file by id [{}]", id);
         self.db_data_repo.fetch_one_by_id(conn, id).await
     }
 
-    pub async fn exists_by_repository(&self, repository: &RepositoryFile) -> Result<bool, LightSpeedError> {
-        self.c3p0
-            .transaction(|conn| async { self.exists_by_repository_with_conn(conn, repository).await })
-            .await
+    pub async fn exists_by_repository(&self, repository: &RepositoryFile) -> Result<bool, LsError> {
+        self.c3p0.transaction(|conn| async { self.exists_by_repository_with_conn(conn, repository).await }).await
     }
 
     pub async fn exists_by_repository_with_conn(
         &self,
-        conn: &mut RepoManager::Conn,
+        conn: &mut RepoManager::Tx,
         repository: &RepositoryFile,
-    ) -> Result<bool, LightSpeedError> {
-        debug!("FileStoreService - Check if file exists by repository [{:?}]", repository);
+    ) -> Result<bool, LsError> {
+        debug!("LsFileStoreService - Check if file exists by repository [{:?}]", repository);
         self.db_data_repo.exists_by_repository(conn, repository).await
     }
 
     pub async fn read_file_data_by_repository(
         &self,
         repository: &RepositoryFile,
-    ) -> Result<FileStoreDataModel, LightSpeedError> {
+    ) -> Result<FileStoreDataModel, LsError> {
         self.c3p0
-            .transaction(
-                |conn| async { self.read_file_data_by_repository_with_conn(conn, repository).await },
-            )
+            .transaction(|conn| async { self.read_file_data_by_repository_with_conn(conn, repository).await })
             .await
     }
 
     pub async fn read_file_data_by_repository_with_conn(
         &self,
-        conn: &mut RepoManager::Conn,
+        conn: &mut RepoManager::Tx,
         repository: &RepositoryFile,
-    ) -> Result<FileStoreDataModel, LightSpeedError> {
-        debug!("FileStoreService - Read file data by repository [{:?}]", repository);
+    ) -> Result<FileStoreDataModel, LsError> {
+        debug!("LsFileStoreService - Read file data by repository [{:?}]", repository);
         self.db_data_repo.fetch_one_by_repository(conn, repository).await
     }
 
@@ -82,7 +78,7 @@ impl<RepoManager: DBFileStoreRepositoryManager> FileStoreService<RepoManager> {
         offset: usize,
         max: usize,
         sort: &OrderBy,
-    ) -> Result<Vec<FileStoreDataModel>, LightSpeedError> {
+    ) -> Result<Vec<FileStoreDataModel>, LsError> {
         self.c3p0
             .transaction(|conn| async {
                 self.read_all_file_data_by_repository_with_conn(conn, repository, offset, max, sort).await
@@ -92,24 +88,22 @@ impl<RepoManager: DBFileStoreRepositoryManager> FileStoreService<RepoManager> {
 
     pub async fn read_all_file_data_by_repository_with_conn(
         &self,
-        conn: &mut RepoManager::Conn,
+        conn: &mut RepoManager::Tx,
         repository: &Repository,
         offset: usize,
         max: usize,
         sort: &OrderBy,
-    ) -> Result<Vec<FileStoreDataModel>, LightSpeedError> {
-        debug!("FileStoreService - Read file data by repository [{:?}]", repository);
+    ) -> Result<Vec<FileStoreDataModel>, LsError> {
+        debug!("LsFileStoreService - Read file data by repository [{:?}]", repository);
         self.db_data_repo.fetch_all_by_repository(conn, repository, offset, max, sort).await
     }
 
-    pub async fn read_file_content(&self, repository: &RepositoryFile) -> Result<BinaryContent<'_>, LightSpeedError> {
-        debug!("FileStoreService - Read file [{:?}]", repository);
+    pub async fn read_file_content(&self, repository: &RepositoryFile) -> Result<BinaryContent<'_>, LsError> {
+        debug!("LsFileStoreService - Read file [{:?}]", repository);
         match repository {
             RepositoryFile::DB { file_path, repository_name } => {
                 self.c3p0
-                    .transaction(|conn| async {
-                        self.db_binary_repo.read_file(conn, repository_name, file_path).await
-                    })
+                    .transaction(|conn| async { self.db_binary_repo.read_file(conn, repository_name, file_path).await })
                     .await
             }
             RepositoryFile::FS { file_path, repository_name } => {
@@ -120,10 +114,10 @@ impl<RepoManager: DBFileStoreRepositoryManager> FileStoreService<RepoManager> {
 
     pub async fn read_file_content_with_conn(
         &self,
-        conn: &mut RepoManager::Conn,
+        conn: &mut RepoManager::Tx,
         repository: &RepositoryFile,
-    ) -> Result<BinaryContent<'_>, LightSpeedError> {
-        debug!("FileStoreService - Read file [{:?}]", repository);
+    ) -> Result<BinaryContent<'_>, LsError> {
+        debug!("LsFileStoreService - Read file [{:?}]", repository);
         match repository {
             RepositoryFile::DB { file_path, repository_name } => {
                 self.db_binary_repo.read_file(conn, repository_name, file_path).await
@@ -136,14 +130,14 @@ impl<RepoManager: DBFileStoreRepositoryManager> FileStoreService<RepoManager> {
 
     pub async fn save_file_with_conn<'a>(
         &self,
-        conn: &mut RepoManager::Conn,
+        conn: &mut RepoManager::Tx,
         filename: String,
         content_type: String,
         content: &'a BinaryContent<'a>,
         repository: SaveRepository,
-    ) -> Result<FileStoreDataModel, LightSpeedError> {
+    ) -> Result<FileStoreDataModel, LsError> {
         info!(
-            "FileStoreService - Save file [{}], content type [{}], destination [{:?}]",
+            "LsFileStoreService - Save file [{}], content type [{}], destination [{:?}]",
             filename, content_type, repository
         );
 
@@ -179,7 +173,7 @@ impl<RepoManager: DBFileStoreRepositoryManager> FileStoreService<RepoManager> {
         content_type: String,
         content: &'a BinaryContent<'a>,
         repository: SaveRepository,
-    ) -> Result<FileStoreDataModel, LightSpeedError> {
+    ) -> Result<FileStoreDataModel, LsError> {
         self.c3p0
             .transaction(|conn| async {
                 self.save_file_with_conn(conn, filename, content_type, content, repository).await
@@ -187,16 +181,12 @@ impl<RepoManager: DBFileStoreRepositoryManager> FileStoreService<RepoManager> {
             .await
     }
 
-    pub async fn delete_file_by_id(&self, id: IdType) -> Result<u64, LightSpeedError> {
+    pub async fn delete_file_by_id(&self, id: IdType) -> Result<u64, LsError> {
         self.c3p0.transaction(|conn| async { self.delete_file_by_id_with_conn(conn, id).await }).await
     }
 
-    pub async fn delete_file_by_id_with_conn(
-        &self,
-        conn: &mut RepoManager::Conn,
-        id: IdType,
-    ) -> Result<u64, LightSpeedError> {
-        info!("FileStoreService - Delete file by id [{}]", id);
+    pub async fn delete_file_by_id_with_conn(&self, conn: &mut RepoManager::Tx, id: IdType) -> Result<u64, LsError> {
+        info!("LsFileStoreService - Delete file by id [{}]", id);
 
         let file_data = self.read_file_data_by_id_with_conn(conn, id).await?;
 
@@ -218,15 +208,15 @@ impl<RepoManager: DBFileStoreRepositoryManager> FileStoreService<RepoManager> {
         &self,
         file_path: &str,
         repository_name: &str,
-    ) -> Result<BinaryContent<'_>, LightSpeedError> {
+    ) -> Result<BinaryContent<'_>, LsError> {
         let repo = self.get_fs_repository(repository_name)?;
         repo.read_file(file_path).await
     }
 
     #[inline]
-    fn get_fs_repository(&self, repository_name: &str) -> Result<&FsFileStoreBinaryRepository, LightSpeedError> {
-        self.fs_repositories.get(repository_name).ok_or_else(|| LightSpeedError::BadRequest {
-            message: format!("FileStoreService - Cannot find FS repository with name [{repository_name}]"),
+    fn get_fs_repository(&self, repository_name: &str) -> Result<&FsFileStoreBinaryRepository, LsError> {
+        self.fs_repositories.get(repository_name).ok_or_else(|| LsError::BadRequest {
+            message: format!("LsFileStoreService - Cannot find FS repository with name [{repository_name}]"),
             code: ErrorCodes::NOT_FOUND,
         })
     }

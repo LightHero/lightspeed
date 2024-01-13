@@ -1,6 +1,6 @@
 use crate::config::EmailClientConfig;
-use crate::service::EmailService;
-use lightspeed_core::error::LightSpeedError;
+use crate::service::LsEmailService;
+use lightspeed_core::error::LsError;
 use log::*;
 use std::sync::Arc;
 
@@ -10,26 +10,25 @@ pub mod repository;
 pub mod service;
 
 #[derive(Clone)]
-pub struct EmailClientModule {
+pub struct LsEmailClientModule {
     pub email_config: EmailClientConfig,
-    pub email_service: Arc<EmailService>,
+    pub email_service: Arc<LsEmailService>,
 }
 
-impl EmailClientModule {
-    pub fn new(email_config: EmailClientConfig) -> Result<Self, LightSpeedError> {
-        println!("Creating EmailClientModule");
-        info!("Creating EmailClientModule");
+impl LsEmailClientModule {
+    pub fn new(email_config: EmailClientConfig) -> Result<Self, LsError> {
+        println!("Creating LsEmailClientModule");
+        info!("Creating LsEmailClientModule");
 
-        let email_service = Arc::new(EmailService::new(repository::email::new(email_config.clone())?));
+        let email_service = Arc::new(LsEmailService::new(repository::email::new(email_config.clone())?));
 
-        Ok(EmailClientModule { email_config, email_service })
+        Ok(LsEmailClientModule { email_config, email_service })
     }
 }
 
-#[async_trait::async_trait]
-impl lightspeed_core::module::Module for EmailClientModule {
-    async fn start(&mut self) -> Result<(), LightSpeedError> {
-        info!("Starting EmailClientModule");
+impl lightspeed_core::module::LsModule for LsEmailClientModule {
+    async fn start(&mut self) -> Result<(), LsError> {
+        info!("Starting LsEmailClientModule");
         Ok(())
     }
 }

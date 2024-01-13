@@ -4,21 +4,22 @@ use crate::repository::fixed_recipient_email::FixedRecipientEmailClient;
 use crate::repository::full_email::FullEmailClient;
 use crate::repository::in_memory_email::InMemoryEmailClient;
 use crate::repository::no_ops_email::NoOpsEmailClient;
-use lightspeed_core::error::LightSpeedError;
+use lightspeed_core::error::LsError;
 use log::*;
 use serde::Deserialize;
+use std::future::Future;
+use std::pin::Pin;
 use std::str::FromStr;
 use std::sync::Arc;
 
-#[async_trait::async_trait]
 pub trait EmailClient: Send + Sync {
-    async fn send(&self, email_message: EmailMessage) -> Result<(), LightSpeedError>;
-    fn get_emails(&self) -> Result<Vec<EmailMessage>, LightSpeedError>;
-    fn clear_emails(&self) -> Result<(), LightSpeedError>;
-    fn retain_emails(&self, retain: Box<dyn FnMut(&EmailMessage) -> bool>) -> Result<(), LightSpeedError>;
+    fn send(&self, email_message: EmailMessage) -> Pin<Box<dyn Future<Output = Result<(), LsError>> + Send>>;
+    fn get_emails(&self) -> Result<Vec<EmailMessage>, LsError>;
+    fn clear_emails(&self) -> Result<(), LsError>;
+    fn retain_emails(&self, retain: Box<dyn FnMut(&EmailMessage) -> bool>) -> Result<(), LsError>;
 }
 
-pub fn new(email_config: EmailClientConfig) -> Result<Arc<dyn EmailClient>, LightSpeedError> {
+pub fn new(email_config: EmailClientConfig) -> Result<Arc<dyn EmailClient>, LsError> {
     let client: Arc<dyn EmailClient> = match &email_config.email_client_type {
         EmailClientType::Full => Arc::new(FullEmailClient::new(email_config.clone())?),
         EmailClientType::InMemory => Arc::new(InMemoryEmailClient::new()),
@@ -28,7 +29,7 @@ pub fn new(email_config: EmailClientConfig) -> Result<Arc<dyn EmailClient>, Ligh
     if let Some(recipients) = email_config.forward_all_emails_to_fixed_recipients {
         warn!("All emails will be sent to the fixed recipients: {}", recipients.join("; "));
         if recipients.is_empty() {
-            Err(LightSpeedError::ConfigurationError {
+            Err(LsError::ConfigurationError {
                 message: "Cannot build the email client. Based on the current config all emails should be sent to fixed recipients, but the recipient list is empty".to_owned()
             })
         } else {
@@ -47,14 +48,14 @@ pub enum EmailClientType {
 }
 
 impl FromStr for EmailClientType {
-    type Err = LightSpeedError;
+    type Err = LsError;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         match s.to_lowercase().as_str() {
             "full" => Ok(EmailClientType::Full),
             "in_memory" => Ok(EmailClientType::InMemory),
             "no_ops" => Ok(EmailClientType::NoOps),
-            _ => Err(LightSpeedError::ConfigurationError { message: format!("Unknown Email client_type [{s}]") }),
+            _ => Err(LsError::ConfigurationError { message: format!("Unknown Email client_type [{s}]") }),
         }
     }
 }

@@ -5,7 +5,7 @@ use std::borrow::Cow;
 use std::path::PathBuf;
 use strum::{AsRefStr, Display};
 
-pub type FileStoreDataModel = Model<FileStoreDataData>;
+pub type FileStoreDataModel<Id> = Model<Id, FileStoreDataData>;
 
 #[derive(Clone)]
 pub enum BinaryContent<'a> {

@@ -3,21 +3,21 @@ use crate::model::schema::{SchemaData, SchemaModel};
 use crate::repository::CmsRepositoryManager;
 use crate::repository::SchemaRepository;
 use c3p0::*;
-use lightspeed_core::error::{ErrorDetails, LightSpeedError};
+use lightspeed_core::error::{ErrorDetails, LsError};
 use lightspeed_core::service::validator::{Validator, ERR_NOT_UNIQUE};
 
 #[derive(Clone)]
-pub struct SchemaService<RepoManager: CmsRepositoryManager> {
+pub struct LsSchemaService<RepoManager: CmsRepositoryManager> {
     c3p0: RepoManager::C3P0,
     schema_repo: RepoManager::SchemaRepo,
 }
 
-impl<RepoManager: CmsRepositoryManager> SchemaService<RepoManager> {
+impl<RepoManager: CmsRepositoryManager> LsSchemaService<RepoManager> {
     pub fn new(c3p0: RepoManager::C3P0, schema_repo: RepoManager::SchemaRepo) -> Self {
-        SchemaService { c3p0, schema_repo }
+        LsSchemaService { c3p0, schema_repo }
     }
 
-    pub async fn create_schema(&self, create_schema_dto: CreateSchemaDto) -> Result<SchemaModel, LightSpeedError> {
+    pub async fn create_schema(&self, create_schema_dto: CreateSchemaDto) -> Result<SchemaModel, LsError> {
         self.c3p0
             .transaction(|conn| async {
                 let name_already_exists = self
@@ -41,15 +41,11 @@ impl<RepoManager: CmsRepositoryManager> SchemaService<RepoManager> {
             .await
     }
 
-    pub async fn delete(&self, schema_model: SchemaModel) -> Result<SchemaModel, LightSpeedError> {
+    pub async fn delete(&self, schema_model: SchemaModel) -> Result<SchemaModel, LsError> {
         self.c3p0.transaction(|conn| async { self.schema_repo.delete(conn, schema_model).await }).await
     }
 
-    pub async fn delete_by_project_id(
-        &self,
-        conn: &mut RepoManager::Conn,
-        project_id: i64,
-    ) -> Result<u64, LightSpeedError> {
+    pub async fn delete_by_project_id(&self, conn: &mut RepoManager::Tx, project_id: i64) -> Result<u64, LsError> {
         self.schema_repo.delete_by_project_id(conn, project_id).await
     }
 }

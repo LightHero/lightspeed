@@ -1,5 +1,5 @@
 use c3p0::Model;
-use lightspeed_core::error::{ErrorDetails, LightSpeedError};
+use lightspeed_core::error::{ErrorDetails, LsError};
 use lightspeed_core::service::validator::order::{validate_ge, validate_le};
 use lightspeed_core::service::validator::{Validable, ERR_NOT_UNIQUE};
 use once_cell::sync::OnceCell;
@@ -27,7 +27,7 @@ pub struct SchemaData {
 }
 
 impl Validable for SchemaData {
-    fn validate(&self, error_details: &mut ErrorDetails) -> Result<(), LightSpeedError> {
+    fn validate(&self, error_details: &mut ErrorDetails) -> Result<(), LsError> {
         validate_ge(error_details, "name", 3, self.name.len());
         self.schema.validate(&mut error_details.with_scope("schema"))?;
         Ok(())
@@ -42,7 +42,7 @@ pub struct Schema {
 }
 
 impl Validable for Schema {
-    fn validate(&self, error_details: &mut ErrorDetails) -> Result<(), LightSpeedError> {
+    fn validate(&self, error_details: &mut ErrorDetails) -> Result<(), LsError> {
         let mut field_names = vec![];
 
         for (count, schema_field) in self.fields.iter().enumerate() {
@@ -67,7 +67,7 @@ pub struct SchemaField {
 }
 
 impl Validable for SchemaField {
-    fn validate(&self, error_details: &mut ErrorDetails) -> Result<(), LightSpeedError> {
+    fn validate(&self, error_details: &mut ErrorDetails) -> Result<(), LsError> {
         validate_ge(error_details, "name", 1, self.name.len());
         validate_le(error_details, "name", SCHEMA_FIELD_NAME_MAX_LENGHT, self.name.len());
 
@@ -152,7 +152,7 @@ mod test {
         let result = Validator::validate(&schema_data);
 
         match result {
-            Err(LightSpeedError::ValidationError { details }) => {
+            Err(LsError::ValidationError { details }) => {
                 assert_eq!(details.details.len(), 2);
                 assert_eq!(
                     details.details.get("name"),
@@ -192,7 +192,7 @@ mod test {
         let result = Validator::validate(&schema);
 
         match result {
-            Err(LightSpeedError::ValidationError { details }) => {
+            Err(LsError::ValidationError { details }) => {
                 assert_eq!(details.details.len(), 1);
                 assert_eq!(
                     details.details.get("fields[1].name"),
@@ -243,7 +243,7 @@ mod test {
         let result = Validator::validate(&schema);
 
         match result {
-            Err(LightSpeedError::ValidationError { details }) => {
+            Err(LsError::ValidationError { details }) => {
                 assert_eq!(details.details.len(), 2);
                 assert_eq!(
                     details.details.get("fields[1].name"),

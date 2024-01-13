@@ -4,14 +4,14 @@ use lightspeed_cms::model::content::{Content, ContentData, ContentFieldValue, Co
 use lightspeed_cms::model::schema::{
     Schema, SchemaField, SchemaFieldArity, SchemaFieldType, SCHEMA_FIELD_NAME_MAX_LENGHT,
 };
-use lightspeed_core::error::{ErrorDetail, LightSpeedError};
-use lightspeed_core::service::random::RandomService;
+use lightspeed_core::error::{ErrorDetail, LsError};
+use lightspeed_core::service::random::LsRandomService;
 use lightspeed_core::service::validator::ERR_NOT_UNIQUE;
 use lightspeed_core::utils::new_hyphenated_uuid;
 use std::collections::HashMap;
 
 #[test]
-fn should_create_and_drop_content_table() -> Result<(), LightSpeedError> {
+fn should_create_and_drop_content_table() -> Result<(), LsError> {
     test(async {
         let data = data(false).await;
         let cms_module = &data.0;
@@ -54,7 +54,7 @@ fn should_create_and_drop_content_table() -> Result<(), LightSpeedError> {
 }
 
 #[test]
-fn should_save_and_delete_content() -> Result<(), LightSpeedError> {
+fn should_save_and_delete_content() -> Result<(), LsError> {
     test(async {
         let data = data(false).await;
         let cms_module = &data.0;
@@ -105,7 +105,7 @@ fn should_save_and_delete_content() -> Result<(), LightSpeedError> {
 }
 
 #[test]
-fn should_validate_content_on_save() -> Result<(), LightSpeedError> {
+fn should_validate_content_on_save() -> Result<(), LsError> {
     test(async {
         let data = data(false).await;
         let cms_module = &data.0;
@@ -139,7 +139,7 @@ fn should_validate_content_on_save() -> Result<(), LightSpeedError> {
         let result = content_service.create_content(&saved_schema_1.data.schema, content).await;
 
         match result {
-            Err(LightSpeedError::ValidationError { .. }) => {}
+            Err(LsError::ValidationError { .. }) => {}
             _ => panic!(),
         }
 
@@ -150,7 +150,7 @@ fn should_validate_content_on_save() -> Result<(), LightSpeedError> {
 }
 
 #[test]
-fn should_create_unique_constraints_for_slug_schema_fields() -> Result<(), LightSpeedError> {
+fn should_create_unique_constraints_for_slug_schema_fields() -> Result<(), LsError> {
     test(async {
         let data = data(false).await;
         let cms_module = &data.0;
@@ -197,7 +197,7 @@ fn should_create_unique_constraints_for_slug_schema_fields() -> Result<(), Light
         assert!(result.is_err());
 
         match result {
-            Err(LightSpeedError::ValidationError { details }) => {
+            Err(LsError::ValidationError { details }) => {
                 println!("details: {details:#?}");
                 assert_eq!(
                     details.details[&format!("fields[{field_name}]")],
@@ -212,7 +212,7 @@ fn should_create_unique_constraints_for_slug_schema_fields() -> Result<(), Light
 }
 
 #[test]
-fn should_create_unique_constraints_for_string_unique_schema_fields() -> Result<(), LightSpeedError> {
+fn should_create_unique_constraints_for_string_unique_schema_fields() -> Result<(), LsError> {
     test(async {
         let data = data(false).await;
         let cms_module = &data.0;
@@ -264,7 +264,7 @@ fn should_create_unique_constraints_for_string_unique_schema_fields() -> Result<
         assert!(result.is_err());
 
         match result {
-            Err(LightSpeedError::ValidationError { details }) => {
+            Err(LsError::ValidationError { details }) => {
                 println!("details: {details:#?}");
                 assert_eq!(
                     details.details[&format!("fields[{field_name}]")],
@@ -279,7 +279,7 @@ fn should_create_unique_constraints_for_string_unique_schema_fields() -> Result<
 }
 
 #[test]
-fn should_create_unique_constraints_for_number_unique_schema_fields() -> Result<(), LightSpeedError> {
+fn should_create_unique_constraints_for_number_unique_schema_fields() -> Result<(), LsError> {
     test(async {
         let data = data(false).await;
         let cms_module = &data.0;
@@ -329,7 +329,7 @@ fn should_create_unique_constraints_for_number_unique_schema_fields() -> Result<
         assert!(result.is_err());
 
         match result {
-            Err(LightSpeedError::ValidationError { details }) => {
+            Err(LsError::ValidationError { details }) => {
                 println!("details: {details:#?}");
                 assert_eq!(
                     details.details[&format!("fields[{field_name}]")],
@@ -344,7 +344,7 @@ fn should_create_unique_constraints_for_number_unique_schema_fields() -> Result<
 }
 
 #[test]
-fn should_create_unique_constraints_for_boolean_unique_schema_fields() -> Result<(), LightSpeedError> {
+fn should_create_unique_constraints_for_boolean_unique_schema_fields() -> Result<(), LsError> {
     test(async {
         let data = data(false).await;
         let cms_module = &data.0;
@@ -389,7 +389,7 @@ fn should_create_unique_constraints_for_boolean_unique_schema_fields() -> Result
         assert!(result.is_err());
 
         match result {
-            Err(LightSpeedError::ValidationError { details }) => {
+            Err(LsError::ValidationError { details }) => {
                 println!("details: {details:#?}");
                 assert_eq!(
                     details.details[&format!("fields[{field_name}]")],
@@ -404,7 +404,7 @@ fn should_create_unique_constraints_for_boolean_unique_schema_fields() -> Result
 }
 
 #[test]
-fn should_create_unique_constraints_for_field_name_with_max_length() -> Result<(), LightSpeedError> {
+fn should_create_unique_constraints_for_field_name_with_max_length() -> Result<(), LsError> {
     test(async {
         let data = data(false).await;
         let cms_module = &data.0;
@@ -412,7 +412,7 @@ fn should_create_unique_constraints_for_field_name_with_max_length() -> Result<(
         let content_service = &cms_module.content_service;
         let schema_service = &cms_module.schema_service;
 
-        let field_name = RandomService::random_string(SCHEMA_FIELD_NAME_MAX_LENGHT).to_lowercase();
+        let field_name = LsRandomService::random_string(SCHEMA_FIELD_NAME_MAX_LENGHT).to_lowercase();
         let schema = CreateSchemaDto {
             name: new_hyphenated_uuid(),
             project_id: -1,

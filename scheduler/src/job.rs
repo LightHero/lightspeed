@@ -3,8 +3,8 @@ use crate::scheduler::Scheduler;
 use chrono::{DateTime, Utc};
 use chrono_tz::Tz;
 use log::*;
-use std::{future::Future, sync::Arc};
 use std::pin::Pin;
+use std::{future::Future, sync::Arc};
 use tokio::sync::{Mutex, RwLock};
 
 pub struct JobScheduler {

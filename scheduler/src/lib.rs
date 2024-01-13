@@ -148,7 +148,6 @@ impl JobExecutorInternal {
 }
 
 impl JobExecutor {
-
     /// Creates a new Executor that uses the Local time zone for the execution times evaluation.
     /// For example, the cron expressions will refer to the Local time zone.
     pub fn new_with_local_tz() -> JobExecutor {
@@ -172,7 +171,7 @@ impl JobExecutor {
                 jobs: RwLock::new(vec![]),
             }),
         }
-}
+    }
 
     /// Adds a job to the JobExecutor.
     pub async fn add_job(&self, schedule: &dyn TryToScheduler, job: Job) -> Result<(), SchedulerError> {

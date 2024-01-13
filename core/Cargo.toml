@@ -11,7 +11,7 @@ repository = "https://github.com/LightHero/lightspeed"
 keywords = []
 
 [dependencies]
-async-trait = { workspace = true }
+c3p0 = { workspace = true }
 chrono = { workspace = true }
 jsonwebtoken = { workspace = true }
 log = { workspace = true }
@@ -22,7 +22,6 @@ strum = { workspace = true }
 uuid = { workspace = true }
 validator = { workspace = true }
 
-c3p0_common = { workspace = true, optional = true }
 actix-web = { workspace = true, optional = true }
 axum = { workspace = true, optional = true }
 poem = { workspace = true, optional = true }
@@ -44,7 +43,6 @@ default = []
 
 axum = ["dep:axum", "web"]
 actix_web = ["dep:actix-web", "web"]
-c3p0 = ["dep:c3p0_common"]
 poem = ["dep:poem", "web"]
 poem_openapi = ["poem", "dep:poem-openapi"]
 web = ["http"]

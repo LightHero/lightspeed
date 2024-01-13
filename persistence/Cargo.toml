@@ -1,0 +1,22 @@
+[package]
+name = "lightspeed_persistence"
+license = "MIT"
+version.workspace = true
+edition.workspace = true
+authors = ["Francesco Cina <ufoscout@gmail.com>"]
+description = "LightSpeed"
+readme = "README.md"
+homepage = "https://github.com/LightHero/lightspeed"
+repository = "https://github.com/LightHero/lightspeed"
+keywords = []
+
+[dependencies]
+lightspeed_core = { workspace = true }
+log = { workspace = true }
+opendal = { workspace = true }
+
+
+[dev-dependencies]
+opendal = { workspace = true, default-features = true, features = ["services-redis"] }
+tempfile = { workspace = true }
+tokio = { workspace = true, features = ["macros", "rt-multi-thread"] }

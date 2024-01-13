@@ -3,6 +3,6 @@ use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize)]
 #[cfg_attr(feature = "poem_openapi", derive(poem_openapi::Object))]
-pub struct AuthDto {
-    pub auth: Auth,
+pub struct AuthDto<Id: Send + Sync> {
+    pub auth: Auth<Id>,
 }

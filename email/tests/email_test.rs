@@ -2,7 +2,7 @@ use lettre::message::SinglePart;
 use lightspeed_email::config::EmailClientConfig;
 use lightspeed_email::model::email::{EmailAttachment, EmailMessage};
 use lightspeed_email::repository::email::{new, EmailClientType};
-use lightspeed_email::service::EmailService;
+use lightspeed_email::service::LsEmailService;
 use testcontainers::testcontainers::clients::Cli;
 use testcontainers::testcontainers::core::WaitFor;
 use testcontainers::testcontainers::{Container, GenericImage};
@@ -35,7 +35,7 @@ async fn should_start_the_mailserver() {
         forward_all_emails_to_fixed_recipients: None,
     };
 
-    let email_service = EmailService::new(new(config).unwrap());
+    let email_service = LsEmailService::new(new(config).unwrap());
 
     let mut message = EmailMessage::new();
     message.from = Some("UFO <ufoscout@gmail.com>".to_owned());
