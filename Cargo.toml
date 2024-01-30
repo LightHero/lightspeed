@@ -30,7 +30,7 @@ lightspeed_logger = { version = "0.56.0", path = "./logger" }
 lightspeed_persistence = { version = "0.56.0", path = "./persistence" }
 lightspeed_scheduler = { version = "0.56.0", path = "./scheduler" }
 
-atomic = "0.5"
+arc-swap = "1.6"
 axum = { version = "0.7.4" }
 base64 = "0.21"
 bcrypt = "0.15"

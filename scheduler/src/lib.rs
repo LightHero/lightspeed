@@ -1,7 +1,7 @@
 use crate::error::SchedulerError;
 use crate::job::{Job, JobScheduler};
 use crate::scheduler::{Scheduler, TryToScheduler};
-use atomic::Atomic;
+use arc_swap::ArcSwap;
 use chrono::Utc;
 use chrono_tz::{Tz, UTC};
 use log::*;
@@ -22,7 +22,7 @@ pub struct JobExecutor {
 }
 
 struct JobExecutorInternal {
-    sleep_between_checks: Atomic<Duration>,
+    sleep_between_checks: ArcSwap<Duration>,
     running: AtomicBool,
     timezone: Option<Tz>,
     jobs: RwLock<Vec<Arc<JobScheduler>>>,
@@ -165,7 +165,7 @@ impl JobExecutor {
     pub fn new_with_tz(timezone: Option<Tz>) -> JobExecutor {
         JobExecutor {
             executor: Arc::new(JobExecutorInternal {
-                sleep_between_checks: Atomic::new(Duration::new(1, 0)),
+                sleep_between_checks: ArcSwap::new(Arc::new(Duration::new(1, 0))),
                 running: AtomicBool::new(false),
                 timezone,
                 jobs: RwLock::new(vec![]),
@@ -203,7 +203,7 @@ impl JobExecutor {
                 info!("Starting the job executor");
                 while executor.is_running() {
                     executor.run_pending_jobs().await;
-                    tokio::time::sleep(executor.sleep_between_checks.load(Ordering::SeqCst)).await;
+                    tokio::time::sleep(executor.sleep_between_checks.load().as_ref().clone()).await;
                 }
                 info!("Job executor stopped");
             }))
@@ -221,7 +221,7 @@ impl JobExecutor {
             if graceful {
                 info!("Wait for all Jobs to complete");
                 while self.executor.is_running_job().await {
-                    tokio::time::sleep(self.executor.sleep_between_checks.load(Ordering::SeqCst)).await;
+                    tokio::time::sleep(self.executor.sleep_between_checks.load().as_ref().clone()).await;
                 }
                 info!("All Jobs completed");
             }
@@ -235,7 +235,7 @@ impl JobExecutor {
     /// Sets the sleep time between checks for pending Jobs.
     /// The default is 1 second.
     pub fn set_sleep_between_checks(&self, sleep: Duration) {
-        self.executor.sleep_between_checks.store(sleep, Ordering::SeqCst);
+        self.executor.sleep_between_checks.store(Arc::new(sleep));
     }
 }
 
