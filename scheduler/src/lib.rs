@@ -203,7 +203,7 @@ impl JobExecutor {
                 info!("Starting the job executor");
                 while executor.is_running() {
                     executor.run_pending_jobs().await;
-                    tokio::time::sleep(executor.sleep_between_checks.load().as_ref().clone()).await;
+                    tokio::time::sleep(*executor.sleep_between_checks.load().as_ref()).await;
                 }
                 info!("Job executor stopped");
             }))
@@ -221,7 +221,7 @@ impl JobExecutor {
             if graceful {
                 info!("Wait for all Jobs to complete");
                 while self.executor.is_running_job().await {
-                    tokio::time::sleep(self.executor.sleep_between_checks.load().as_ref().clone()).await;
+                    tokio::time::sleep(*self.executor.sleep_between_checks.load().as_ref()).await;
                 }
                 info!("All Jobs completed");
             }

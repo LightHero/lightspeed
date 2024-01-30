@@ -4,7 +4,7 @@ use crate::service::auth_account::LsAuthAccountService;
 use crate::service::password_codec::LsPasswordCodecService;
 use c3p0::IdType;
 use lightspeed_core::error::LsError;
-use lightspeed_core::web::types::types::MaybeWeb;
+use lightspeed_core::web::types::MaybeWeb;
 use log::*;
 use std::sync::Arc;
 

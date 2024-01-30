@@ -12,7 +12,7 @@ use lightspeed_core::error::*;
 use lightspeed_core::service::auth::Auth;
 use lightspeed_core::service::validator::{Validator, ERR_NOT_UNIQUE};
 use lightspeed_core::utils::current_epoch_seconds;
-use lightspeed_core::web::types::types::MaybeWeb;
+use lightspeed_core::web::types::MaybeWeb;
 use log::*;
 use std::sync::Arc;
 

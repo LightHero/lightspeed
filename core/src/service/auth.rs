@@ -1,6 +1,6 @@
 use crate::error::LsError;
 use crate::utils::current_epoch_seconds;
-use crate::web::types::types::MaybeWeb;
+use crate::web::types::MaybeWeb;
 use c3p0::IdType;
 use serde::{Deserialize, Serialize};
 use std::borrow::Cow;

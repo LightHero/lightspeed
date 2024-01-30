@@ -6,7 +6,7 @@ use http::{HeaderMap, HeaderValue, Request};
 use log::*;
 use std::sync::Arc;
 
-use self::types::types::MaybeWeb;
+use self::types::MaybeWeb;
 
 #[cfg(feature = "axum")]
 pub mod axum;

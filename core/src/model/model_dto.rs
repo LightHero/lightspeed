@@ -1,7 +1,7 @@
 use c3p0::{DataType, IdType, Model, VersionType};
 use serde::{Deserialize, Serialize};
 
-use crate::web::types::types::MaybeWeb;
+use crate::web::types::MaybeWeb;
 
 #[derive(Clone, Serialize, Deserialize)]
 #[cfg_attr(feature = "poem_openapi", derive(poem_openapi::Object))]

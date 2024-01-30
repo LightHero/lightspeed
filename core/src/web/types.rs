@@ -1,5 +1,7 @@
+pub use traits::*;
+
 #[cfg(feature = "poem_openapi")]
-pub mod types {
+mod traits {
 
     pub use poem_openapi::types::*;
     pub trait MaybeWeb: Send + Sync + Type + ParseFromJSON + ToJSON {}
@@ -7,7 +9,7 @@ pub mod types {
 }
 
 #[cfg(not(feature = "poem_openapi"))]
-pub mod types {
+mod traits {
     pub trait MaybeWeb: Send + Sync {}
     impl<T: Send + Sync> MaybeWeb for T where T: ?Sized {}
 }

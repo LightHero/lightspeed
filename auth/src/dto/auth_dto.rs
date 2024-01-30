@@ -1,4 +1,4 @@
-use lightspeed_core::{service::auth::Auth, web::types::types::MaybeWeb};
+use lightspeed_core::{service::auth::Auth, web::types::MaybeWeb};
 use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize)]
