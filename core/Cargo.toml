@@ -13,6 +13,7 @@ keywords = []
 [dependencies]
 c3p0 = { workspace = true }
 chrono = { workspace = true }
+http = { workspace = true }
 jsonwebtoken = { workspace = true }
 log = { workspace = true }
 rand = { workspace = true }
@@ -25,7 +26,6 @@ validator = { workspace = true }
 axum = { workspace = true, optional = true }
 poem = { workspace = true, optional = true }
 poem-openapi = { workspace = true, optional = true }
-http = { workspace = true, optional = true }
 
 [dev-dependencies]
 config = { workspace = true }
@@ -39,7 +39,6 @@ tower = { workspace = true }
 [features]
 default = []
 
-axum = ["dep:axum", "web"]
-poem = ["dep:poem", "web"]
+axum = ["dep:axum"]
+poem = ["dep:poem"]
 poem_openapi = ["poem", "dep:poem-openapi"]
-web = ["http"]

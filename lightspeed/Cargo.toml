@@ -38,5 +38,5 @@ scheduler = ["dep:lightspeed_scheduler"]
 
 axum = ["lightspeed_core?/axum"]
 # axum = ["lightspeed_core?/axum", "lightspeed_file_store?/axum"]
-# poem = ["lightspeed_core?/poem"]
-# poem_openapi = ["lightspeed_core?/poem_openapi", "poem", "lightspeed_auth?/poem_openapi"]
+poem = ["lightspeed_core?/poem"]
+poem_openapi = ["lightspeed_core?/poem_openapi", "poem", "lightspeed_auth?/poem_openapi"]

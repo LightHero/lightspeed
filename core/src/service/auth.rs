@@ -1,5 +1,6 @@
 use crate::error::LsError;
 use crate::utils::current_epoch_seconds;
+use crate::web::types::types::MaybeWeb;
 use c3p0::IdType;
 use serde::{Deserialize, Serialize};
 use std::borrow::Cow;
@@ -7,7 +8,8 @@ use std::collections::BTreeMap;
 use std::sync::Arc;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct Auth<Id> {
+#[cfg_attr(feature = "poem_openapi", derive(poem_openapi::Object))]
+pub struct Auth<Id: MaybeWeb> {
     pub id: Id,
     pub username: String,
     pub session_id: String,
@@ -16,7 +18,7 @@ pub struct Auth<Id> {
     pub expiration_ts_seconds: i64,
 }
 
-impl<Id: IdType> Auth<Id> {
+impl<Id: IdType + MaybeWeb> Auth<Id> {
     pub fn new<S: Into<String>>(
         id: Id,
         username: S,
@@ -57,7 +59,7 @@ impl LsAuthService {
         }
     }
 
-    pub fn auth<Id: IdType>(&self, auth: Auth<Id>) -> AuthContext<Id> {
+    pub fn auth<Id: IdType + MaybeWeb>(&self, auth: Auth<Id>) -> AuthContext<Id> {
         AuthContext { auth, permission_roles_map: &self.permission_roles_map }
     }
 
@@ -73,12 +75,12 @@ impl LsAuthService {
     }
 }
 
-pub struct AuthContext<'a, Id: IdType> {
+pub struct AuthContext<'a, Id: IdType + MaybeWeb> {
     pub auth: Auth<Id>,
     permission_roles_map: &'a BTreeMap<String, Vec<String>>,
 }
 
-impl<'a, Id: IdType> AuthContext<'a, Id> {
+impl<'a, Id: IdType + MaybeWeb> AuthContext<'a, Id> {
     pub fn is_authenticated(&self) -> Result<&AuthContext<Id>, LsError> {
         if self.auth.username.is_empty() || self.auth.expiration_ts_seconds < current_epoch_seconds() {
             return Err(LsError::UnauthenticatedError {});

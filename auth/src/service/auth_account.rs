@@ -12,13 +12,14 @@ use lightspeed_core::error::*;
 use lightspeed_core::service::auth::Auth;
 use lightspeed_core::service::validator::{Validator, ERR_NOT_UNIQUE};
 use lightspeed_core::utils::current_epoch_seconds;
+use lightspeed_core::web::types::types::MaybeWeb;
 use log::*;
 use std::sync::Arc;
 
 pub const WRONG_TYPE: &str = "WRONG_TYPE";
 
 #[derive(Clone)]
-pub struct LsAuthAccountService<Id: IdType, RepoManager: AuthRepositoryManager<Id>> {
+pub struct LsAuthAccountService<Id: IdType + MaybeWeb, RepoManager: AuthRepositoryManager<Id>> {
     c3p0: RepoManager::C3P0,
     auth_config: AuthConfig,
     auth_repo: RepoManager::AuthAccountRepo,
@@ -26,7 +27,7 @@ pub struct LsAuthAccountService<Id: IdType, RepoManager: AuthRepositoryManager<I
     token_service: Arc<LsTokenService<Id, RepoManager>>,
 }
 
-impl<Id: IdType, RepoManager: AuthRepositoryManager<Id>> LsAuthAccountService<Id, RepoManager> {
+impl<Id: IdType + MaybeWeb, RepoManager: AuthRepositoryManager<Id>> LsAuthAccountService<Id, RepoManager> {
     pub fn new(
         c3p0: RepoManager::C3P0,
         auth_config: AuthConfig,

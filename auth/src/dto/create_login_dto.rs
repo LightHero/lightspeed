@@ -27,11 +27,3 @@ impl Validable for CreateLoginDto {
         Ok(())
     }
 }
-
-#[derive(Clone)]
-pub struct AuthAccountCreatedEvent {
-    pub user_id: i64,
-    pub data: HashMap<String, String>,
-    pub accept_privacy_policy: bool,
-    pub language: Language,
-}

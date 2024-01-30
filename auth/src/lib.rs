@@ -4,6 +4,7 @@ use crate::service::auth_account::LsAuthAccountService;
 use crate::service::password_codec::LsPasswordCodecService;
 use c3p0::IdType;
 use lightspeed_core::error::LsError;
+use lightspeed_core::web::types::types::MaybeWeb;
 use log::*;
 use std::sync::Arc;
 
@@ -14,7 +15,7 @@ pub mod repository;
 pub mod service;
 
 #[derive(Clone)]
-pub struct LsAuthModule<Id: IdType, RepoManager: AuthRepositoryManager<Id>> {
+pub struct LsAuthModule<Id: IdType + MaybeWeb, RepoManager: AuthRepositoryManager<Id>> {
     pub auth_config: AuthConfig,
 
     pub repo_manager: RepoManager,
@@ -24,7 +25,7 @@ pub struct LsAuthModule<Id: IdType, RepoManager: AuthRepositoryManager<Id>> {
     pub token_service: Arc<service::token::LsTokenService<Id, RepoManager>>,
 }
 
-impl<Id: IdType, RepoManager: AuthRepositoryManager<Id>> LsAuthModule<Id, RepoManager> {
+impl<Id: IdType + MaybeWeb, RepoManager: AuthRepositoryManager<Id>> LsAuthModule<Id, RepoManager> {
     pub fn new(repo_manager: RepoManager, auth_config: AuthConfig) -> Self {
         println!("Creating LsAuthModule");
         info!("Creating LsAuthModule");
@@ -46,7 +47,7 @@ impl<Id: IdType, RepoManager: AuthRepositoryManager<Id>> LsAuthModule<Id, RepoMa
     }
 }
 
-impl<Id: IdType, RepoManager: AuthRepositoryManager<Id>> lightspeed_core::module::LsModule
+impl<Id: IdType + MaybeWeb, RepoManager: AuthRepositoryManager<Id>> lightspeed_core::module::LsModule
     for LsAuthModule<Id, RepoManager>
 {
     async fn start(&mut self) -> Result<(), LsError> {

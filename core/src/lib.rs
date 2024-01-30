@@ -4,9 +4,8 @@ pub mod model;
 pub mod module;
 pub mod service;
 pub mod utils;
-
-#[cfg(feature = "web")]
 pub mod web;
+
 
 use crate::error::LsError;
 use crate::service::auth::InMemoryRolesProvider;

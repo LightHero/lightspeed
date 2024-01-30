@@ -6,10 +6,13 @@ use http::{HeaderMap, HeaderValue, Request};
 use log::*;
 use std::sync::Arc;
 
+use self::types::types::MaybeWeb;
+
 #[cfg(feature = "axum")]
 pub mod axum;
 #[cfg(feature = "poem")]
 pub mod poem;
+pub mod types;
 
 pub const JWT_TOKEN_HEADER: &str = "Authorization";
 pub const JWT_TOKEN_HEADER_SUFFIX: &str = "Bearer ";
@@ -38,7 +41,7 @@ pub struct WebAuthService<Id> {
     jwt_service: Arc<LsJwtService>,
 }
 
-impl<Id: IdType> WebAuthService<Id> {
+impl<Id: IdType + MaybeWeb> WebAuthService<Id> {
     pub fn new(auth_service: Arc<LsAuthService>, jwt_service: Arc<LsJwtService>) -> Self {
         Self { phantom_id: std::marker::PhantomData, auth_service, jwt_service }
     }
