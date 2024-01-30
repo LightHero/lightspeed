@@ -20,8 +20,6 @@ sqlx = { workspace = true }
 strum = { workspace = true }
 tokio = { workspace = true, features = ["fs", "io-util"] }
 
-actix-files = { workspace = true, optional = true }
-actix-web = { workspace = true, optional = true }
 mime = { workspace = true, optional = true }
 mime_guess = { workspace = true, optional = true }
 
@@ -31,7 +29,6 @@ tokio-util = { workspace = true, optional = true, features = ["io"] }
 # TO BE REMOVED
 
 [dev-dependencies]
-actix-rt = { workspace = true }
 config = { workspace = true }
 hyper = { workspace = true }
 lightspeed_logger = { workspace = true }
@@ -46,5 +43,4 @@ tower = { workspace = true }
 [features]
 default = []
 
-actix_web = ["dep:actix-files", "dep:actix-web", "lightspeed_core/actix_web", "mime", "mime_guess"]
 axum = ["dep:axum", "lightspeed_core/axum", "mime", "mime_guess", "tokio-util"]

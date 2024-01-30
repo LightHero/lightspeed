@@ -30,9 +30,6 @@ lightspeed_logger = { version = "0.56.0", path = "./logger" }
 lightspeed_persistence = { version = "0.56.0", path = "./persistence" }
 lightspeed_scheduler = { version = "0.56.0", path = "./scheduler" }
 
-actix-files = { version = "0.6.0" }
-actix-rt = "2"
-actix-web = { version = "4.0.1" }
 atomic = "0.5"
 axum = { version = "0.6" }
 base64 = "0.21"
