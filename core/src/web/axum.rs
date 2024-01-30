@@ -1,11 +1,11 @@
 use crate::error::{LsError, RootErrorDetails, WebErrorDetails};
-use axum::body::{boxed, Body, BoxBody};
+use axum::body::Body;
 use axum::http::{header, HeaderValue, Response, StatusCode};
 use axum::response::IntoResponse;
 use log::*;
 
 impl IntoResponse for LsError {
-    fn into_response(self) -> Response<BoxBody> {
+    fn into_response(self) -> Response<Body> {
         match self {
             LsError::InvalidTokenError { .. }
             | LsError::ExpiredTokenError { .. }
@@ -34,34 +34,34 @@ impl IntoResponse for LsError {
 }
 
 #[inline]
-fn response_with_code(http_code: StatusCode) -> Response<BoxBody> {
-    let mut res = Response::new(boxed(Body::empty()));
+fn response_with_code(http_code: StatusCode) -> Response<Body> {
+    let mut res = Response::new(Body::empty());
     *res.status_mut() = http_code;
     res
 }
 
 #[inline]
-fn response_with_message(http_code: StatusCode, message: Option<String>) -> Response<BoxBody> {
+fn response_with_message(http_code: StatusCode, message: Option<String>) -> Response<Body> {
     response(http_code, &WebErrorDetails::from_message(http_code.as_u16(), message.as_ref().map(|val| val.into())))
 }
 
 #[inline]
-fn response_with_error_details(http_code: StatusCode, details: RootErrorDetails) -> Response<BoxBody> {
+fn response_with_error_details(http_code: StatusCode, details: RootErrorDetails) -> Response<Body> {
     response(http_code, &WebErrorDetails::from_error_details(http_code.as_u16(), details))
 }
 
 #[inline]
-fn response(http_code: StatusCode, details: &WebErrorDetails) -> Response<BoxBody> {
+fn response(http_code: StatusCode, details: &WebErrorDetails) -> Response<Body> {
     match serde_json::to_vec(details) {
         Ok(body) => {
-            let mut res = Response::new(boxed(Body::from(body)));
+            let mut res = Response::new(Body::from(body));
             *res.status_mut() = http_code;
             res.headers_mut().insert(header::CONTENT_TYPE, HeaderValue::from_static("application/json"));
             res
         }
         Err(err) => {
             error!("response_with_message - cannot serialize body. Err: {:?}", err);
-            let mut res = Response::new(boxed(Body::empty()));
+            let mut res = Response::new(Body::empty());
             *res.status_mut() = http::StatusCode::INTERNAL_SERVER_ERROR;
             res
         }
@@ -79,6 +79,7 @@ mod test {
     use axum::http::{header, HeaderMap, Request};
     use axum::routing::get;
     use axum::Router;
+    use http_body_util::BodyExt;
     use jsonwebtoken::Algorithm;
     use std::sync::Arc;
     use tower::ServiceExt; // for `app.oneshot()`
@@ -217,7 +218,7 @@ mod test {
 
         assert_eq!("application/json", resp.headers().get(header::CONTENT_TYPE).unwrap().to_str().unwrap());
 
-        let body = hyper::body::to_bytes(resp.into_body()).await.unwrap();
+        let body = resp.into_body().collect().await.unwrap().to_bytes();
         let body: WebErrorDetails = serde_json::from_slice(&body).unwrap();
 
         assert_eq!("error", body.message.unwrap());

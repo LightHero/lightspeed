@@ -29,7 +29,7 @@ http = { workspace = true, optional = true }
 
 [dev-dependencies]
 config = { workspace = true }
-hyper = { workspace = true }
+http-body-util = { workspace = true }
 lightspeed_logger = { workspace = true }
 poem = { workspace = true, features = ["test"] }
 poem-openapi = { workspace = true, features = ["swagger-ui"] }
