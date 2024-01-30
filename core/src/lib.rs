@@ -6,7 +6,6 @@ pub mod service;
 pub mod utils;
 pub mod web;
 
-
 use crate::error::LsError;
 use crate::service::auth::InMemoryRolesProvider;
 use log::info;
