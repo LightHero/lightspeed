@@ -2,6 +2,7 @@
 
 ## exit if something fails
 set -e
+set -x
 
 declare -a publish_list=(
     "logger"
