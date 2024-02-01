@@ -10,9 +10,9 @@ declare -a publish_list=(
     "cache"
     "core"
     "auth"
-    "cms"
+    # "cms"
     "email"
-    "file_store"
+    # "file_store"
     "hash"
     "lightspeed"
 )
