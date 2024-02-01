@@ -233,6 +233,30 @@ impl JobExecutor {
     }
 }
 
+
+#[cfg(feature = "tracing")]
+fn instrument<F: std::future::Future<Output = ()>>(
+    timestamp: i64,
+    group: String,
+    name: String,
+    fut: F,
+) -> impl std::future::Future<Output = ()> {
+    use tracing_futures::Instrument;
+    let span = tracing::error_span!("run_pending", group, name, timestamp);
+    fut.instrument(span)
+}
+
+#[cfg(not(feature = "tracing"))]
+fn instrument<F: std::future::Future<Output = ()>>(
+    _timestamp: i64,
+    _group: String,
+    _name: String,
+    fut: F,
+) -> impl std::future::Future<Output = ()> {
+    fut
+}
+
+
 #[cfg(test)]
 pub mod test {
 
@@ -451,26 +475,4 @@ pub mod test {
             .await
             .unwrap();
     }
-}
-
-#[cfg(feature = "tracing")]
-fn instrument<F: std::future::Future<Output = ()>>(
-    timestamp: i64,
-    group: String,
-    name: String,
-    fut: F,
-) -> impl std::future::Future<Output = ()> {
-    use tracing_futures::Instrument;
-    let span = tracing::error_span!("run_pending", group, name, timestamp);
-    fut.instrument(span)
-}
-
-#[cfg(not(feature = "tracing"))]
-fn instrument<F: std::future::Future<Output = ()>>(
-    _timestamp: i64,
-    _group: String,
-    _name: String,
-    fut: F,
-) -> impl std::future::Future<Output = ()> {
-    fut
 }
