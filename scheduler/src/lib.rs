@@ -233,7 +233,6 @@ impl JobExecutor {
     }
 }
 
-
 #[cfg(feature = "tracing")]
 fn instrument<F: std::future::Future<Output = ()>>(
     timestamp: i64,
@@ -255,7 +254,6 @@ fn instrument<F: std::future::Future<Output = ()>>(
 ) -> impl std::future::Future<Output = ()> {
     fut
 }
-
 
 #[cfg(test)]
 pub mod test {
