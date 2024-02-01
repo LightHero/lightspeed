@@ -10,7 +10,6 @@ use std::sync::Arc;
 use std::time::Duration;
 use tokio::sync::RwLock;
 use tokio::task::JoinHandle;
-use tracing_futures::Instrument;
 
 pub mod error;
 pub mod job;
@@ -87,14 +86,10 @@ impl JobExecutorInternal {
                     let job_clone = job_scheduler.clone();
 
                     let timestamp = Utc::now().timestamp();
-                    let group = job_clone.job.group();
-                    let name = job_clone.job.name();
-                    let span = tracing::error_span!("run_pending", group, name, timestamp);
+                    let group = job_clone.job.group().to_owned();
+                    let name = job_clone.job.name().to_owned();
 
-                    let fut = async move {
-                        let group = job_clone.job.group();
-                        let name = job_clone.job.name();
-
+                    let fut = instrument(timestamp, group.clone(), name.clone(), async move {
                         info!("Start execution of Job [{}/{}]", group, name);
                         let start = std::time::Instant::now();
                         let result = job_clone.run().await;
@@ -124,8 +119,7 @@ impl JobExecutorInternal {
                                 );
                             }
                         }
-                    }
-                    .instrument(span);
+                    });
 
                     tokio::spawn(fut);
                 } else {
@@ -457,4 +451,26 @@ pub mod test {
             .await
             .unwrap();
     }
+}
+
+#[cfg(feature = "tracing")]
+fn instrument<F: std::future::Future<Output = ()>>(
+    timestamp: i64,
+    group: String,
+    name: String,
+    fut: F,
+) -> impl std::future::Future<Output = ()> {
+    use tracing_futures::Instrument;
+    let span = tracing::error_span!("run_pending", group, name, timestamp);
+    fut.instrument(span)
+}
+
+#[cfg(not(feature = "tracing"))]
+fn instrument<F: std::future::Future<Output = ()>>(
+    _timestamp: i64,
+    _group: String,
+    _name: String,
+    fut: F,
+) -> impl std::future::Future<Output = ()> {
+    fut
 }
