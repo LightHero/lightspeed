@@ -16,7 +16,7 @@ cron = { workspace = true }
 chrono = { workspace = true }
 chrono-tz = { workspace = true }
 log = { workspace = true }
-tokio = { workspace = true, features = ["sync", "time"] }
+tokio = { workspace = true, features = ["rt", "sync", "time"] }
 tracing = { workspace = true, optional = true}
 tracing-futures = { workspace = true, optional = true }
 
