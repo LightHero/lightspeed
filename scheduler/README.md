@@ -6,37 +6,48 @@ An in-process scheduler for periodic jobs. Schedule lets you run Rust functions 
 ## Usage
 
 ```rust
-use schedule::Agenda;
-use chrono::Utc;
+    use std::time::Duration;
+    use lightspeed_scheduler::{job::Job, scheduler::{Scheduler, TryToScheduler}, JobExecutor};
+    
+    #[tokio::main]
+    async fn main() {
+        let executor = JobExecutor::new_with_utc_tz();
+    
+        // Run every 10 seconds with no retries in case of failure
+        let retries = None;
+        executor
+            .add_job_with_scheduler(
+                Scheduler::Interval {
+                    interval_duration: Duration::from_secs(10),
+                    execute_at_startup: true,
+                },
+                Job::new("hello_job", "job_1", retries, move || {
+                    Box::pin(async move {
+                        println!("Hello from job. This happens every 10 seconds!");
+                        Ok(())
+                    })
+                }),
+            )
+            .await;
+    
 
-fn main() {
-    let mut a = Agenda::new();
+        // Run every day at 2:00 am with two retries in case of failure
+        let retries = Some(2);
+        executor
+        .add_job_with_scheduler(
+            "0 0 2 * * *".to_scheduler().unwrap(),
+            Job::new("hello_job", "job_2", retries, move || {
+                Box::pin(async move {
+                    println!("Hello from job. This happens every day at 2 am!");
+                    Ok(())
+                })
+            }),
+        )
+        .await;
 
-    // Run every second
-    a.add(|| {
-        println!("at second     :: {}", Utc::now());
-        Ok(())
-    }).schedule("* * * * * *").unwrap();
-
-    // Run every minute
-    a.add(|| {
-        println!("at minute     :: {}", Utc::now());
-        Ok(())
-    }).schedule("0 * * * * *").unwrap();
-
-    // Run every hour
-    a.add(|| {
-        println!("at hour       :: {}", Utc::now());
-        Ok(())
-    }).schedule("0 0 * * * *").unwrap();
-
-    // Check and run pending jobs in agenda every 500 milliseconds
-    loop {
-        a.run_pending();
-
-        std::thread::sleep(std::time::Duration::from_millis(500));
+        // Start the job executor
+        let _executor_handle = executor.run().await.expect("The job executor should run!");
     }
-}
 ```
 
 ## Cron schedule format
