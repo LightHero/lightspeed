@@ -47,6 +47,13 @@ An in-process scheduler for periodic jobs. Schedule lets you run Rust functions 
 
         // Start the job executor
         let _executor_handle = executor.run().await.expect("The job executor should run!");
+
+        // Wait for a signal to stop the job executor
+        tokio::signal::ctrl_c().await.unwrap();
+        
+        // Stop the job executor
+        let stop_gracefully = true;
+        executor.stop(stop_gracefully).await.expect("The job executor should stop!");
     }
 ```
 
