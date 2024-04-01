@@ -1,11 +1,13 @@
+use validator::ValidateEmail;
+
 use crate::error::{ErrorDetail, ErrorDetails};
 
 pub const NOT_VALID_EMAIL: &str = "NOT_VALID_EMAIL";
 
 /// Validates whether the given string is an email based on Django `EmailValidator` and HTML5 specs
 #[inline]
-pub fn validate_email<S: Into<String>>(error_details: &mut ErrorDetails, field_name: S, val: &str) {
-    if !validator::validate_email(val) {
+pub fn validate_email<S: Into<String>, T: ValidateEmail>(error_details: &mut ErrorDetails, field_name: S, val: T) {
+    if !val.validate_email() {
         error_details.add_detail(field_name.into(), ErrorDetail::new(NOT_VALID_EMAIL, vec![]))
     }
 }

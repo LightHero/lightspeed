@@ -1,27 +1,28 @@
 use crate::error::{ErrorDetail, ErrorDetails};
+use validator::ValidateIp;
 
 pub const NOT_VALID_IP: &str = "NOT_VALID_IP";
 
 /// Validates whether the given string is an IP V4
 #[inline]
-pub fn validate_ip_v4<S: Into<String>>(error_details: &mut ErrorDetails, field_name: S, val: &str) {
-    if !validator::validate_ip_v4(val) {
+pub fn validate_ip_v4<S: Into<String>, T: ValidateIp>(error_details: &mut ErrorDetails, field_name: S, val: T) {
+    if !val.validate_ipv4() {
         error_details.add_detail(field_name.into(), ErrorDetail::new(NOT_VALID_IP, vec![]))
     }
 }
 
 /// Validates whether the given string is an IP V6
 #[inline]
-pub fn validate_ip_v6<S: Into<String>>(error_details: &mut ErrorDetails, field_name: S, val: &str) {
-    if !validator::validate_ip_v6(val) {
+pub fn validate_ip_v6<S: Into<String>, T: ValidateIp>(error_details: &mut ErrorDetails, field_name: S, val: T) {
+    if !val.validate_ipv6() {
         error_details.add_detail(field_name.into(), ErrorDetail::new(NOT_VALID_IP, vec![]))
     }
 }
 
 /// Validates whether the given string is an IP
 #[inline]
-pub fn validate_ip<S: Into<String>>(error_details: &mut ErrorDetails, field_name: S, val: &str) {
-    if !validator::validate_ip(val) {
+pub fn validate_ip<S: Into<String>, T: ValidateIp>(error_details: &mut ErrorDetails, field_name: S, val: T) {
+    if !val.validate_ip() {
         error_details.add_detail(field_name.into(), ErrorDetail::new(NOT_VALID_IP, vec![]))
     }
 }

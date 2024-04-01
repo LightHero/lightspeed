@@ -1,5 +1,6 @@
+use validator::ValidateContains;
+
 use crate::error::{ErrorDetail, ErrorDetails};
-use validator::Contains;
 
 pub const MUST_CONTAIN: &str = "MUST_CONTAIN";
 
@@ -7,13 +8,13 @@ pub const MUST_CONTAIN: &str = "MUST_CONTAIN";
 /// The value needs to implement the Contains trait, which is implement on String, str and Hashmap<String>
 /// by default.
 #[inline]
-pub fn validate_contains<S: Into<String>, T: Contains>(
+pub fn validate_contains<S: Into<String>, T: ValidateContains>(
     error_details: &mut ErrorDetails,
     field_name: S,
     val: T,
     needle: &str,
 ) {
-    if !validator::validate_contains(val, needle) {
+    if !val.validate_contains(needle) {
         error_details.add_detail(field_name.into(), ErrorDetail::new(MUST_CONTAIN, vec![needle.to_string()]))
     }
 }
