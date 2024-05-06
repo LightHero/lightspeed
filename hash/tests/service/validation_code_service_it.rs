@@ -37,12 +37,12 @@ async fn should_generate_validation_code() -> Result<(), LsError> {
 
     // Use bad code
     let mut bad_verify_code = verify_code_request.clone();
-    bad_verify_code.code = "abced".to_owned();
+    "abced".clone_into(&mut bad_verify_code.code);
     assert!(!validation_code_service.verify_validation_code(bad_verify_code).unwrap().code_valid);
 
     // tampered to_be_validated data
     let mut bad_verify_code = verify_code_request.clone();
-    bad_verify_code.data.to_be_validated = "2233223322".to_owned();
+    "2233223322".clone_into(&mut bad_verify_code.data.to_be_validated);
     assert!(!validation_code_service.verify_validation_code(bad_verify_code).unwrap().code_valid);
 
     // tampered created_ts_seconds
