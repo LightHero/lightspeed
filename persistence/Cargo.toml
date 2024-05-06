@@ -17,6 +17,6 @@ opendal = { workspace = true }
 
 
 [dev-dependencies]
-opendal = { workspace = true, default-features = true, features = ["services-redis"] }
+opendal = { workspace = true, default-features = true, features = ["services-fs"] }
 tempfile = { workspace = true }
 tokio = { workspace = true, features = ["macros", "rt-multi-thread"] }

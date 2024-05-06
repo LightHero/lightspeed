@@ -23,7 +23,7 @@ mod test {
 
         // Read data
         let bs = op.read("../Cargo.toml").await?;
-        println!("{}", String::from_utf8_lossy(&bs));
+        println!("{}", String::from_utf8_lossy(&bs.to_vec()));
 
         // Fetch metadata
         // let meta = op.stat("hello.txt").await?;

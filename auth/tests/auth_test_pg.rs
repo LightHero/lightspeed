@@ -8,27 +8,25 @@ use lightspeed_auth::LsAuthModule;
 use lightspeed_core::module::LsModule;
 use once_cell::sync::OnceCell;
 use testcontainers::postgres::Postgres;
-use testcontainers::testcontainers::clients::Cli;
-use testcontainers::testcontainers::Container;
+use testcontainers::testcontainers::runners::AsyncRunner;
+use testcontainers::testcontainers::ContainerAsync;
 
 mod tests;
 
 pub type Id = u64;
 pub type RepoManager = PgAuthRepositoryManager<Id>;
 
-pub type MaybeType = (LsAuthModule<Id, RepoManager>, Container<'static, Postgres>);
+pub type MaybeType = (LsAuthModule<Id, RepoManager>, ContainerAsync<Postgres>);
 
 async fn init() -> MaybeType {
-    static DOCKER: OnceCell<Cli> = OnceCell::new();
-
-    let node = DOCKER.get_or_init(Cli::default).run(Postgres::default());
+    let node = Postgres::default().start().await;
 
     let options = PgConnectOptions::new()
         .username("postgres")
         .password("postgres")
         .database("postgres")
         .host("127.0.0.1")
-        .port(node.get_host_port_ipv4(5432));
+        .port(node.get_host_port_ipv4(5432).await);
 
     let pool = PgPool::connect_with(options).await.unwrap();
 
