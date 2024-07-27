@@ -20,14 +20,14 @@ pub type RepoManager = PgAuthRepositoryManager<Id>;
 pub type MaybeType = (LsAuthModule<Id, RepoManager>, ContainerAsync<Postgres>);
 
 async fn init() -> MaybeType {
-    let node = Postgres::default().start().await;
+    let node = Postgres::default().start().await.unwrap();
 
     let options = PgConnectOptions::new()
         .username("postgres")
         .password("postgres")
         .database("postgres")
         .host("127.0.0.1")
-        .port(node.get_host_port_ipv4(5432).await);
+        .port(node.get_host_port_ipv4(5432).await.unwrap());
 
     let pool = PgPool::connect_with(options).await.unwrap();
 

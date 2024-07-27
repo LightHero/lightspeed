@@ -11,9 +11,10 @@ pub async fn new_mail_server() -> (u16, ContainerAsync<GenericImage>) {
     let node = GenericImage::new("mailhog/mailhog", "v1.0.0")
         .with_wait_for(WaitFor::message_on_stdout("Creating API v2 with WebPath:"))
         .start()
-        .await;
+        .await
+        .unwrap();
 
-    (node.get_host_port_ipv4(1025).await, node)
+    (node.get_host_port_ipv4(1025).await.unwrap(), node)
 }
 
 #[tokio::test]
