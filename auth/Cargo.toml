@@ -26,7 +26,6 @@ strum = { workspace = true }
 config = { workspace = true }
 lightspeed_logger = { workspace = true }
 maybe-single = { workspace = true }
-once_cell = { workspace = true }
 testcontainers = { workspace = true }
 tokio = { workspace = true, features = ["rt-multi-thread"] }
 
