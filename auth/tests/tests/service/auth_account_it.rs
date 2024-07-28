@@ -1356,19 +1356,19 @@ fn should_return_users_by_status() -> Result<(), LsError> {
         // Act
         let all_active_users = auth_module
             .auth_account_service
-            .fetch_all_by_status(AuthAccountStatus::Active, &0, u32::max_value())
+            .fetch_all_by_status(AuthAccountStatus::Active, &0, u32::MAX)
             .await
             .unwrap();
 
         let all_pending_users = auth_module
             .auth_account_service
-            .fetch_all_by_status(AuthAccountStatus::PendingActivation, &0, u32::max_value())
+            .fetch_all_by_status(AuthAccountStatus::PendingActivation, &0, u32::MAX)
             .await
             .unwrap();
 
         let all_disabled_users = auth_module
             .auth_account_service
-            .fetch_all_by_status(AuthAccountStatus::Disabled, &0, u32::max_value())
+            .fetch_all_by_status(AuthAccountStatus::Disabled, &0, u32::MAX)
             .await
             .unwrap();
 
@@ -1412,13 +1412,13 @@ fn should_return_users_by_status_with_offset_and_limit() -> Result<(), LsError> 
         // Act
         let all_users = auth_module
             .auth_account_service
-            .fetch_all_by_status(AuthAccountStatus::Active, &user_1.id, u32::max_value())
+            .fetch_all_by_status(AuthAccountStatus::Active, &user_1.id, u32::MAX)
             .await
             .unwrap();
 
         let offset_one_users = auth_module
             .auth_account_service
-            .fetch_all_by_status(AuthAccountStatus::Active, &user_2.id, u32::max_value())
+            .fetch_all_by_status(AuthAccountStatus::Active, &user_2.id, u32::MAX)
             .await
             .unwrap();
 

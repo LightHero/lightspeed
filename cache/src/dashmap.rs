@@ -215,7 +215,7 @@ mod test {
 
     #[test]
     fn should_not_overflow_when_ttl_is_max() {
-        Cache::<String, String>::new(u32::max_value());
+        Cache::<String, String>::new(u32::MAX);
     }
 
     #[derive(Error, Debug, PartialEq, Eq)]

@@ -13,15 +13,15 @@ keywords = []
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-lightspeed_auth = { workspace = true, path = "../auth", optional = true }
-lightspeed_cache = { workspace = true, path = "../cache", optional = true }
-# lightspeed_cms = { workspace = true, path = "../cms", optional = true }
-lightspeed_core = { workspace = true, path = "../core", optional = true }
-lightspeed_email = { workspace = true, path = "../email", optional = true }
-# lightspeed_file_store = { workspace = true, path = "../file_store", optional = true }
-lightspeed_hash = { workspace = true, path = "../hash", optional = true }
-lightspeed_logger = { workspace = true, path = "../logger", optional = true }
-lightspeed_scheduler = { workspace = true, path = "../scheduler", optional = true }
+lightspeed_auth = { workspace = true, optional = true }
+lightspeed_cache = { workspace = true, optional = true }
+# lightspeed_cms = { workspace = true, optional = true }
+lightspeed_core = { workspace = true, optional = true }
+lightspeed_email = { workspace = true, optional = true }
+# lightspeed_file_store = { workspace = true, optional = true }
+lightspeed_hash = { workspace = true, optional = true }
+lightspeed_logger = { workspace = true, optional = true }
+lightspeed_scheduler = { workspace = true, optional = true }
 
 [features]
 default = ["core"]
