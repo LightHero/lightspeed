@@ -15,20 +15,20 @@ members = [
 ]
 
 [workspace.package]
-version = "0.59.0"
+version = "0.60.0"
 edition = "2021"
 
 [workspace.dependencies]
-lightspeed_auth = { version = "0.59.0", path = "./auth" }
-lightspeed_cache = { version = "0.59.0", path = "./cache" }
-# lightspeed_cms = { version = "0.59.0", path = "./cms" }
-lightspeed_core = { version = "0.59.0", path = "./core" }
-lightspeed_email = { version = "0.59.0", path = "./email" }
-# lightspeed_file_store = { version = "0.59.0", path = "./file_store" }
-lightspeed_hash = { version = "0.59.0", path = "./hash" }
-lightspeed_logger = { version = "0.59.0", path = "./logger" }
-lightspeed_persistence = { version = "0.59.0", path = "./persistence" }
-lightspeed_scheduler = { version = "0.59.0", path = "./scheduler" }
+lightspeed_auth = { version = "0.60.0", path = "./auth" }
+lightspeed_cache = { version = "0.60.0", path = "./cache" }
+# lightspeed_cms = { version = "0.60.0", path = "./cms" }
+lightspeed_core = { version = "0.60.0", path = "./core" }
+lightspeed_email = { version = "0.60.0", path = "./email" }
+# lightspeed_file_store = { version = "0.60.0", path = "./file_store" }
+lightspeed_hash = { version = "0.60.0", path = "./hash" }
+lightspeed_logger = { version = "0.60.0", path = "./logger" }
+lightspeed_persistence = { version = "0.60.0", path = "./persistence" }
+lightspeed_scheduler = { version = "0.60.0", path = "./scheduler" }
 
 arc-swap = "1.6"
 axum = { version = "0.7.4" }
@@ -37,9 +37,9 @@ bcrypt = "0.15"
 c3p0 = { version = "0.71", features = ["sqlx_postgres"] }
 #c3p0 = { git = "https://github.com/ufoscout/c3p0", branch = "master", features = ["sqlx_postgres"] }
 chrono = { version = "0.4", default-features = false, features = ["clock"] }
-chrono-tz = "0.9"
+chrono-tz = "0.10"
 config = "0.14"
-cron = "0.12.0"
+cron = "0.13.0"
 dashmap = { version = "6" }
 http = { version = "1" }
 http-body-util = "0.1"
@@ -49,7 +49,7 @@ log = "0.4"
 maybe-single = { version = "0.16.0", features =["tokio"] }
 mime = { version = "0.3" }
 mime_guess = { version = "2.0" }
-opendal = { version = "0.47", default-features = false }
+opendal = { version = "0.50", default-features = false }
 parking_lot = "0.12"
 poem = { version = "3" }
 poem-openapi = { version = "5" }
@@ -61,17 +61,17 @@ sha2 = "0.10"
 sqlx = { version = "0.8", default-features = false, features = ["macros", "migrate"] }
 strum = { version = "0.26", features = ["derive"] }
 tempfile = "3"
-testcontainers = { package = "testcontainers-modules", version = "0.8", features = ["postgres"] }
-thiserror = { version = "1" }
+testcontainers = { package = "testcontainers-modules", version = "0.11", features = ["postgres"] }
+thiserror = { version = "2" }
 tokio = { version = "1", default-features = false }
 tokio-util = { version = "0.7", default-features = false }
-tower = { version = "0.4", default-features = false }
+tower = { version = "0.5", default-features = false }
 tracing = { version = "0.1", default-features = false }
 tracing-appender = { version = "0.2", default-features = false }
 tracing-futures = "0.2"
 tracing-subscriber = { version = "0.3", default-features = false }
 uuid = { version = "1", features = ["v4"] }
-validator = { version = "0.18", default-features = false }
+validator = { version = "0.19", default-features = false }
 
 [profile.dev]
 debug = false
