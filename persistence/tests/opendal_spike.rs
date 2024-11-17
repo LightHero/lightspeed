@@ -9,8 +9,7 @@ mod test {
     #[tokio::test]
     async fn test_opendal_0() -> Result<()> {
         // Pick a builder and configure it.
-        let mut builder = services::Fs::default();
-        builder.root("./");
+        let builder = services::Fs::default().root("./");
 
         // Init an operator
         let op = Operator::new(builder)?
