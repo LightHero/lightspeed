@@ -11,6 +11,9 @@ pub mod mysql;
 #[cfg(feature = "postgres")]
 pub mod pg;
 
+#[cfg(feature = "sqlite")]
+pub mod sqlite;
+
 pub trait AuthRepositoryManager: Clone + Send + Sync {
     type Tx: Send + Sync;
     type C3P0: C3p0Pool<Tx = Self::Tx>;

@@ -57,7 +57,6 @@ for_each_feature command:
   
   ## exit if something fails
   set -e
-  set -x
 
   declare -a features=(
     "axum"
@@ -65,6 +64,7 @@ for_each_feature command:
     "poem"
     "poem_openapi"
     "postgres"
+    "sqlite"
   )
 
   for i in "${features[@]}"
