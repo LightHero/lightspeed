@@ -27,17 +27,21 @@ jobs:
         with:
           components: clippy, rustfmt
 
-      - name: rustfmt
-        run: |
-          cargo fmt --all --check
+      - name: Install Just command runner
+        uses: extractions/setup-just@v1
 
-      - name: clippy
+      - name: check rust code style
         run: |
-          cargo clippy --all-features --all-targets -- -D warnings
+          just check_code
+
+      - name: build
+        run: |
+          just build
 
       - name: test
+        if: ${{ !inputs.skip-test }}
         run: |
-          ./scripts/test.sh
+          just test
 
       - name: Install cargo-llvm-cov
         uses: taiki-e/install-action@cargo-llvm-cov

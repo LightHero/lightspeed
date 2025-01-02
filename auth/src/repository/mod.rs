@@ -5,6 +5,7 @@ use crate::model::token::{TokenData, TokenModel};
 use c3p0::*;
 use lightspeed_core::error::LsError;
 
+#[cfg(feature = "postgres")]
 pub mod pg;
 
 pub trait AuthRepositoryManager<Id: IdType>: Clone + Send + Sync {

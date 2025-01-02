@@ -32,3 +32,4 @@ tokio = { workspace = true, features = ["rt-multi-thread"] }
 [features]
 default = []
 poem_openapi = ["dep:poem-openapi", "lightspeed_core/poem_openapi"]
+postgres = ["c3p0/sqlx_postgres"]
