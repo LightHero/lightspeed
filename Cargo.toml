@@ -31,15 +31,15 @@ lightspeed_persistence = { version = "0.60.0", path = "./persistence" }
 lightspeed_scheduler = { version = "0.60.0", path = "./scheduler" }
 
 arc-swap = "1.6"
-axum = { version = "0.7.4" }
+axum = { version = "0.8" }
 base64 = "0.22"
-bcrypt = "0.15"
+bcrypt = "0.16"
 c3p0 = { version = "0.71", features = ["sqlx_postgres"] }
 #c3p0 = { git = "https://github.com/ufoscout/c3p0", branch = "master", features = ["sqlx_postgres"] }
 chrono = { version = "0.4", default-features = false, features = ["clock"] }
 chrono-tz = "0.10"
-config = "0.14"
-cron = "0.13.0"
+config = "0.15"
+cron = "0.14.0"
 dashmap = { version = "6" }
 http = { version = "1" }
 http-body-util = "0.1"
@@ -49,7 +49,7 @@ log = "0.4"
 maybe-single = { version = "0.16.0", features =["tokio"] }
 mime = { version = "0.3" }
 mime_guess = { version = "2.0" }
-opendal = { version = "0.50", default-features = false }
+opendal = { version = "0.51", default-features = false }
 parking_lot = "0.12"
 poem = { version = "3" }
 poem-openapi = { version = "5" }
