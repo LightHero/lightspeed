@@ -6,38 +6,38 @@ use lightspeed_core::error::LsError;
 use std::ops::Deref;
 
 #[derive(Clone)]
-pub struct PgTokenRepository {
-    repo: SqlxPgC3p0Json<u64, TokenData, TokenDataCodec>,
+pub struct MySqlTokenRepository {
+    repo: SqlxMySqlC3p0Json<u64, TokenData, TokenDataCodec>,
 }
 
-impl Deref for PgTokenRepository {
-    type Target = SqlxPgC3p0Json<u64, TokenData, TokenDataCodec>;
+impl Deref for MySqlTokenRepository {
+    type Target = SqlxMySqlC3p0Json<u64, TokenData, TokenDataCodec>;
 
     fn deref(&self) -> &Self::Target {
         &self.repo
     }
 }
 
-impl Default for PgTokenRepository {
+impl Default for MySqlTokenRepository {
     fn default() -> Self {
         Self::new()
     }
 }
 
-impl PgTokenRepository {
+impl MySqlTokenRepository {
     pub fn new() -> Self {
-        Self { repo: SqlxPgC3p0JsonBuilder::new("LS_AUTH_TOKEN").build_with_codec(TokenDataCodec {}) }
+        Self { repo: SqlxMySqlC3p0JsonBuilder::new("LS_AUTH_TOKEN").build_with_codec(TokenDataCodec {}) }
     }
 }
 
-impl TokenRepository for PgTokenRepository {
-    type Tx = PgTx;
+impl TokenRepository for MySqlTokenRepository {
+    type Tx = MySqlTx;
 
     async fn fetch_by_token(&self, tx: &mut Self::Tx, token_string: &str) -> Result<TokenModel, LsError> {
         let sql = &format!(
             r#"
             {}
-            where data ->> 'token' = $1
+            where data -> '$.token' = ?
             limit 1
         "#,
             self.queries().find_base_sql_query
@@ -49,7 +49,7 @@ impl TokenRepository for PgTokenRepository {
         let sql = format!(
             r#"
             {}
-            where data ->> 'username' = $1
+            where data -> '$.username' = ?
         "#,
             self.queries().find_base_sql_query
         );

@@ -8,20 +8,18 @@ use lightspeed_core::model::language::Language;
 use lightspeed_core::utils::new_hyphenated_uuid;
 use std::collections::HashMap;
 
-use crate::Id;
-
-pub async fn create_user<RepoManager: AuthRepositoryManager<Id>>(
-    auth_module: &LsAuthModule<Id, RepoManager>,
+pub async fn create_user<RepoManager: AuthRepositoryManager>(
+    auth_module: &LsAuthModule<RepoManager>,
     activate: bool,
-) -> Result<(AuthAccountModel<Id>, TokenModel<Id>), LsError> {
+) -> Result<(AuthAccountModel, TokenModel), LsError> {
     create_user_with_password(auth_module, &new_hyphenated_uuid(), activate).await
 }
 
-pub async fn create_user_with_password<RepoManager: AuthRepositoryManager<Id>>(
-    auth_module: &LsAuthModule<Id, RepoManager>,
+pub async fn create_user_with_password<RepoManager: AuthRepositoryManager>(
+    auth_module: &LsAuthModule<RepoManager>,
     password: &str,
     activate: bool,
-) -> Result<(AuthAccountModel<Id>, TokenModel<Id>), LsError> {
+) -> Result<(AuthAccountModel, TokenModel), LsError> {
     let username = new_hyphenated_uuid();
     let email = format!("{username}@email.fake");
 

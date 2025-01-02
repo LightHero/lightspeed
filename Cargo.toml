@@ -61,7 +61,7 @@ sha2 = "0.10"
 sqlx = { version = "0.8", default-features = false, features = ["macros", "migrate"] }
 strum = { version = "0.26", features = ["derive"] }
 tempfile = "3"
-testcontainers = { package = "testcontainers-modules", version = "0.11", features = ["postgres"] }
+testcontainers = { package = "testcontainers-modules", version = "0.11", features = ["mysql", "postgres"] }
 thiserror = { version = "2" }
 tokio = { version = "1", default-features = false }
 tokio-util = { version = "0.7", default-features = false }

@@ -14,7 +14,6 @@ jobs:
   build:
     name: Build and Test
     runs-on: ubuntu-latest
-    timeout-minutes: 15
 
     env:
       CARGO_TERM_COLOR: always
@@ -25,7 +24,7 @@ jobs:
       - name: Install rust toolchain
         uses: dtolnay/rust-toolchain@stable
         with:
-          components: clippy, rustfmt
+          components: clippy, rustfmt, llvm-tools-preview
 
       - name: Install Just command runner
         uses: extractions/setup-just@v1

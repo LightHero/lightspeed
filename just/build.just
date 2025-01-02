@@ -61,6 +61,7 @@ for_each_feature command:
 
   declare -a features=(
     "axum"
+    "mysql"
     "poem"
     "poem_openapi"
     "postgres"

@@ -6,24 +6,24 @@ use lightspeed_core::error::{ErrorCodes, LsError};
 use std::ops::Deref;
 
 #[derive(Clone)]
-pub struct PgAuthAccountRepository {
-    repo: SqlxPgC3p0Json<u64, AuthAccountData, AuthAccountDataCodec>,
+pub struct MySqlAuthAccountRepository {
+    repo: SqlxMySqlC3p0Json<u64, AuthAccountData, AuthAccountDataCodec>,
 }
 
-impl Default for PgAuthAccountRepository {
+impl Default for MySqlAuthAccountRepository {
     fn default() -> Self {
         Self::new()
     }
 }
 
-impl PgAuthAccountRepository {
+impl MySqlAuthAccountRepository {
     pub fn new() -> Self {
-        Self { repo: SqlxPgC3p0JsonBuilder::new("LS_AUTH_ACCOUNT").build_with_codec(AuthAccountDataCodec {}) }
+        Self { repo: SqlxMySqlC3p0JsonBuilder::new("LS_AUTH_ACCOUNT").build_with_codec(AuthAccountDataCodec {}) }
     }
 }
 
-impl AuthAccountRepository for PgAuthAccountRepository {
-    type Tx = PgTx;
+impl AuthAccountRepository for MySqlAuthAccountRepository {
+    type Tx = MySqlTx;
 
     async fn fetch_all_by_status(
         &self,
@@ -35,9 +35,9 @@ impl AuthAccountRepository for PgAuthAccountRepository {
         let sql = format!(
             r#"
             {}
-            where id >= $1 and DATA ->> 'status' = $2
+            where id >= ? and DATA -> '$.status' = ?
             order by id asc
-            limit $3
+            limit ?
         "#,
             self.queries().find_base_sql_query
         );
@@ -70,7 +70,7 @@ impl AuthAccountRepository for PgAuthAccountRepository {
         let sql = &format!(
             r#"
             {}
-            where DATA ->> 'username' = $1
+            where DATA -> '$.username' = ?
             limit 1
         "#,
             self.queries().find_base_sql_query
@@ -86,7 +86,7 @@ impl AuthAccountRepository for PgAuthAccountRepository {
         let sql = format!(
             r#"
             {}
-            where DATA ->> 'email' = $1
+            where DATA -> '$.email' = ?
             limit 1
         "#,
             self.queries().find_base_sql_query
@@ -111,8 +111,8 @@ impl AuthAccountRepository for PgAuthAccountRepository {
     }
 }
 
-impl Deref for PgAuthAccountRepository {
-    type Target = SqlxPgC3p0Json<u64, AuthAccountData, AuthAccountDataCodec>;
+impl Deref for MySqlAuthAccountRepository {
+    type Target = SqlxMySqlC3p0Json<u64, AuthAccountData, AuthAccountDataCodec>;
 
     fn deref(&self) -> &Self::Target {
         &self.repo

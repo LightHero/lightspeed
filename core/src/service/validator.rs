@@ -365,13 +365,13 @@ pub mod test {
         error_details: ErrorDetails<'a>,
     }
 
-    impl<'a> Tester<'a> {
+    impl Tester<'_> {
         fn new() -> Self {
             Self { error_details: ErrorDetails::default() }
         }
     }
 
-    impl<'a> Validable for Tester<'a> {
+    impl Validable for Tester<'_> {
         fn validate(&self, error_details: &mut ErrorDetails) -> Result<(), LsError> {
             for (key, details) in self.error_details.details().iter() {
                 for detail in details {
