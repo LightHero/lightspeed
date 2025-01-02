@@ -196,13 +196,13 @@ pub enum ErrorDetails<'a> {
     Scoped(ScopedErrorDetails<'a>),
 }
 
-impl<'a> Default for ErrorDetails<'a> {
+impl Default for ErrorDetails<'_> {
     fn default() -> Self {
         ErrorDetails::Root(Default::default())
     }
 }
 
-impl<'a> ErrorDetails<'a> {
+impl ErrorDetails<'_> {
     pub fn add_detail<K: Into<String>, V: Into<ErrorDetail>>(&mut self, key: K, value: V) {
         match self {
             ErrorDetails::Root(node) => node.add_detail(key.into(), value.into()),
@@ -254,7 +254,7 @@ impl RootErrorDetails {
     }
 }
 
-impl<'a> ScopedErrorDetails<'a> {
+impl ScopedErrorDetails<'_> {
     fn add_detail(&mut self, key: String, value: ErrorDetail) {
         let scoped_key = format!("{}.{}", self.scope, key);
         self.details.add_detail(scoped_key, value)

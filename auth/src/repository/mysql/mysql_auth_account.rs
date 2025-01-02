@@ -10,6 +10,12 @@ pub struct MySqlAuthAccountRepository {
     repo: SqlxMySqlC3p0Json<u64, AuthAccountData, AuthAccountDataCodec>,
 }
 
+impl Default for MySqlAuthAccountRepository {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl MySqlAuthAccountRepository {
     pub fn new() -> Self {
         Self { repo: SqlxMySqlC3p0JsonBuilder::new("LS_AUTH_ACCOUNT").build_with_codec(AuthAccountDataCodec {}) }

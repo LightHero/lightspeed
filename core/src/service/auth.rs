@@ -80,7 +80,7 @@ pub struct AuthContext<'a, Id: IdType + MaybeWeb> {
     permission_roles_map: &'a BTreeMap<String, Vec<String>>,
 }
 
-impl<'a, Id: IdType + MaybeWeb> AuthContext<'a, Id> {
+impl<Id: IdType + MaybeWeb> AuthContext<'_, Id> {
     pub fn is_authenticated(&self) -> Result<&AuthContext<Id>, LsError> {
         if self.auth.username.is_empty() || self.auth.expiration_ts_seconds < current_epoch_seconds() {
             return Err(LsError::UnauthenticatedError {});

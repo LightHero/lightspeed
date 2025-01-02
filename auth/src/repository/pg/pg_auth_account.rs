@@ -10,6 +10,12 @@ pub struct PgAuthAccountRepository {
     repo: SqlxPgC3p0Json<u64, AuthAccountData, AuthAccountDataCodec>,
 }
 
+impl Default for PgAuthAccountRepository {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl PgAuthAccountRepository {
     pub fn new() -> Self {
         Self { repo: SqlxPgC3p0JsonBuilder::new("LS_AUTH_ACCOUNT").build_with_codec(AuthAccountDataCodec {}) }

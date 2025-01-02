@@ -18,6 +18,12 @@ impl Deref for PgTokenRepository {
     }
 }
 
+impl Default for PgTokenRepository {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl PgTokenRepository {
     pub fn new() -> Self {
         Self { repo: SqlxPgC3p0JsonBuilder::new("LS_AUTH_TOKEN").build_with_codec(TokenDataCodec {}) }
