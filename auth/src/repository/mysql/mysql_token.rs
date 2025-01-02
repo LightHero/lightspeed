@@ -20,10 +20,7 @@ impl Deref for MySqlTokenRepository {
 
 impl MySqlTokenRepository {
     pub fn new() -> Self {
-        Self {
-            repo: SqlxMySqlC3p0JsonBuilder::new("LS_AUTH_TOKEN")
-                .build_with_codec(TokenDataCodec {}),
-        }
+        Self { repo: SqlxMySqlC3p0JsonBuilder::new("LS_AUTH_TOKEN").build_with_codec(TokenDataCodec {}) }
     }
 }
 

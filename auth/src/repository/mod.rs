@@ -100,9 +100,5 @@ pub trait TokenRepository: Clone + Send + Sync {
         model: NewModel<TokenData>,
     ) -> impl Future<Output = Result<TokenModel, LsError>> + Send;
 
-    fn delete(
-        &self,
-        tx: &mut Self::Tx,
-        model: TokenModel,
-    ) -> impl Future<Output = Result<TokenModel, LsError>> + Send;
+    fn delete(&self, tx: &mut Self::Tx, model: TokenModel) -> impl Future<Output = Result<TokenModel, LsError>> + Send;
 }

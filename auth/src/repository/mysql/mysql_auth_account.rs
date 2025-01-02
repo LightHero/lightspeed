@@ -12,10 +12,7 @@ pub struct MySqlAuthAccountRepository {
 
 impl MySqlAuthAccountRepository {
     pub fn new() -> Self {
-        Self {
-            repo: SqlxMySqlC3p0JsonBuilder::new("LS_AUTH_ACCOUNT")
-                .build_with_codec(AuthAccountDataCodec {}),
-        }
+        Self { repo: SqlxMySqlC3p0JsonBuilder::new("LS_AUTH_ACCOUNT").build_with_codec(AuthAccountDataCodec {}) }
     }
 }
 
@@ -91,27 +88,15 @@ impl AuthAccountRepository for MySqlAuthAccountRepository {
         Ok(self.repo.fetch_one_optional_with_sql(tx, ::sqlx::query(&sql).bind(email)).await?)
     }
 
-    async fn save(
-        &self,
-        tx: &mut Self::Tx,
-        model: NewModel<AuthAccountData>,
-    ) -> Result<AuthAccountModel, LsError> {
+    async fn save(&self, tx: &mut Self::Tx, model: NewModel<AuthAccountData>) -> Result<AuthAccountModel, LsError> {
         Ok(self.repo.save(tx, model).await?)
     }
 
-    async fn update(
-        &self,
-        tx: &mut Self::Tx,
-        model: AuthAccountModel,
-    ) -> Result<AuthAccountModel, LsError> {
+    async fn update(&self, tx: &mut Self::Tx, model: AuthAccountModel) -> Result<AuthAccountModel, LsError> {
         Ok(self.repo.update(tx, model).await?)
     }
 
-    async fn delete(
-        &self,
-        tx: &mut Self::Tx,
-        model: AuthAccountModel,
-    ) -> Result<AuthAccountModel, LsError> {
+    async fn delete(&self, tx: &mut Self::Tx, model: AuthAccountModel) -> Result<AuthAccountModel, LsError> {
         Ok(self.repo.delete(tx, model).await?)
     }
 

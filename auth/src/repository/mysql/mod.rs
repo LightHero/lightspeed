@@ -1,9 +1,9 @@
 use crate::repository::AuthRepositoryManager;
-use mysql_auth_account::MySqlAuthAccountRepository;
-use mysql_token::MySqlTokenRepository;
 use ::sqlx::{migrate::Migrator, *};
 use c3p0::sqlx::*;
 use lightspeed_core::error::LsError;
+use mysql_auth_account::MySqlAuthAccountRepository;
+use mysql_token::MySqlTokenRepository;
 
 pub mod mysql_auth_account;
 pub mod mysql_token;
@@ -20,7 +20,6 @@ impl MySqlAuthRepositoryManager {
         MySqlAuthRepositoryManager { c3p0 }
     }
 }
-
 
 impl AuthRepositoryManager for MySqlAuthRepositoryManager {
     type Tx = MySqlTx;
