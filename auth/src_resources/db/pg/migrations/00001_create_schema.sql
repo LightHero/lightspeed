@@ -1,8 +1,8 @@
 -- Your SQL goes here
 
------------------------------
+-- ---------------------------
 -- Begin - LS_AUTH_ACCOUNT -
------------------------------
+-- ---------------------------
 
 create table LS_AUTH_ACCOUNT (
     ID bigserial primary key,
@@ -18,9 +18,9 @@ CREATE UNIQUE INDEX LS_AUTH_ACCOUNT_UNIQUE_EMAIL ON LS_AUTH_ACCOUNT( (DATA->>'em
 -- End - LS_AUTH_ACCOUNT -
 
 
----------------------------
+-- -------------------------
 -- Begin - LS_AUTH_TOKEN -
----------------------------
+-- -------------------------
 
 create table LS_AUTH_TOKEN (
     ID bigserial primary key,

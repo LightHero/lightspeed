@@ -1,35 +1,48 @@
 -- Your SQL goes here
 
------------------------------
+-- ---------------------------
 -- Begin - LS_AUTH_ACCOUNT -
------------------------------
+-- ---------------------------
 
 create table LS_AUTH_ACCOUNT (
-    ID bigserial primary key,
+    ID BIGINT primary key NOT NULL AUTO_INCREMENT,
     VERSION int not null,
     create_epoch_millis bigint not null,
     update_epoch_millis bigint not null,
-    DATA JSONB
+    DATA JSON
 );
 
-CREATE UNIQUE INDEX LS_AUTH_ACCOUNT_UNIQUE_USERNAME ON LS_AUTH_ACCOUNT( (DATA->>'username') );
-CREATE UNIQUE INDEX LS_AUTH_ACCOUNT_UNIQUE_EMAIL ON LS_AUTH_ACCOUNT( (DATA->>'email') );
+ALTER TABLE LS_AUTH_ACCOUNT
+    ADD INDEX LS_AUTH_ACCOUNT_UNIQUE_USERNAME((
+        CAST(DATA->>"$.username" as CHAR(255))
+    COLLATE utf8mb4_bin
+    ));
+
+ALTER TABLE LS_AUTH_ACCOUNT
+    ADD INDEX LS_AUTH_ACCOUNT_UNIQUE_EMAIL((
+        CAST(DATA->>"$.email" as CHAR(255))
+    COLLATE utf8mb4_bin
+    ));
 
 -- End - LS_AUTH_ACCOUNT -
 
 
----------------------------
+-- -------------------------
 -- Begin - LS_AUTH_TOKEN -
----------------------------
+-- -------------------------
 
 create table LS_AUTH_TOKEN (
-    ID bigserial primary key,
+    ID BIGINT primary key NOT NULL AUTO_INCREMENT,
     VERSION int not null,
     create_epoch_millis bigint not null,
     update_epoch_millis bigint not null,
-    DATA JSONB
+    DATA JSON
 );
 
-CREATE UNIQUE INDEX LS_AUTH_TOKEN_UNIQUE_TOKEN ON LS_AUTH_TOKEN( (DATA->>'token') );
+ALTER TABLE LS_AUTH_TOKEN
+    ADD INDEX LS_AUTH_TOKEN_UNIQUE_TOKEN((
+        CAST(DATA->>"$.token" as CHAR(255))
+    COLLATE utf8mb4_bin
+    ));
 
 -- End - LS_AUTH_TOKEN -
