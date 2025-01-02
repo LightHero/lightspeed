@@ -4,7 +4,7 @@ use serde_json::Value;
 use std::borrow::Cow;
 use strum::{AsRefStr, Display};
 
-pub type AuthAccountModel<Id> = Model<Id, AuthAccountData>;
+pub type AuthAccountModel = Model<u64, AuthAccountData>;
 
 #[derive(Clone, Serialize, Deserialize)]
 pub struct AuthAccountData {

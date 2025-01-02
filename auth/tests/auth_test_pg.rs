@@ -16,10 +16,9 @@ use testcontainers::testcontainers::ContainerAsync;
 
 mod tests;
 
-pub type Id = u64;
-pub type RepoManager = PgAuthRepositoryManager<Id>;
+pub type RepoManager = PgAuthRepositoryManager;
 
-pub type MaybeType = (LsAuthModule<Id, RepoManager>, ContainerAsync<Postgres>);
+pub type MaybeType = (LsAuthModule<RepoManager>, ContainerAsync<Postgres>);
 
 async fn init() -> MaybeType {
     let node = Postgres::default().start().await.unwrap();

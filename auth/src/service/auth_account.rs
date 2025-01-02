@@ -12,33 +12,32 @@ use lightspeed_core::error::*;
 use lightspeed_core::service::auth::Auth;
 use lightspeed_core::service::validator::{Validator, ERR_NOT_UNIQUE};
 use lightspeed_core::utils::current_epoch_seconds;
-use lightspeed_core::web::types::MaybeWeb;
 use log::*;
 use std::sync::Arc;
 
 pub const WRONG_TYPE: &str = "WRONG_TYPE";
 
 #[derive(Clone)]
-pub struct LsAuthAccountService<Id: IdType + MaybeWeb, RepoManager: AuthRepositoryManager<Id>> {
+pub struct LsAuthAccountService<RepoManager: AuthRepositoryManager> {
     c3p0: RepoManager::C3P0,
     auth_config: AuthConfig,
     auth_repo: RepoManager::AuthAccountRepo,
     password_service: Arc<LsPasswordCodecService>,
-    token_service: Arc<LsTokenService<Id, RepoManager>>,
+    token_service: Arc<LsTokenService<RepoManager>>,
 }
 
-impl<Id: IdType + MaybeWeb, RepoManager: AuthRepositoryManager<Id>> LsAuthAccountService<Id, RepoManager> {
+impl<RepoManager: AuthRepositoryManager> LsAuthAccountService<RepoManager> {
     pub fn new(
         c3p0: RepoManager::C3P0,
         auth_config: AuthConfig,
-        token_service: Arc<LsTokenService<Id, RepoManager>>,
+        token_service: Arc<LsTokenService<RepoManager>>,
         password_service: Arc<LsPasswordCodecService>,
         auth_repo: RepoManager::AuthAccountRepo,
     ) -> Self {
         LsAuthAccountService { c3p0, auth_config, auth_repo, password_service, token_service }
     }
 
-    pub async fn login(&self, username: &str, password: &str) -> Result<Auth<Id>, LsError> {
+    pub async fn login(&self, username: &str, password: &str) -> Result<Auth<u64>, LsError> {
         self.c3p0.transaction(|conn| async { self.login_with_conn(conn, username, password).await }).await
     }
 
@@ -47,7 +46,7 @@ impl<Id: IdType + MaybeWeb, RepoManager: AuthRepositoryManager<Id>> LsAuthAccoun
         conn: &mut RepoManager::Tx,
         username: &str,
         password: &str,
-    ) -> Result<Auth<Id>, LsError> {
+    ) -> Result<Auth<u64>, LsError> {
         debug!("login attempt with username [{}]", username);
         let model = self.auth_repo.fetch_by_username_optional(conn, username).await?;
 
@@ -83,7 +82,7 @@ impl<Id: IdType + MaybeWeb, RepoManager: AuthRepositoryManager<Id>> LsAuthAccoun
     pub async fn create_user(
         &self,
         create_login_dto: CreateLoginDto,
-    ) -> Result<(AuthAccountModel<Id>, TokenModel<Id>), LsError> {
+    ) -> Result<(AuthAccountModel, TokenModel), LsError> {
         self.c3p0.transaction(|conn| async { self.create_user_with_conn(conn, create_login_dto).await }).await
     }
 
@@ -91,7 +90,7 @@ impl<Id: IdType + MaybeWeb, RepoManager: AuthRepositoryManager<Id>> LsAuthAccoun
         &self,
         conn: &mut RepoManager::Tx,
         create_login_dto: CreateLoginDto,
-    ) -> Result<(AuthAccountModel<Id>, TokenModel<Id>), LsError> {
+    ) -> Result<(AuthAccountModel, TokenModel), LsError> {
         info!(
             "Create login attempt with username [{:?}] and email [{}]",
             create_login_dto.username, create_login_dto.email
@@ -145,7 +144,7 @@ impl<Id: IdType + MaybeWeb, RepoManager: AuthRepositoryManager<Id>> LsAuthAccoun
         &self,
         conn: &mut RepoManager::Tx,
         username: &str,
-    ) -> Result<TokenModel<Id>, LsError> {
+    ) -> Result<TokenModel, LsError> {
         debug!("Generate activation token for username [{}]", username);
         self.token_service.generate_and_save_token_with_conn(conn, username, TokenType::AccountActivation).await
     }
@@ -154,7 +153,7 @@ impl<Id: IdType + MaybeWeb, RepoManager: AuthRepositoryManager<Id>> LsAuthAccoun
         &self,
         username: &str,
         email: &str,
-    ) -> Result<(AuthAccountModel<Id>, TokenModel<Id>), LsError> {
+    ) -> Result<(AuthAccountModel, TokenModel), LsError> {
         self.c3p0
             .transaction(|conn| async {
                 self.generate_new_activation_token_by_username_and_email_with_conn(conn, username, email).await
@@ -167,7 +166,7 @@ impl<Id: IdType + MaybeWeb, RepoManager: AuthRepositoryManager<Id>> LsAuthAccoun
         conn: &mut RepoManager::Tx,
         username: &str,
         email: &str,
-    ) -> Result<(AuthAccountModel<Id>, TokenModel<Id>), LsError> {
+    ) -> Result<(AuthAccountModel, TokenModel), LsError> {
         debug!("Generate new activation token for username [{}] and email [{}]", username, email);
         let auth_account = self.fetch_by_username_with_conn(conn, username).await?;
 
@@ -198,7 +197,7 @@ impl<Id: IdType + MaybeWeb, RepoManager: AuthRepositoryManager<Id>> LsAuthAccoun
     pub async fn generate_new_activation_token_by_token(
         &self,
         previous_activation_token: &str,
-    ) -> Result<(AuthAccountModel<Id>, TokenModel<Id>), LsError> {
+    ) -> Result<(AuthAccountModel, TokenModel), LsError> {
         self.c3p0
             .transaction(|conn| async {
                 self.generate_new_activation_token_by_token_with_conn(conn, previous_activation_token).await
@@ -210,7 +209,7 @@ impl<Id: IdType + MaybeWeb, RepoManager: AuthRepositoryManager<Id>> LsAuthAccoun
         &self,
         conn: &mut RepoManager::Tx,
         previous_activation_token: &str,
-    ) -> Result<(AuthAccountModel<Id>, TokenModel<Id>), LsError> {
+    ) -> Result<(AuthAccountModel, TokenModel), LsError> {
         debug!("Generate new activation token from previous token [{}]", previous_activation_token);
         let token = self.token_service.fetch_by_token_with_conn(conn, previous_activation_token, false).await?;
 
@@ -242,7 +241,7 @@ impl<Id: IdType + MaybeWeb, RepoManager: AuthRepositoryManager<Id>> LsAuthAccoun
         Ok((user, token))
     }
 
-    pub async fn activate_user(&self, activation_token: &str) -> Result<AuthAccountModel<Id>, LsError> {
+    pub async fn activate_user(&self, activation_token: &str) -> Result<AuthAccountModel, LsError> {
         self.c3p0.transaction(|conn| async { self.activate_user_with_conn(conn, activation_token).await }).await
     }
 
@@ -250,7 +249,7 @@ impl<Id: IdType + MaybeWeb, RepoManager: AuthRepositoryManager<Id>> LsAuthAccoun
         &self,
         conn: &mut RepoManager::Tx,
         activation_token: &str,
-    ) -> Result<AuthAccountModel<Id>, LsError> {
+    ) -> Result<AuthAccountModel, LsError> {
         debug!("Activate user called with token [{}]", activation_token);
 
         let token = self.token_service.fetch_by_token_with_conn(conn, activation_token, true).await?;
@@ -287,7 +286,7 @@ impl<Id: IdType + MaybeWeb, RepoManager: AuthRepositoryManager<Id>> LsAuthAccoun
     pub async fn generate_reset_password_token(
         &self,
         username: &str,
-    ) -> Result<(AuthAccountModel<Id>, TokenModel<Id>), LsError> {
+    ) -> Result<(AuthAccountModel, TokenModel), LsError> {
         self.c3p0.transaction(|conn| async { self.generate_reset_password_token_with_conn(conn, username).await }).await
     }
 
@@ -295,7 +294,7 @@ impl<Id: IdType + MaybeWeb, RepoManager: AuthRepositoryManager<Id>> LsAuthAccoun
         &self,
         conn: &mut RepoManager::Tx,
         username: &str,
-    ) -> Result<(AuthAccountModel<Id>, TokenModel<Id>), LsError> {
+    ) -> Result<(AuthAccountModel, TokenModel), LsError> {
         info!("Generate reset password token for username [{}]", username);
 
         let user = self.auth_repo.fetch_by_username(conn, username).await?;
@@ -319,7 +318,7 @@ impl<Id: IdType + MaybeWeb, RepoManager: AuthRepositoryManager<Id>> LsAuthAccoun
     pub async fn reset_password_by_token(
         &self,
         reset_password_dto: ResetPasswordDto,
-    ) -> Result<AuthAccountModel<Id>, LsError> {
+    ) -> Result<AuthAccountModel, LsError> {
         self.c3p0
             .transaction(|conn| async { self.reset_password_by_token_with_conn(conn, reset_password_dto).await })
             .await
@@ -329,7 +328,7 @@ impl<Id: IdType + MaybeWeb, RepoManager: AuthRepositoryManager<Id>> LsAuthAccoun
         &self,
         conn: &mut RepoManager::Tx,
         reset_password_dto: ResetPasswordDto,
-    ) -> Result<AuthAccountModel<Id>, LsError> {
+    ) -> Result<AuthAccountModel, LsError> {
         debug!("Reset password called with token [{}]", reset_password_dto.token);
         Validator::validate(&reset_password_dto)?;
 
@@ -364,15 +363,15 @@ impl<Id: IdType + MaybeWeb, RepoManager: AuthRepositoryManager<Id>> LsAuthAccoun
         Ok(user)
     }
 
-    pub async fn change_password(&self, dto: ChangePasswordDto<Id>) -> Result<AuthAccountModel<Id>, LsError> {
+    pub async fn change_password(&self, dto: ChangePasswordDto) -> Result<AuthAccountModel, LsError> {
         self.c3p0.transaction(|conn| async { self.change_password_with_conn(conn, dto).await }).await
     }
 
     pub async fn change_password_with_conn(
         &self,
         conn: &mut RepoManager::Tx,
-        dto: ChangePasswordDto<Id>,
-    ) -> Result<AuthAccountModel<Id>, LsError> {
+        dto: ChangePasswordDto,
+    ) -> Result<AuthAccountModel, LsError> {
         info!("Reset password of user_id [{:?}]", dto.user_id);
 
         Validator::validate(&dto)?;
@@ -403,20 +402,20 @@ impl<Id: IdType + MaybeWeb, RepoManager: AuthRepositoryManager<Id>> LsAuthAccoun
         Ok(user)
     }
 
-    pub async fn fetch_by_user_id(&self, user_id: &Id) -> Result<AuthAccountModel<Id>, LsError> {
+    pub async fn fetch_by_user_id(&self, user_id: &u64) -> Result<AuthAccountModel, LsError> {
         self.c3p0.transaction(|conn| async { self.fetch_by_user_id_with_conn(conn, user_id).await }).await
     }
 
     pub async fn fetch_by_user_id_with_conn(
         &self,
         conn: &mut RepoManager::Tx,
-        user_id: &Id,
-    ) -> Result<AuthAccountModel<Id>, LsError> {
+        user_id: &u64,
+    ) -> Result<AuthAccountModel, LsError> {
         debug!("Fetch user with user_id [{:?}]", user_id);
         self.auth_repo.fetch_by_id(conn, user_id).await
     }
 
-    pub async fn fetch_by_username(&self, username: &str) -> Result<AuthAccountModel<Id>, LsError> {
+    pub async fn fetch_by_username(&self, username: &str) -> Result<AuthAccountModel, LsError> {
         self.c3p0.transaction(|conn| async { self.fetch_by_username_with_conn(conn, username).await }).await
     }
 
@@ -424,7 +423,7 @@ impl<Id: IdType + MaybeWeb, RepoManager: AuthRepositoryManager<Id>> LsAuthAccoun
         &self,
         conn: &mut RepoManager::Tx,
         username: &str,
-    ) -> Result<AuthAccountModel<Id>, LsError> {
+    ) -> Result<AuthAccountModel, LsError> {
         debug!("Fetch user with username [{}]", username);
         self.auth_repo.fetch_by_username(conn, username).await
     }
@@ -432,9 +431,9 @@ impl<Id: IdType + MaybeWeb, RepoManager: AuthRepositoryManager<Id>> LsAuthAccoun
     pub async fn fetch_all_by_status(
         &self,
         status: AuthAccountStatus,
-        start_user_id: &Id,
+        start_user_id: &u64,
         limit: u32,
-    ) -> Result<Vec<AuthAccountModel<Id>>, LsError> {
+    ) -> Result<Vec<AuthAccountModel>, LsError> {
         self.c3p0
             .transaction(|conn| async { self.fetch_all_by_status_with_conn(conn, status, start_user_id, limit).await })
             .await
@@ -444,23 +443,23 @@ impl<Id: IdType + MaybeWeb, RepoManager: AuthRepositoryManager<Id>> LsAuthAccoun
         &self,
         conn: &mut RepoManager::Tx,
         status: AuthAccountStatus,
-        start_user_id: &Id,
+        start_user_id: &u64,
         limit: u32,
-    ) -> Result<Vec<AuthAccountModel<Id>>, LsError> {
+    ) -> Result<Vec<AuthAccountModel>, LsError> {
         debug!("Fetch all with status [{}], start_user_id {:?}, limit {}", status, start_user_id, limit);
         self.auth_repo.fetch_all_by_status(conn, status, start_user_id, limit).await
     }
 
-    pub async fn add_roles(&self, user_id: &Id, roles: &[String]) -> Result<AuthAccountModel<Id>, LsError> {
+    pub async fn add_roles(&self, user_id: &u64, roles: &[String]) -> Result<AuthAccountModel, LsError> {
         self.c3p0.transaction(|conn| async { self.add_roles_with_conn(conn, user_id, roles).await }).await
     }
 
     pub async fn add_roles_with_conn(
         &self,
         conn: &mut RepoManager::Tx,
-        user_id: &Id,
+        user_id: &u64,
         roles: &[String],
-    ) -> Result<AuthAccountModel<Id>, LsError> {
+    ) -> Result<AuthAccountModel, LsError> {
         info!("Add roles [{:?}] to user_id [{:?}]", roles, user_id);
 
         let mut account = self.fetch_by_user_id_with_conn(conn, user_id).await?;
@@ -472,16 +471,16 @@ impl<Id: IdType + MaybeWeb, RepoManager: AuthRepositoryManager<Id>> LsAuthAccoun
         self.auth_repo.update(conn, account).await
     }
 
-    pub async fn delete_roles(&self, user_id: &Id, roles: &[String]) -> Result<AuthAccountModel<Id>, LsError> {
+    pub async fn delete_roles(&self, user_id: &u64, roles: &[String]) -> Result<AuthAccountModel, LsError> {
         self.c3p0.transaction(|conn| async { self.delete_roles_with_conn(conn, user_id, roles).await }).await
     }
 
     pub async fn delete_roles_with_conn(
         &self,
         conn: &mut RepoManager::Tx,
-        user_id: &Id,
+        user_id: &u64,
         roles: &[String],
-    ) -> Result<AuthAccountModel<Id>, LsError> {
+    ) -> Result<AuthAccountModel, LsError> {
         info!("delete roles [{:?}] to user_id [{:?}]", roles, user_id);
 
         let mut account = self.fetch_by_user_id_with_conn(conn, user_id).await?;
@@ -493,10 +492,10 @@ impl<Id: IdType + MaybeWeb, RepoManager: AuthRepositoryManager<Id>> LsAuthAccoun
 
     pub async fn change_user_data(
         &self,
-        user_id: &Id,
+        user_id: &u64,
         new_username: Option<String>,
         new_email: Option<String>,
-    ) -> Result<AuthAccountModel<Id>, LsError> {
+    ) -> Result<AuthAccountModel, LsError> {
         self.c3p0
             .transaction(|conn| async { self.change_user_data_with_conn(conn, user_id, new_username, new_email).await })
             .await
@@ -505,10 +504,10 @@ impl<Id: IdType + MaybeWeb, RepoManager: AuthRepositoryManager<Id>> LsAuthAccoun
     pub async fn change_user_data_with_conn(
         &self,
         conn: &mut RepoManager::Tx,
-        user_id: &Id,
+        user_id: &u64,
         new_username: Option<String>,
         new_email: Option<String>,
-    ) -> Result<AuthAccountModel<Id>, LsError> {
+    ) -> Result<AuthAccountModel, LsError> {
         info!(
             "Change user data of user_id [{:?}]. New username: [{:?}]. New email: [{:?}]",
             user_id, new_username, new_email
@@ -535,15 +534,15 @@ impl<Id: IdType + MaybeWeb, RepoManager: AuthRepositoryManager<Id>> LsAuthAccoun
         self.auth_repo.update(conn, user).await
     }
 
-    pub async fn disable_by_user_id(&self, user_id: &Id) -> Result<AuthAccountModel<Id>, LsError> {
+    pub async fn disable_by_user_id(&self, user_id: &u64) -> Result<AuthAccountModel, LsError> {
         self.c3p0.transaction(|conn| async { self.disable_by_user_id_with_conn(conn, user_id).await }).await
     }
 
     pub async fn disable_by_user_id_with_conn(
         &self,
         conn: &mut RepoManager::Tx,
-        user_id: &Id,
-    ) -> Result<AuthAccountModel<Id>, LsError> {
+        user_id: &u64,
+    ) -> Result<AuthAccountModel, LsError> {
         debug!("Disable user with user_id [{:?}]", user_id);
         let mut user = self.auth_repo.fetch_by_id(conn, user_id).await?;
 
@@ -561,7 +560,7 @@ impl<Id: IdType + MaybeWeb, RepoManager: AuthRepositoryManager<Id>> LsAuthAccoun
         self.auth_repo.update(conn, user).await
     }
 
-    pub async fn reactivate_disabled_user_by_user_id(&self, user_id: &Id) -> Result<AuthAccountModel<Id>, LsError> {
+    pub async fn reactivate_disabled_user_by_user_id(&self, user_id: &u64) -> Result<AuthAccountModel, LsError> {
         self.c3p0
             .transaction(|conn| async { self.reactivate_disabled_user_by_user_id_with_conn(conn, user_id).await })
             .await
@@ -570,8 +569,8 @@ impl<Id: IdType + MaybeWeb, RepoManager: AuthRepositoryManager<Id>> LsAuthAccoun
     pub async fn reactivate_disabled_user_by_user_id_with_conn(
         &self,
         conn: &mut RepoManager::Tx,
-        user_id: &Id,
-    ) -> Result<AuthAccountModel<Id>, LsError> {
+        user_id: &u64,
+    ) -> Result<AuthAccountModel, LsError> {
         debug!("Reactivate disabled user with user_id [{:?}]", user_id);
         let mut user = self.auth_repo.fetch_by_id(conn, user_id).await?;
 
@@ -589,11 +588,11 @@ impl<Id: IdType + MaybeWeb, RepoManager: AuthRepositoryManager<Id>> LsAuthAccoun
         self.auth_repo.update(conn, user).await
     }
 
-    pub async fn delete_by_user_id(&self, user_id: &Id) -> Result<u64, LsError> {
+    pub async fn delete_by_user_id(&self, user_id: &u64) -> Result<u64, LsError> {
         self.c3p0.transaction(|conn| async { self.delete_by_user_id_with_conn(conn, user_id).await }).await
     }
 
-    pub async fn delete_by_user_id_with_conn(&self, conn: &mut RepoManager::Tx, user_id: &Id) -> Result<u64, LsError> {
+    pub async fn delete_by_user_id_with_conn(&self, conn: &mut RepoManager::Tx, user_id: &u64) -> Result<u64, LsError> {
         debug!("Delete user with user_id [{:?}]", user_id);
         self.auth_repo.delete_by_id(conn, user_id).await
     }

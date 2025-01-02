@@ -4,33 +4,31 @@ use c3p0::sqlx::*;
 use c3p0::*;
 use lightspeed_core::error::{ErrorCodes, LsError};
 use std::ops::Deref;
-use std::sync::Arc;
 
 #[derive(Clone)]
-pub struct PgAuthAccountRepository<Id: IdType> {
-    repo: SqlxPgC3p0Json<Id, AuthAccountData, AuthAccountDataCodec>,
+pub struct PgAuthAccountRepository {
+    repo: SqlxPgC3p0Json<u64, AuthAccountData, AuthAccountDataCodec>,
 }
 
-impl<Id: IdType> PgAuthAccountRepository<Id> {
-    pub fn new(id_generator: Arc<dyn PostgresIdGenerator<Id>>) -> Self {
+impl PgAuthAccountRepository {
+    pub fn new() -> Self {
         Self {
             repo: SqlxPgC3p0JsonBuilder::new("LS_AUTH_ACCOUNT")
-                .with_id_generator(id_generator)
                 .build_with_codec(AuthAccountDataCodec {}),
         }
     }
 }
 
-impl<Id: IdType> AuthAccountRepository<Id> for PgAuthAccountRepository<Id> {
+impl AuthAccountRepository for PgAuthAccountRepository {
     type Tx = PgTx;
 
     async fn fetch_all_by_status(
         &self,
         tx: &mut Self::Tx,
         status: AuthAccountStatus,
-        start_user_id: &Id,
+        start_user_id: &u64,
         limit: u32,
-    ) -> Result<Vec<AuthAccountModel<Id>>, LsError> {
+    ) -> Result<Vec<AuthAccountModel>, LsError> {
         let sql = format!(
             r#"
             {}
@@ -50,11 +48,11 @@ impl<Id: IdType> AuthAccountRepository<Id> for PgAuthAccountRepository<Id> {
             .await?)
     }
 
-    async fn fetch_by_id(&self, tx: &mut Self::Tx, user_id: &Id) -> Result<Model<Id, AuthAccountData>, LsError> {
+    async fn fetch_by_id(&self, tx: &mut Self::Tx, user_id: &u64) -> Result<AuthAccountModel, LsError> {
         Ok(self.repo.fetch_one_by_id(tx, user_id).await?)
     }
 
-    async fn fetch_by_username(&self, tx: &mut Self::Tx, username: &str) -> Result<AuthAccountModel<Id>, LsError> {
+    async fn fetch_by_username(&self, tx: &mut Self::Tx, username: &str) -> Result<AuthAccountModel, LsError> {
         self.fetch_by_username_optional(tx, username).await?.ok_or_else(|| LsError::BadRequest {
             message: format!("No user found with username [{username}]"),
             code: ErrorCodes::NOT_FOUND,
@@ -65,7 +63,7 @@ impl<Id: IdType> AuthAccountRepository<Id> for PgAuthAccountRepository<Id> {
         &self,
         tx: &mut Self::Tx,
         username: &str,
-    ) -> Result<Option<Model<Id, AuthAccountData>>, LsError> {
+    ) -> Result<Option<AuthAccountModel>, LsError> {
         let sql = &format!(
             r#"
             {}
@@ -81,7 +79,7 @@ impl<Id: IdType> AuthAccountRepository<Id> for PgAuthAccountRepository<Id> {
         &self,
         tx: &mut Self::Tx,
         email: &str,
-    ) -> Result<Option<AuthAccountModel<Id>>, LsError> {
+    ) -> Result<Option<AuthAccountModel>, LsError> {
         let sql = format!(
             r#"
             {}
@@ -97,33 +95,33 @@ impl<Id: IdType> AuthAccountRepository<Id> for PgAuthAccountRepository<Id> {
         &self,
         tx: &mut Self::Tx,
         model: NewModel<AuthAccountData>,
-    ) -> Result<Model<Id, AuthAccountData>, LsError> {
+    ) -> Result<AuthAccountModel, LsError> {
         Ok(self.repo.save(tx, model).await?)
     }
 
     async fn update(
         &self,
         tx: &mut Self::Tx,
-        model: Model<Id, AuthAccountData>,
-    ) -> Result<Model<Id, AuthAccountData>, LsError> {
+        model: AuthAccountModel,
+    ) -> Result<AuthAccountModel, LsError> {
         Ok(self.repo.update(tx, model).await?)
     }
 
     async fn delete(
         &self,
         tx: &mut Self::Tx,
-        model: Model<Id, AuthAccountData>,
-    ) -> Result<Model<Id, AuthAccountData>, LsError> {
+        model: AuthAccountModel,
+    ) -> Result<AuthAccountModel, LsError> {
         Ok(self.repo.delete(tx, model).await?)
     }
 
-    async fn delete_by_id(&self, tx: &mut Self::Tx, user_id: &Id) -> Result<u64, LsError> {
+    async fn delete_by_id(&self, tx: &mut Self::Tx, user_id: &u64) -> Result<u64, LsError> {
         Ok(self.repo.delete_by_id(tx, user_id).await?)
     }
 }
 
-impl<Id: IdType> Deref for PgAuthAccountRepository<Id> {
-    type Target = SqlxPgC3p0Json<Id, AuthAccountData, AuthAccountDataCodec>;
+impl Deref for PgAuthAccountRepository {
+    type Target = SqlxPgC3p0Json<u64, AuthAccountData, AuthAccountDataCodec>;
 
     fn deref(&self) -> &Self::Target {
         &self.repo
