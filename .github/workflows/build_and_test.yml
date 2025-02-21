@@ -38,7 +38,6 @@ jobs:
           just build
 
       - name: test
-        if: ${{ !inputs.skip-test }}
         run: |
           just test
 
