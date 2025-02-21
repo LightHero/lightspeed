@@ -16,7 +16,7 @@ members = [
 
 [workspace.package]
 version = "0.60.1"
-edition = "2021"
+edition = "2024"
 
 [workspace.dependencies]
 lightspeed_auth = { version = "0.60.1", path = "./auth" }

@@ -36,11 +36,11 @@ impl JobScheduler {
         }
 
         // Check if NOW is on or after next_run_at
-        if let Some(next_run_at) = self.next_run_at.lock().await.as_ref() {
+        match self.next_run_at.lock().await.as_ref() { Some(next_run_at) => {
             *next_run_at < Utc::now()
-        } else {
+        } _ => {
             false
-        }
+        }}
     }
 
     /// Run the job immediately and re-schedule it.
@@ -125,15 +125,15 @@ impl Job {
 
         if let Some(retries) = self.retries_after_failure {
             for attempt in 1..=retries {
-                if let Err(e) = run_result {
+                match run_result { Err(e) => {
                     warn!(
                         "Execution failed for job [{}/{}] - Retry execution, attempt {}/{}. Previous err: {}",
                         self.group, self.name, attempt, retries, e
                     );
                     run_result = self.exec().await;
-                } else {
+                } _ => {
                     break;
-                }
+                }}
             }
         }
 
