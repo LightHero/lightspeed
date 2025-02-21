@@ -1,5 +1,5 @@
 use rand::distr::Alphanumeric;
-use rand::{rng, Rng};
+use rand::{Rng, rng};
 use std::fmt::Debug;
 use tracing::*;
 use tracing_futures::Instrument;

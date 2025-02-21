@@ -1,10 +1,10 @@
 #[cfg(test)]
 mod test {
 
-    use opendal::layers::LoggingLayer;
-    use opendal::services;
     use opendal::Operator;
     use opendal::Result;
+    use opendal::layers::LoggingLayer;
+    use opendal::services;
 
     #[tokio::test]
     async fn test_opendal_0() -> Result<()> {

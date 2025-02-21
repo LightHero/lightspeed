@@ -1,6 +1,6 @@
+use lightspeed_core::LsCoreModule;
 use lightspeed_core::config::CoreConfig;
 use lightspeed_core::module::LsModule;
-use lightspeed_core::LsCoreModule;
 use lightspeed_hash::LsHashModule;
 use lightspeed_logger::config::LoggerConfig;
 use lightspeed_logger::setup_logger;

@@ -97,11 +97,9 @@ fn should_validate_token_on_fetch() -> Result<(), LsError> {
 
             let saved_token = token_repo.save(conn, token).await?;
 
-            assert!(auth_module
-                .token_service
-                .fetch_by_token_with_conn(conn, &saved_token.data.token, true)
-                .await
-                .is_err());
+            assert!(
+                auth_module.token_service.fetch_by_token_with_conn(conn, &saved_token.data.token, true).await.is_err()
+            );
 
             Ok(())
         })

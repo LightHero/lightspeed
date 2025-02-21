@@ -36,11 +36,10 @@ impl JobScheduler {
         }
 
         // Check if NOW is on or after next_run_at
-        match self.next_run_at.lock().await.as_ref() { Some(next_run_at) => {
-            *next_run_at < Utc::now()
-        } _ => {
-            false
-        }}
+        match self.next_run_at.lock().await.as_ref() {
+            Some(next_run_at) => *next_run_at < Utc::now(),
+            _ => false,
+        }
     }
 
     /// Run the job immediately and re-schedule it.
@@ -125,15 +124,18 @@ impl Job {
 
         if let Some(retries) = self.retries_after_failure {
             for attempt in 1..=retries {
-                match run_result { Err(e) => {
-                    warn!(
-                        "Execution failed for job [{}/{}] - Retry execution, attempt {}/{}. Previous err: {}",
-                        self.group, self.name, attempt, retries, e
-                    );
-                    run_result = self.exec().await;
-                } _ => {
-                    break;
-                }}
+                match run_result {
+                    Err(e) => {
+                        warn!(
+                            "Execution failed for job [{}/{}] - Retry execution, attempt {}/{}. Previous err: {}",
+                            self.group, self.name, attempt, retries, e
+                        );
+                        run_result = self.exec().await;
+                    }
+                    _ => {
+                        break;
+                    }
+                }
             }
         }
 
@@ -292,11 +294,7 @@ pub mod test {
                 *lock = count + 1;
                 println!("job - count {count}");
 
-                if count == succeed_at {
-                    Ok(())
-                } else {
-                    Err(SchedulerError::JobLockError { message: "".to_owned() })?
-                }
+                if count == succeed_at { Ok(()) } else { Err(SchedulerError::JobLockError { message: "".to_owned() })? }
             })
         });
 

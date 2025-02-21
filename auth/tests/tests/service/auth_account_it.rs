@@ -217,14 +217,16 @@ fn should_activate_user() -> Result<(), LsError> {
 
         assert!(auth_module.auth_account_service.activate_user(&token.data.token).await.is_err());
 
-        assert!(auth_module
-            .repo_manager
-            .c3p0()
-            .transaction(async |conn| {
-                auth_module.token_service.fetch_by_token_with_conn(conn, &token.data.token, false).await
-            })
-            .await
-            .is_err());
+        assert!(
+            auth_module
+                .repo_manager
+                .c3p0()
+                .transaction(async |conn| {
+                    auth_module.token_service.fetch_by_token_with_conn(conn, &token.data.token, false).await
+                })
+                .await
+                .is_err()
+        );
 
         Ok(())
     })
@@ -322,18 +324,22 @@ fn should_regenerate_activation_token_by_email_and_username() -> Result<(), LsEr
         let (user, token) = create_user(auth_module, false).await?;
 
         // use wrong email
-        assert!(auth_module
-            .auth_account_service
-            .generate_new_activation_token_by_username_and_email(&user.data.username, "email")
-            .await
-            .is_err());
+        assert!(
+            auth_module
+                .auth_account_service
+                .generate_new_activation_token_by_username_and_email(&user.data.username, "email")
+                .await
+                .is_err()
+        );
 
         // use wrong username
-        assert!(auth_module
-            .auth_account_service
-            .generate_new_activation_token_by_username_and_email("name", &user.data.email)
-            .await
-            .is_err());
+        assert!(
+            auth_module
+                .auth_account_service
+                .generate_new_activation_token_by_username_and_email("name", &user.data.email)
+                .await
+                .is_err()
+        );
 
         let (new_user, new_token) = auth_module
             .auth_account_service
@@ -366,17 +372,19 @@ fn should_regenerate_activation_token_even_if_token_expired() -> Result<(), LsEr
         let token_model = &auth_module
             .repo_manager
             .c3p0()
-            .transaction(async |conn| { auth_module.repo_manager.token_repo().update(conn, token.clone()).await })
+            .transaction(async |conn| auth_module.repo_manager.token_repo().update(conn, token.clone()).await)
             .await?;
 
-        assert!(auth_module
-            .repo_manager
-            .c3p0()
-            .transaction(async |conn| {
-                auth_module.token_service.fetch_by_token_with_conn(conn, &token_model.data.token, true).await
-            })
-            .await
-            .is_err());
+        assert!(
+            auth_module
+                .repo_manager
+                .c3p0()
+                .transaction(async |conn| {
+                    auth_module.token_service.fetch_by_token_with_conn(conn, &token_model.data.token, true).await
+                })
+                .await
+                .is_err()
+        );
 
         assert!(auth_module.auth_account_service.activate_user(&token_model.data.token).await.is_err());
 
@@ -407,11 +415,9 @@ fn should_resend_activation_token_only_if_correct_token_type() -> Result<(), LsE
             })
             .await?;
 
-        assert!(auth_module
-            .auth_account_service
-            .generate_new_activation_token_by_token(&token.data.token)
-            .await
-            .is_err());
+        assert!(
+            auth_module.auth_account_service.generate_new_activation_token_by_token(&token.data.token).await.is_err()
+        );
 
         Ok(())
     })

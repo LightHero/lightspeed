@@ -222,12 +222,14 @@ mod test {
 
     #[test]
     fn should_not_build_if_secret_key_empty() {
-        assert!(super::LsJwtService::new(&JwtConfig {
-            secret: "".to_string(),
-            signature_algorithm: jsonwebtoken::Algorithm::HS512,
-            token_validity_minutes: 60,
-        })
-        .is_err());
+        assert!(
+            super::LsJwtService::new(&JwtConfig {
+                secret: "".to_string(),
+                signature_algorithm: jsonwebtoken::Algorithm::HS512,
+                token_validity_minutes: 60,
+            })
+            .is_err()
+        );
     }
 
     fn new() -> super::LsJwtService {

@@ -27,7 +27,9 @@ impl EmailClient for FixedRecipientEmailClient {
         let fixed_to_recipients = self.fixed_to_recipients.clone();
 
         Box::pin(async move {
-            warn!("FixedRecipientEmailClient - Received an email. The email recipients will be substituted by the configured one(s)");
+            warn!(
+                "FixedRecipientEmailClient - Received an email. The email recipients will be substituted by the configured one(s)"
+            );
 
             email_message.subject = Some(to_subject(&email_message.subject.unwrap_or_default(), &email_message.to));
 

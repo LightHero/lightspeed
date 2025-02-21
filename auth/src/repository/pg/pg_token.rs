@@ -1,9 +1,9 @@
 use crate::model::token::{TokenData, TokenDataCodec, TokenModel};
 use crate::repository::TokenRepository;
+use ::sqlx::{Postgres, Transaction};
 use c3p0::sqlx::*;
 use c3p0::*;
 use lightspeed_core::error::LsError;
-use ::sqlx::{Postgres, Transaction};
 use std::ops::Deref;
 
 #[derive(Clone)]

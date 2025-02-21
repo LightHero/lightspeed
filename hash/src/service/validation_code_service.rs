@@ -3,7 +3,7 @@ use crate::dto::{
 };
 use crate::service::hash_service::LsHashService;
 use lightspeed_core::error::LsError;
-use lightspeed_core::service::jwt::{LsJwtService, JWT};
+use lightspeed_core::service::jwt::{JWT, LsJwtService};
 use lightspeed_core::utils::current_epoch_seconds;
 use log::*;
 use serde::Serialize;
