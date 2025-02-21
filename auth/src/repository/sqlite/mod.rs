@@ -22,7 +22,7 @@ impl SqliteAuthRepositoryManager {
 }
 
 impl AuthRepositoryManager for SqliteAuthRepositoryManager {
-    type Tx = SqliteTx;
+    type Tx<'a> = Transaction<'a, Sqlite>;
     type C3P0 = SqlxSqliteC3p0Pool;
     type AuthAccountRepo = SqliteAuthAccountRepository;
     type TokenRepo = SqliteTokenRepository;

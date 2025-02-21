@@ -102,7 +102,7 @@ fn should_return_user_by_id() -> Result<(), LsError> {
         auth_module
             .repo_manager
             .c3p0()
-            .transaction(|conn| async {
+            .transaction(async |conn| {
                 let user_by_id = auth_module.auth_account_service.fetch_by_user_id_with_conn(conn, &user.id).await?;
 
                 assert_eq!(user.data.username, user_by_id.data.username);
@@ -124,7 +124,7 @@ fn should_return_user_by_username() -> Result<(), LsError> {
         auth_module
             .repo_manager
             .c3p0()
-            .transaction(|conn| async {
+            .transaction(async |conn| {
                 let user_by_id =
                     auth_module.auth_account_service.fetch_by_username_with_conn(conn, &user.data.username).await?;
 
@@ -220,7 +220,7 @@ fn should_activate_user() -> Result<(), LsError> {
         assert!(auth_module
             .repo_manager
             .c3p0()
-            .transaction(|conn| async {
+            .transaction(async |conn| {
                 auth_module.token_service.fetch_by_token_with_conn(conn, &token.data.token, false).await
             })
             .await
@@ -242,7 +242,7 @@ fn should_activate_user_only_if_activation_token_type() -> Result<(), LsError> {
         auth_module
             .repo_manager
             .c3p0()
-            .transaction(|conn| async {
+            .transaction(async |conn| {
                 let token = auth_module
                     .token_service
                     .generate_and_save_token_with_conn(conn, &user.data.username, TokenType::ResetPassword)
@@ -271,7 +271,7 @@ fn should_activate_user_only_if_pending_activation() -> Result<(), LsError> {
         auth_module
             .repo_manager
             .c3p0()
-            .transaction::<_, LsError, _, _>(|conn| async {
+            .transaction::<_, LsError, _>(async |conn| {
                 let token = auth_module
                     .token_service
                     .generate_and_save_token_with_conn(conn, &user.data.username, TokenType::AccountActivation)
@@ -366,13 +366,13 @@ fn should_regenerate_activation_token_even_if_token_expired() -> Result<(), LsEr
         let token_model = &auth_module
             .repo_manager
             .c3p0()
-            .transaction(|conn| async { auth_module.repo_manager.token_repo().update(conn, token.clone()).await })
+            .transaction(async |conn| { auth_module.repo_manager.token_repo().update(conn, token.clone()).await })
             .await?;
 
         assert!(auth_module
             .repo_manager
             .c3p0()
-            .transaction(|conn| async {
+            .transaction(async |conn| {
                 auth_module.token_service.fetch_by_token_with_conn(conn, &token_model.data.token, true).await
             })
             .await
@@ -399,7 +399,7 @@ fn should_resend_activation_token_only_if_correct_token_type() -> Result<(), LsE
         let token = auth_module
             .repo_manager
             .c3p0()
-            .transaction(|conn| async {
+            .transaction(async |conn| {
                 auth_module
                     .token_service
                     .generate_and_save_token_with_conn(conn, &user.data.username, TokenType::ResetPassword)
@@ -703,7 +703,7 @@ fn should_reset_password_by_token() -> Result<(), LsError> {
         let token = auth_module
             .repo_manager
             .c3p0()
-            .transaction(|conn| async {
+            .transaction(async |conn| {
                 auth_module
                     .token_service
                     .generate_and_save_token_with_conn(conn, &user.data.username, TokenType::ResetPassword)
@@ -744,7 +744,7 @@ fn should_reset_password_only_if_correct_token_type() -> Result<(), LsError> {
         let token = auth_module
             .repo_manager
             .c3p0()
-            .transaction(|conn| async {
+            .transaction(async |conn| {
                 auth_module
                     .token_service
                     .generate_and_save_token_with_conn(conn, &user.data.username, TokenType::AccountActivation)
@@ -781,7 +781,7 @@ fn should_reset_password_only_if_user_is_active() -> Result<(), LsError> {
         let token = auth_module
             .repo_manager
             .c3p0()
-            .transaction(|conn| async {
+            .transaction(async |conn| {
                 auth_module
                     .token_service
                     .generate_and_save_token_with_conn(conn, &user.data.username, TokenType::ResetPassword)
@@ -817,7 +817,7 @@ fn should_reset_password_only_if_passwords_match() -> Result<(), LsError> {
         let token = auth_module
             .repo_manager
             .c3p0()
-            .transaction(|conn| async {
+            .transaction(async |conn| {
                 auth_module
                     .token_service
                     .generate_and_save_token_with_conn(conn, &user.data.username, TokenType::ResetPassword)

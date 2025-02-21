@@ -22,7 +22,7 @@ impl PgAuthRepositoryManager {
 }
 
 impl AuthRepositoryManager for PgAuthRepositoryManager {
-    type Tx = PgTx;
+    type Tx<'a> = Transaction<'a, Postgres>;
     type C3P0 = SqlxPgC3p0Pool;
     type AuthAccountRepo = PgAuthAccountRepository;
     type TokenRepo = PgTokenRepository;
