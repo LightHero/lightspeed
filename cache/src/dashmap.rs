@@ -1,5 +1,5 @@
 use chrono::prelude::Local;
-use dashmap::{mapref::entry::Entry, DashMap};
+use dashmap::{DashMap, mapref::entry::Entry};
 use std::hash::Hash;
 use std::sync::Arc;
 

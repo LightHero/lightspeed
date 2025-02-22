@@ -97,15 +97,15 @@ impl<V0: Validable, V1: Validable, V2: Validable, V3: Validable, V4: Validable, 
 }
 
 impl<
-        V0: Validable,
-        V1: Validable,
-        V2: Validable,
-        V3: Validable,
-        V4: Validable,
-        V5: Validable,
-        V6: Validable,
-        V7: Validable,
-    > Validable for (&V0, &V1, &V2, &V3, &V4, &V5, &V6, &V7)
+    V0: Validable,
+    V1: Validable,
+    V2: Validable,
+    V3: Validable,
+    V4: Validable,
+    V5: Validable,
+    V6: Validable,
+    V7: Validable,
+> Validable for (&V0, &V1, &V2, &V3, &V4, &V5, &V6, &V7)
 {
     #[inline]
     fn validate(&self, error_details: &mut ErrorDetails) -> Result<(), LsError> {
@@ -121,16 +121,16 @@ impl<
 }
 
 impl<
-        V0: Validable,
-        V1: Validable,
-        V2: Validable,
-        V3: Validable,
-        V4: Validable,
-        V5: Validable,
-        V6: Validable,
-        V7: Validable,
-        V8: Validable,
-    > Validable for (&V0, &V1, &V2, &V3, &V4, &V5, &V6, &V7, &V8)
+    V0: Validable,
+    V1: Validable,
+    V2: Validable,
+    V3: Validable,
+    V4: Validable,
+    V5: Validable,
+    V6: Validable,
+    V7: Validable,
+    V8: Validable,
+> Validable for (&V0, &V1, &V2, &V3, &V4, &V5, &V6, &V7, &V8)
 {
     #[inline]
     fn validate(&self, error_details: &mut ErrorDetails) -> Result<(), LsError> {
@@ -147,17 +147,17 @@ impl<
 }
 
 impl<
-        V0: Validable,
-        V1: Validable,
-        V2: Validable,
-        V3: Validable,
-        V4: Validable,
-        V5: Validable,
-        V6: Validable,
-        V7: Validable,
-        V8: Validable,
-        V9: Validable,
-    > Validable for (&V0, &V1, &V2, &V3, &V4, &V5, &V6, &V7, &V8, &V9)
+    V0: Validable,
+    V1: Validable,
+    V2: Validable,
+    V3: Validable,
+    V4: Validable,
+    V5: Validable,
+    V6: Validable,
+    V7: Validable,
+    V8: Validable,
+    V9: Validable,
+> Validable for (&V0, &V1, &V2, &V3, &V4, &V5, &V6, &V7, &V8, &V9)
 {
     #[inline]
     fn validate(&self, error_details: &mut ErrorDetails) -> Result<(), LsError> {

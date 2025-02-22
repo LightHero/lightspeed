@@ -22,7 +22,7 @@ impl MySqlAuthRepositoryManager {
 }
 
 impl AuthRepositoryManager for MySqlAuthRepositoryManager {
-    type Tx = MySqlTx;
+    type Tx<'a> = Transaction<'a, MySql>;
     type C3P0 = SqlxMySqlC3p0Pool;
     type AuthAccountRepo = MySqlAuthAccountRepository;
     type TokenRepo = MySqlTokenRepository;

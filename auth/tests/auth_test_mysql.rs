@@ -6,13 +6,13 @@ use c3p0::sqlx::sqlx::mysql::*;
 use c3p0::sqlx::*;
 use maybe_single::tokio::*;
 
+use lightspeed_auth::LsAuthModule;
 use lightspeed_auth::config::AuthConfig;
 use lightspeed_auth::repository::mysql::MySqlAuthRepositoryManager;
-use lightspeed_auth::LsAuthModule;
 use lightspeed_core::module::LsModule;
 use testcontainers::mysql::Mysql;
-use testcontainers::testcontainers::runners::AsyncRunner;
 use testcontainers::testcontainers::ContainerAsync;
+use testcontainers::testcontainers::runners::AsyncRunner;
 
 mod tests;
 

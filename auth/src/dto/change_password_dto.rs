@@ -1,7 +1,7 @@
 use lightspeed_core::error::{ErrorDetails, LsError};
 use lightspeed_core::service::auth::Owned;
-use lightspeed_core::service::validator::must_match::validate_must_be_equals;
 use lightspeed_core::service::validator::Validable;
+use lightspeed_core::service::validator::must_match::validate_must_be_equals;
 use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize)]

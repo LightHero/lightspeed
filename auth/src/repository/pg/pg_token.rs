@@ -1,5 +1,6 @@
 use crate::model::token::{TokenData, TokenDataCodec, TokenModel};
 use crate::repository::TokenRepository;
+use ::sqlx::{Postgres, Transaction};
 use c3p0::sqlx::*;
 use c3p0::*;
 use lightspeed_core::error::LsError;
@@ -31,9 +32,9 @@ impl PgTokenRepository {
 }
 
 impl TokenRepository for PgTokenRepository {
-    type Tx = PgTx;
+    type Tx<'a> = Transaction<'a, Postgres>;
 
-    async fn fetch_by_token(&self, tx: &mut Self::Tx, token_string: &str) -> Result<TokenModel, LsError> {
+    async fn fetch_by_token(&self, tx: &mut Self::Tx<'_>, token_string: &str) -> Result<TokenModel, LsError> {
         let sql = &format!(
             r#"
             {}
@@ -45,7 +46,7 @@ impl TokenRepository for PgTokenRepository {
         Ok(self.repo.fetch_one_with_sql(tx, ::sqlx::query(sql).bind(token_string)).await?)
     }
 
-    async fn fetch_by_username(&self, tx: &mut Self::Tx, username: &str) -> Result<Vec<TokenModel>, LsError> {
+    async fn fetch_by_username(&self, tx: &mut Self::Tx<'_>, username: &str) -> Result<Vec<TokenModel>, LsError> {
         let sql = format!(
             r#"
             {}
@@ -57,11 +58,11 @@ impl TokenRepository for PgTokenRepository {
         Ok(self.repo.fetch_all_with_sql(tx, ::sqlx::query(&sql).bind(username)).await?)
     }
 
-    async fn save(&self, tx: &mut Self::Tx, model: NewModel<TokenData>) -> Result<TokenModel, LsError> {
+    async fn save(&self, tx: &mut Self::Tx<'_>, model: NewModel<TokenData>) -> Result<TokenModel, LsError> {
         Ok(self.repo.save(tx, model).await?)
     }
 
-    async fn delete(&self, tx: &mut Self::Tx, model: TokenModel) -> Result<TokenModel, LsError> {
+    async fn delete(&self, tx: &mut Self::Tx<'_>, model: TokenModel) -> Result<TokenModel, LsError> {
         Ok(self.repo.delete(tx, model).await?)
     }
 }

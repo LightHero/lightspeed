@@ -1,6 +1,6 @@
+use crate::repository::AuthRepositoryManager;
 use crate::repository::pg::pg_auth_account::PgAuthAccountRepository;
 use crate::repository::pg::pg_token::PgTokenRepository;
-use crate::repository::AuthRepositoryManager;
 use ::sqlx::{migrate::Migrator, *};
 use c3p0::sqlx::*;
 use lightspeed_core::error::LsError;
@@ -22,7 +22,7 @@ impl PgAuthRepositoryManager {
 }
 
 impl AuthRepositoryManager for PgAuthRepositoryManager {
-    type Tx = PgTx;
+    type Tx<'a> = Transaction<'a, Postgres>;
     type C3P0 = SqlxPgC3p0Pool;
     type AuthAccountRepo = PgAuthAccountRepository;
     type TokenRepo = PgTokenRepository;

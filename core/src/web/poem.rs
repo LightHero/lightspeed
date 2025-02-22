@@ -2,7 +2,7 @@ use crate::error::{LsError, RootErrorDetails, WebErrorDetails};
 use crate::web::Headers;
 use http::HeaderValue;
 use log::*;
-use poem::{error::ResponseError, http::StatusCode, Request, Response};
+use poem::{Request, Response, error::ResponseError, http::StatusCode};
 use std::error::Error as StdError;
 
 impl Headers for Request {
@@ -95,8 +95,8 @@ pub mod openapi {
     use crate::error::{LsError, WebErrorDetails};
     use log::error;
     use poem::http::StatusCode;
-    use poem_openapi::payload::Json;
     use poem_openapi::ApiResponse;
+    use poem_openapi::payload::Json;
 
     #[derive(ApiResponse, Debug)]
     pub enum LightSpeedErrorResponse {
@@ -157,12 +157,12 @@ mod test {
     use super::*;
     use crate::config::JwtConfig;
     use crate::service::auth::{Auth, InMemoryRolesProvider, LsAuthService, Role};
-    use crate::service::jwt::{LsJwtService, JWT};
-    use crate::web::{WebAuthService, JWT_TOKEN_HEADER, JWT_TOKEN_HEADER_SUFFIX};
+    use crate::service::jwt::{JWT, LsJwtService};
+    use crate::web::{JWT_TOKEN_HEADER, JWT_TOKEN_HEADER_SUFFIX, WebAuthService};
     use jsonwebtoken::Algorithm;
     use poem::http::HeaderMap;
     use poem::test::TestClient;
-    use poem::{handler, Request, Route};
+    use poem::{Request, Route, handler};
     use std::sync::Arc;
 
     type AuthIdType = u64;
@@ -318,8 +318,8 @@ mod test {
     mod test_openapi {
         use super::*;
         use crate::web::poem::openapi::LightSpeedErrorResponse;
-        use poem::test::TestClient;
         use poem::Route;
+        use poem::test::TestClient;
         use poem_openapi::payload::{Json, PlainText};
         use poem_openapi::*;
         use serde::Serialize;

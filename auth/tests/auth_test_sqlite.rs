@@ -6,9 +6,9 @@ use c3p0::sqlx::sqlx::sqlite::*;
 use c3p0::sqlx::*;
 use maybe_single::tokio::*;
 
+use lightspeed_auth::LsAuthModule;
 use lightspeed_auth::config::AuthConfig;
 use lightspeed_auth::repository::sqlite::SqliteAuthRepositoryManager;
-use lightspeed_auth::LsAuthModule;
 use lightspeed_core::module::LsModule;
 
 mod tests;

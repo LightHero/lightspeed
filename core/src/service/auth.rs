@@ -799,25 +799,24 @@ mod test {
         };
         let auth_context = auth_service.auth(user);
 
-        assert!(auth_context
-            .has_role("ROLE_1")
-            .or_else(|_err| auth_context.has_any_role(&["ROLE_1", "ROLE_3"])?.has_role("ROLE_1"))
-            .is_ok());
+        assert!(
+            auth_context
+                .has_role("ROLE_1")
+                .or_else(|_err| auth_context.has_any_role(&["ROLE_1", "ROLE_3"])?.has_role("ROLE_1"))
+                .is_ok()
+        );
 
-        assert!(auth_context
-            .has_role("ROLE_3")
-            .or_else(|_err| auth_context.has_any_role(&["ROLE_1", "ROLE_3"]))
-            .is_ok());
+        assert!(
+            auth_context.has_role("ROLE_3").or_else(|_err| auth_context.has_any_role(&["ROLE_1", "ROLE_3"])).is_ok()
+        );
 
-        assert!(auth_context
-            .has_role("ROLE_1")
-            .or_else(|_err| auth_context.has_all_roles(&["ROLE_1", "ROLE_3"]))
-            .is_ok());
+        assert!(
+            auth_context.has_role("ROLE_1").or_else(|_err| auth_context.has_all_roles(&["ROLE_1", "ROLE_3"])).is_ok()
+        );
 
-        assert!(auth_context
-            .has_role("ROLE_3")
-            .or_else(|_err| auth_context.has_all_roles(&["ROLE_1", "ROLE_3"]))
-            .is_err());
+        assert!(
+            auth_context.has_role("ROLE_3").or_else(|_err| auth_context.has_all_roles(&["ROLE_1", "ROLE_3"])).is_err()
+        );
         Ok(())
     }
 

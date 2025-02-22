@@ -24,7 +24,7 @@ fn should_delete_token() -> Result<(), LsError> {
             },
         };
 
-        c3p0.transaction(|conn| async {
+        c3p0.transaction(async |conn| {
             let saved_token = token_repo.save(conn, token).await?;
 
             assert!(token_repo.exists_by_id(conn, &saved_token.id).await?);
@@ -44,7 +44,7 @@ fn should_generate_token() -> Result<(), LsError> {
         let auth_module = &data.0;
 
         let c3p0 = auth_module.repo_manager.c3p0();
-        c3p0.transaction(|conn| async {
+        c3p0.transaction(async |conn| {
             let username = new_hyphenated_uuid();
             let token_type = TokenType::AccountActivation;
 
@@ -84,7 +84,7 @@ fn should_validate_token_on_fetch() -> Result<(), LsError> {
         let c3p0 = auth_module.repo_manager.c3p0();
         let token_repo = auth_module.repo_manager.token_repo();
 
-        c3p0.transaction(|conn| async {
+        c3p0.transaction(async |conn| {
             let token = NewModel {
                 version: 0,
                 data: TokenData {
@@ -97,11 +97,9 @@ fn should_validate_token_on_fetch() -> Result<(), LsError> {
 
             let saved_token = token_repo.save(conn, token).await?;
 
-            assert!(auth_module
-                .token_service
-                .fetch_by_token_with_conn(conn, &saved_token.data.token, true)
-                .await
-                .is_err());
+            assert!(
+                auth_module.token_service.fetch_by_token_with_conn(conn, &saved_token.data.token, true).await.is_err()
+            );
 
             Ok(())
         })
@@ -122,7 +120,7 @@ fn should_return_all_tokens_by_username() -> Result<(), LsError> {
         let username_1 = new_hyphenated_uuid();
         let username_2 = new_hyphenated_uuid();
 
-        c3p0.transaction(|conn| async {
+        c3p0.transaction(async |conn| {
             assert_eq!(0, token_service.fetch_all_by_username_with_conn(conn, &username_1).await?.len());
             assert_eq!(0, token_service.fetch_all_by_username_with_conn(conn, &username_2).await?.len());
 

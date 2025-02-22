@@ -1,6 +1,6 @@
 use crate::error::{LsError, RootErrorDetails, WebErrorDetails};
 use axum::body::Body;
-use axum::http::{header, HeaderValue, Response, StatusCode};
+use axum::http::{HeaderValue, Response, StatusCode, header};
 use axum::response::IntoResponse;
 use log::*;
 
@@ -74,11 +74,11 @@ mod test {
     use super::*;
     use crate::config::JwtConfig;
     use crate::service::auth::{Auth, InMemoryRolesProvider, LsAuthService, Role};
-    use crate::service::jwt::{LsJwtService, JWT};
-    use crate::web::{WebAuthService, JWT_TOKEN_HEADER, JWT_TOKEN_HEADER_SUFFIX};
-    use axum::http::{header, HeaderMap, Request};
-    use axum::routing::get;
+    use crate::service::jwt::{JWT, LsJwtService};
+    use crate::web::{JWT_TOKEN_HEADER, JWT_TOKEN_HEADER_SUFFIX, WebAuthService};
     use axum::Router;
+    use axum::http::{HeaderMap, Request, header};
+    use axum::routing::get;
     use http_body_util::BodyExt;
     use jsonwebtoken::Algorithm;
     use std::sync::Arc;

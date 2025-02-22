@@ -1,7 +1,7 @@
 use crate::service::hash_service::LsHashService;
 use crate::service::validation_code_service::LsValidationCodeService;
-use lightspeed_core::error::LsError;
 use lightspeed_core::LsCoreModule;
+use lightspeed_core::error::LsError;
 use log::*;
 use std::sync::Arc;
 

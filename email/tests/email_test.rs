@@ -1,7 +1,7 @@
 use lettre::message::SinglePart;
 use lightspeed_email::config::EmailClientConfig;
 use lightspeed_email::model::email::{EmailAttachment, EmailMessage};
-use lightspeed_email::repository::email::{new, EmailClientType};
+use lightspeed_email::repository::email::{EmailClientType, new};
 use lightspeed_email::service::LsEmailService;
 use testcontainers::testcontainers::core::WaitFor;
 use testcontainers::testcontainers::runners::AsyncRunner;

@@ -36,10 +36,9 @@ impl JobScheduler {
         }
 
         // Check if NOW is on or after next_run_at
-        if let Some(next_run_at) = self.next_run_at.lock().await.as_ref() {
-            *next_run_at < Utc::now()
-        } else {
-            false
+        match self.next_run_at.lock().await.as_ref() {
+            Some(next_run_at) => *next_run_at < Utc::now(),
+            _ => false,
         }
     }
 
@@ -125,14 +124,17 @@ impl Job {
 
         if let Some(retries) = self.retries_after_failure {
             for attempt in 1..=retries {
-                if let Err(e) = run_result {
-                    warn!(
-                        "Execution failed for job [{}/{}] - Retry execution, attempt {}/{}. Previous err: {}",
-                        self.group, self.name, attempt, retries, e
-                    );
-                    run_result = self.exec().await;
-                } else {
-                    break;
+                match run_result {
+                    Err(e) => {
+                        warn!(
+                            "Execution failed for job [{}/{}] - Retry execution, attempt {}/{}. Previous err: {}",
+                            self.group, self.name, attempt, retries, e
+                        );
+                        run_result = self.exec().await;
+                    }
+                    _ => {
+                        break;
+                    }
                 }
             }
         }
@@ -292,11 +294,7 @@ pub mod test {
                 *lock = count + 1;
                 println!("job - count {count}");
 
-                if count == succeed_at {
-                    Ok(())
-                } else {
-                    Err(SchedulerError::JobLockError { message: "".to_owned() })?
-                }
+                if count == succeed_at { Ok(()) } else { Err(SchedulerError::JobLockError { message: "".to_owned() })? }
             })
         });
 
