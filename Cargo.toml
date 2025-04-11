@@ -46,7 +46,7 @@ http-body-util = "0.1"
 jsonwebtoken = "9.0"
 lettre = { version = "0.11", default-features = false }
 log = "0.4"
-maybe-single = { version = "0.16.0", features =["tokio"] }
+maybe-once = { version = "0.17", features =["tokio"] }
 mime = { version = "0.3" }
 mime_guess = { version = "2.0" }
 opendal = { version = "0.51", default-features = false }

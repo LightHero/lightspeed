@@ -4,7 +4,7 @@ use std::sync::OnceLock;
 
 use c3p0::sqlx::sqlx::postgres::*;
 use c3p0::sqlx::*;
-use maybe_single::tokio::*;
+use maybe_once::tokio::*;
 
 use lightspeed_auth::LsAuthModule;
 use lightspeed_auth::config::AuthConfig;
@@ -47,8 +47,8 @@ async fn init() -> MaybeType {
 }
 
 pub async fn data(serial: bool) -> Data<'static, MaybeType> {
-    static DATA: OnceLock<MaybeSingleAsync<MaybeType>> = OnceLock::new();
-    DATA.get_or_init(|| MaybeSingleAsync::new(|| Box::pin(init()))).data(serial).await
+    static DATA: OnceLock<MaybeOnceAsync<MaybeType>> = OnceLock::new();
+    DATA.get_or_init(|| MaybeOnceAsync::new(|| Box::pin(init()))).data(serial).await
 }
 
 pub fn test<F: std::future::Future>(f: F) -> F::Output {

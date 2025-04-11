@@ -32,7 +32,7 @@ tokio-util = { workspace = true, optional = true, features = ["io"] }
 config = { workspace = true }
 hyper = { workspace = true }
 lightspeed_logger = { workspace = true }
-maybe-single = { workspace = true }
+maybe-once = { workspace = true }
 once_cell = { workspace = true }
 rand = { workspace = true }
 tempfile = { workspace = true }

@@ -25,7 +25,7 @@ strum = { workspace = true }
 [dev-dependencies]
 config = { workspace = true }
 lightspeed_logger = { workspace = true }
-maybe-single = { workspace = true }
+maybe-once = { workspace = true }
 testcontainers = { workspace = true }
 tokio = { workspace = true, features = ["rt-multi-thread"] }
 

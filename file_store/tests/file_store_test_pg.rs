@@ -1,6 +1,6 @@
 use c3p0::sqlx::sqlx::postgres::*;
 use c3p0::sqlx::*;
-use maybe_single::tokio::*;
+use maybe_once::tokio::*;
 
 use ::testcontainers::postgres::Postgres;
 use ::testcontainers::testcontainers::clients::Cli;
@@ -48,8 +48,8 @@ async fn init() -> MaybeType {
 }
 
 pub async fn data(serial: bool) -> Data<'static, MaybeType> {
-    static DATA: OnceCell<MaybeSingleAsync<MaybeType>> = OnceCell::new();
-    DATA.get_or_init(|| MaybeSingleAsync::new(|| Box::pin(init()))).data(serial).await
+    static DATA: OnceCell<MaybeOnceAsync<MaybeType>> = OnceCell::new();
+    DATA.get_or_init(|| MaybeOnceAsync::new(|| Box::pin(init()))).data(serial).await
 }
 
 pub fn test<F: std::future::Future>(f: F) -> F::Output {
