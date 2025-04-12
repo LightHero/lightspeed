@@ -17,7 +17,7 @@ impl ResponseError for LsError {
             LsError::InvalidTokenError { .. }
             | LsError::ExpiredTokenError { .. }
             | LsError::GenerateTokenError { .. }
-            | LsError::MissingAuthTokenError { .. }
+            | LsError::MissingAuthTokenError
             | LsError::ParseAuthHeaderError { .. }
             | LsError::UnauthenticatedError => StatusCode::UNAUTHORIZED,
             LsError::ForbiddenError { .. } => StatusCode::FORBIDDEN,
@@ -42,7 +42,7 @@ impl ResponseError for LsError {
             LsError::InvalidTokenError { .. }
             | LsError::ExpiredTokenError { .. }
             | LsError::GenerateTokenError { .. }
-            | LsError::MissingAuthTokenError { .. }
+            | LsError::MissingAuthTokenError
             | LsError::ParseAuthHeaderError { .. }
             | LsError::UnauthenticatedError => response_with_code(self.status()),
             LsError::ForbiddenError { .. } => response_with_code(self.status()),
@@ -121,7 +121,7 @@ pub mod openapi {
                 LsError::InvalidTokenError { .. }
                 | LsError::ExpiredTokenError { .. }
                 | LsError::GenerateTokenError { .. }
-                | LsError::MissingAuthTokenError { .. }
+                | LsError::MissingAuthTokenError
                 | LsError::ParseAuthHeaderError { .. }
                 | LsError::UnauthenticatedError => LightSpeedErrorResponse::Unauthorized,
                 LsError::ForbiddenError { .. } => LightSpeedErrorResponse::Forbidden,

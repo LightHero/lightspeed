@@ -95,7 +95,7 @@ impl Error for LsError {
             LsError::InvalidTokenError { .. } |
             LsError::ExpiredTokenError{ .. } |
             LsError::GenerateTokenError { .. } |
-            LsError::MissingAuthTokenError { .. } |
+            LsError::MissingAuthTokenError |
             LsError::ParseAuthHeaderError { .. } |
 
             LsError::ModuleBuilderError { .. } |
@@ -103,7 +103,7 @@ impl Error for LsError {
             LsError::ConfigurationError { .. } |
 
             // Auth
-            LsError::UnauthenticatedError { .. } |
+            LsError::UnauthenticatedError |
             LsError::ForbiddenError { .. } |
             LsError::PasswordEncryptionError { .. } |
 

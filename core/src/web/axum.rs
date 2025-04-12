@@ -10,7 +10,7 @@ impl IntoResponse for LsError {
             LsError::InvalidTokenError { .. }
             | LsError::ExpiredTokenError { .. }
             | LsError::GenerateTokenError { .. }
-            | LsError::MissingAuthTokenError { .. }
+            | LsError::MissingAuthTokenError
             | LsError::ParseAuthHeaderError { .. }
             | LsError::UnauthenticatedError => response_with_code(StatusCode::UNAUTHORIZED),
             LsError::ForbiddenError { .. } => response_with_code(StatusCode::FORBIDDEN),
