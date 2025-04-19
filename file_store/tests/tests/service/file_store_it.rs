@@ -381,7 +381,7 @@ fn should_delete_file_from_db() -> Result<(), LsError> {
         data.0
             .repo_manager
             .c3p0()
-            .transaction::<_, LsError, _, _>(|conn| async {
+            .transaction::<_, LsError, _>(async|conn| {
                 assert!(db_file_binary_repo.read_file(conn, repository_name, file_path).await.is_ok());
                 Ok(())
             })
@@ -394,7 +394,7 @@ fn should_delete_file_from_db() -> Result<(), LsError> {
         data.0
             .repo_manager
             .c3p0()
-            .transaction::<_, LsError, _, _>(|conn| async {
+            .transaction::<_, LsError, _>(async |conn| {
                 assert!(db_file_binary_repo.read_file(conn, repository_name, file_path).await.is_err());
                 Ok(())
             })

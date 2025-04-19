@@ -21,9 +21,8 @@ impl PgFileStoreRepositoryManager {
     }
 }
 
-#[async_trait::async_trait]
 impl DBFileStoreRepositoryManager for PgFileStoreRepositoryManager {
-    type Tx = PgTx;
+    type Tx<'a> = Transaction<'a, Postgres>;
     type C3P0 = SqlxPgC3p0Pool;
     type FileStoreBinaryRepo = PgFileStoreBinaryRepository;
     type FileStoreDataRepo = PgFileStoreDataRepository;

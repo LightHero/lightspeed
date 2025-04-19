@@ -30,10 +30,8 @@ tokio-util = { workspace = true, optional = true, features = ["io"] }
 
 [dev-dependencies]
 config = { workspace = true }
-hyper = { workspace = true }
 lightspeed_logger = { workspace = true }
 maybe-once = { workspace = true }
-once_cell = { workspace = true }
 rand = { workspace = true }
 tempfile = { workspace = true }
 testcontainers = { workspace = true }
@@ -44,3 +42,6 @@ tower = { workspace = true }
 default = []
 
 axum = ["dep:axum", "lightspeed_core/axum", "mime", "mime_guess", "tokio-util"]
+mysql = ["c3p0/sqlx_mysql"]
+postgres = ["c3p0/sqlx_postgres"]
+sqlite = ["c3p0/sqlx_sqlite"]

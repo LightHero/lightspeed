@@ -1,28 +1,27 @@
 use crate::model::{FileStoreDataData, FileStoreDataDataCodec, FileStoreDataModel, Repository, RepositoryFile};
 use crate::repository::db::FileStoreDataRepository;
-use ::sqlx::{query, Row};
+use ::sqlx::{query, Postgres, Row, Transaction};
 use c3p0::sqlx::error::into_c3p0_error;
 use c3p0::{sqlx::*, *};
 use lightspeed_core::error::LsError;
 
 #[derive(Clone)]
 pub struct PgFileStoreDataRepository {
-    repo: SqlxPgC3p0Json<FileStoreDataData, FileStoreDataDataCodec>,
+    repo: SqlxPgC3p0Json<u64, FileStoreDataData, FileStoreDataDataCodec>,
 }
 
 impl Default for PgFileStoreDataRepository {
     fn default() -> Self {
         PgFileStoreDataRepository {
-            repo: C3p0JsonBuilder::new("LS_FILE_STORE_DATA").build_with_codec(FileStoreDataDataCodec {}),
+            repo: SqlxPgC3p0JsonBuilder::new("LS_FILE_STORE_DATA").build_with_codec(FileStoreDataDataCodec {}),
         }
     }
 }
 
-#[async_trait::async_trait]
 impl FileStoreDataRepository for PgFileStoreDataRepository {
-    type Tx = PgTx;
+    type Tx<'a> = Transaction<'a, Postgres>;
 
-    async fn exists_by_repository(&self, tx: &mut Self::Tx, repository: &RepositoryFile) -> Result<bool, LsError> {
+    async fn exists_by_repository(&self, tx: &mut Self::Tx<'_>, repository: &RepositoryFile) -> Result<bool, LsError> {
         let sql =
             "SELECT EXISTS (SELECT 1 FROM LS_FILE_STORE_DATA WHERE (data -> 'repository' ->> '_json_tag') = $1 AND (data -> 'repository' ->> 'repository_name') = $2 AND (data -> 'repository' ->> 'file_path') = $3)";
 
@@ -32,20 +31,20 @@ impl FileStoreDataRepository for PgFileStoreDataRepository {
             .bind(repo_info.repo_type)
             .bind(repo_info.repository_name)
             .bind(repo_info.file_path)
-            .fetch_one(tx.conn())
+            .fetch_one(tx.as_mut())
             .await
             .and_then(|row| row.try_get(0))
             .map_err(into_c3p0_error)?;
         Ok(res)
     }
 
-    async fn fetch_one_by_id(&self, tx: &mut Self::Tx, id: IdType) -> Result<FileStoreDataModel, LsError> {
+    async fn fetch_one_by_id(&self, tx: &mut Self::Tx<'_>, id: u64) -> Result<FileStoreDataModel, LsError> {
         Ok(self.repo.fetch_one_by_id(tx, &id).await?)
     }
 
     async fn fetch_one_by_repository(
         &self,
-        tx: &mut Self::Tx,
+        tx: &mut Self::Tx<'_>,
         repository: &RepositoryFile,
     ) -> Result<FileStoreDataModel, LsError> {
         let sql = format!(
@@ -68,7 +67,7 @@ impl FileStoreDataRepository for PgFileStoreDataRepository {
 
     async fn fetch_all_by_repository(
         &self,
-        tx: &mut Self::Tx,
+        tx: &mut Self::Tx<'_>,
         repository: &Repository,
         offset: usize,
         max: usize,
@@ -95,11 +94,11 @@ impl FileStoreDataRepository for PgFileStoreDataRepository {
             .await?)
     }
 
-    async fn save(&self, tx: &mut Self::Tx, model: NewModel<FileStoreDataData>) -> Result<FileStoreDataModel, LsError> {
+    async fn save(&self, tx: &mut Self::Tx<'_>, model: NewModel<FileStoreDataData>) -> Result<FileStoreDataModel, LsError> {
         Ok(self.repo.save(tx, model).await?)
     }
 
-    async fn delete_by_id(&self, tx: &mut Self::Tx, id: IdType) -> Result<u64, LsError> {
+    async fn delete_by_id(&self, tx: &mut Self::Tx<'_>, id: u64) -> Result<u64, LsError> {
         Ok(self.repo.delete_by_id(tx, &id).await?)
     }
 }

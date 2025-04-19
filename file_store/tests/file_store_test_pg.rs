@@ -1,33 +1,32 @@
+use std::sync::OnceLock;
+
 use c3p0::sqlx::sqlx::postgres::*;
 use c3p0::sqlx::*;
 use maybe_once::tokio::*;
 
-use ::testcontainers::postgres::Postgres;
-use ::testcontainers::testcontainers::clients::Cli;
 use lightspeed_core::module::LsModule;
 use lightspeed_file_store::config::FileStoreConfig;
 use lightspeed_file_store::repository::db::pg::PgFileStoreRepositoryManager;
 use lightspeed_file_store::LsFileStoreModule;
-use once_cell::sync::OnceCell;
-use testcontainers::testcontainers::Container;
+use testcontainers::postgres::Postgres;
+use testcontainers::testcontainers::ContainerAsync;
+use testcontainers::testcontainers::runners::AsyncRunner;
 
 mod tests;
 
 pub type RepoManager = PgFileStoreRepositoryManager;
 
-pub type MaybeType = (LsFileStoreModule<RepoManager>, Container<'static, Postgres>);
+pub type MaybeType = (LsFileStoreModule<RepoManager>, ContainerAsync<Postgres>);
 
 async fn init() -> MaybeType {
-    static DOCKER: OnceCell<Cli> = OnceCell::new();
-
-    let node = DOCKER.get_or_init(Cli::default).run(Postgres::default());
+    let node = Postgres::default().start().await.unwrap();
 
     let options = PgConnectOptions::new()
         .username("postgres")
         .password("postgres")
         .database("postgres")
         .host("127.0.0.1")
-        .port(node.get_host_port_ipv4(5432));
+        .port(node.get_host_port_ipv4(5432).await.unwrap());
 
     let pool = PgPool::connect_with(options).await.unwrap();
 
@@ -48,12 +47,12 @@ async fn init() -> MaybeType {
 }
 
 pub async fn data(serial: bool) -> Data<'static, MaybeType> {
-    static DATA: OnceCell<MaybeOnceAsync<MaybeType>> = OnceCell::new();
+    static DATA: OnceLock<MaybeOnceAsync<MaybeType>> = OnceLock::new();
     DATA.get_or_init(|| MaybeOnceAsync::new(|| Box::pin(init()))).data(serial).await
 }
 
 pub fn test<F: std::future::Future>(f: F) -> F::Output {
-    static RT: OnceCell<tokio::runtime::Runtime> = OnceCell::new();
+    static RT: OnceLock<tokio::runtime::Runtime> = OnceLock::new();
     RT.get_or_init(|| {
         tokio::runtime::Builder::new_multi_thread().enable_all().build().expect("Should create a tokio runtime")
     })

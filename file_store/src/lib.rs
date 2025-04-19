@@ -37,7 +37,6 @@ impl<RepoManager: DBFileStoreRepositoryManager> LsFileStoreModule<RepoManager> {
     }
 }
 
-#[async_trait::async_trait]
 impl<RepoManager: DBFileStoreRepositoryManager> lightspeed_core::module::LsModule for LsFileStoreModule<RepoManager> {
     async fn start(&mut self) -> Result<(), LsError> {
         info!("Starting LsFileStoreModule");

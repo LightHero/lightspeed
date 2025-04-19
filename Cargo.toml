@@ -6,7 +6,7 @@ members = [
     # "cms",
     "core",
     "email",
-    # "file_store",
+    "file_store",
     "hash",
     "logger",
     "persistence",
@@ -24,7 +24,7 @@ lightspeed_cache = { version = "0.61.0", path = "./cache" }
 # lightspeed_cms = { version = "0.61.0", path = "./cms" }
 lightspeed_core = { version = "0.61.0", path = "./core" }
 lightspeed_email = { version = "0.61.0", path = "./email" }
-# lightspeed_file_store = { version = "0.61.0", path = "./file_store" }
+lightspeed_file_store = { version = "0.61.0", path = "./file_store" }
 lightspeed_hash = { version = "0.61.0", path = "./hash" }
 lightspeed_logger = { version = "0.61.0", path = "./logger" }
 lightspeed_persistence = { version = "0.61.0", path = "./persistence" }
