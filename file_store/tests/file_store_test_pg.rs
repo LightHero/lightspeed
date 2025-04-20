@@ -1,3 +1,5 @@
+#![cfg(feature = "postgres")]
+
 use std::sync::OnceLock;
 
 use c3p0::sqlx::sqlx::postgres::*;
