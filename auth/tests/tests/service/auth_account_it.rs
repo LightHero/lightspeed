@@ -1,5 +1,5 @@
-use crate::tests::util::{create_user, create_user_with_password};
 use crate::data;
+use crate::tests::util::{create_user, create_user_with_password};
 use c3p0::*;
 use lightspeed_auth::dto::change_password_dto::ChangePasswordDto;
 use lightspeed_auth::dto::create_login_dto::CreateLoginDto;

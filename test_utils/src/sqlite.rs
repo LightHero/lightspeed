@@ -1,5 +1,7 @@
-use c3p0::sqlx::{sqlx::{sqlite::SqliteConnectOptions, Sqlite}, SqlxSqliteC3p0Pool};
-
+use c3p0::sqlx::{
+    SqlxSqliteC3p0Pool,
+    sqlx::{Sqlite, sqlite::SqliteConnectOptions},
+};
 
 /// Creates a new connection pool to an in-memory SQLite database.
 ///
