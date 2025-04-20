@@ -1,0 +1,17 @@
+[package]
+name = "test_utils"
+license = "MIT"
+version.workspace = true
+edition.workspace = true
+authors = ["Francesco Cina <ufoscout@gmail.com>"]
+description = "LightSpeed"
+readme = "README.md"
+homepage = "https://github.com/LightHero/lightspeed"
+repository = "https://github.com/LightHero/lightspeed"
+keywords = []
+
+[dependencies]
+c3p0 = { workspace = true, features = ["sqlx_mysql", "sqlx_postgres", "sqlx_sqlite"] }
+maybe-once = { workspace = true }
+testcontainers = { workspace = true }
+tokio = { workspace = true, features = ["rt-multi-thread"] }

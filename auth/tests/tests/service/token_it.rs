@@ -1,13 +1,14 @@
-use crate::{data, test};
+use crate::data;
 use c3p0::*;
 use lightspeed_auth::model::token::{TokenData, TokenType};
 use lightspeed_auth::repository::AuthRepositoryManager;
 use lightspeed_core::error::LsError;
 use lightspeed_core::utils::{current_epoch_seconds, new_hyphenated_uuid};
+use test_utils::tokio_test;
 
 #[test]
 fn should_delete_token() -> Result<(), LsError> {
-    test(async {
+    tokio_test(async {
         let data = data(false).await;
         let auth_module = &data.0;
 
@@ -39,7 +40,7 @@ fn should_delete_token() -> Result<(), LsError> {
 
 #[test]
 fn should_generate_token() -> Result<(), LsError> {
-    test(async {
+    tokio_test(async {
         let data = data(false).await;
         let auth_module = &data.0;
 
@@ -77,7 +78,7 @@ fn should_generate_token() -> Result<(), LsError> {
 
 #[test]
 fn should_validate_token_on_fetch() -> Result<(), LsError> {
-    test(async {
+    tokio_test(async {
         let data = data(false).await;
         let auth_module = &data.0;
 
@@ -109,7 +110,7 @@ fn should_validate_token_on_fetch() -> Result<(), LsError> {
 
 #[test]
 fn should_return_all_tokens_by_username() -> Result<(), LsError> {
-    test(async {
+    tokio_test(async {
         let data = data(false).await;
         let auth_module = &data.0;
         let token_service = &auth_module.token_service;

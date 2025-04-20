@@ -27,6 +27,7 @@ config = { workspace = true }
 lightspeed_logger = { workspace = true }
 maybe-once = { workspace = true }
 testcontainers = { workspace = true }
+test_utils = { workspace = true }
 tokio = { workspace = true, features = ["rt-multi-thread"] }
 
 [features]

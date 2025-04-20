@@ -1,15 +1,16 @@
-use crate::{data, test};
+use crate::data;
 use c3p0::*;
 use lightspeed_core::error::LsError;
 use lightspeed_file_store::model::BinaryContent;
 use lightspeed_file_store::repository::db::{DBFileStoreBinaryRepository, DBFileStoreRepositoryManager};
 use std::borrow::Cow;
+use test_utils::tokio_test;
 
 const SOURCE_FILE: &str = "./Cargo.toml";
 
 #[test]
 fn should_save_file_from_fs() -> Result<(), LsError> {
-    test(async {
+    tokio_test(async {
         let data = data(false).await;
         let repo_manager = &data.0.repo_manager;
         let file_store = repo_manager.file_store_binary_repo();
@@ -38,7 +39,7 @@ fn should_save_file_from_fs() -> Result<(), LsError> {
 
 #[test]
 fn should_save_file_from_memory() -> Result<(), LsError> {
-    test(async {
+    tokio_test(async {
         let data = data(false).await;
         let repo_manager = &data.0.repo_manager;
         let file_store = repo_manager.file_store_binary_repo();
@@ -66,7 +67,7 @@ fn should_save_file_from_memory() -> Result<(), LsError> {
 
 #[test]
 fn save_file_should_fail_if_file_exists_in_same_repository() -> Result<(), LsError> {
-    test(async {
+    tokio_test(async {
         let data = data(false).await;
         let repo_manager = &data.0.repo_manager;
         let file_store = repo_manager.file_store_binary_repo();
@@ -87,7 +88,7 @@ fn save_file_should_fail_if_file_exists_in_same_repository() -> Result<(), LsErr
 
 #[test]
 fn save_file_not_should_fail_if_file_exists_in_different_repository() -> Result<(), LsError> {
-    test(async {
+    tokio_test(async {
         let data = data(false).await;
         let repo_manager = &data.0.repo_manager;
         let file_store = repo_manager.file_store_binary_repo();
