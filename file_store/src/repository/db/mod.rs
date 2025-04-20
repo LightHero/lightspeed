@@ -2,11 +2,14 @@ use crate::model::{BinaryContent, FileStoreDataData, FileStoreDataModel, Reposit
 use c3p0::*;
 use lightspeed_core::error::LsError;
 
+#[cfg(feature = "mysql_unsupported")]
+pub mod mysql;
+
 #[cfg(feature = "postgres")]
 pub mod pg;
 
-#[cfg(feature = "mysql_unsupported")]
-pub mod mysql;
+#[cfg(feature = "sqlite")]
+pub mod sqlite;
 
 pub trait DBFileStoreRepositoryManager: Clone + Send + Sync {
     type Tx<'a>: Send + Sync;

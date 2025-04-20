@@ -5,18 +5,18 @@
 -----------------------------
 
 create table LS_FILE_STORE_DATA (
-    ID BIGINT primary key NOT NULL AUTO_INCREMENT,
-    VERSION int not null,
-    create_epoch_millis bigint not null,
-    update_epoch_millis bigint not null,
+    ID integer primary key autoincrement,
+    VERSION integer not null,
+    create_epoch_millis integer not null,
+    update_epoch_millis integer not null,
     DATA JSON
 );
 
 -- End - LS_FILE_STORE_DATA -
 
------------------------------------
+-- ---------------------------------
 -- Begin - LS_FILE_STORE_BINARY -
------------------------------------
+-- ---------------------------------
 
 create table LS_FILE_STORE_BINARY (
     repository    TEXT NOT NULL,
@@ -24,6 +24,6 @@ create table LS_FILE_STORE_BINARY (
     data          LONGBLOB NOT NULL
 );
 
-ALTER TABLE LS_FILE_STORE_BINARY ADD INDEX LS_FILE_STORE_BINARY_UNIQUE_REPOSITORY_FILEPATH ( repository, filepath );
+CREATE UNIQUE INDEX LS_FILE_STORE_BINARY_UNIQUE_REPOSITORY_FILEPATH ON LS_FILE_STORE_BINARY( repository, filepath );
 
 -- End - LS_FILE_STORE_BINARY -

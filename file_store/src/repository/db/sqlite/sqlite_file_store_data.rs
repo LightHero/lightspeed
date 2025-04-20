@@ -1,28 +1,28 @@
 use crate::model::{FileStoreDataData, FileStoreDataDataCodec, FileStoreDataModel, Repository, RepositoryFile};
 use crate::repository::db::FileStoreDataRepository;
-use ::sqlx::{Postgres, Row, Transaction, query};
+use ::sqlx::{Row, Sqlite, Transaction, query};
 use c3p0::sqlx::error::into_c3p0_error;
 use c3p0::{sqlx::*, *};
 use lightspeed_core::error::LsError;
 
 #[derive(Clone)]
-pub struct PgFileStoreDataRepository {
-    repo: SqlxPgC3p0Json<u64, FileStoreDataData, FileStoreDataDataCodec>,
+pub struct SqliteFileStoreDataRepository {
+    repo: SqlxSqliteC3p0Json<u64, FileStoreDataData, FileStoreDataDataCodec>,
 }
 
-impl Default for PgFileStoreDataRepository {
+impl Default for SqliteFileStoreDataRepository {
     fn default() -> Self {
-        PgFileStoreDataRepository {
-            repo: SqlxPgC3p0JsonBuilder::new("LS_FILE_STORE_DATA").build_with_codec(FileStoreDataDataCodec {}),
+        SqliteFileStoreDataRepository {
+            repo: SqlxSqliteC3p0JsonBuilder::new("LS_FILE_STORE_DATA").build_with_codec(FileStoreDataDataCodec {}),
         }
     }
 }
 
-impl FileStoreDataRepository for PgFileStoreDataRepository {
-    type Tx<'a> = Transaction<'a, Postgres>;
+impl FileStoreDataRepository for SqliteFileStoreDataRepository {
+    type Tx<'a> = Transaction<'a, Sqlite>;
 
     async fn exists_by_repository(&self, tx: &mut Self::Tx<'_>, repository: &RepositoryFile) -> Result<bool, LsError> {
-        let sql = "SELECT EXISTS (SELECT 1 FROM LS_FILE_STORE_DATA WHERE (data -> 'repository' ->> '_json_tag') = $1 AND (data -> 'repository' ->> 'repository_name') = $2 AND (data -> 'repository' ->> 'file_path') = $3)";
+        let sql = "SELECT EXISTS (SELECT 1 FROM LS_FILE_STORE_DATA WHERE (data ->> '$.repository._json_tag') = ? AND (data ->> '$.repository.repository_name') = ? AND (data ->> '$.repository.file_path') = ?)";
 
         let repo_info = RepoFileInfo::new(repository);
 
@@ -49,7 +49,7 @@ impl FileStoreDataRepository for PgFileStoreDataRepository {
         let sql = format!(
             r#"
             {}
-            WHERE (data -> 'repository' ->> '_json_tag') = $1 AND (data -> 'repository' ->> 'repository_name') = $2 AND (data -> 'repository' ->> 'file_path') = $3
+            WHERE (data ->> '$.repository._json_tag') = ? AND (data ->> '$.repository.repository_name') = ? AND (data ->> '$.repository.file_path') = ?
         "#,
             self.repo.queries().find_base_sql_query
         );
@@ -74,7 +74,7 @@ impl FileStoreDataRepository for PgFileStoreDataRepository {
     ) -> Result<Vec<FileStoreDataModel>, LsError> {
         let sql = format!(
             r#"{}
-               WHERE (data -> 'repository' ->> '_json_tag') = $1 AND (data -> 'repository' ->> 'repository_name') = $2
+               WHERE (data ->> '$.repository._json_tag') = ? AND (data ->> '$.repository.repository_name') = ?
                 order by id {}
                 limit {}
                 offset {}
