@@ -13,8 +13,8 @@ pub use lightspeed_core as core;
 #[cfg(feature = "email")]
 pub use lightspeed_email as email;
 
-// #[cfg(feature = "file_store")]
-// pub use lightspeed_file_store as file_store;
+#[cfg(feature = "file_store")]
+pub use lightspeed_file_store as file_store;
 
 #[cfg(feature = "hash")]
 pub use lightspeed_hash as hash;

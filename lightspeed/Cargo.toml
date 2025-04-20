@@ -18,7 +18,7 @@ lightspeed_cache = { workspace = true, optional = true }
 # lightspeed_cms = { workspace = true, optional = true }
 lightspeed_core = { workspace = true, optional = true }
 lightspeed_email = { workspace = true, optional = true }
-# lightspeed_file_store = { workspace = true, optional = true }
+lightspeed_file_store = { workspace = true, optional = true }
 lightspeed_hash = { workspace = true, optional = true }
 lightspeed_logger = { workspace = true, optional = true }
 lightspeed_scheduler = { workspace = true, optional = true }
@@ -31,12 +31,11 @@ cache = ["dep:lightspeed_cache"]
 # cms = ["dep:lightspeed_cms"]
 core = ["dep:lightspeed_core"]
 email = ["dep:lightspeed_email"]
-# file_store = ["dep:lightspeed_file_store"]
+file_store = ["dep:lightspeed_file_store"]
 hash = ["dep:lightspeed_hash"]
 logger = ["dep:lightspeed_logger"]
 scheduler = ["dep:lightspeed_scheduler"]
 
-axum = ["lightspeed_core?/axum"]
-# axum = ["lightspeed_core?/axum", "lightspeed_file_store?/axum"]
+axum = ["lightspeed_core?/axum", "lightspeed_file_store?/axum"]
 poem = ["lightspeed_core?/poem"]
 poem_openapi = ["lightspeed_core?/poem_openapi", "poem", "lightspeed_auth?/poem_openapi"]
