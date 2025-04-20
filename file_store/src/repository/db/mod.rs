@@ -5,6 +5,9 @@ use lightspeed_core::error::LsError;
 #[cfg(feature = "postgres")]
 pub mod pg;
 
+#[cfg(feature = "mysql")]
+pub mod mysql;
+
 pub trait DBFileStoreRepositoryManager: Clone + Send + Sync {
     type Tx<'a>: Send + Sync;
     type C3P0: for<'a> C3p0Pool<Tx<'a> = Self::Tx<'a>>;
