@@ -1,5 +1,10 @@
 #![cfg(feature = "mysql_unsupported")]
 
+///
+/// DISABLED because mysql is not supported
+/// see: https://github.com/LightHero/lightspeed/issues/22
+///  
+
 use std::sync::OnceLock;
 
 use lightspeed_file_store::LsFileStoreModule;
