@@ -21,47 +21,47 @@ pub trait DBFileStoreRepositoryManager: Clone + Send + Sync {
 pub trait DBFileStoreBinaryRepository: Clone + Send + Sync {
     type Tx<'a>: Send + Sync;
 
-    async fn read_file(
+     fn read_file(
         &self,
         tx: &mut Self::Tx<'_>,
         repository_name: &str,
         file_path: &str,
-    ) -> Result<BinaryContent<'_>, LsError>;
+    ) -> impl Future<Output = Result<BinaryContent<'_>, LsError>> + Send;
 
-    async fn save_file<'a>(
+     fn save_file<'a>(
         &self,
         tx: &mut Self::Tx<'_>,
         repository_name: &str,
         file_path: &str,
         content: &'a BinaryContent<'a>,
-    ) -> Result<u64, LsError>;
+    ) -> impl Future<Output = Result<u64, LsError>> + Send;
 
-    async fn delete_file(&self, tx: &mut Self::Tx<'_>, repository_name: &str, file_path: &str) -> Result<u64, LsError>;
+    fn delete_file(&self, tx: &mut Self::Tx<'_>, repository_name: &str, file_path: &str) -> impl Future<Output = Result<u64, LsError>> + Send;
 }
 
 pub trait FileStoreDataRepository: Clone + Send + Sync {
     type Tx<'a>: Send + Sync;
 
-    async fn exists_by_repository(&self, tx: &mut Self::Tx<'_>, repository: &RepositoryFile) -> Result<bool, LsError>;
+     fn exists_by_repository(&self, tx: &mut Self::Tx<'_>, repository: &RepositoryFile) -> impl Future<Output = Result<bool, LsError>> + Send;
 
-    async fn fetch_one_by_id(&self, tx: &mut Self::Tx<'_>, id: u64) -> Result<FileStoreDataModel, LsError>;
+     fn fetch_one_by_id(&self, tx: &mut Self::Tx<'_>, id: u64) -> impl Future<Output = Result<FileStoreDataModel, LsError>> + Send;
 
-    async fn fetch_one_by_repository(
+     fn fetch_one_by_repository(
         &self,
         tx: &mut Self::Tx<'_>,
         repository: &RepositoryFile,
-    ) -> Result<FileStoreDataModel, LsError>;
+    ) -> impl Future<Output = Result<FileStoreDataModel, LsError>> + Send;
 
-    async fn fetch_all_by_repository(
+     fn fetch_all_by_repository(
         &self,
         tx: &mut Self::Tx<'_>,
         repository: &Repository,
         offset: usize,
         max: usize,
         sort: &OrderBy,
-    ) -> Result<Vec<FileStoreDataModel>, LsError>;
+    ) -> impl Future<Output = Result<Vec<FileStoreDataModel>, LsError>> + Send;
 
-    async fn save(&self, tx: &mut Self::Tx<'_>, model: NewModel<FileStoreDataData>) -> Result<FileStoreDataModel, LsError>;
+     fn save(&self, tx: &mut Self::Tx<'_>, model: NewModel<FileStoreDataData>) -> impl Future<Output = Result<FileStoreDataModel, LsError>> + Send;
 
-    async fn delete_by_id(&self, tx: &mut Self::Tx<'_>, id: u64) -> Result<u64, LsError>;
+     fn delete_by_id(&self, tx: &mut Self::Tx<'_>, id: u64) -> impl Future<Output = Result<u64, LsError>> + Send;
 }

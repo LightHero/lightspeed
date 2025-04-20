@@ -90,7 +90,7 @@ impl FileStoreDataRepository for PgFileStoreDataRepository {
 
         Ok(self
             .repo
-            .fetch_all_with_sql(tx, ::sqlx::query(&sql).bind(&repo_info.repo_type).bind(&repo_info.repository_name))
+            .fetch_all_with_sql(tx, ::sqlx::query(&sql).bind(repo_info.repo_type).bind(repo_info.repository_name))
             .await?)
     }
 
