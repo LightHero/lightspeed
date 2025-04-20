@@ -1,5 +1,8 @@
 use crate::model::BinaryContent;
-use axum::{body::Body, http::{header, response::Builder, Response}};
+use axum::{
+    body::Body,
+    http::{Response, header, response::Builder},
+};
 use lightspeed_core::error::LsError;
 use log::*;
 use std::borrow::Cow;
@@ -92,7 +95,7 @@ mod test {
     use super::*;
     use axum::http::{self, Request, StatusCode};
     use axum::routing::get;
-    use axum::{extract::Extension, Router};
+    use axum::{Router, extract::Extension};
     use http_body_util::BodyExt;
     use std::path::Path;
     use std::sync::Arc;

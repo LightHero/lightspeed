@@ -7,9 +7,9 @@ use c3p0::sqlx::*;
 use maybe_once::tokio::*;
 
 use lightspeed_core::module::LsModule;
+use lightspeed_file_store::LsFileStoreModule;
 use lightspeed_file_store::config::FileStoreConfig;
 use lightspeed_file_store::repository::db::pg::PgFileStoreRepositoryManager;
-use lightspeed_file_store::LsFileStoreModule;
 use testcontainers::postgres::Postgres;
 use testcontainers::testcontainers::ContainerAsync;
 use testcontainers::testcontainers::runners::AsyncRunner;

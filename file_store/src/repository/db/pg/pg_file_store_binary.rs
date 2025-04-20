@@ -1,6 +1,6 @@
 use crate::model::BinaryContent;
 use crate::repository::db::DBFileStoreBinaryRepository;
-use ::sqlx::{query, Postgres, Row, Transaction};
+use ::sqlx::{Postgres, Row, Transaction, query};
 use c3p0::sqlx::error::into_c3p0_error;
 use lightspeed_core::error::{ErrorCodes, LsError};
 use std::borrow::Cow;
@@ -85,7 +85,8 @@ impl DBFileStoreBinaryRepository for PgFileStoreBinaryRepository {
 
     async fn delete_file(&self, tx: &mut Self::Tx<'_>, repository_name: &str, file_path: &str) -> Result<u64, LsError> {
         let sql = &format!("DELETE FROM {} WHERE repository = $1 AND filepath = $2", self.table_name);
-        let res = query(sql).bind(repository_name).bind(file_path).execute(tx.as_mut()).await.map_err(into_c3p0_error)?;
+        let res =
+            query(sql).bind(repository_name).bind(file_path).execute(tx.as_mut()).await.map_err(into_c3p0_error)?;
         Ok(res.rows_affected())
     }
 }

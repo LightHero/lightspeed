@@ -193,10 +193,12 @@ fn save_should_fails_if_fs_repo_does_not_exist() -> Result<(), LsError> {
         let file_name_1 = format!("file_2_{random}");
         let save_repository_1 = SaveRepository::FS { subfolder: None, repository_name: "REPO_NOT_EXISTING".to_owned() };
 
-        assert!(file_store
-            .save_file(file_name_1.clone(), content_type.clone(), &binary_content, save_repository_1)
-            .await
-            .is_err());
+        assert!(
+            file_store
+                .save_file(file_name_1.clone(), content_type.clone(), &binary_content, save_repository_1)
+                .await
+                .is_err()
+        );
 
         Ok(())
     })
@@ -381,7 +383,7 @@ fn should_delete_file_from_db() -> Result<(), LsError> {
         data.0
             .repo_manager
             .c3p0()
-            .transaction::<_, LsError, _>(async|conn| {
+            .transaction::<_, LsError, _>(async |conn| {
                 assert!(db_file_binary_repo.read_file(conn, repository_name, file_path).await.is_ok());
                 Ok(())
             })
@@ -521,16 +523,20 @@ fn should_fail_if_file_already_exists_in_db() -> Result<(), LsError> {
         };
 
         // Act & Assert
-        assert!(file_store
-            .save_file(same_file_name.clone(), content_type.clone(), &binary_content, save_repository_db.clone(),)
-            .await
-            .is_ok());
+        assert!(
+            file_store
+                .save_file(same_file_name.clone(), content_type.clone(), &binary_content, save_repository_db.clone(),)
+                .await
+                .is_ok()
+        );
 
         // fail if file already exists
-        assert!(file_store
-            .save_file(same_file_name.clone(), content_type.clone(), &binary_content, save_repository_db.clone(),)
-            .await
-            .is_err());
+        assert!(
+            file_store
+                .save_file(same_file_name.clone(), content_type.clone(), &binary_content, save_repository_db.clone(),)
+                .await
+                .is_err()
+        );
 
         // success if file has different name
         assert!(
@@ -546,29 +552,36 @@ fn should_fail_if_file_already_exists_in_db() -> Result<(), LsError> {
         );
 
         // success if file has different repository_name
-        assert!(file_store
-            .save_file(
-                same_file_name.clone(),
-                content_type.clone(),
-                &binary_content,
-                SaveRepository::DB { subfolder: Some(same_file_path.clone()), repository_name: "REPO_TWO".to_owned() },
-            )
-            .await
-            .is_ok());
+        assert!(
+            file_store
+                .save_file(
+                    same_file_name.clone(),
+                    content_type.clone(),
+                    &binary_content,
+                    SaveRepository::DB {
+                        subfolder: Some(same_file_path.clone()),
+                        repository_name: "REPO_TWO".to_owned()
+                    },
+                )
+                .await
+                .is_ok()
+        );
 
         // success if file has different file_path
-        assert!(file_store
-            .save_file(
-                same_file_name.clone(),
-                content_type.clone(),
-                &binary_content,
-                SaveRepository::DB {
-                    subfolder: Some(format!("{same_file_path}-1")),
-                    repository_name: same_repository_name.to_owned(),
-                },
-            )
-            .await
-            .is_ok());
+        assert!(
+            file_store
+                .save_file(
+                    same_file_name.clone(),
+                    content_type.clone(),
+                    &binary_content,
+                    SaveRepository::DB {
+                        subfolder: Some(format!("{same_file_path}-1")),
+                        repository_name: same_repository_name.to_owned(),
+                    },
+                )
+                .await
+                .is_ok()
+        );
 
         Ok(())
     })
@@ -596,16 +609,20 @@ fn should_fail_if_file_already_exists_in_fs() -> Result<(), LsError> {
         };
 
         // Act & Assert
-        assert!(file_store
-            .save_file(same_file_name.clone(), content_type.clone(), &binary_content, save_repository_db.clone(),)
-            .await
-            .is_ok());
+        assert!(
+            file_store
+                .save_file(same_file_name.clone(), content_type.clone(), &binary_content, save_repository_db.clone(),)
+                .await
+                .is_ok()
+        );
 
         // fail if file already exists
-        assert!(file_store
-            .save_file(same_file_name.clone(), content_type.clone(), &binary_content, save_repository_db.clone(),)
-            .await
-            .is_err());
+        assert!(
+            file_store
+                .save_file(same_file_name.clone(), content_type.clone(), &binary_content, save_repository_db.clone(),)
+                .await
+                .is_err()
+        );
 
         // success if file has different name
         assert!(
@@ -621,29 +638,36 @@ fn should_fail_if_file_already_exists_in_fs() -> Result<(), LsError> {
         );
 
         // success if file has different repository_name
-        assert!(file_store
-            .save_file(
-                same_file_name.clone(),
-                content_type.clone(),
-                &binary_content,
-                SaveRepository::FS { subfolder: Some(same_file_path.clone()), repository_name: "REPO_TWO".to_owned() },
-            )
-            .await
-            .is_ok());
+        assert!(
+            file_store
+                .save_file(
+                    same_file_name.clone(),
+                    content_type.clone(),
+                    &binary_content,
+                    SaveRepository::FS {
+                        subfolder: Some(same_file_path.clone()),
+                        repository_name: "REPO_TWO".to_owned()
+                    },
+                )
+                .await
+                .is_ok()
+        );
 
         // success if file has different file_path
-        assert!(file_store
-            .save_file(
-                same_file_name.clone(),
-                content_type.clone(),
-                &binary_content,
-                SaveRepository::FS {
-                    subfolder: Some(format!("{same_file_path}-1")),
-                    repository_name: same_repository_name.to_owned(),
-                },
-            )
-            .await
-            .is_ok());
+        assert!(
+            file_store
+                .save_file(
+                    same_file_name.clone(),
+                    content_type.clone(),
+                    &binary_content,
+                    SaveRepository::FS {
+                        subfolder: Some(format!("{same_file_path}-1")),
+                        repository_name: same_repository_name.to_owned(),
+                    },
+                )
+                .await
+                .is_ok()
+        );
 
         Ok(())
     })

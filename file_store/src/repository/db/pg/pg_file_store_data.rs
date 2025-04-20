@@ -1,6 +1,6 @@
 use crate::model::{FileStoreDataData, FileStoreDataDataCodec, FileStoreDataModel, Repository, RepositoryFile};
 use crate::repository::db::FileStoreDataRepository;
-use ::sqlx::{query, Postgres, Row, Transaction};
+use ::sqlx::{Postgres, Row, Transaction, query};
 use c3p0::sqlx::error::into_c3p0_error;
 use c3p0::{sqlx::*, *};
 use lightspeed_core::error::LsError;
@@ -22,8 +22,7 @@ impl FileStoreDataRepository for PgFileStoreDataRepository {
     type Tx<'a> = Transaction<'a, Postgres>;
 
     async fn exists_by_repository(&self, tx: &mut Self::Tx<'_>, repository: &RepositoryFile) -> Result<bool, LsError> {
-        let sql =
-            "SELECT EXISTS (SELECT 1 FROM LS_FILE_STORE_DATA WHERE (data -> 'repository' ->> '_json_tag') = $1 AND (data -> 'repository' ->> 'repository_name') = $2 AND (data -> 'repository' ->> 'file_path') = $3)";
+        let sql = "SELECT EXISTS (SELECT 1 FROM LS_FILE_STORE_DATA WHERE (data -> 'repository' ->> '_json_tag') = $1 AND (data -> 'repository' ->> 'repository_name') = $2 AND (data -> 'repository' ->> 'file_path') = $3)";
 
         let repo_info = RepoFileInfo::new(repository);
 
@@ -94,7 +93,11 @@ impl FileStoreDataRepository for PgFileStoreDataRepository {
             .await?)
     }
 
-    async fn save(&self, tx: &mut Self::Tx<'_>, model: NewModel<FileStoreDataData>) -> Result<FileStoreDataModel, LsError> {
+    async fn save(
+        &self,
+        tx: &mut Self::Tx<'_>,
+        model: NewModel<FileStoreDataData>,
+    ) -> Result<FileStoreDataModel, LsError> {
         Ok(self.repo.save(tx, model).await?)
     }
 

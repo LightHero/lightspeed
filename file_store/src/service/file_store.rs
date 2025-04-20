@@ -29,7 +29,7 @@ impl<RepoManager: DBFileStoreRepositoryManager> LsFileStoreService<RepoManager> 
     }
 
     pub async fn read_file_data_by_id(&self, id: u64) -> Result<FileStoreDataModel, LsError> {
-        self.c3p0.transaction(async |conn| { self.read_file_data_by_id_with_conn(conn, id).await }).await
+        self.c3p0.transaction(async |conn| self.read_file_data_by_id_with_conn(conn, id).await).await
     }
 
     pub async fn read_file_data_by_id_with_conn(
@@ -42,7 +42,7 @@ impl<RepoManager: DBFileStoreRepositoryManager> LsFileStoreService<RepoManager> 
     }
 
     pub async fn exists_by_repository(&self, repository: &RepositoryFile) -> Result<bool, LsError> {
-        self.c3p0.transaction(async |conn| { self.exists_by_repository_with_conn(conn, repository).await }).await
+        self.c3p0.transaction(async |conn| self.exists_by_repository_with_conn(conn, repository).await).await
     }
 
     pub async fn exists_by_repository_with_conn(
@@ -58,9 +58,7 @@ impl<RepoManager: DBFileStoreRepositoryManager> LsFileStoreService<RepoManager> 
         &self,
         repository: &RepositoryFile,
     ) -> Result<FileStoreDataModel, LsError> {
-        self.c3p0
-            .transaction(async |conn| { self.read_file_data_by_repository_with_conn(conn, repository).await })
-            .await
+        self.c3p0.transaction(async |conn| self.read_file_data_by_repository_with_conn(conn, repository).await).await
     }
 
     pub async fn read_file_data_by_repository_with_conn(
@@ -80,7 +78,7 @@ impl<RepoManager: DBFileStoreRepositoryManager> LsFileStoreService<RepoManager> 
         sort: &OrderBy,
     ) -> Result<Vec<FileStoreDataModel>, LsError> {
         self.c3p0
-            .transaction(async|conn| {
+            .transaction(async |conn| {
                 self.read_all_file_data_by_repository_with_conn(conn, repository, offset, max, sort).await
             })
             .await
@@ -103,7 +101,7 @@ impl<RepoManager: DBFileStoreRepositoryManager> LsFileStoreService<RepoManager> 
         match repository {
             RepositoryFile::DB { file_path, repository_name } => {
                 self.c3p0
-                    .transaction(async|conn| { self.db_binary_repo.read_file(conn, repository_name, file_path).await })
+                    .transaction(async |conn| self.db_binary_repo.read_file(conn, repository_name, file_path).await)
                     .await
             }
             RepositoryFile::FS { file_path, repository_name } => {
@@ -175,14 +173,12 @@ impl<RepoManager: DBFileStoreRepositoryManager> LsFileStoreService<RepoManager> 
         repository: SaveRepository,
     ) -> Result<FileStoreDataModel, LsError> {
         self.c3p0
-            .transaction(async |conn| {
-                self.save_file_with_conn(conn, filename, content_type, content, repository).await
-            })
+            .transaction(async |conn| self.save_file_with_conn(conn, filename, content_type, content, repository).await)
             .await
     }
 
     pub async fn delete_file_by_id(&self, id: u64) -> Result<u64, LsError> {
-        self.c3p0.transaction(async |conn| { self.delete_file_by_id_with_conn(conn, id).await }).await
+        self.c3p0.transaction(async |conn| self.delete_file_by_id_with_conn(conn, id).await).await
     }
 
     pub async fn delete_file_by_id_with_conn(&self, conn: &mut RepoManager::Tx<'_>, id: u64) -> Result<u64, LsError> {
