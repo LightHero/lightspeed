@@ -2,9 +2,9 @@
 
 use std::sync::OnceLock;
 
+use lightspeed_file_store::LsFileStoreModule;
 use lightspeed_file_store::config::FileStoreConfig;
 use lightspeed_file_store::repository::db::mysql::MySqlFileStoreRepositoryManager;
-use lightspeed_file_store::LsFileStoreModule;
 use maybe_once::tokio::*;
 
 use lightspeed_core::module::LsModule;

@@ -1,6 +1,6 @@
 use crate::model::{FileStoreDataData, FileStoreDataDataCodec, FileStoreDataModel, Repository, RepositoryFile};
 use crate::repository::db::FileStoreDataRepository;
-use ::sqlx::{query, MySql, Row, Transaction};
+use ::sqlx::{MySql, Row, Transaction, query};
 use c3p0::sqlx::error::into_c3p0_error;
 use c3p0::{sqlx::*, *};
 use lightspeed_core::error::LsError;
