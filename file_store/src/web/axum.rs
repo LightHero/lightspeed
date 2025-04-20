@@ -1,8 +1,5 @@
 use crate::model::BinaryContent;
-use axum::{
-    body::{boxed, Body, BoxBody, StreamBody},
-    http::{header, response::Builder, Response},
-};
+use axum::{body::Body, http::{header, response::Builder, Response}};
 use lightspeed_core::error::LsError;
 use log::*;
 use std::borrow::Cow;
@@ -12,7 +9,7 @@ pub async fn into_response(
     content: BinaryContent<'_>,
     file_name: Option<&str>,
     set_content_disposition: bool,
-) -> Result<Response<BoxBody>, LsError> {
+) -> Result<Response<Body>, LsError> {
     let (file_name, ct, body) = match content {
         BinaryContent::FromFs { file_path } => {
             debug!("Create HttpResponse from FS content");
@@ -24,7 +21,7 @@ pub async fn into_response(
             // convert the `AsyncRead` into a `Stream`
             let stream = ReaderStream::new(file);
             // convert the `Stream` into an `axum::body::HttpBody`
-            let body = StreamBody::new(stream);
+            // let body = StreamBody::new(stream);
 
             let file_name = if let Some(file_name) = file_name {
                 Cow::Borrowed(file_name)
@@ -40,7 +37,7 @@ pub async fn into_response(
                 }
             };
 
-            (file_name, ct, boxed(body))
+            (file_name, ct, Body::from_stream(stream))
         }
         BinaryContent::InMemory { content } => {
             debug!("Create HttpResponse from Memory content of {} bytes", content.len());
@@ -48,7 +45,7 @@ pub async fn into_response(
             let path = std::path::Path::new(file_name.as_ref());
             let ct = mime_guess::from_path(path).first_or_octet_stream();
             let owned_vec: Vec<u8> = content.into();
-            (file_name, ct, boxed(Body::from(owned_vec)))
+            (file_name, ct, Body::from(owned_vec))
         }
     };
 
@@ -96,11 +93,12 @@ mod test {
     use axum::http::{self, Request, StatusCode};
     use axum::routing::get;
     use axum::{extract::Extension, Router};
+    use http_body_util::BodyExt;
     use std::path::Path;
     use std::sync::Arc;
     use tower::ServiceExt; // for `app.oneshot()`
 
-    async fn download(Extension(data): Extension<Arc<AppData>>) -> Result<Response<BoxBody>, LsError> {
+    async fn download(Extension(data): Extension<Arc<AppData>>) -> Result<Response<Body>, LsError> {
         println!("Download called");
         into_response(data.content.clone(), data.file_name, data.set_content_disposition).await
     }
@@ -133,7 +131,7 @@ mod test {
         assert_eq!(resp.status(), StatusCode::OK);
         assert!(resp.headers().get(http::header::CONTENT_DISPOSITION).is_none());
 
-        let body = hyper::body::to_bytes(resp.into_body()).await.unwrap();
+        let body = resp.into_body().collect().await.unwrap().to_bytes();
         assert_eq!(body.as_ref(), &content);
     }
 
@@ -164,7 +162,7 @@ mod test {
             resp.headers().get(http::header::CONTENT_DISPOSITION).unwrap()
         );
 
-        let body = hyper::body::to_bytes(resp.into_body()).await.unwrap();
+        let body = resp.into_body().collect().await.unwrap().to_bytes();
         assert_eq!(body.as_ref(), &content);
     }
 
@@ -191,7 +189,7 @@ mod test {
         assert_eq!(resp.status(), StatusCode::OK);
         assert!(resp.headers().get(http::header::CONTENT_DISPOSITION).is_none());
 
-        let body = hyper::body::to_bytes(resp.into_body()).await.unwrap();
+        let body = resp.into_body().collect().await.unwrap().to_bytes();
         assert_eq!(body.as_ref(), &content);
     }
 
@@ -223,7 +221,7 @@ mod test {
             resp.headers().get(http::header::CONTENT_DISPOSITION).unwrap()
         );
 
-        let body = hyper::body::to_bytes(resp.into_body()).await.unwrap();
+        let body = resp.into_body().collect().await.unwrap().to_bytes();
         assert_eq!(body.as_ref(), &content);
     }
 }

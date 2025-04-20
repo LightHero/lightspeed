@@ -26,10 +26,9 @@ mime_guess = { workspace = true, optional = true }
 axum = { workspace = true, optional = true }
 tokio-util = { workspace = true, optional = true, features = ["io"] }
 
-# TO BE REMOVED
-
 [dev-dependencies]
 config = { workspace = true }
+http-body-util = { workspace = true }
 lightspeed_logger = { workspace = true }
 maybe-once = { workspace = true }
 rand = { workspace = true }
