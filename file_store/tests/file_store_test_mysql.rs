@@ -1,4 +1,4 @@
-#![cfg(feature = "mysql")]
+#![cfg(feature = "mysql_unsupported")]
 
 use std::sync::OnceLock;
 

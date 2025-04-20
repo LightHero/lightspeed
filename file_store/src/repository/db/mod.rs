@@ -5,7 +5,7 @@ use lightspeed_core::error::LsError;
 #[cfg(feature = "postgres")]
 pub mod pg;
 
-#[cfg(feature = "mysql")]
+#[cfg(feature = "mysql_unsupported")]
 pub mod mysql;
 
 pub trait DBFileStoreRepositoryManager: Clone + Send + Sync {
