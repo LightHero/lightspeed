@@ -22,12 +22,12 @@ sqlx = { workspace = true }
 strum = { workspace = true }
 
 axum = { workspace = true, optional = true }
-http-body-util = { workspace = true, optional = true }
 mime = { workspace = true, optional = true }
 mime_guess = { workspace = true, optional = true }
 
 [dev-dependencies]
 config = { workspace = true }
+http-body-util = { workspace = true }
 lightspeed_logger = { workspace = true }
 maybe-once = { workspace = true }
 opendal = { workspace = true, default-features = true, features = ["services-fs"] }
@@ -41,7 +41,7 @@ tower = { workspace = true }
 [features]
 default = []
 
-axum = ["dep:axum", "http-body-util", "lightspeed_core/axum", "mime", "mime_guess"]
+axum = ["dep:axum", "lightspeed_core/axum", "mime", "mime_guess"]
 mysql_unsupported = ["c3p0/sqlx_mysql"]
 postgres = ["c3p0/sqlx_postgres"]
 sqlite = ["c3p0/sqlx_sqlite"]
