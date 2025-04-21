@@ -13,17 +13,19 @@ pub enum BinaryContent<'a> {
     OpenDal { operator: Arc<opendal::Operator>, path: String },
 }
 
-impl <'a> BinaryContent<'a> {
-
+impl<'a> BinaryContent<'a> {
     pub async fn read(&self) -> Result<Cow<'a, [u8]>, LsError> {
         match self {
             BinaryContent::InMemory { content } => Ok(content.clone()),
-            BinaryContent::OpenDal { operator, path } => {
-                Ok(operator.read(path).await.map_err(|err| LsError::BadRequest {
+            BinaryContent::OpenDal { operator, path } => Ok(operator
+                .read(path)
+                .await
+                .map_err(|err| LsError::BadRequest {
                     message: format!("Failed to read file from store: {}", err),
                     code: ErrorCodes::IO_ERROR,
-                })?.to_vec().into())
-            }
+                })?
+                .to_vec()
+                .into()),
         }
     }
 }

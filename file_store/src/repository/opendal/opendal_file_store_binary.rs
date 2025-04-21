@@ -20,7 +20,6 @@ impl OpendalFileStoreBinaryRepository {
     }
 
     pub async fn save_file(&self, file_path: &str, content: &BinaryContent<'_>) -> Result<(), LsError> {
-
         match content {
             BinaryContent::InMemory { content } => {
                 let CLONED = content.clone().into_owned();
@@ -37,18 +36,25 @@ impl OpendalFileStoreBinaryRepository {
                     message: format!("OpendalFileStoreDataRepository - Cannot read file [{path}]. Err: {err:?}"),
                     code: ErrorCodes::IO_ERROR,
                 })?;
-                
+
                 let byte_stream = reader.into_bytes_stream(..).await.map_err(|err| LsError::BadRequest {
-                    message: format!("OpendalFileStoreDataRepository - Cannot create byte stream from file [{path}]. Err: {err:?}"),
-                    code: ErrorCodes::IO_ERROR,
-                })?; 
-                
-                let byte_sink = self.operator.writer(file_path).await.map_err(|err| LsError::BadRequest {
                     message: format!(
-                        "OpendalFileStoreDataRepository - Cannot create writer to [{file_path}]. Err: {err:?}"
+                        "OpendalFileStoreDataRepository - Cannot create byte stream from file [{path}]. Err: {err:?}"
                     ),
                     code: ErrorCodes::IO_ERROR,
-                })?.into_bytes_sink();
+                })?;
+
+                let byte_sink = self
+                    .operator
+                    .writer(file_path)
+                    .await
+                    .map_err(|err| LsError::BadRequest {
+                        message: format!(
+                            "OpendalFileStoreDataRepository - Cannot create writer to [{file_path}]. Err: {err:?}"
+                        ),
+                        code: ErrorCodes::IO_ERROR,
+                    })?
+                    .into_bytes_sink();
 
                 byte_stream.forward(byte_sink).await.map_err(|err| LsError::BadRequest {
                     message: format!(

@@ -1,8 +1,8 @@
 use crate::model::BinaryContent;
 use crate::repository::db::DBFileStoreBinaryRepository;
-use futures::TryFutureExt;
 use ::sqlx::{Postgres, Row, Transaction, query};
 use c3p0::sqlx::error::into_c3p0_error;
+use futures::TryFutureExt;
 use lightspeed_core::error::{ErrorCodes, LsError};
 use std::borrow::Cow;
 use tokio::fs::File;
@@ -53,7 +53,7 @@ impl DBFileStoreBinaryRepository for PgFileStoreBinaryRepository {
             BinaryContent::OpenDal { operator, path } => {
                 let buffer = operator.read(path).await.map_err(|err| LsError::BadRequest {
                     message: format!("PgFileStoreBinaryRepository - Cannot read file [{path}]. Err: {err:?}"),
-                    code: ErrorCodes::IO_ERROR,  
+                    code: ErrorCodes::IO_ERROR,
                 })?;
                 Cow::Owned(Cow::Owned(buffer.to_vec()))
             }

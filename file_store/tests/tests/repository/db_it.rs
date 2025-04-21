@@ -3,8 +3,8 @@ use c3p0::*;
 use lightspeed_core::error::LsError;
 use lightspeed_file_store::model::BinaryContent;
 use lightspeed_file_store::repository::db::{DBFileStoreBinaryRepository, DBFileStoreRepositoryManager};
-use opendal::services::Fs;
 use opendal::Operator;
+use opendal::services::Fs;
 use std::borrow::Cow;
 use test_utils::tokio_test;
 

@@ -4,8 +4,8 @@ use lightspeed_core::error::LsError;
 use lightspeed_core::utils::new_hyphenated_uuid;
 use lightspeed_file_store::model::{BinaryContent, Repository, RepositoryFile, SaveRepository};
 use lightspeed_file_store::repository::db::{DBFileStoreBinaryRepository, DBFileStoreRepositoryManager};
-use opendal::services::Fs;
 use opendal::Operator;
+use opendal::services::Fs;
 use std::path::{Path, PathBuf};
 use test_utils::tokio_test;
 
@@ -76,7 +76,7 @@ fn should_save_file_to_fs() -> Result<(), LsError> {
         println!("Data: [{:#?}]", loaded.data);
 
         let read_content = file_store.read_file_content(&loaded.data.repository).await.unwrap().read().await.unwrap();
-        assert_eq!( read_content.as_ref(), &std::fs::read(SOURCE_FILE).unwrap());
+        assert_eq!(read_content.as_ref(), &std::fs::read(SOURCE_FILE).unwrap());
 
         Ok(())
     })
@@ -272,10 +272,7 @@ fn should_save_file_to_fs_with_relative_folder() -> Result<(), LsError> {
         match file_store.read_file_content(&saved.data.repository).await {
             Ok(BinaryContent::OpenDal { operator, path }) => {
                 let dest: Vec<u8> = operator.read(&path).await.unwrap().to_vec();
-                assert_eq!(
-                    &std::fs::read(SOURCE_FILE).unwrap(),
-                    &dest
-                );
+                assert_eq!(&std::fs::read(SOURCE_FILE).unwrap(), &dest);
             }
             _ => panic!(),
         }
@@ -351,10 +348,7 @@ fn should_save_file_to_fs_with_relative_folder_in_repository() -> Result<(), LsE
         match file_store.read_file_content(&saved.data.repository).await {
             Ok(BinaryContent::OpenDal { operator, path }) => {
                 let dest: Vec<u8> = operator.read(&path).await.unwrap().to_vec();
-                assert_eq!(
-                    &std::fs::read(SOURCE_FILE).unwrap(),
-                    &dest
-                );
+                assert_eq!(&std::fs::read(SOURCE_FILE).unwrap(), &dest);
             }
             _ => panic!(),
         }

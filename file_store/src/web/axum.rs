@@ -12,18 +12,16 @@ pub async fn into_response(
     file_name: Option<&str>,
     set_content_disposition: bool,
 ) -> Result<Response<Body>, LsError> {
-
     let (file_name, ct, body) = match content {
         BinaryContent::InMemory { content } => {
-                debug!("Create HttpResponse from Memory content of {} bytes", content.len());
-                let file_name = Cow::Borrowed(file_name.unwrap_or(""));
-                let path = std::path::Path::new(file_name.as_ref());
-                let ct = mime_guess::from_path(path).first_or_octet_stream();
-                let owned_vec: Vec<u8> = content.into();
-                (file_name, ct, Body::from(owned_vec))
-            }
+            debug!("Create HttpResponse from Memory content of {} bytes", content.len());
+            let file_name = Cow::Borrowed(file_name.unwrap_or(""));
+            let path = std::path::Path::new(file_name.as_ref());
+            let ct = mime_guess::from_path(path).first_or_octet_stream();
+            let owned_vec: Vec<u8> = content.into();
+            (file_name, ct, Body::from(owned_vec))
+        }
         BinaryContent::OpenDal { operator, path } => {
-
             let file_path = std::path::Path::new(&path);
             let ct = mime_guess::from_path(&path).first_or_octet_stream();
 
@@ -45,7 +43,7 @@ pub async fn into_response(
             let stream = reader.into_bytes_stream(..).await.unwrap();
 
             (file_name, ct, Body::from_stream(stream))
-        },
+        }
     };
 
     let mut response_builder = Builder::new();
@@ -93,7 +91,7 @@ mod test {
     use axum::routing::get;
     use axum::{Router, extract::Extension};
     use http_body_util::BodyExt;
-    use opendal::{services, Operator};
+    use opendal::{Operator, services};
     use std::sync::Arc;
     use tower::ServiceExt; // for `app.oneshot()`
 
@@ -172,7 +170,7 @@ mod test {
         let content = std::fs::read(&file_path).unwrap();
 
         let operator = Operator::new(services::Fs::default().root("./")).unwrap().finish().into();
-        
+
         let data = Arc::new(AppData {
             content: BinaryContent::OpenDal { operator, path: file_path.to_owned() },
             file_name: Some("Cargo.toml"),
@@ -202,7 +200,7 @@ mod test {
         let content = std::fs::read(&file_path).unwrap();
 
         let operator = Operator::new(services::Fs::default().root("./")).unwrap().finish().into();
-        
+
         let data = Arc::new(AppData {
             content: BinaryContent::OpenDal { operator, path: file_path.to_owned() },
             file_name: None,

@@ -23,7 +23,10 @@ impl<RepoManager: DBFileStoreRepositoryManager> LsFileStoreService<RepoManager> 
             c3p0: repo_manager.c3p0().clone(),
             db_binary_repo: repo_manager.file_store_binary_repo(),
             db_data_repo: repo_manager.file_store_data_repo(),
-            repositories: repositories.into_iter().map(|(name, repo)| (name, OpendalFileStoreBinaryRepository::new(repo))).collect(),
+            repositories: repositories
+                .into_iter()
+                .map(|(name, repo)| (name, OpendalFileStoreBinaryRepository::new(repo)))
+                .collect(),
         }
     }
 

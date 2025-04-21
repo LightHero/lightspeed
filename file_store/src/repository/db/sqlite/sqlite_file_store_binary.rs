@@ -50,7 +50,7 @@ impl DBFileStoreBinaryRepository for SqliteFileStoreBinaryRepository {
             BinaryContent::OpenDal { operator, path } => {
                 let buffer = operator.read(path).await.map_err(|err| LsError::BadRequest {
                     message: format!("SqliteFileStoreBinaryRepository - Cannot read file [{path}]. Err: {err:?}"),
-                    code: ErrorCodes::IO_ERROR,  
+                    code: ErrorCodes::IO_ERROR,
                 })?;
                 Cow::Owned(Cow::Owned(buffer.to_vec()))
             }

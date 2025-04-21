@@ -1,5 +1,5 @@
-use std::{collections::HashMap, sync::Arc};
 use opendal::Operator;
+use std::{collections::HashMap, sync::Arc};
 
 #[derive(Debug, Clone, Default)]
 pub struct FileStoreConfig {
