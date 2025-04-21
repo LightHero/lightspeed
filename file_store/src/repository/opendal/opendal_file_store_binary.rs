@@ -1,3 +1,5 @@
+use std::sync::Arc;
+
 use crate::model::BinaryContent;
 use futures::StreamExt;
 use lightspeed_core::error::{ErrorCodes, LsError};
@@ -5,16 +7,16 @@ use opendal::Operator;
 
 #[derive(Clone)]
 pub struct OpendalFileStoreBinaryRepository {
-    operator: Operator,
+    operator: Arc<Operator>,
 }
 
 impl OpendalFileStoreBinaryRepository {
-    pub fn new(operator: Operator) -> Self {
+    pub fn new(operator: Arc<Operator>) -> Self {
         Self { operator }
     }
 
-    pub async fn read_file<'a>(&'a self, file_path: &'a str) -> Result<BinaryContent<'a>, LsError> {
-        Ok(BinaryContent::OpenDal { operator: &self.operator, path: file_path })
+    pub async fn read_file(&self, file_path: &str) -> Result<BinaryContent<'_>, LsError> {
+        Ok(BinaryContent::OpenDal { operator: self.operator.clone(), path: file_path.to_owned() })
     }
 
     pub async fn save_file(&self, file_path: &str, content: &BinaryContent<'_>) -> Result<(), LsError> {
@@ -68,7 +70,7 @@ impl OpendalFileStoreBinaryRepository {
 
 #[cfg(test)]
 mod test {
-    
+
     use super::*;
     use lightspeed_core::error::LsError;
     use opendal::services;
@@ -76,13 +78,13 @@ mod test {
 
     const SOURCE_FILE: &str = "./Cargo.toml";
 
-    fn source_store() -> Operator {
+    fn source_store() -> Arc<Operator> {
         new_operator("./")
     }
 
-    fn new_operator(path: &str) -> Operator {
+    fn new_operator(path: &str) -> Arc<Operator> {
         let builder = services::Fs::default().root(path);
-        Operator::new(builder).unwrap().finish()
+        Operator::new(builder).unwrap().finish().into()
     }
 
     #[tokio::test]
@@ -91,7 +93,7 @@ mod test {
         let file_name = format!("file_{random}");
 
         let source_store = source_store();
-        let binary_content = BinaryContent::OpenDal { operator: &source_store, path: SOURCE_FILE };
+        let binary_content = BinaryContent::OpenDal { operator: source_store, path: SOURCE_FILE.to_owned() };
 
         let tempdir = tempfile::tempdir().unwrap();
         let temp_dir_path = tempdir.path().to_str().unwrap().to_owned();
@@ -153,7 +155,7 @@ mod test {
         let random: u32 = rand::random();
         let file_name = format!("test/temp/file_{random}");
         let source_store = source_store();
-        let binary_content = BinaryContent::OpenDal { operator: &source_store, path: SOURCE_FILE };
+        let binary_content = BinaryContent::OpenDal { operator: source_store, path: SOURCE_FILE.to_owned() };
 
         let tempdir = tempfile::tempdir().unwrap();
         let temp_dir_path = tempdir.path().to_str().unwrap().to_owned();
@@ -177,7 +179,7 @@ mod test {
         let random: u32 = rand::random();
         let file_name = format!("/test/temp/file_{random}");
         let source_store = source_store();
-        let binary_content = BinaryContent::OpenDal { operator: &source_store, path: SOURCE_FILE };
+        let binary_content = BinaryContent::OpenDal { operator: source_store, path: SOURCE_FILE.to_owned() };
 
         let tempdir = tempfile::tempdir().unwrap();
         let temp_dir_path = tempdir.path().to_str().unwrap().to_owned();
@@ -197,7 +199,7 @@ mod test {
         let random: u32 = rand::random();
         let file_name = format!("file_{random}");
         let source_store = source_store();
-        let binary_content = BinaryContent::OpenDal { operator: &source_store, path: SOURCE_FILE };
+        let binary_content = BinaryContent::OpenDal { operator: source_store, path: SOURCE_FILE.to_owned() };
 
         let tempdir = tempfile::tempdir().unwrap();
         let temp_dir_path = tempdir.path().to_str().unwrap().to_owned();
@@ -207,7 +209,7 @@ mod test {
 
         match file_store.read_file(&file_name).await {
             Ok(BinaryContent::OpenDal { operator, path }) => {
-                let buffer = operator.read(path).await.unwrap().to_vec();
+                let buffer = operator.read(&path).await.unwrap().to_vec();
                 let file_content = std::str::from_utf8(&buffer).unwrap();
                 assert_eq!(&std::fs::read_to_string(SOURCE_FILE).unwrap(), file_content);
             }

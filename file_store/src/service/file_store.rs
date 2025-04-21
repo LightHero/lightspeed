@@ -7,6 +7,7 @@ use lightspeed_core::utils::current_epoch_seconds;
 use log::*;
 use opendal::Operator;
 use std::collections::HashMap;
+use std::sync::Arc;
 
 #[derive(Clone)]
 pub struct LsFileStoreService<RepoManager: DBFileStoreRepositoryManager> {
@@ -17,7 +18,7 @@ pub struct LsFileStoreService<RepoManager: DBFileStoreRepositoryManager> {
 }
 
 impl<RepoManager: DBFileStoreRepositoryManager> LsFileStoreService<RepoManager> {
-    pub fn new(repo_manager: &RepoManager, repositories: HashMap<String, Operator>) -> Self {
+    pub fn new(repo_manager: &RepoManager, repositories: HashMap<String, Arc<Operator>>) -> Self {
         LsFileStoreService {
             c3p0: repo_manager.c3p0().clone(),
             db_binary_repo: repo_manager.file_store_binary_repo(),
