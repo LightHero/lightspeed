@@ -13,6 +13,7 @@ keywords = []
 [dependencies]
 lightspeed_core = { workspace = true }
 c3p0 = { workspace = true }
+futures = { workspace = true }
 log = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }
@@ -32,6 +33,7 @@ tokio-util = { workspace = true, optional = true, features = ["io"] }
 config = { workspace = true }
 lightspeed_logger = { workspace = true }
 maybe-once = { workspace = true }
+opendal = { workspace = true, default-features = true, features = ["services-fs"] }
 rand = { workspace = true }
 tempfile = { workspace = true }
 testcontainers = { workspace = true }

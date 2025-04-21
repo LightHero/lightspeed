@@ -16,7 +16,7 @@ lightspeed_core = { workspace = true }
 log = { workspace = true }
 opendal = { workspace = true }
 http-body-util = { workspace = true }
-futures = "0.3"
+futures = { workspace = true }
 
 [dev-dependencies]
 opendal = { workspace = true, default-features = true, features = ["services-fs"] }

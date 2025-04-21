@@ -2,7 +2,7 @@
 mod test {
 
     use axum::body::Body;
-    use axum::body::BodyDataStream;
+    use futures::SinkExt;
     use http_body_util::StreamBody;
     use opendal::Operator;
     use opendal::Result;
@@ -40,6 +40,23 @@ mod test {
             // Body::new(StreamBody::new(Body::from("")));
             // Body::try_from(stream.compat_mut());
         }
+
+                // read stream
+                {
+
+                    let reader = op.reader("../Cargo.toml").await?;
+                    let writer = op.writer("hello.txt").await?;
+                    let stream = reader.into_bytes_stream(..).await?; 
+                    let write_sink = writer.into_bytes_sink();
+                    write_sink.send_all(&mut stream).await.unwrap();
+        
+        
+                    let body_ds = Body::from("").into_data_stream();
+        
+                    Body::new(StreamBody::new(stream).into()).into_data_stream();
+                    // Body::new(StreamBody::new(Body::from("")));
+                    // Body::try_from(stream.compat_mut());
+                }
 
         // Fetch metadata
         // let meta = op.stat("hello.txt").await?;

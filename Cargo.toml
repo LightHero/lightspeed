@@ -45,6 +45,7 @@ cron = "0.15.0"
 dashmap = { version = "6" }
 http = { version = "1" }
 http-body-util = "0.1"
+futures = { version = "0.3", default-features = false }
 jsonwebtoken = "9.0"
 lettre = { version = "0.11", default-features = false }
 log = "0.4"

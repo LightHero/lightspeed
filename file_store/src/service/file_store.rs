@@ -1,10 +1,11 @@
 use crate::model::{BinaryContent, FileStoreDataData, FileStoreDataModel, Repository, RepositoryFile, SaveRepository};
 use crate::repository::db::{DBFileStoreBinaryRepository, DBFileStoreRepositoryManager, FileStoreDataRepository};
-use crate::repository::filesystem::fs_file_store_binary::FsFileStoreBinaryRepository;
+use crate::repository::opendal::opendal_file_store_binary::OpendalFileStoreBinaryRepository;
 use c3p0::*;
 use lightspeed_core::error::{ErrorCodes, LsError};
 use lightspeed_core::utils::current_epoch_seconds;
 use log::*;
+use opendal::Operator;
 use std::collections::HashMap;
 
 #[derive(Clone)]
@@ -12,19 +13,16 @@ pub struct LsFileStoreService<RepoManager: DBFileStoreRepositoryManager> {
     c3p0: RepoManager::C3P0,
     db_binary_repo: RepoManager::FileStoreBinaryRepo,
     db_data_repo: RepoManager::FileStoreDataRepo,
-    fs_repositories: HashMap<String, FsFileStoreBinaryRepository>,
+    repositories: HashMap<String, OpendalFileStoreBinaryRepository>,
 }
 
 impl<RepoManager: DBFileStoreRepositoryManager> LsFileStoreService<RepoManager> {
-    pub fn new(repo_manager: &RepoManager, fs_repositories: Vec<(String, String)>) -> Self {
+    pub fn new(repo_manager: &RepoManager, repositories: HashMap<String, Operator>) -> Self {
         LsFileStoreService {
             c3p0: repo_manager.c3p0().clone(),
             db_binary_repo: repo_manager.file_store_binary_repo(),
             db_data_repo: repo_manager.file_store_data_repo(),
-            fs_repositories: fs_repositories
-                .into_iter()
-                .map(|(name, base_path)| (name, FsFileStoreBinaryRepository::new(base_path)))
-                .collect(),
+            repositories: repositories.into_iter().map(|(name, repo)| (name, OpendalFileStoreBinaryRepository::new(repo))).collect(),
         }
     }
 
@@ -177,11 +175,11 @@ impl<RepoManager: DBFileStoreRepositoryManager> LsFileStoreService<RepoManager> 
             .await
     }
 
-    pub async fn delete_file_by_id(&self, id: u64) -> Result<u64, LsError> {
+    pub async fn delete_file_by_id(&self, id: u64) -> Result<(), LsError> {
         self.c3p0.transaction(async |conn| self.delete_file_by_id_with_conn(conn, id).await).await
     }
 
-    pub async fn delete_file_by_id_with_conn(&self, conn: &mut RepoManager::Tx<'_>, id: u64) -> Result<u64, LsError> {
+    pub async fn delete_file_by_id_with_conn(&self, conn: &mut RepoManager::Tx<'_>, id: u64) -> Result<(), LsError> {
         info!("LsFileStoreService - Delete file by id [{}]", id);
 
         let file_data = self.read_file_data_by_id_with_conn(conn, id).await?;
@@ -190,7 +188,7 @@ impl<RepoManager: DBFileStoreRepositoryManager> LsFileStoreService<RepoManager> 
 
         match file_data.data.repository {
             RepositoryFile::DB { file_path, repository_name } => {
-                self.db_binary_repo.delete_file(conn, &repository_name, &file_path).await
+                self.db_binary_repo.delete_file(conn, &repository_name, &file_path).await.map(|_| ())
             }
             RepositoryFile::FS { file_path, repository_name } => {
                 let repo = self.get_fs_repository(&repository_name)?;
@@ -210,8 +208,8 @@ impl<RepoManager: DBFileStoreRepositoryManager> LsFileStoreService<RepoManager> 
     }
 
     #[inline]
-    fn get_fs_repository(&self, repository_name: &str) -> Result<&FsFileStoreBinaryRepository, LsError> {
-        self.fs_repositories.get(repository_name).ok_or_else(|| LsError::BadRequest {
+    fn get_fs_repository(&self, repository_name: &str) -> Result<&OpendalFileStoreBinaryRepository, LsError> {
+        self.repositories.get(repository_name).ok_or_else(|| LsError::BadRequest {
             message: format!("LsFileStoreService - Cannot find FS repository with name [{repository_name}]"),
             code: ErrorCodes::NOT_FOUND,
         })
