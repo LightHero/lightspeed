@@ -19,6 +19,13 @@ impl OpendalFileStoreBinaryRepository {
         Ok(BinaryContent::OpenDal { operator: self.operator.clone(), path: file_path.to_owned() })
     }
 
+    pub async fn exists(&self, file_path: &str) -> Result<bool, LsError> {
+        self.operator.exists(file_path).await.map_err(|err| LsError::BadRequest {
+            message: format!("OpendalFileStoreDataRepository - Cannot check file [{file_path}]. Err: {err:?}"),
+            code: ErrorCodes::IO_ERROR,
+        })
+    }
+
     pub async fn save_file(&self, file_path: &str, content: &BinaryContent<'_>) -> Result<(), LsError> {
         match content {
             BinaryContent::InMemory { content } => {
@@ -104,7 +111,11 @@ mod test {
         let temp_dir_path = tempdir.path().to_str().unwrap().to_owned();
         let file_store = OpendalFileStoreBinaryRepository::new(new_operator(&temp_dir_path));
 
+        assert!(!file_store.exists(&file_name).await?);
+
         file_store.save_file(&file_name, &binary_content).await?;
+
+        assert!(file_store.exists(&file_name).await?);
 
         let expected_file_path = format!("{temp_dir_path}/{file_name}");
         assert!(std::path::Path::new(&expected_file_path).exists());
@@ -128,7 +139,11 @@ mod test {
         let temp_dir_path = tempdir.path().to_str().unwrap().to_owned();
         let file_store = OpendalFileStoreBinaryRepository::new(new_operator(&temp_dir_path));
 
+        assert!(!file_store.exists(&file_name).await?);
+
         file_store.save_file(&file_name, &binary_content).await?;
+
+        assert!(file_store.exists(&file_name).await?);
 
         let expected_file_path = format!("{temp_dir_path}/{file_name}");
         assert!(std::path::Path::new(&expected_file_path).exists());
