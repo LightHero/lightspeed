@@ -5,7 +5,6 @@ use c3p0::sqlx::error::into_c3p0_error;
 use futures::TryFutureExt;
 use lightspeed_core::error::{ErrorCodes, LsError};
 use std::borrow::Cow;
-use tokio::fs::File;
 use tokio::io::AsyncReadExt;
 
 #[derive(Clone)]

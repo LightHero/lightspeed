@@ -167,7 +167,7 @@ mod test {
     async fn should_download_file_with_no_content_disposition() {
         // Arrange
         let file_path = "./Cargo.toml";
-        let content = std::fs::read(&file_path).unwrap();
+        let content = std::fs::read(file_path).unwrap();
 
         let operator = Operator::new(services::Fs::default().root("./")).unwrap().finish().into();
 
@@ -197,7 +197,7 @@ mod test {
     async fn should_download_file_with_content_disposition() {
         // Arrange
         let file_path = "./Cargo.toml";
-        let content = std::fs::read(&file_path).unwrap();
+        let content = std::fs::read(file_path).unwrap();
 
         let operator = Operator::new(services::Fs::default().root("./")).unwrap().finish().into();
 
