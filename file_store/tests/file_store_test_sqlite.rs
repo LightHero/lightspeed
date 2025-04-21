@@ -3,14 +3,12 @@
 use std::sync::OnceLock;
 
 use lightspeed_file_store::LsFileStoreModule;
-use lightspeed_file_store::config::FileStoreConfig;
 use lightspeed_file_store::repository::db::sqlite::SqliteFileStoreRepositoryManager;
 use maybe_once::tokio::*;
 
 use lightspeed_core::module::LsModule;
-use opendal::Operator;
-use opendal::services::Fs;
 use test_utils::sqlite::new_sqlite_db;
+use tests::get_config;
 
 mod tests;
 
@@ -23,15 +21,7 @@ async fn init() -> MaybeType {
 
     let repo_manager = RepoManager::new(c3p0.clone());
 
-    let mut file_store_config = FileStoreConfig::default();
-    file_store_config.repositories.insert(
-        "REPO_ONE".to_owned(),
-        Operator::new(Fs::default().root("../target/repo_one")).unwrap().finish().into(),
-    );
-    file_store_config.repositories.insert(
-        "REPO_TWO".to_owned(),
-        Operator::new(Fs::default().root("../target/repo_two")).unwrap().finish().into(),
-    );
+    let file_store_config = get_config();
 
     let mut file_store_module = LsFileStoreModule::new(repo_manager, file_store_config).unwrap();
     {
