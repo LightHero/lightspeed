@@ -156,7 +156,7 @@ fn should_save_file_to_fs_with_specific_repo() -> Result<(), LsError> {
             file_store.save_file(file_name_2.clone(), content_type, &binary_content, save_repository_2).await?;
 
         match file_store.read_file_content(&save_1.data.repository).await {
-            Ok(BinaryContent::OpenDal { operator, path }) => {
+            Ok(BinaryContent::OpenDal { operator: _, path }) => {
                 assert_eq!(file_name_1, path);
                 assert!(PathBuf::from(format!("../target/repo_one/{file_name_1}")).exists());
             }
@@ -164,7 +164,7 @@ fn should_save_file_to_fs_with_specific_repo() -> Result<(), LsError> {
         }
 
         match file_store.read_file_content(&save_2.data.repository).await {
-            Ok(BinaryContent::OpenDal { operator, path }) => {
+            Ok(BinaryContent::OpenDal { operator: _, path }) => {
                 assert_eq!(file_name_2, path);
                 assert!(PathBuf::from(format!("../target/repo_two/{file_name_2}")).exists());
             }

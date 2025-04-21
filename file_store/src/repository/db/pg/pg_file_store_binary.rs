@@ -2,10 +2,8 @@ use crate::model::BinaryContent;
 use crate::repository::db::DBFileStoreBinaryRepository;
 use ::sqlx::{Postgres, Row, Transaction, query};
 use c3p0::sqlx::error::into_c3p0_error;
-use futures::TryFutureExt;
 use lightspeed_core::error::{ErrorCodes, LsError};
 use std::borrow::Cow;
-use tokio::io::AsyncReadExt;
 
 #[derive(Clone)]
 pub struct PgFileStoreBinaryRepository {

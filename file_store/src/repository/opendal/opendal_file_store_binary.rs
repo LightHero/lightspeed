@@ -22,8 +22,7 @@ impl OpendalFileStoreBinaryRepository {
     pub async fn save_file(&self, file_path: &str, content: &BinaryContent<'_>) -> Result<(), LsError> {
         match content {
             BinaryContent::InMemory { content } => {
-                let CLONED = content.clone().into_owned();
-                self.operator.write(file_path, CLONED).await.map_err(|err| LsError::BadRequest {
+                self.operator.write(file_path, content.to_vec()).await.map_err(|err| LsError::BadRequest {
                     message: format!(
                         "OpendalFileStoreDataRepository - Cannot write data to [{file_path}]. Err: {err:?}"
                     ),
