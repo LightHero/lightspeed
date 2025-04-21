@@ -403,7 +403,7 @@ fn should_delete_file_from_db() -> Result<(), LsError> {
             .repo_manager
             .c3p0()
             .transaction::<_, LsError, _>(async |conn| {
-                assert!(db_file_binary_repo.read_file(conn, &save_repository, &file_path).await.is_ok());
+                assert!(db_file_binary_repo.read_file(conn, save_repository, &file_path).await.is_ok());
                 Ok(())
             })
             .await
@@ -416,7 +416,7 @@ fn should_delete_file_from_db() -> Result<(), LsError> {
             .repo_manager
             .c3p0()
             .transaction::<_, LsError, _>(async |conn| {
-                assert!(db_file_binary_repo.read_file(conn, &save_repository, &file_path).await.is_err());
+                assert!(db_file_binary_repo.read_file(conn, save_repository, &file_path).await.is_err());
                 Ok(())
             })
             .await
@@ -707,8 +707,8 @@ fn should_read_all_file_data_by_repository() -> Result<(), LsError> {
             .await?;
 
         let all_repo_files =
-            file_store.read_all_file_data_by_repository(&save_repository, 0, 100, &OrderBy::Asc).await.unwrap();
-        assert!(all_repo_files.len() >= 1);
+            file_store.read_all_file_data_by_repository(save_repository, 0, 100, &OrderBy::Asc).await.unwrap();
+        assert!(!all_repo_files.is_empty());
 
         file_store
             .save_file(
@@ -721,7 +721,7 @@ fn should_read_all_file_data_by_repository() -> Result<(), LsError> {
             .await?;
 
         let all_repo_files =
-            file_store.read_all_file_data_by_repository(&save_repository, 0, 2, &OrderBy::Asc).await.unwrap();
+            file_store.read_all_file_data_by_repository(save_repository, 0, 2, &OrderBy::Asc).await.unwrap();
         assert_eq!(all_repo_files.len(), 2);
 
         file_store
@@ -735,7 +735,7 @@ fn should_read_all_file_data_by_repository() -> Result<(), LsError> {
             .await?;
 
         let all_repo_files =
-            file_store.read_all_file_data_by_repository(&save_repository, 0, 10000, &OrderBy::Asc).await.unwrap();
+            file_store.read_all_file_data_by_repository(save_repository, 0, 10000, &OrderBy::Asc).await.unwrap();
         assert!(all_repo_files.len() >= 3);
 
         assert!(all_repo_files.iter().any(|file| file.data.filename == file_name_1));
@@ -743,7 +743,7 @@ fn should_read_all_file_data_by_repository() -> Result<(), LsError> {
         assert!(all_repo_files.iter().any(|file| file.data.filename == file_name_3));
 
         let all_repo_files =
-            file_store.read_all_file_data_by_repository(&save_repository, 1, 1, &OrderBy::Asc).await.unwrap();
+            file_store.read_all_file_data_by_repository(save_repository, 1, 1, &OrderBy::Asc).await.unwrap();
         assert_eq!(1, all_repo_files.len());
 
         Ok(())
