@@ -66,7 +66,6 @@ tempfile = "3"
 testcontainers = { package = "testcontainers-modules", version = "0.11", features = ["mysql", "postgres"] }
 thiserror = { version = "2" }
 tokio = { version = "1", default-features = false }
-tokio-util = { version = "0.7", default-features = false }
 tower = { version = "0.5", default-features = false }
 tracing = { version = "0.1", default-features = false }
 tracing-appender = { version = "0.2", default-features = false }

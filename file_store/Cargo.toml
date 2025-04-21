@@ -20,14 +20,11 @@ serde = { workspace = true }
 serde_json = { workspace = true }
 sqlx = { workspace = true }
 strum = { workspace = true }
-tokio = { workspace = true, features = ["fs", "io-util"] }
-
 
 axum = { workspace = true, optional = true }
 http-body-util = { workspace = true, optional = true }
 mime = { workspace = true, optional = true }
 mime_guess = { workspace = true, optional = true }
-tokio-util = { workspace = true, optional = true, features = ["io"] }
 
 [dev-dependencies]
 config = { workspace = true }
@@ -44,7 +41,7 @@ tower = { workspace = true }
 [features]
 default = []
 
-axum = ["dep:axum", "http-body-util", "lightspeed_core/axum", "mime", "mime_guess", "tokio-util"]
+axum = ["dep:axum", "http-body-util", "lightspeed_core/axum", "mime", "mime_guess"]
 mysql_unsupported = ["c3p0/sqlx_mysql"]
 postgres = ["c3p0/sqlx_postgres"]
 sqlite = ["c3p0/sqlx_sqlite"]
