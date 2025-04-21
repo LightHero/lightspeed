@@ -10,13 +10,10 @@ pub mod dto;
 pub mod model;
 pub mod repository;
 pub mod service;
-pub mod utils;
 pub mod web;
 
 #[derive(Clone)]
 pub struct LsFileStoreModule<RepoManager: DBFileStoreRepositoryManager> {
-    pub config: FileStoreConfig,
-
     pub repo_manager: RepoManager,
     pub file_store_service: Arc<service::file_store::LsFileStoreService<RepoManager>>,
 }
@@ -25,15 +22,9 @@ impl<RepoManager: DBFileStoreRepositoryManager> LsFileStoreModule<RepoManager> {
     pub fn new(repo_manager: RepoManager, config: FileStoreConfig) -> Result<Self, LsError> {
         println!("Creating LsFileStoreModule");
         info!("Creating LsFileStoreModule");
-        /*
-               let file_store_repo_manager =
-                   FileStoreRepoManager::new(config.clone(), &repo_manager)?;
+        let file_store_service = Arc::new(LsFileStoreService::new(&repo_manager, config.repositories));
 
-
-        */
-        let file_store_service = Arc::new(LsFileStoreService::new(&repo_manager, config.fs_repo_base_folders.clone()));
-
-        Ok(LsFileStoreModule { config, repo_manager, file_store_service })
+        Ok(LsFileStoreModule { repo_manager, file_store_service })
     }
 }
 

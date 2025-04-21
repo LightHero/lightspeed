@@ -6,7 +6,6 @@ use axum::{
 use lightspeed_core::error::LsError;
 use log::*;
 use std::borrow::Cow;
-use tokio_util::io::ReaderStream;
 
 pub async fn into_response(
     content: BinaryContent<'_>,
@@ -14,17 +13,17 @@ pub async fn into_response(
     set_content_disposition: bool,
 ) -> Result<Response<Body>, LsError> {
     let (file_name, ct, body) = match content {
-        BinaryContent::FromFs { file_path } => {
-            debug!("Create HttpResponse from FS content");
-            let ct = mime_guess::from_path(&file_path).first_or_octet_stream();
-            let file = tokio::fs::File::open(&file_path).await.map_err(|err| LsError::BadRequest {
-                message: format!("Cannot open file {}. Err {:?}", file_path.display(), err),
-                code: "",
-            })?;
-            // convert the `AsyncRead` into a `Stream`
-            let stream = ReaderStream::new(file);
-            // convert the `Stream` into an `axum::body::HttpBody`
-            // let body = StreamBody::new(stream);
+        BinaryContent::InMemory { content } => {
+            debug!("Create HttpResponse from Memory content of {} bytes", content.len());
+            let file_name = Cow::Borrowed(file_name.unwrap_or(""));
+            let path = std::path::Path::new(file_name.as_ref());
+            let ct = mime_guess::from_path(path).first_or_octet_stream();
+            let owned_vec: Vec<u8> = content.into();
+            (file_name, ct, Body::from(owned_vec))
+        }
+        BinaryContent::OpenDal { operator, path } => {
+            let file_path = std::path::Path::new(&path);
+            let ct = mime_guess::from_path(&path).first_or_octet_stream();
 
             let file_name = if let Some(file_name) = file_name {
                 Cow::Borrowed(file_name)
@@ -40,15 +39,10 @@ pub async fn into_response(
                 }
             };
 
+            let reader = operator.reader(&path).await.unwrap();
+            let stream = reader.into_bytes_stream(..).await.unwrap();
+
             (file_name, ct, Body::from_stream(stream))
-        }
-        BinaryContent::InMemory { content } => {
-            debug!("Create HttpResponse from Memory content of {} bytes", content.len());
-            let file_name = Cow::Borrowed(file_name.unwrap_or(""));
-            let path = std::path::Path::new(file_name.as_ref());
-            let ct = mime_guess::from_path(path).first_or_octet_stream();
-            let owned_vec: Vec<u8> = content.into();
-            (file_name, ct, Body::from(owned_vec))
         }
     };
 
@@ -97,7 +91,7 @@ mod test {
     use axum::routing::get;
     use axum::{Router, extract::Extension};
     use http_body_util::BodyExt;
-    use std::path::Path;
+    use opendal::{Operator, services};
     use std::sync::Arc;
     use tower::ServiceExt; // for `app.oneshot()`
 
@@ -172,10 +166,13 @@ mod test {
     #[tokio::test]
     async fn should_download_file_with_no_content_disposition() {
         // Arrange
-        let file_path = Path::new("./Cargo.toml").to_owned();
-        let content = std::fs::read(&file_path).unwrap();
+        let file_path = "./Cargo.toml";
+        let content = std::fs::read(file_path).unwrap();
+
+        let operator = Operator::new(services::Fs::default().root("./")).unwrap().finish().into();
+
         let data = Arc::new(AppData {
-            content: BinaryContent::FromFs { file_path: file_path.clone() },
+            content: BinaryContent::OpenDal { operator, path: file_path.to_owned() },
             file_name: Some("Cargo.toml"),
             set_content_disposition: false,
         });
@@ -199,10 +196,13 @@ mod test {
     #[tokio::test]
     async fn should_download_file_with_content_disposition() {
         // Arrange
-        let file_path = Path::new("./Cargo.toml").to_owned();
-        let content = std::fs::read(&file_path).unwrap();
+        let file_path = "./Cargo.toml";
+        let content = std::fs::read(file_path).unwrap();
+
+        let operator = Operator::new(services::Fs::default().root("./")).unwrap().finish().into();
+
         let data = Arc::new(AppData {
-            content: BinaryContent::FromFs { file_path: file_path.clone() },
+            content: BinaryContent::OpenDal { operator, path: file_path.to_owned() },
             file_name: None,
             set_content_disposition: true,
         });

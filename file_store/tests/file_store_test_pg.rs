@@ -6,11 +6,11 @@ use maybe_once::tokio::*;
 
 use lightspeed_core::module::LsModule;
 use lightspeed_file_store::LsFileStoreModule;
-use lightspeed_file_store::config::FileStoreConfig;
 use lightspeed_file_store::repository::db::pg::PgFileStoreRepositoryManager;
 use test_utils::pg::new_pg_db;
 use testcontainers::postgres::Postgres;
 use testcontainers::testcontainers::ContainerAsync;
+use tests::get_config;
 
 mod tests;
 
@@ -23,9 +23,7 @@ async fn init() -> MaybeType {
 
     let repo_manager = RepoManager::new(c3p0.clone());
 
-    let mut file_store_config = FileStoreConfig::default();
-    file_store_config.fs_repo_base_folders.push(("REPO_ONE".to_owned(), "../target/repo_one".to_owned()));
-    file_store_config.fs_repo_base_folders.push(("REPO_TWO".to_owned(), "../target/repo_two".to_owned()));
+    let file_store_config = get_config();
 
     let mut file_store_module = LsFileStoreModule::new(repo_manager, file_store_config).unwrap();
     {

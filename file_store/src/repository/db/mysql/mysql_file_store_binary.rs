@@ -4,8 +4,6 @@ use ::sqlx::{MySql, Row, Transaction, query};
 use c3p0::sqlx::error::into_c3p0_error;
 use lightspeed_core::error::{ErrorCodes, LsError};
 use std::borrow::Cow;
-use tokio::fs::File;
-use tokio::io::AsyncReadExt;
 
 #[derive(Clone)]
 pub struct MySqlFileStoreBinaryRepository {
@@ -49,25 +47,12 @@ impl DBFileStoreBinaryRepository for MySqlFileStoreBinaryRepository {
     ) -> Result<u64, LsError> {
         let binary_content = match content {
             BinaryContent::InMemory { content } => Cow::Borrowed(content),
-            BinaryContent::FromFs { file_path } => {
-                let mut file = File::open(file_path).await.map_err(|err| LsError::BadRequest {
-                    message: format!(
-                        "MySqlFileStoreBinaryRepository - Cannot open file [{}]. Err: {:?}",
-                        file_path.display(),
-                        err
-                    ),
+            BinaryContent::OpenDal { operator, path } => {
+                let buffer = operator.read(path).await.map_err(|err| LsError::BadRequest {
+                    message: format!("MySqlFileStoreBinaryRepository - Cannot read file [{path}]. Err: {err:?}"),
                     code: ErrorCodes::IO_ERROR,
                 })?;
-                let mut contents = vec![];
-                file.read_to_end(&mut contents).await.map_err(|err| LsError::BadRequest {
-                    message: format!(
-                        "MySqlFileStoreBinaryRepository - Cannot read file [{}]. Err: {:?}",
-                        file_path.display(),
-                        err
-                    ),
-                    code: ErrorCodes::IO_ERROR,
-                })?;
-                Cow::Owned(Cow::Owned(contents))
+                Cow::Owned(Cow::Owned(buffer.to_vec()))
             }
         };
 

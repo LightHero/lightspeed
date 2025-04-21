@@ -1,26 +1,25 @@
-use serde::Deserialize;
+use opendal::Operator;
+use std::{collections::HashMap, sync::Arc};
 
-#[derive(Debug, Clone, Deserialize, Default)]
-#[serde(default)]
-pub struct FileStoreConfig {
-    /// The base folder used in case of 'FS' FileStoreType.
-    #[serde(default)]
-    pub fs_repo_base_folders: Vec<(String, String)>,
+#[derive(Debug, Clone)]
+pub enum RepositoryType {
+    Opendal(Arc<Operator>),
+    DB,
 }
 
-#[derive(Debug, Clone, Deserialize, Default)]
-pub struct FsStore {
-    pub key: String,
-    pub folder: String,
-}
-
-#[cfg(test)]
-mod test {
-
-    use super::*;
-
-    #[test]
-    fn should_build_config() {
-        let _config: FileStoreConfig = config::Config::builder().build().unwrap().try_deserialize().unwrap();
+impl From<Arc<Operator>> for RepositoryType {
+    fn from(value: Arc<Operator>) -> Self {
+        RepositoryType::Opendal(value)
     }
+}
+
+impl From<Operator> for RepositoryType {
+    fn from(value: Operator) -> Self {
+        RepositoryType::Opendal(Arc::new(value))
+    }
+}
+
+#[derive(Debug, Clone, Default)]
+pub struct FileStoreConfig {
+    pub repositories: HashMap<String, RepositoryType>,
 }

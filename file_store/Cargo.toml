@@ -13,24 +13,23 @@ keywords = []
 [dependencies]
 lightspeed_core = { workspace = true }
 c3p0 = { workspace = true }
+futures = { workspace = true }
 log = { workspace = true }
+opendal = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }
 sqlx = { workspace = true }
-strum = { workspace = true }
-tokio = { workspace = true, features = ["fs", "io-util"] }
-
-mime = { workspace = true, optional = true }
-mime_guess = { workspace = true, optional = true }
 
 axum = { workspace = true, optional = true }
-tokio-util = { workspace = true, optional = true, features = ["io"] }
+mime = { workspace = true, optional = true }
+mime_guess = { workspace = true, optional = true }
 
 [dev-dependencies]
 config = { workspace = true }
 http-body-util = { workspace = true }
 lightspeed_logger = { workspace = true }
 maybe-once = { workspace = true }
+opendal = { workspace = true, default-features = true, features = ["services-fs"] }
 rand = { workspace = true }
 tempfile = { workspace = true }
 testcontainers = { workspace = true }
@@ -41,7 +40,7 @@ tower = { workspace = true }
 [features]
 default = []
 
-axum = ["dep:axum", "lightspeed_core/axum", "mime", "mime_guess", "tokio-util"]
+axum = ["dep:axum", "lightspeed_core/axum", "mime", "mime_guess"]
 mysql_unsupported = ["c3p0/sqlx_mysql"]
 postgres = ["c3p0/sqlx_postgres"]
 sqlite = ["c3p0/sqlx_sqlite"]

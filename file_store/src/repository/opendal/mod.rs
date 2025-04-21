@@ -1,1 +1,1 @@
-pub mod fs_file_store_binary;
+pub mod opendal_file_store_binary;

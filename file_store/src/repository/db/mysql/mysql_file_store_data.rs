@@ -1,4 +1,4 @@
-use crate::model::{FileStoreDataData, FileStoreDataDataCodec, FileStoreDataModel, Repository, RepositoryFile};
+use crate::model::{FileStoreDataData, FileStoreDataDataCodec, FileStoreDataModel};
 use crate::repository::db::FileStoreDataRepository;
 use ::sqlx::{MySql, Row, Transaction, query};
 use c3p0::sqlx::error::into_c3p0_error;
@@ -21,15 +21,17 @@ impl Default for MySqlFileStoreDataRepository {
 impl FileStoreDataRepository for MySqlFileStoreDataRepository {
     type Tx<'a> = Transaction<'a, MySql>;
 
-    async fn exists_by_repository(&self, tx: &mut Self::Tx<'_>, repository: &RepositoryFile) -> Result<bool, LsError> {
-        let sql = "SELECT EXISTS (SELECT 1 FROM LS_FILE_STORE_DATA WHERE (data -> '$.repository._json_tag') = ? AND (data -> '$.repository.repository_name') = ? AND (data -> '$.repository.file_path') = ?)";
-
-        let repo_info = RepoFileInfo::new(repository);
+    async fn exists_by_repository(
+        &self,
+        tx: &mut Self::Tx<'_>,
+        repository: &str,
+        file_path: &str,
+    ) -> Result<bool, LsError> {
+        let sql = "SELECT EXISTS (SELECT 1 FROM LS_FILE_STORE_DATA WHERE (data -> '$.repository') = ? AND (data -> '$.file_path') = ?)";
 
         let res = query(sql)
-            .bind(repo_info.repo_type)
-            .bind(repo_info.repository_name)
-            .bind(repo_info.file_path)
+            .bind(repository)
+            .bind(file_path)
             .fetch_one(tx.as_mut())
             .await
             .and_then(|row| row.try_get(0))
@@ -44,37 +46,31 @@ impl FileStoreDataRepository for MySqlFileStoreDataRepository {
     async fn fetch_one_by_repository(
         &self,
         tx: &mut Self::Tx<'_>,
-        repository: &RepositoryFile,
+        repository: &str,
+        file_path: &str,
     ) -> Result<FileStoreDataModel, LsError> {
         let sql = format!(
             r#"
             {}
-            WHERE (data -> '$.repository._json_tag') = ? AND (data -> '$.repository.repository_name') = ? AND (data -> '$.repository.file_path') = ?
+            WHERE (data -> '$.repository') = ? AND (data -> '$.file_path') = ?
         "#,
             self.repo.queries().find_base_sql_query
         );
-        let repo_info = RepoFileInfo::new(repository);
 
-        Ok(self
-            .repo
-            .fetch_one_with_sql(
-                tx,
-                ::sqlx::query(&sql).bind(repo_info.repo_type).bind(repo_info.repository_name).bind(repo_info.file_path),
-            )
-            .await?)
+        Ok(self.repo.fetch_one_with_sql(tx, ::sqlx::query(&sql).bind(repository).bind(file_path)).await?)
     }
 
     async fn fetch_all_by_repository(
         &self,
         tx: &mut Self::Tx<'_>,
-        repository: &Repository,
+        repository: &str,
         offset: usize,
         max: usize,
         sort: &OrderBy,
     ) -> Result<Vec<FileStoreDataModel>, LsError> {
         let sql = format!(
             r#"{}
-               WHERE (data -> '$.repository._json_tag') = ? AND (data -> '$.repository.repository_name') = ?
+               WHERE (data -> '$.repository') = ?
                 order by id {}
                 limit {}
                 offset {}
@@ -85,12 +81,7 @@ impl FileStoreDataRepository for MySqlFileStoreDataRepository {
             offset
         );
 
-        let repo_info = RepoInfo::new(repository);
-
-        Ok(self
-            .repo
-            .fetch_all_with_sql(tx, ::sqlx::query(&sql).bind(repo_info.repo_type).bind(repo_info.repository_name))
-            .await?)
+        Ok(self.repo.fetch_all_with_sql(tx, ::sqlx::query(&sql).bind(repository)).await?)
     }
 
     async fn save(
@@ -103,38 +94,5 @@ impl FileStoreDataRepository for MySqlFileStoreDataRepository {
 
     async fn delete_by_id(&self, tx: &mut Self::Tx<'_>, id: u64) -> Result<u64, LsError> {
         Ok(self.repo.delete_by_id(tx, &id).await?)
-    }
-}
-
-struct RepoFileInfo<'a> {
-    repo_type: &'a str,
-    repository_name: &'a str,
-    file_path: &'a str,
-}
-
-impl<'a> RepoFileInfo<'a> {
-    fn new(repo: &'a RepositoryFile) -> Self {
-        match repo {
-            RepositoryFile::DB { file_path, repository_name } => {
-                RepoFileInfo { repo_type: repo.as_ref(), repository_name, file_path }
-            }
-            RepositoryFile::FS { file_path, repository_name } => {
-                RepoFileInfo { repo_type: repo.as_ref(), repository_name, file_path }
-            }
-        }
-    }
-}
-
-struct RepoInfo<'a> {
-    repo_type: &'a str,
-    repository_name: &'a str,
-}
-
-impl<'a> RepoInfo<'a> {
-    fn new(repo: &'a Repository) -> Self {
-        match repo {
-            Repository::DB { repository_name } => RepoInfo { repo_type: repo.as_ref(), repository_name },
-            Repository::FS { repository_name } => RepoInfo { repo_type: repo.as_ref(), repository_name },
-        }
     }
 }
