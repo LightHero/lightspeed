@@ -2,7 +2,7 @@ use crate::data;
 use c3p0::*;
 use lightspeed_core::error::LsError;
 use lightspeed_core::utils::new_hyphenated_uuid;
-use lightspeed_file_store::model::{BinaryContent, Repository, RepositoryFile, SaveRepository};
+use lightspeed_file_store::model::BinaryContent;
 use lightspeed_file_store::repository::db::{DBFileStoreBinaryRepository, DBFileStoreRepositoryManager};
 use opendal::Operator;
 use opendal::services::Fs;

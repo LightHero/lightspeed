@@ -1,31 +1,42 @@
-use crate::model::{BinaryContent, FileStoreDataData, FileStoreDataModel, Repository, RepositoryFile, SaveRepository};
+use crate::config::RepositoryType;
+use crate::model::{BinaryContent, FileStoreDataData, FileStoreDataModel};
 use crate::repository::db::{DBFileStoreBinaryRepository, DBFileStoreRepositoryManager, FileStoreDataRepository};
 use crate::repository::opendal::opendal_file_store_binary::OpendalFileStoreBinaryRepository;
 use c3p0::*;
 use lightspeed_core::error::{ErrorCodes, LsError};
 use lightspeed_core::utils::current_epoch_seconds;
 use log::*;
-use opendal::Operator;
 use std::collections::HashMap;
-use std::sync::Arc;
 
 #[derive(Clone)]
 pub struct LsFileStoreService<RepoManager: DBFileStoreRepositoryManager> {
     c3p0: RepoManager::C3P0,
     db_binary_repo: RepoManager::FileStoreBinaryRepo,
     db_data_repo: RepoManager::FileStoreDataRepo,
-    repositories: HashMap<String, OpendalFileStoreBinaryRepository>,
+    repositories: HashMap<String, RepositoryStoreType>,
+}
+
+#[derive(Clone)]
+enum RepositoryStoreType {
+    DB,
+    Opendal(OpendalFileStoreBinaryRepository)
 }
 
 impl<RepoManager: DBFileStoreRepositoryManager> LsFileStoreService<RepoManager> {
-    pub fn new(repo_manager: &RepoManager, repositories: HashMap<String, Arc<Operator>>) -> Self {
+    pub fn new(repo_manager: &RepoManager, repositories: HashMap<String, RepositoryType>) -> Self {
         LsFileStoreService {
             c3p0: repo_manager.c3p0().clone(),
             db_binary_repo: repo_manager.file_store_binary_repo(),
             db_data_repo: repo_manager.file_store_data_repo(),
             repositories: repositories
                 .into_iter()
-                .map(|(name, repo)| (name, OpendalFileStoreBinaryRepository::new(repo)))
+                .map(|(name, repo)| {
+                    let repo = match repo {
+                        RepositoryType::DB => RepositoryStoreType::DB,
+                        RepositoryType::Opendal(repo) => RepositoryStoreType::Opendal(OpendalFileStoreBinaryRepository::new(repo)),
+                    };
+                    (name, repo)
+                })
                 .collect(),
         }
     }
@@ -43,38 +54,42 @@ impl<RepoManager: DBFileStoreRepositoryManager> LsFileStoreService<RepoManager> 
         self.db_data_repo.fetch_one_by_id(conn, id).await
     }
 
-    pub async fn exists_by_repository(&self, repository: &RepositoryFile) -> Result<bool, LsError> {
-        self.c3p0.transaction(async |conn| self.exists_by_repository_with_conn(conn, repository).await).await
+    pub async fn exists_by_repository(&self, repository: &str,
+        file_path: &str,) -> Result<bool, LsError> {
+        self.c3p0.transaction(async |conn| self.exists_by_repository_with_conn(conn, repository, file_path).await).await
     }
 
     pub async fn exists_by_repository_with_conn(
         &self,
         conn: &mut RepoManager::Tx<'_>,
-        repository: &RepositoryFile,
+        repository: &str,
+        file_path: &str,
     ) -> Result<bool, LsError> {
         debug!("LsFileStoreService - Check if file exists by repository [{:?}]", repository);
-        self.db_data_repo.exists_by_repository(conn, repository).await
+        self.db_data_repo.exists_by_repository(conn, repository, file_path).await
     }
 
     pub async fn read_file_data_by_repository(
         &self,
-        repository: &RepositoryFile,
+        repository: &str,
+        file_path: &str,
     ) -> Result<FileStoreDataModel, LsError> {
-        self.c3p0.transaction(async |conn| self.read_file_data_by_repository_with_conn(conn, repository).await).await
+        self.c3p0.transaction(async |conn| self.read_file_data_by_repository_with_conn(conn, repository, file_path).await).await
     }
 
     pub async fn read_file_data_by_repository_with_conn(
         &self,
         conn: &mut RepoManager::Tx<'_>,
-        repository: &RepositoryFile,
+        repository: &str,
+        file_path: &str,
     ) -> Result<FileStoreDataModel, LsError> {
         debug!("LsFileStoreService - Read file data by repository [{:?}]", repository);
-        self.db_data_repo.fetch_one_by_repository(conn, repository).await
+        self.db_data_repo.fetch_one_by_repository(conn, repository, file_path).await
     }
 
     pub async fn read_all_file_data_by_repository(
         &self,
-        repository: &Repository,
+        repository: &str,
         offset: usize,
         max: usize,
         sort: &OrderBy,
@@ -89,7 +104,7 @@ impl<RepoManager: DBFileStoreRepositoryManager> LsFileStoreService<RepoManager> 
     pub async fn read_all_file_data_by_repository_with_conn(
         &self,
         conn: &mut RepoManager::Tx<'_>,
-        repository: &Repository,
+        repository: &str,
         offset: usize,
         max: usize,
         sort: &OrderBy,
@@ -98,67 +113,65 @@ impl<RepoManager: DBFileStoreRepositoryManager> LsFileStoreService<RepoManager> 
         self.db_data_repo.fetch_all_by_repository(conn, repository, offset, max, sort).await
     }
 
-    pub async fn read_file_content(&self, repository: &RepositoryFile) -> Result<BinaryContent<'_>, LsError> {
-        debug!("LsFileStoreService - Read file [{:?}]", repository);
-        match repository {
-            RepositoryFile::DB { file_path, repository_name } => {
+    pub async fn read_file_content(&self, repository: &str, file_path: &str ) -> Result<BinaryContent<'_>, LsError> {
+        debug!("LsFileStoreService - Read repository [{}] file [{}]", repository, file_path);
+        match self.get_repository(repository)? {
+            RepositoryStoreType::DB => {
                 self.c3p0
-                    .transaction(async |conn| self.db_binary_repo.read_file(conn, repository_name, file_path).await)
-                    .await
-            }
-            RepositoryFile::FS { file_path, repository_name } => {
-                self.read_file_content_from_fs(file_path, repository_name).await
-            }
+                    .transaction(async |conn| self.db_binary_repo.read_file(conn, repository, file_path).await)
+                .await
+            },
+            RepositoryStoreType::Opendal(opendal_file_store_binary_repository) => {
+                opendal_file_store_binary_repository.read_file(file_path).await
+            },
         }
     }
 
     pub async fn read_file_content_with_conn(
         &self,
         conn: &mut RepoManager::Tx<'_>,
-        repository: &RepositoryFile,
+        repository: &str, file_path: &str,
     ) -> Result<BinaryContent<'_>, LsError> {
-        debug!("LsFileStoreService - Read file [{:?}]", repository);
-        match repository {
-            RepositoryFile::DB { file_path, repository_name } => {
-                self.db_binary_repo.read_file(conn, repository_name, file_path).await
-            }
-            RepositoryFile::FS { file_path, repository_name } => {
-                self.read_file_content_from_fs(file_path, repository_name).await
-            }
+        debug!("LsFileStoreService - Read repository [{}] file [{}]", repository, file_path);
+        match self.get_repository(repository)? {
+            RepositoryStoreType::DB => {
+                self.db_binary_repo.read_file(conn, repository, file_path).await
+            },
+            RepositoryStoreType::Opendal(opendal_file_store_binary_repository) => {
+                opendal_file_store_binary_repository.read_file(file_path).await
+            },
         }
     }
 
     pub async fn save_file_with_conn<'a>(
         &self,
         conn: &mut RepoManager::Tx<'_>,
+        repository: String,
+        file_path: String,
         filename: String,
         content_type: String,
         content: &'a BinaryContent<'a>,
-        repository: SaveRepository,
     ) -> Result<FileStoreDataModel, LsError> {
         info!(
-            "LsFileStoreService - Save file [{}], content type [{}], destination [{:?}]",
-            filename, content_type, repository
+            "LsFileStoreService - Repository [{}] - Save file [{}], content type [{}]",
+            repository, file_path, content_type
         );
 
-        let repository_file = RepositoryFile::from(&repository, &filename);
-        match repository {
-            SaveRepository::FS { repository_name, .. } => {
-                let repo = self.get_fs_repository(&repository_name)?;
-                let file_path = repository_file.file_path();
-                repo.save_file(file_path, content).await?;
-            }
-            SaveRepository::DB { repository_name, .. } => {
-                let file_path = repository_file.file_path();
-                self.db_binary_repo.save_file(conn, &repository_name, file_path, content).await?;
-            }
+        match self.get_repository(&repository)? {
+            RepositoryStoreType::DB => {
+                self.db_binary_repo.save_file(conn, &repository, &file_path, content).await?;
+            },
+            RepositoryStoreType::Opendal(opendal_file_store_binary_repository) => {
+                opendal_file_store_binary_repository.save_file(&file_path, content).await?;
+            },
         };
 
         self.db_data_repo
             .save(
                 conn,
                 NewModel::new(FileStoreDataData {
-                    repository: repository_file,
+                    repository,
+                    file_path,
                     content_type,
                     filename,
                     created_date_epoch_seconds: current_epoch_seconds(),
@@ -169,13 +182,14 @@ impl<RepoManager: DBFileStoreRepositoryManager> LsFileStoreService<RepoManager> 
 
     pub async fn save_file<'a>(
         &self,
+        repository: String,
+        file_path: String,
         filename: String,
         content_type: String,
         content: &'a BinaryContent<'a>,
-        repository: SaveRepository,
     ) -> Result<FileStoreDataModel, LsError> {
         self.c3p0
-            .transaction(async |conn| self.save_file_with_conn(conn, filename, content_type, content, repository).await)
+            .transaction(async |conn| self.save_file_with_conn(conn, repository, file_path, filename, content_type, content).await)
             .await
     }
 
@@ -190,29 +204,18 @@ impl<RepoManager: DBFileStoreRepositoryManager> LsFileStoreService<RepoManager> 
 
         self.db_data_repo.delete_by_id(conn, id).await?;
 
-        match file_data.data.repository {
-            RepositoryFile::DB { file_path, repository_name } => {
-                self.db_binary_repo.delete_file(conn, &repository_name, &file_path).await.map(|_| ())
-            }
-            RepositoryFile::FS { file_path, repository_name } => {
-                let repo = self.get_fs_repository(&repository_name)?;
-                repo.delete_by_filename(&file_path).await
-            }
+        match self.get_repository(&file_data.data.repository)? {
+            RepositoryStoreType::DB => {
+                self.db_binary_repo.delete_file(conn, &file_data.data.repository, &file_data.data.file_path).await.map(|_| ())
+            },
+            RepositoryStoreType::Opendal(opendal_file_store_binary_repository) => {
+                opendal_file_store_binary_repository.delete_by_filename(&file_data.data.file_path).await
+            },
         }
     }
 
     #[inline]
-    async fn read_file_content_from_fs(
-        &self,
-        file_path: &str,
-        repository_name: &str,
-    ) -> Result<BinaryContent<'_>, LsError> {
-        let repo = self.get_fs_repository(repository_name)?;
-        repo.read_file(file_path).await
-    }
-
-    #[inline]
-    fn get_fs_repository(&self, repository_name: &str) -> Result<&OpendalFileStoreBinaryRepository, LsError> {
+    fn get_repository(&self, repository_name: &str) -> Result<&RepositoryStoreType, LsError> {
         self.repositories.get(repository_name).ok_or_else(|| LsError::BadRequest {
             message: format!("LsFileStoreService - Cannot find FS repository with name [{repository_name}]"),
             code: ErrorCodes::NOT_FOUND,

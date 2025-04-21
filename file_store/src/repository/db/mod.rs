@@ -1,4 +1,4 @@
-use crate::model::{BinaryContent, FileStoreDataData, FileStoreDataModel, Repository, RepositoryFile};
+use crate::model::{BinaryContent, FileStoreDataData, FileStoreDataModel};
 use c3p0::*;
 use lightspeed_core::error::LsError;
 
@@ -56,7 +56,8 @@ pub trait FileStoreDataRepository: Clone + Send + Sync {
     fn exists_by_repository(
         &self,
         tx: &mut Self::Tx<'_>,
-        repository: &RepositoryFile,
+        repository: &str,
+        file_path: &str,
     ) -> impl Future<Output = Result<bool, LsError>> + Send;
 
     fn fetch_one_by_id(
@@ -68,13 +69,14 @@ pub trait FileStoreDataRepository: Clone + Send + Sync {
     fn fetch_one_by_repository(
         &self,
         tx: &mut Self::Tx<'_>,
-        repository: &RepositoryFile,
+        repository: &str,
+        file_path: &str,
     ) -> impl Future<Output = Result<FileStoreDataModel, LsError>> + Send;
 
     fn fetch_all_by_repository(
         &self,
         tx: &mut Self::Tx<'_>,
-        repository: &Repository,
+        repository: &str,
         offset: usize,
         max: usize,
         sort: &OrderBy,
