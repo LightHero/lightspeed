@@ -40,7 +40,5 @@ axum = ["lightspeed_core?/axum", "lightspeed_file_store?/axum"]
 poem = ["lightspeed_core?/poem"]
 poem_openapi = ["lightspeed_core?/poem_openapi", "poem", "lightspeed_auth?/poem_openapi"]
 
-opendal = ["lightspeed_file_store?/opendal"]
-
 mysql = ["lightspeed_auth?/mysql"]
 postgres = ["lightspeed_auth?/postgres", "lightspeed_file_store?/postgres"]

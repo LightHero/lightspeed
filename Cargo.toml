@@ -9,7 +9,6 @@ members = [
     "file_store",
     "hash",
     "logger",
-    "persistence",
     "scheduler",
     "lightspeed", 
     "test_utils",

@@ -4,6 +4,8 @@ use lightspeed_core::error::LsError;
 use lightspeed_core::utils::new_hyphenated_uuid;
 use lightspeed_file_store::model::{BinaryContent, Repository, RepositoryFile, SaveRepository};
 use lightspeed_file_store::repository::db::{DBFileStoreBinaryRepository, DBFileStoreRepositoryManager};
+use opendal::services::Fs;
+use opendal::Operator;
 use std::path::{Path, PathBuf};
 use test_utils::tokio_test;
 
@@ -17,7 +19,8 @@ fn should_save_file_to_db() -> Result<(), LsError> {
 
         let random: u32 = rand::random();
         let file_name = format!("file_{random}");
-        let binary_content = BinaryContent::FromFs { file_path: SOURCE_FILE.to_owned().into() };
+        let operator = Operator::new(Fs::default().root("./")).unwrap().finish().into();
+        let binary_content = BinaryContent::OpenDal { operator, path: SOURCE_FILE.to_owned() };
         let content_type = "application/text".to_owned();
         let save_repository = SaveRepository::DB { subfolder: None, repository_name: "MY_REPO".to_owned() };
 
@@ -53,7 +56,8 @@ fn should_save_file_to_fs() -> Result<(), LsError> {
 
         let random: u32 = rand::random();
         let file_name = format!("file_{random}");
-        let binary_content = BinaryContent::FromFs { file_path: SOURCE_FILE.to_owned().into() };
+        let operator = Operator::new(Fs::default().root("./")).unwrap().finish().into();
+        let binary_content = BinaryContent::OpenDal { operator, path: SOURCE_FILE.to_owned() };
         let content_type = "application/text".to_owned();
         let save_repository = SaveRepository::FS { subfolder: None, repository_name: "REPO_ONE".to_owned() };
 
@@ -71,16 +75,9 @@ fn should_save_file_to_fs() -> Result<(), LsError> {
 
         println!("Data: [{:#?}]", loaded.data);
 
-        match &file_store.read_file_content(&loaded.data.repository).await {
-            Ok(BinaryContent::FromFs { file_path }) => {
-                assert_eq!(&PathBuf::from(format!("../target/repo_one/{file_name}")), file_path);
-                assert_eq!(
-                    &std::fs::read_to_string(SOURCE_FILE).unwrap(),
-                    &std::fs::read_to_string(file_path).unwrap()
-                );
-            }
-            _ => panic!(),
-        }
+        let read_content = file_store.read_file_content(&loaded.data.repository).await.unwrap().read().await.unwrap();
+        assert_eq!( read_content.as_ref(), &std::fs::read(SOURCE_FILE).unwrap());
+
         Ok(())
     })
 }
@@ -92,7 +89,8 @@ fn should_save_file_to_db_with_specific_repo() -> Result<(), LsError> {
         let file_store = &data.0.file_store_service;
 
         let random: u32 = rand::random();
-        let binary_content = BinaryContent::FromFs { file_path: SOURCE_FILE.to_owned().into() };
+        let operator = Operator::new(Fs::default().root("./")).unwrap().finish().into();
+        let binary_content = BinaryContent::OpenDal { operator, path: SOURCE_FILE.to_owned() };
         let content_type = "application/text".to_owned();
         let file_name_1 = format!("file_2_{random}");
         let file_name_2 = format!("file_1_{random}");
@@ -143,7 +141,8 @@ fn should_save_file_to_fs_with_specific_repo() -> Result<(), LsError> {
         let file_store = &data.0.file_store_service;
 
         let random: u32 = rand::random();
-        let binary_content = BinaryContent::FromFs { file_path: SOURCE_FILE.to_owned().into() };
+        let operator = Operator::new(Fs::default().root("./")).unwrap().finish().into();
+        let binary_content = BinaryContent::OpenDal { operator, path: SOURCE_FILE.to_owned() };
         let content_type = "application/text".to_owned();
         let file_name_1 = format!("file_2_{random}");
         let file_name_2 = format!("file_1_{random}");
@@ -157,15 +156,17 @@ fn should_save_file_to_fs_with_specific_repo() -> Result<(), LsError> {
             file_store.save_file(file_name_2.clone(), content_type, &binary_content, save_repository_2).await?;
 
         match file_store.read_file_content(&save_1.data.repository).await {
-            Ok(BinaryContent::FromFs { file_path }) => {
-                assert_eq!(PathBuf::from(format!("../target/repo_one/{file_name_1}")), file_path);
+            Ok(BinaryContent::OpenDal { operator, path }) => {
+                assert_eq!(file_name_1, path);
+                assert!(PathBuf::from(format!("../target/repo_one/{file_name_1}")).exists());
             }
             _ => panic!(),
         }
 
         match file_store.read_file_content(&save_2.data.repository).await {
-            Ok(BinaryContent::FromFs { file_path }) => {
-                assert_eq!(PathBuf::from(format!("../target/repo_two/{file_name_2}")), file_path);
+            Ok(BinaryContent::OpenDal { operator, path }) => {
+                assert_eq!(file_name_2, path);
+                assert!(PathBuf::from(format!("../target/repo_two/{file_name_2}")).exists());
             }
             _ => panic!(),
         }
@@ -189,7 +190,8 @@ fn save_should_fails_if_fs_repo_does_not_exist() -> Result<(), LsError> {
         let file_store = &data.0.file_store_service;
 
         let random: u32 = rand::random();
-        let binary_content = BinaryContent::FromFs { file_path: SOURCE_FILE.to_owned().into() };
+        let operator = Operator::new(Fs::default().root("./")).unwrap().finish().into();
+        let binary_content = BinaryContent::OpenDal { operator, path: SOURCE_FILE.to_owned() };
         let content_type = "application/text".to_owned();
         let file_name_1 = format!("file_2_{random}");
         let save_repository_1 = SaveRepository::FS { subfolder: None, repository_name: "REPO_NOT_EXISTING".to_owned() };
@@ -213,7 +215,8 @@ fn should_save_file_to_db_with_relative_folder() -> Result<(), LsError> {
 
         let random: u32 = rand::random();
         let file_name = format!("relative/folder/file_{random}");
-        let binary_content = BinaryContent::FromFs { file_path: SOURCE_FILE.to_owned().into() };
+        let operator = Operator::new(Fs::default().root("./")).unwrap().finish().into();
+        let binary_content = BinaryContent::OpenDal { operator, path: SOURCE_FILE.to_owned() };
         let content_type = "application/text".to_owned();
         let save_repository = SaveRepository::DB { subfolder: None, repository_name: "REPO_ONE".to_owned() };
 
@@ -249,7 +252,8 @@ fn should_save_file_to_fs_with_relative_folder() -> Result<(), LsError> {
 
         let random: u32 = rand::random();
         let file_name = format!("relative/folder/file_{random}");
-        let binary_content = BinaryContent::FromFs { file_path: SOURCE_FILE.to_owned().into() };
+        let operator = Operator::new(Fs::default().root("./")).unwrap().finish().into();
+        let binary_content = BinaryContent::OpenDal { operator, path: SOURCE_FILE.to_owned() };
         let content_type = "application/text".to_owned();
         let save_repository = SaveRepository::FS { subfolder: None, repository_name: "REPO_ONE".to_owned() };
 
@@ -266,11 +270,11 @@ fn should_save_file_to_fs_with_relative_folder() -> Result<(), LsError> {
         }
 
         match file_store.read_file_content(&saved.data.repository).await {
-            Ok(BinaryContent::FromFs { file_path }) => {
-                assert_eq!(PathBuf::from(format!("../target/repo_one/{file_name}")), file_path);
+            Ok(BinaryContent::OpenDal { operator, path }) => {
+                let dest: Vec<u8> = operator.read(&path).await.unwrap().to_vec();
                 assert_eq!(
-                    &std::fs::read_to_string(SOURCE_FILE).unwrap(),
-                    &std::fs::read_to_string(file_path).unwrap()
+                    &std::fs::read(SOURCE_FILE).unwrap(),
+                    &dest
                 );
             }
             _ => panic!(),
@@ -288,7 +292,8 @@ fn should_save_file_to_db_with_relative_folder_in_repository() -> Result<(), LsE
 
         let random: u32 = rand::random();
         let file_name = format!("folder/file_{random}");
-        let binary_content = BinaryContent::FromFs { file_path: SOURCE_FILE.to_owned().into() };
+        let operator = Operator::new(Fs::default().root("./")).unwrap().finish().into();
+        let binary_content = BinaryContent::OpenDal { operator, path: SOURCE_FILE.to_owned() };
         let content_type = "application/text".to_owned();
         let save_repository =
             SaveRepository::DB { subfolder: Some("relative".to_owned()), repository_name: "REPO_ONE".to_owned() };
@@ -325,7 +330,8 @@ fn should_save_file_to_fs_with_relative_folder_in_repository() -> Result<(), LsE
 
         let random: u32 = rand::random();
         let file_name = format!("folder/file_{random}");
-        let binary_content = BinaryContent::FromFs { file_path: SOURCE_FILE.to_owned().into() };
+        let operator = Operator::new(Fs::default().root("./")).unwrap().finish().into();
+        let binary_content = BinaryContent::OpenDal { operator, path: SOURCE_FILE.to_owned() };
         let content_type = "application/text".to_owned();
         let save_repository =
             SaveRepository::FS { subfolder: Some("relative".to_owned()), repository_name: "REPO_ONE".to_owned() };
@@ -343,11 +349,11 @@ fn should_save_file_to_fs_with_relative_folder_in_repository() -> Result<(), LsE
         }
 
         match file_store.read_file_content(&saved.data.repository).await {
-            Ok(BinaryContent::FromFs { file_path }) => {
-                assert_eq!(PathBuf::from(format!("../target/repo_one/relative/{file_name}")), file_path);
+            Ok(BinaryContent::OpenDal { operator, path }) => {
+                let dest: Vec<u8> = operator.read(&path).await.unwrap().to_vec();
                 assert_eq!(
-                    &std::fs::read_to_string(SOURCE_FILE).unwrap(),
-                    &std::fs::read_to_string(file_path).unwrap()
+                    &std::fs::read(SOURCE_FILE).unwrap(),
+                    &dest
                 );
             }
             _ => panic!(),
@@ -367,7 +373,8 @@ fn should_delete_file_from_db() -> Result<(), LsError> {
 
         let random: u32 = rand::random();
         let file_name = format!("file_{random}");
-        let binary_content = BinaryContent::FromFs { file_path: SOURCE_FILE.to_owned().into() };
+        let operator = Operator::new(Fs::default().root("./")).unwrap().finish().into();
+        let binary_content = BinaryContent::OpenDal { operator, path: SOURCE_FILE.to_owned() };
         let content_type = "application/text".to_owned();
         let save_repository =
             SaveRepository::DB { subfolder: Some("relative".to_owned()), repository_name: "REPO_ONE".to_owned() };
@@ -391,7 +398,7 @@ fn should_delete_file_from_db() -> Result<(), LsError> {
             .await
             .unwrap();
 
-        assert_eq!(1, file_store.delete_file_by_id(saved.id).await?);
+        file_store.delete_file_by_id(saved.id).await?;
         assert!(file_store.read_file_data_by_id(saved.id).await.is_err());
 
         data.0
@@ -416,7 +423,8 @@ fn should_delete_file_from_fs() -> Result<(), LsError> {
 
         let random: u32 = rand::random();
         let file_name = format!("relative/folder/file_{random}");
-        let binary_content = BinaryContent::FromFs { file_path: SOURCE_FILE.to_owned().into() };
+        let operator = Operator::new(Fs::default().root("./")).unwrap().finish().into();
+        let binary_content = BinaryContent::OpenDal { operator, path: SOURCE_FILE.to_owned() };
         let content_type = "application/text".to_owned();
         let save_repository = SaveRepository::FS { subfolder: None, repository_name: "REPO_ONE".to_owned() };
 
@@ -433,7 +441,7 @@ fn should_delete_file_from_fs() -> Result<(), LsError> {
 
         assert!(Path::new(&file_path).exists());
 
-        assert_eq!(1, file_store.delete_file_by_id(saved.id).await?);
+        file_store.delete_file_by_id(saved.id).await?;
         assert!(file_store.read_file_data_by_id(saved.id).await.is_err());
 
         assert!(!Path::new(&file_path).exists());
@@ -453,8 +461,8 @@ fn should_allow_same_files_with_same_repository_name_and_path_but_different_repo
         let same_file_name = format!("folder/file_{random}");
         let same_file_path = format!("path_{random}");
         let same_repository_name = "REPO_ONE";
-
-        let binary_content = BinaryContent::FromFs { file_path: SOURCE_FILE.to_owned().into() };
+        let operator = Operator::new(Fs::default().root("./")).unwrap().finish().into();
+        let binary_content = BinaryContent::OpenDal { operator, path: SOURCE_FILE.to_owned() };
 
         let content_type = "application/text".to_owned();
 
@@ -513,8 +521,8 @@ fn should_fail_if_file_already_exists_in_db() -> Result<(), LsError> {
         let same_file_name = format!("folder/file_{random}");
         let same_file_path = format!("path_{random}");
         let same_repository_name = "REPO_ONE";
-
-        let binary_content = BinaryContent::FromFs { file_path: SOURCE_FILE.to_owned().into() };
+        let operator = Operator::new(Fs::default().root("./")).unwrap().finish().into();
+        let binary_content = BinaryContent::OpenDal { operator, path: SOURCE_FILE.to_owned() };
 
         let content_type = "application/text".to_owned();
 
@@ -600,7 +608,8 @@ fn should_fail_if_file_already_exists_in_fs() -> Result<(), LsError> {
         let same_file_path = format!("path_{random}");
         let same_repository_name = "REPO_ONE";
 
-        let binary_content = BinaryContent::FromFs { file_path: SOURCE_FILE.to_owned().into() };
+        let operator = Operator::new(Fs::default().root("./")).unwrap().finish().into();
+        let binary_content = BinaryContent::OpenDal { operator, path: SOURCE_FILE.to_owned() };
 
         let content_type = "application/text".to_owned();
 
@@ -681,7 +690,8 @@ fn should_read_all_file_data_by_repository() -> Result<(), LsError> {
         let file_store = &data.0.file_store_service;
 
         let random: u32 = rand::random();
-        let binary_content = BinaryContent::FromFs { file_path: SOURCE_FILE.to_owned().into() };
+        let operator = Operator::new(Fs::default().root("./")).unwrap().finish().into();
+        let binary_content = BinaryContent::OpenDal { operator, path: SOURCE_FILE.to_owned() };
         let content_type = "application/text".to_owned();
         let file_name_1 = format!("file_1_{random}");
         let file_name_2 = format!("file_2_{random}");
@@ -741,7 +751,8 @@ fn should_return_if_file_exists_by_repository() -> Result<(), LsError> {
         // Arrange
         let random: u32 = rand::random();
         let file_name = format!("file_{random}");
-        let binary_content = BinaryContent::FromFs { file_path: SOURCE_FILE.to_owned().into() };
+        let operator = Operator::new(Fs::default().root("./")).unwrap().finish().into();
+        let binary_content = BinaryContent::OpenDal { operator, path: SOURCE_FILE.to_owned() };
         let content_type = "application/text".to_owned();
         let save_repository =
             SaveRepository::DB { subfolder: Some("relative".to_owned()), repository_name: "REPO_ONE".to_owned() };
@@ -751,7 +762,7 @@ fn should_return_if_file_exists_by_repository() -> Result<(), LsError> {
         // Act & Assert
         assert!(file_store.exists_by_repository(&saved.data.repository).await.unwrap());
 
-        assert_eq!(1, file_store.delete_file_by_id(saved.id).await?);
+        file_store.delete_file_by_id(saved.id).await?;
         assert!(!file_store.exists_by_repository(&saved.data.repository).await.unwrap());
 
         Ok(())

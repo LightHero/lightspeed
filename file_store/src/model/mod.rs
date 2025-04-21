@@ -1,4 +1,5 @@
 use c3p0::{C3p0Error, JsonCodec, Model};
+use lightspeed_core::error::{ErrorCodes, LsError};
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use std::{borrow::Cow, sync::Arc};
@@ -10,6 +11,21 @@ pub type FileStoreDataModel = Model<u64, FileStoreDataData>;
 pub enum BinaryContent<'a> {
     InMemory { content: Cow<'a, [u8]> },
     OpenDal { operator: Arc<opendal::Operator>, path: String },
+}
+
+impl <'a> BinaryContent<'a> {
+
+    pub async fn read(&self) -> Result<Cow<'a, [u8]>, LsError> {
+        match self {
+            BinaryContent::InMemory { content } => Ok(content.clone()),
+            BinaryContent::OpenDal { operator, path } => {
+                Ok(operator.read(path).await.map_err(|err| LsError::BadRequest {
+                    message: format!("Failed to read file from store: {}", err),
+                    code: ErrorCodes::IO_ERROR,
+                })?.to_vec().into())
+            }
+        }
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
