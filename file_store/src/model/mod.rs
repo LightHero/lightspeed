@@ -32,7 +32,7 @@ impl<'a> BinaryContent<'a> {
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct FileStoreDataData {
     pub filename: String,
-    pub file_path: String, 
+    pub file_path: String,
     pub repository: String,
     pub content_type: String,
     pub created_date_epoch_seconds: i64,

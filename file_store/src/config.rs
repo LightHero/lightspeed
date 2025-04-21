@@ -4,7 +4,7 @@ use std::{collections::HashMap, sync::Arc};
 #[derive(Debug, Clone)]
 pub enum RepositoryType {
     Opendal(Arc<Operator>),
-    DB
+    DB,
 }
 
 impl From<Arc<Operator>> for RepositoryType {

@@ -21,8 +21,12 @@ impl Default for MySqlFileStoreDataRepository {
 impl FileStoreDataRepository for MySqlFileStoreDataRepository {
     type Tx<'a> = Transaction<'a, MySql>;
 
-    async fn exists_by_repository(&self, tx: &mut Self::Tx<'_>, repository: &str,
-    file_path: &str,) -> Result<bool, LsError> {
+    async fn exists_by_repository(
+        &self,
+        tx: &mut Self::Tx<'_>,
+        repository: &str,
+        file_path: &str,
+    ) -> Result<bool, LsError> {
         let sql = "SELECT EXISTS (SELECT 1 FROM LS_FILE_STORE_DATA WHERE (data -> '$.repository') = ? AND (data -> '$.file_path') = ?)";
 
         let res = query(sql)
@@ -53,13 +57,7 @@ impl FileStoreDataRepository for MySqlFileStoreDataRepository {
             self.repo.queries().find_base_sql_query
         );
 
-        Ok(self
-            .repo
-            .fetch_one_with_sql(
-                tx,
-                ::sqlx::query(&sql).bind(repository).bind(file_path),
-            )
-            .await?)
+        Ok(self.repo.fetch_one_with_sql(tx, ::sqlx::query(&sql).bind(repository).bind(file_path)).await?)
     }
 
     async fn fetch_all_by_repository(
@@ -83,10 +81,7 @@ impl FileStoreDataRepository for MySqlFileStoreDataRepository {
             offset
         );
 
-        Ok(self
-            .repo
-            .fetch_all_with_sql(tx, ::sqlx::query(&sql).bind(repository))
-            .await?)
+        Ok(self.repo.fetch_all_with_sql(tx, ::sqlx::query(&sql).bind(repository)).await?)
     }
 
     async fn save(
