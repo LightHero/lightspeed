@@ -69,6 +69,10 @@ impl DBFileStoreBinaryRepository for MySqlFileStoreBinaryRepository {
                 })?;
                 Cow::Owned(Cow::Owned(contents))
             }
+            BinaryContent::OpenDal { operator, path } => {
+                let TODO = 0;
+                todo!()
+            }
         };
 
         let sql = &format!("INSERT INTO {} (repository, filepath, data) VALUES (?, ?, ?)", self.table_name);

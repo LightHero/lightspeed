@@ -1,10 +1,12 @@
 use crate::model::BinaryContent;
 use axum::{
-    body::Body,
+    body::{Body, HttpBody},
     http::{Response, header, response::Builder},
 };
+use http_body_util::{combinators::BoxBody, BodyDataStream, BodyExt, StreamBody};
 use lightspeed_core::error::LsError;
 use log::*;
+use opendal::BufferStream;
 use std::borrow::Cow;
 use tokio_util::io::ReaderStream;
 
@@ -13,18 +15,48 @@ pub async fn into_response(
     file_name: Option<&str>,
     set_content_disposition: bool,
 ) -> Result<Response<Body>, LsError> {
+
     let (file_name, ct, body) = match content {
         BinaryContent::FromFs { file_path } => {
-            debug!("Create HttpResponse from FS content");
-            let ct = mime_guess::from_path(&file_path).first_or_octet_stream();
-            let file = tokio::fs::File::open(&file_path).await.map_err(|err| LsError::BadRequest {
-                message: format!("Cannot open file {}. Err {:?}", file_path.display(), err),
-                code: "",
-            })?;
-            // convert the `AsyncRead` into a `Stream`
-            let stream = ReaderStream::new(file);
-            // convert the `Stream` into an `axum::body::HttpBody`
-            // let body = StreamBody::new(stream);
+                        debug!("Create HttpResponse from FS content");
+                        let ct = mime_guess::from_path(&file_path).first_or_octet_stream();
+                        let file = tokio::fs::File::open(&file_path).await.map_err(|err| LsError::BadRequest {
+                            message: format!("Cannot open file {}. Err {:?}", file_path.display(), err),
+                            code: "",
+                        })?;
+                        // convert the `AsyncRead` into a `Stream`
+                        let stream = ReaderStream::new(file);
+                        // convert the `Stream` into an `axum::body::HttpBody`
+                        // let body = StreamBody::new(stream);
+        
+                        let file_name = if let Some(file_name) = file_name {
+                            Cow::Borrowed(file_name)
+                        } else {
+                            match file_path.file_name().to_owned() {
+                                Some(name) => Cow::Owned(name.to_string_lossy().as_ref().to_owned()),
+                                None => {
+                                    return Err(LsError::BadRequest {
+                                        message: "Provided path has no filename".to_owned(),
+                                        code: "",
+                                    })?;
+                                }
+                            }
+                        };
+        
+                        (file_name, ct, Body::from_stream(stream))
+            }
+        BinaryContent::InMemory { content } => {
+                debug!("Create HttpResponse from Memory content of {} bytes", content.len());
+                let file_name = Cow::Borrowed(file_name.unwrap_or(""));
+                let path = std::path::Path::new(file_name.as_ref());
+                let ct = mime_guess::from_path(path).first_or_octet_stream();
+                let owned_vec: Vec<u8> = content.into();
+                (file_name, ct, Body::from(owned_vec))
+            }
+        BinaryContent::OpenDal { operator, path } => {
+
+            let file_path = std::path::Path::new(path);
+            let ct = mime_guess::from_path(path).first_or_octet_stream();
 
             let file_name = if let Some(file_name) = file_name {
                 Cow::Borrowed(file_name)
@@ -40,16 +72,11 @@ pub async fn into_response(
                 }
             };
 
+            let reader = operator.reader(path).await.unwrap();
+            let stream = reader.into_bytes_stream(..).await.unwrap();
+
             (file_name, ct, Body::from_stream(stream))
-        }
-        BinaryContent::InMemory { content } => {
-            debug!("Create HttpResponse from Memory content of {} bytes", content.len());
-            let file_name = Cow::Borrowed(file_name.unwrap_or(""));
-            let path = std::path::Path::new(file_name.as_ref());
-            let ct = mime_guess::from_path(path).first_or_octet_stream();
-            let owned_vec: Vec<u8> = content.into();
-            (file_name, ct, Body::from(owned_vec))
-        }
+        },
     };
 
     let mut response_builder = Builder::new();

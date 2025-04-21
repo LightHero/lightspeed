@@ -11,10 +11,12 @@ repository = "https://github.com/LightHero/lightspeed"
 keywords = []
 
 [dependencies]
+axum = { workspace = true }
 lightspeed_core = { workspace = true }
 log = { workspace = true }
 opendal = { workspace = true }
-
+http-body-util = { workspace = true }
+futures = "0.3"
 
 [dev-dependencies]
 opendal = { workspace = true, default-features = true, features = ["services-fs"] }

@@ -51,23 +51,27 @@ impl FsFileStoreBinaryRepository {
 
         match content {
             BinaryContent::InMemory { content } => {
-                tokio::fs::write(destination_path, content.as_ref()).await.map_err(|err| LsError::BadRequest {
-                    message: format!(
-                        "FsFileStoreDataRepository - Cannot write data to [{destination_file_path}]. Err: {err:?}"
-                    ),
-                    code: ErrorCodes::IO_ERROR,
-                })?;
-                Ok(())
-            }
+                        tokio::fs::write(destination_path, content.as_ref()).await.map_err(|err| LsError::BadRequest {
+                            message: format!(
+                                "FsFileStoreDataRepository - Cannot write data to [{destination_file_path}]. Err: {err:?}"
+                            ),
+                            code: ErrorCodes::IO_ERROR,
+                        })?;
+                        Ok(())
+                    }
             BinaryContent::FromFs { file_path } => {
-                tokio::fs::copy(file_path, destination_path).await.map_err(|err| LsError::BadRequest {
-                    message: format!(
-                        "FsFileStoreDataRepository - Cannot copy file from [{file_path:?}] to [{destination_file_path}]. Err: {err:?}"
-                    ),
-                    code: ErrorCodes::IO_ERROR,
-                })?;
-                Ok(())
-            }
+                        tokio::fs::copy(file_path, destination_path).await.map_err(|err| LsError::BadRequest {
+                            message: format!(
+                                "FsFileStoreDataRepository - Cannot copy file from [{file_path:?}] to [{destination_file_path}]. Err: {err:?}"
+                            ),
+                            code: ErrorCodes::IO_ERROR,
+                        })?;
+                        Ok(())
+                    }
+BinaryContent::OpenDal { operator, path } => {
+    let TODO = 0;
+    todo!()
+}
         }
     }
 

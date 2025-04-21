@@ -1,7 +1,7 @@
 use c3p0::{C3p0Error, JsonCodec, Model};
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
-use std::borrow::Cow;
+use std::{borrow::Cow, sync::Arc};
 use std::path::PathBuf;
 use strum::{AsRefStr, Display};
 
@@ -11,6 +11,7 @@ pub type FileStoreDataModel = Model<u64, FileStoreDataData>;
 pub enum BinaryContent<'a> {
     FromFs { file_path: PathBuf },
     InMemory { content: Cow<'a, [u8]> },
+    OpenDal { operator: &'a opendal::Operator, path: &'a str },
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
