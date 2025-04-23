@@ -28,7 +28,7 @@ publish:
   )
 
   echo 'Execute before publishing'
-  ./scripts/test.sh
+  just test
 
   for i in "${publish_list[@]}"
   do
