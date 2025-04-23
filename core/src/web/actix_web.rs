@@ -19,19 +19,19 @@ impl ResponseError for LsError {
             LsError::InvalidTokenError { .. }
             | LsError::ExpiredTokenError { .. }
             | LsError::GenerateTokenError { .. }
-            | LsError::MissingAuthTokenError { .. }
+            | LsError::MissingAuthTokenError
             | LsError::ParseAuthHeaderError { .. }
             | LsError::UnauthenticatedError => HttpResponse::Unauthorized().finish(),
             LsError::ForbiddenError { .. } => HttpResponse::Forbidden().finish(),
             LsError::ValidationError { details } => {
                 let http_code = http::StatusCode::UNPROCESSABLE_ENTITY;
                 HttpResponseBuilder::new(http_code)
-                    .json(&WebErrorDetails::from_error_details(http_code.as_u16(), details.clone()))
+                    .json(WebErrorDetails::from_error_details(http_code.as_u16(), details.clone()))
             }
             LsError::BadRequest { code, .. } => {
                 let http_code = http::StatusCode::BAD_REQUEST;
                 HttpResponseBuilder::new(http_code)
-                    .json(&WebErrorDetails::from_message(http_code.as_u16(), Some((*code).into())))
+                    .json(WebErrorDetails::from_message(http_code.as_u16(), Some((*code).into())))
             }
             LsError::C3p0Error { .. } => {
                 let http_code = http::StatusCode::BAD_REQUEST;
@@ -40,7 +40,7 @@ impl ResponseError for LsError {
             LsError::RequestConflict { code, .. } | LsError::ServiceUnavailable { code, .. } => {
                 let http_code = http::StatusCode::CONFLICT;
                 HttpResponseBuilder::new(http_code)
-                    .json(&WebErrorDetails::from_message(http_code.as_u16(), Some((*code).into())))
+                    .json(WebErrorDetails::from_message(http_code.as_u16(), Some((*code).into())))
             }
             LsError::InternalServerError { .. }
             | LsError::ModuleBuilderError { .. }
