@@ -12,7 +12,7 @@ use lightspeed_core::error::{ErrorCodes, LsError};
 use lightspeed_core::model::language::Language;
 use lightspeed_core::utils::{current_epoch_seconds, new_hyphenated_uuid};
 use std::collections::HashMap;
-use test_utils::tokio_test;
+use lightspeed_test_utils::tokio_test;
 
 #[test]
 fn should_create_pending_user() -> Result<(), LsError> {

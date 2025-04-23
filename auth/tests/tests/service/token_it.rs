@@ -4,7 +4,7 @@ use lightspeed_auth::model::token::{TokenData, TokenType};
 use lightspeed_auth::repository::AuthRepositoryManager;
 use lightspeed_core::error::LsError;
 use lightspeed_core::utils::{current_epoch_seconds, new_hyphenated_uuid};
-use test_utils::tokio_test;
+use lightspeed_test_utils::tokio_test;
 
 #[test]
 fn should_delete_token() -> Result<(), LsError> {
