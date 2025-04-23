@@ -7,7 +7,7 @@ use maybe_once::tokio::*;
 use lightspeed_core::module::LsModule;
 use lightspeed_file_store::LsFileStoreModule;
 use lightspeed_file_store::repository::db::pg::PgFileStoreRepositoryManager;
-use test_utils::pg::new_pg_db;
+use lightspeed_test_utils::pg::new_pg_db;
 use testcontainers::postgres::Postgres;
 use testcontainers::testcontainers::ContainerAsync;
 use tests::get_config;

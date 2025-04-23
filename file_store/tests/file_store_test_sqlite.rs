@@ -7,7 +7,7 @@ use lightspeed_file_store::repository::db::sqlite::SqliteFileStoreRepositoryMana
 use maybe_once::tokio::*;
 
 use lightspeed_core::module::LsModule;
-use test_utils::sqlite::new_sqlite_db;
+use lightspeed_test_utils::sqlite::new_sqlite_db;
 use tests::get_config;
 
 mod tests;

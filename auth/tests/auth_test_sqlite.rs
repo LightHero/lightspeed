@@ -8,7 +8,7 @@ use lightspeed_auth::LsAuthModule;
 use lightspeed_auth::config::AuthConfig;
 use lightspeed_auth::repository::sqlite::SqliteAuthRepositoryManager;
 use lightspeed_core::module::LsModule;
-use test_utils::sqlite::new_sqlite_db;
+use lightspeed_test_utils::sqlite::new_sqlite_db;
 
 mod tests;
 

@@ -29,7 +29,7 @@ lightspeed_hash = { version = "0.62.0", path = "./hash" }
 lightspeed_logger = { version = "0.62.0", path = "./logger" }
 lightspeed_persistence = { version = "0.62.0", path = "./persistence" }
 lightspeed_scheduler = { version = "0.62.0", path = "./scheduler" }
-test_utils = { version = "0.62.0", path = "./test_utils" }
+lightspeed_test_utils = { version = "0.62.0", path = "./test_utils" }
 
 actix-files = { version = "0.6.0" }
 actix-rt = "2"

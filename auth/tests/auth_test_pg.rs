@@ -8,7 +8,7 @@ use lightspeed_auth::LsAuthModule;
 use lightspeed_auth::config::AuthConfig;
 use lightspeed_auth::repository::pg::PgAuthRepositoryManager;
 use lightspeed_core::module::LsModule;
-use test_utils::pg::new_pg_db;
+use lightspeed_test_utils::pg::new_pg_db;
 use testcontainers::postgres::Postgres;
 use testcontainers::testcontainers::ContainerAsync;
 

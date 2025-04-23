@@ -8,7 +8,7 @@ use lightspeed_auth::LsAuthModule;
 use lightspeed_auth::config::AuthConfig;
 use lightspeed_auth::repository::mysql::MySqlAuthRepositoryManager;
 use lightspeed_core::module::LsModule;
-use test_utils::mysql::new_mysql_db;
+use lightspeed_test_utils::mysql::new_mysql_db;
 use testcontainers::mysql::Mysql;
 use testcontainers::testcontainers::ContainerAsync;
 
