@@ -16,6 +16,7 @@ publish:
 
   declare -a publish_list=(
       "logger"
+      "test_utils"
       "scheduler"
       "cache"
       "core"
