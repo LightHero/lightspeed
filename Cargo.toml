@@ -31,6 +31,9 @@ lightspeed_persistence = { version = "0.61.0", path = "./persistence" }
 lightspeed_scheduler = { version = "0.61.0", path = "./scheduler" }
 test_utils = { version = "0.61.0", path = "./test_utils" }
 
+actix-files = { version = "0.6.0" }
+actix-rt = "2"
+actix-web = { version = "4.0.1" }
 arc-swap = "1.6"
 axum = { version = "0.8" }
 base64 = "0.22"
@@ -42,6 +45,7 @@ chrono-tz = "0.10"
 config = "0.15"
 cron = "0.15.0"
 dashmap = { version = "6" }
+http_02 = { package = "http", version = "0.2" }
 http = { version = "1" }
 http-body-util = "0.1"
 futures = { version = "0.3", default-features = false }
