@@ -11,8 +11,8 @@ use lightspeed_auth::service::auth_account::LsAuthAccountService;
 use lightspeed_core::error::{ErrorCodes, LsError};
 use lightspeed_core::model::language::Language;
 use lightspeed_core::utils::{current_epoch_seconds, new_hyphenated_uuid};
-use std::collections::HashMap;
 use lightspeed_test_utils::tokio_test;
+use std::collections::HashMap;
 
 #[test]
 fn should_create_pending_user() -> Result<(), LsError> {

@@ -3,10 +3,10 @@ use c3p0::*;
 use lightspeed_core::error::LsError;
 use lightspeed_file_store::model::BinaryContent;
 use lightspeed_file_store::repository::db::{DBFileStoreBinaryRepository, DBFileStoreRepositoryManager};
+use lightspeed_test_utils::tokio_test;
 use opendal::Operator;
 use opendal::services::Fs;
 use std::path::{Path, PathBuf};
-use test_utils::tokio_test;
 
 const SOURCE_FILE: &str = "./Cargo.toml";
 
