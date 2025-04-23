@@ -1,8 +1,8 @@
 use crate::error::LsError;
 use crate::service::auth::{Auth, AuthContext, LsAuthService};
 use crate::service::jwt::LsJwtService;
-use c3p0::IdType;
 use ::http::{HeaderMap, Request};
+use c3p0::IdType;
 use log::*;
 use std::sync::Arc;
 
@@ -28,9 +28,7 @@ pub trait Headers {
 impl Headers for HeaderMap {
     fn get_as_str(&self, header_name: &str) -> Option<Result<&str, LsError>> {
         self.get(header_name).map(|header| {
-            header
-                .to_str()
-                .map_err(|err| LsError::ParseAuthHeaderError { message: format!("{:?}", err) })
+            header.to_str().map_err(|err| LsError::ParseAuthHeaderError { message: format!("{:?}", err) })
         })
     }
 }
@@ -55,16 +53,14 @@ impl<Id: IdType + MaybeWeb> WebAuthService<Id> {
 
     pub fn token_string_from_request<'a, H: Headers>(&self, req: &'a H) -> Result<&'a str, LsError> {
         if let Some(header) = req.get_as_str(JWT_TOKEN_HEADER) {
-            header
-                .map_err(|err| LsError::ParseAuthHeaderError { message: format!("{:?}", err) })
-                .and_then(|header| {
-                    trace!("Token found in request: [{}]", header);
-                    if header.len() > JWT_TOKEN_HEADER_SUFFIX_LEN {
-                        Ok(&header[JWT_TOKEN_HEADER_SUFFIX_LEN..])
-                    } else {
-                        Err(LsError::ParseAuthHeaderError { message: format!("Unexpected auth header: {}", header) })
-                    }
-                })
+            header.map_err(|err| LsError::ParseAuthHeaderError { message: format!("{:?}", err) }).and_then(|header| {
+                trace!("Token found in request: [{}]", header);
+                if header.len() > JWT_TOKEN_HEADER_SUFFIX_LEN {
+                    Ok(&header[JWT_TOKEN_HEADER_SUFFIX_LEN..])
+                } else {
+                    Err(LsError::ParseAuthHeaderError { message: format!("Unexpected auth header: {}", header) })
+                }
+            })
         } else {
             Err(LsError::MissingAuthTokenError)
         }

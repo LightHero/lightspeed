@@ -1,15 +1,13 @@
 use crate::error::{LsError, WebErrorDetails};
 use crate::web::Headers;
 use actix_web::HttpResponseBuilder;
-use actix_web::{http, HttpRequest, HttpResponse, ResponseError};
+use actix_web::{HttpRequest, HttpResponse, ResponseError, http};
 
 impl Headers for HttpRequest {
     fn get_as_str(&self, header_name: &str) -> Option<Result<&str, LsError>> {
-            self.headers().get(header_name).map(|header| {
-                header
-                    .to_str()
-                    .map_err(|err| LsError::ParseAuthHeaderError { message: format!("{:?}", err) })
-            })
+        self.headers().get(header_name).map(|header| {
+            header.to_str().map_err(|err| LsError::ParseAuthHeaderError { message: format!("{:?}", err) })
+        })
     }
 }
 
@@ -58,13 +56,14 @@ mod test {
     use crate::config::JwtConfig;
     use crate::error::RootErrorDetails;
     use crate::service::auth::{Auth, InMemoryRolesProvider, LsAuthService, Role};
-    use crate::service::jwt::{LsJwtService, JWT};
-    use crate::web::{WebAuthService, JWT_TOKEN_HEADER, JWT_TOKEN_HEADER_SUFFIX};
+    use crate::service::jwt::{JWT, LsJwtService};
+    use crate::web::{JWT_TOKEN_HEADER, JWT_TOKEN_HEADER_SUFFIX, WebAuthService};
     use actix_web::dev::Service;
-    use actix_web::test::{init_service, read_body_json, TestRequest};
+    use actix_web::test::{TestRequest, init_service, read_body_json};
     use actix_web::{
-        http::{header, StatusCode},
-        web, App,
+        App,
+        http::{StatusCode, header},
+        web,
     };
     use jsonwebtoken::Algorithm;
     use std::sync::Arc;
