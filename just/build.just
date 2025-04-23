@@ -22,7 +22,7 @@ publish:
       "auth"
       # "cms"
       "email"
-      # "file_store"
+      "file_store"
       "hash"
       "lightspeed"
   )
