@@ -23,11 +23,13 @@ strum = { workspace = true }
 uuid = { workspace = true }
 validator = { workspace = true }
 
+actix-web = { workspace = true, optional = true }
 axum = { workspace = true, optional = true }
 poem = { workspace = true, optional = true }
 poem-openapi = { workspace = true, optional = true }
 
 [dev-dependencies]
+actix-rt = { workspace = true }
 config = { workspace = true }
 http-body-util = { workspace = true }
 lightspeed_logger = { workspace = true }
@@ -39,6 +41,7 @@ tower = { workspace = true }
 [features]
 default = []
 
+actix_web = ["dep:actix-web"]
 axum = ["dep:axum"]
 poem = ["dep:poem"]
 poem_openapi = ["poem", "dep:poem-openapi"]

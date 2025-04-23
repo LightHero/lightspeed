@@ -1,13 +1,16 @@
 use crate::error::LsError;
 use crate::service::auth::{Auth, AuthContext, LsAuthService};
 use crate::service::jwt::LsJwtService;
+use ::http::{HeaderMap, Request};
 use c3p0::IdType;
-use http::{HeaderMap, HeaderValue, Request};
 use log::*;
 use std::sync::Arc;
 
 use self::types::MaybeWeb;
 
+// Cannot use actix_web with poem or axum at the same time because they use a different http crate version
+#[cfg(feature = "actix_web")]
+pub mod actix_web;
 #[cfg(feature = "axum")]
 pub mod axum;
 #[cfg(feature = "poem")]
@@ -19,18 +22,20 @@ pub const JWT_TOKEN_HEADER_SUFFIX: &str = "Bearer ";
 pub const JWT_TOKEN_HEADER_SUFFIX_LEN: usize = JWT_TOKEN_HEADER_SUFFIX.len();
 
 pub trait Headers {
-    fn get(&self, header_name: &str) -> Option<&HeaderValue>;
+    fn get_as_str(&self, header_name: &str) -> Option<Result<&str, LsError>>;
 }
 
 impl Headers for HeaderMap {
-    fn get(&self, header_name: &str) -> Option<&HeaderValue> {
-        self.get(header_name)
+    fn get_as_str(&self, header_name: &str) -> Option<Result<&str, LsError>> {
+        self.get(header_name).map(|header| {
+            header.to_str().map_err(|err| LsError::ParseAuthHeaderError { message: format!("{:?}", err) })
+        })
     }
 }
 
 impl<T> Headers for Request<T> {
-    fn get(&self, header_name: &str) -> Option<&HeaderValue> {
-        self.headers().get(header_name)
+    fn get_as_str(&self, header_name: &str) -> Option<Result<&str, LsError>> {
+        self.headers().get_as_str(header_name)
     }
 }
 
@@ -47,20 +52,18 @@ impl<Id: IdType + MaybeWeb> WebAuthService<Id> {
     }
 
     pub fn token_string_from_request<'a, H: Headers>(&self, req: &'a H) -> Result<&'a str, LsError> {
-        if let Some(header) = req.get(JWT_TOKEN_HEADER) {
-            return header
-                .to_str()
-                .map_err(|err| LsError::ParseAuthHeaderError { message: format!("{:?}", err) })
-                .and_then(|header| {
-                    trace!("Token found in request: [{}]", header);
-                    if header.len() > JWT_TOKEN_HEADER_SUFFIX_LEN {
-                        Ok(&header[JWT_TOKEN_HEADER_SUFFIX_LEN..])
-                    } else {
-                        Err(LsError::ParseAuthHeaderError { message: format!("Unexpected auth header: {}", header) })
-                    }
-                });
-        };
-        Err(LsError::MissingAuthTokenError)
+        if let Some(header) = req.get_as_str(JWT_TOKEN_HEADER) {
+            header.map_err(|err| LsError::ParseAuthHeaderError { message: format!("{:?}", err) }).and_then(|header| {
+                trace!("Token found in request: [{}]", header);
+                if header.len() > JWT_TOKEN_HEADER_SUFFIX_LEN {
+                    Ok(&header[JWT_TOKEN_HEADER_SUFFIX_LEN..])
+                } else {
+                    Err(LsError::ParseAuthHeaderError { message: format!("Unexpected auth header: {}", header) })
+                }
+            })
+        } else {
+            Err(LsError::MissingAuthTokenError)
+        }
     }
 
     pub fn token_from_auth(&self, auth: &Auth<Id>) -> Result<String, LsError> {

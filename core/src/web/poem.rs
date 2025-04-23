@@ -1,13 +1,12 @@
 use crate::error::{LsError, RootErrorDetails, WebErrorDetails};
 use crate::web::Headers;
-use http::HeaderValue;
 use log::*;
 use poem::{Request, Response, error::ResponseError, http::StatusCode};
 use std::error::Error as StdError;
 
 impl Headers for Request {
-    fn get(&self, header_name: &str) -> Option<&HeaderValue> {
-        self.headers().get(header_name)
+    fn get_as_str(&self, header_name: &str) -> Option<Result<&str, LsError>> {
+        self.headers().get_as_str(header_name)
     }
 }
 
