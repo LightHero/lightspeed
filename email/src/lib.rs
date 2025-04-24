@@ -26,7 +26,6 @@ impl EmailClientModule {
     }
 }
 
-#[async_trait::async_trait]
 impl lightspeed_core::module::Module for EmailClientModule {
     async fn start(&mut self) -> Result<(), LightSpeedError> {
         info!("Starting EmailClientModule");

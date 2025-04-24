@@ -15,7 +15,6 @@ keywords = ["hash", "validation"]
 [dependencies]
 lightspeed_core = { version = "0.45.3", path = "../core" }
 
-async-trait = "0.1"
 base64 = "0.13"
 log = "0.4"
 sha2 = "0.10"

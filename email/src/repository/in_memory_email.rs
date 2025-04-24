@@ -3,6 +3,8 @@ use crate::repository::email::EmailClient;
 use lightspeed_core::error::LightSpeedError;
 use log::warn;
 use parking_lot::Mutex;
+use std::future::Future;
+use std::pin::Pin;
 use std::sync::Arc;
 
 /// A EmailClient implementation that keeps in memory all the emails
@@ -19,15 +21,18 @@ impl InMemoryEmailClient {
     }
 }
 
-#[async_trait::async_trait]
 impl EmailClient for InMemoryEmailClient {
-    async fn send(&self, email_message: EmailMessage) -> Result<(), LightSpeedError> {
-        warn!("InMemoryEmailService - Received an email. The email is NOT going to be sent but kept in memory");
+    fn send(&self, email_message: EmailMessage) -> Pin<Box<dyn Future<Output = Result<(), LightSpeedError>> + Send>> {
+        let emails = self.emails.clone();
 
-        let mut lock = self.emails.lock();
+        Box::pin(async move {
+            warn!("InMemoryEmailService - Received an email. The email is NOT going to be sent but kept in memory");
 
-        lock.push(email_message);
-        Ok(())
+            let mut lock = emails.lock();
+
+            lock.push(email_message);
+            Ok(())
+        })
     }
 
     fn get_emails(&self) -> Result<Vec<EmailMessage>, LightSpeedError> {

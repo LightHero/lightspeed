@@ -1,9 +1,10 @@
 use crate::error::LightSpeedError;
 use std::str::FromStr;
 
-#[derive(Clone, Debug, PartialEq, Eq, Hash)]
+#[derive(Clone, Debug, PartialEq, Eq, Hash, Default)]
 pub enum Boolean {
     True,
+    #[default]
     False,
 }
 

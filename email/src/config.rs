@@ -2,7 +2,7 @@ use crate::repository::email::EmailClientType;
 use lightspeed_core::model::boolean::Boolean;
 use clap::Parser;
 
-#[derive(Debug, Clone, Parser)]
+#[derive(Debug, Clone, Parser, Default)]
 #[clap(rename_all = "kebab-case")]
 pub struct EmailClientConfig {
     #[clap(long, env = "LS_EMAIL_CLIENT_TYPE", default_value = "full")]

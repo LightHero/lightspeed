@@ -28,7 +28,6 @@ impl HashModule {
     }
 }
 
-#[async_trait::async_trait]
 impl lightspeed_core::module::Module for HashModule {
     async fn start(&mut self) -> Result<(), LightSpeedError> {
         info!("Starting HashModule");
