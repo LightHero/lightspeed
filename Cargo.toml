@@ -1,12 +1,12 @@
 [workspace]
 
 members = [
-    "auth",
+    # "auth",
     "cache",
-    "cms",
+    # "cms",
     "core",
     "email",
-    "file_store",
+    # "file_store",
     "hash",
     "logger",
     "scheduler",

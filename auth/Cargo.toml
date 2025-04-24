@@ -14,7 +14,7 @@ keywords = []
 lightspeed_core = { version = "0.45.2", path = "../core" }
 async-trait = "0.1"
 bcrypt = "0.13"
-c3p0 = { version = "0.67", features = ["postgres", "migrate"] }
+c3p0 = { version = "0.72.4", features = ["postgres", "migrate"] }
 clap = { version = "3.1", default-features = false, features = ["derive", "env", "std"] }
 log = "0.4"
 serde = { version = "1.0", features = ["derive", "rc"] }

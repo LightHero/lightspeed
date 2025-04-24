@@ -7,16 +7,16 @@ pub const WRONG_ID: &str = "WRONG_ID";
 pub const WRONG_VERSION: &str = "WRONG_VERSION";
 
 pub trait WithIdAndVersion {
-    fn get_id(&self) -> i64;
-    fn get_version(&self) -> i32;
+    fn get_id(&self) -> u64;
+    fn get_version(&self) -> u32;
 }
 
-impl<T: Clone + serde::ser::Serialize + Send> WithIdAndVersion for Model<T> {
-    fn get_id(&self) -> i64 {
+impl<T: Clone + serde::ser::Serialize + Send> WithIdAndVersion for Model<u64, T> {
+    fn get_id(&self) -> u64 {
         self.id
     }
 
-    fn get_version(&self) -> i32 {
+    fn get_version(&self) -> u32 {
         self.version
     }
 }

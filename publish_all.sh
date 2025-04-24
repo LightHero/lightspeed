@@ -8,10 +8,7 @@ declare -a publish_list=(
     "scheduler"
     "cache"
     "core"
-    "auth"
-    "cms"
     "email"
-    "file_store"
     "hash"
     "lightspeed"
 )

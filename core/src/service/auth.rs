@@ -10,7 +10,7 @@ use typescript_definitions::TypeScriptify;
 #[derive(Debug, Clone, Serialize, Deserialize, TypeScriptify)]
 #[serde(rename_all = "camelCase")]
 pub struct Auth {
-    pub id: i64,
+    pub id: u64,
     pub username: String,
     pub session_id: String,
     pub roles: Vec<String>,
@@ -20,7 +20,7 @@ pub struct Auth {
 
 impl Auth {
     pub fn new<S: Into<String>>(
-        id: i64,
+        id: u64,
         username: S,
         roles: Vec<String>,
         creation_ts_seconds: i64,
@@ -34,7 +34,7 @@ impl Auth {
 impl Default for Auth {
     fn default() -> Self {
         Self {
-            id: -1,
+            id: 0,
             username: "".to_owned(),
             session_id: "".to_owned(),
             roles: vec![],
@@ -51,17 +51,17 @@ pub struct Role {
 }
 
 pub trait Owned {
-    fn get_owner_id(&self) -> i64;
+    fn get_owner_id(&self) -> u64;
 }
 
-impl Owned for i64 {
-    fn get_owner_id(&self) -> i64 {
+impl Owned for u64 {
+    fn get_owner_id(&self) -> u64 {
         *self
     }
 }
 
-impl<T: Owned + Clone + serde::ser::Serialize + Send> Owned for Model<T> {
-    fn get_owner_id(&self) -> i64 {
+impl<T: Owned + Clone + serde::ser::Serialize + Send> Owned for Model<u64, T> {
+    fn get_owner_id(&self) -> u64 {
         self.data.get_owner_id()
     }
 }
@@ -855,11 +855,11 @@ mod test {
     }
 
     struct Ownable {
-        owner_id: i64,
+        owner_id: u64,
     }
 
     impl Owned for Ownable {
-        fn get_owner_id(&self) -> i64 {
+        fn get_owner_id(&self) -> u64 {
             return self.owner_id;
         }
     }

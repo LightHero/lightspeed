@@ -13,13 +13,10 @@ keywords = []
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-c3p0 = { version = "0.67", features = ["postgres", "migrate"] }
-lightspeed_auth = { version = "0.45.2", path = "../auth", optional = true }
+c3p0 = { version = "0.72.4", features = ["postgres", "migrate"] }
 lightspeed_cache = { version = "0.45.2", path = "../cache", optional = true }
-lightspeed_cms = { version = "0.45.2", path = "../cms", optional = true }
 lightspeed_core = { version = "0.45.2", path = "../core", optional = true }
 lightspeed_email = { version = "0.45.2", path = "../email", optional = true }
-lightspeed_file_store = { version = "0.45.2", path = "../file_store", optional = true }
 lightspeed_hash = { version = "0.45.2", path = "../hash", optional = true }
 lightspeed_logger = { version = "0.45.2", path = "../logger", optional = true }
 lightspeed_scheduler = { version = "0.45.2", path = "../scheduler", optional = true }
@@ -27,15 +24,11 @@ lightspeed_scheduler = { version = "0.45.2", path = "../scheduler", optional = t
 [features]
 default = ["core"]
 
-auth = ["lightspeed_auth"]
 cache = ["lightspeed_cache"]
-cms = ["lightspeed_cms"]
 core = ["lightspeed_core"]
 email = ["lightspeed_email"]
-file_store = ["lightspeed_file_store"]
 hash = ["lightspeed_hash"]
 logger = ["lightspeed_logger"]
 scheduler = ["lightspeed_scheduler"]
 
-axum = ["lightspeed_core/axum", "lightspeed_file_store/axum"]
-actix_web_4 = ["lightspeed_core/actix_web_4", "lightspeed_file_store/actix_web_4"]
+actix_web_4 = ["lightspeed_core/actix_web_4"]
