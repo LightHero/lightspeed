@@ -50,7 +50,7 @@ impl<Id: Eq, Data: Owned<Id>> Owned<Id> for c3p0::Model<Id, Data> {
 impl<Id: Eq> Owned<Id> for Id {
     fn get_owner_id(&self) -> &Id {
         self
-    }    
+    }
 }
 
 #[derive(Clone)]
