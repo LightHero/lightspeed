@@ -13,6 +13,7 @@ keywords = []
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
+c3p0 = { workspace = true, optional = true }
 lightspeed_auth = { workspace = true, optional = true }
 lightspeed_cache = { workspace = true, optional = true }
 # lightspeed_cms = { workspace = true, optional = true }
@@ -26,12 +27,14 @@ lightspeed_scheduler = { workspace = true, optional = true }
 [features]
 default = ["core"]
 
-auth = ["dep:lightspeed_auth"]
+c3p0 = ["dep:c3p0"]
+
+auth = ["dep:lightspeed_auth", "c3p0"]
 cache = ["dep:lightspeed_cache"]
 # cms = ["dep:lightspeed_cms"]
 core = ["dep:lightspeed_core"]
 email = ["dep:lightspeed_email"]
-file_store = ["dep:lightspeed_file_store"]
+file_store = ["dep:lightspeed_file_store", "c3p0"]
 hash = ["dep:lightspeed_hash"]
 logger = ["dep:lightspeed_logger"]
 scheduler = ["dep:lightspeed_scheduler"]
