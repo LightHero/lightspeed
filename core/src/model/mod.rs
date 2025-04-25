@@ -1,13 +1,12 @@
 use crate::service::auth::Owned;
 use crate::service::validator::ownership::WithIdAndVersion;
 use serde::{Deserialize, Serialize};
-use typescript_definitions::TypeScriptify;
 
 pub mod boolean;
 pub mod language;
 pub mod model_dto;
 
-#[derive(Clone, Debug, PartialEq, Deserialize, Serialize, TypeScriptify)]
+#[derive(Clone, Debug, PartialEq, Deserialize, Serialize)]
 pub struct ModelWithOwner<D> {
     pub id: u64,
     pub version: u32,

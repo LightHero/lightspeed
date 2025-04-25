@@ -5,7 +5,6 @@ use std::collections::hash_map::Entry;
 use std::collections::HashMap;
 use std::error::Error;
 use std::fmt::{Display, Formatter};
-use typescript_definitions::TypeScriptify;
 
 pub struct ErrorCodes {}
 
@@ -131,10 +130,10 @@ impl From<c3p0_common::error::C3p0Error> for LightSpeedError {
     }
 }
 
-#[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize, TypeScriptify)]
+#[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct ErrorDetail {
-    error: String,
-    params: Vec<String>,
+    pub error: String,
+    pub params: Vec<String>,
 }
 
 impl ErrorDetail {
@@ -161,7 +160,7 @@ impl From<(&str, Vec<String>)> for ErrorDetail {
     }
 }
 
-#[derive(Serialize, Deserialize, TypeScriptify)]
+#[derive(Serialize, Deserialize)]
 pub struct WebErrorDetails<'a> {
     pub code: u16,
     pub message: Option<Cow<'a, str>>,

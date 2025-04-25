@@ -2,9 +2,8 @@ use crate::error::LightSpeedError;
 use serde::{Deserialize, Serialize};
 use std::str::FromStr;
 use strum::{AsRefStr, Display, EnumIter};
-use typescript_definitions::TypeScriptify;
 
-#[derive(Clone, Debug, Display, EnumIter, AsRefStr, Serialize, Deserialize, PartialEq, Eq, Hash, TypeScriptify)]
+#[derive(Clone, Debug, Display, EnumIter, AsRefStr, Serialize, Deserialize, PartialEq, Eq, Hash)]
 #[allow(non_camel_case_types)]
 pub enum Language {
     DE,
