@@ -1,8 +1,8 @@
 use crate::error::{LightSpeedError, WebErrorDetails};
 use crate::web::Headers;
+use ::http::HeaderValue;
 use actix_web_4_ext::HttpResponseBuilder;
 use actix_web_4_ext::{http, HttpRequest, HttpResponse, ResponseError};
-use ::http::HeaderValue;
 
 impl Headers for HttpRequest {
     fn get(&self, header_name: &str) -> Option<&HeaderValue> {

@@ -75,8 +75,10 @@ mod tests {
         // Arrange
         let mut error_details = ErrorDetails::default();
 
-        let first = c3p0_common::Model { id: 13, version: 1, data: 1000, update_epoch_millis:0, create_epoch_millis: 0 };
-        let second = c3p0_common::Model { id: 12, version: 0, data: 1000, update_epoch_millis:0, create_epoch_millis: 0 };
+        let first =
+            c3p0_common::Model { id: 13, version: 1, data: 1000, update_epoch_millis: 0, create_epoch_millis: 0 };
+        let second =
+            c3p0_common::Model { id: 12, version: 0, data: 1000, update_epoch_millis: 0, create_epoch_millis: 0 };
 
         // Act
         validate_ownership(&mut error_details, &first, &second);
@@ -90,8 +92,10 @@ mod tests {
         // Arrange
         let mut error_details = ErrorDetails::default();
 
-        let first = c3p0_common::Model { id: 13, version: 1, data: 1001, update_epoch_millis:0, create_epoch_millis: 0 };
-        let second = c3p0_common::Model { id: 12, version: 0, data: 1000, update_epoch_millis:0, create_epoch_millis: 0 };
+        let first =
+            c3p0_common::Model { id: 13, version: 1, data: 1001, update_epoch_millis: 0, create_epoch_millis: 0 };
+        let second =
+            c3p0_common::Model { id: 12, version: 0, data: 1000, update_epoch_millis: 0, create_epoch_millis: 0 };
 
         // Act
         validate_ownership(&mut error_details, &first, &second);
@@ -106,8 +110,10 @@ mod tests {
         // Arrange
         let mut error_details = ErrorDetails::default();
 
-        let first = c3p0_common::Model { id: 12, version: 0, data: 1001, update_epoch_millis:0, create_epoch_millis: 0 };
-        let second = c3p0_common::Model { id: 12, version: 0, data: 1000, update_epoch_millis:0, create_epoch_millis: 0 };
+        let first =
+            c3p0_common::Model { id: 12, version: 0, data: 1001, update_epoch_millis: 0, create_epoch_millis: 0 };
+        let second =
+            c3p0_common::Model { id: 12, version: 0, data: 1000, update_epoch_millis: 0, create_epoch_millis: 0 };
 
         // Act
         validate_id_and_version(&mut error_details, &first, &second);
@@ -121,8 +127,10 @@ mod tests {
         // Arrange
         let mut error_details = ErrorDetails::default();
 
-        let first = c3p0_common::Model { id: 13, version: 1, data: 1001, update_epoch_millis:0, create_epoch_millis: 0 };
-        let second = c3p0_common::Model { id: 12, version: 0, data: 1000, update_epoch_millis:0, create_epoch_millis: 0 };
+        let first =
+            c3p0_common::Model { id: 13, version: 1, data: 1001, update_epoch_millis: 0, create_epoch_millis: 0 };
+        let second =
+            c3p0_common::Model { id: 12, version: 0, data: 1000, update_epoch_millis: 0, create_epoch_millis: 0 };
 
         // Act
         validate_id_and_version(&mut error_details, &first, &second);
@@ -138,8 +146,10 @@ mod tests {
         // Arrange
         let mut error_details = ErrorDetails::default();
 
-        let first = c3p0_common::Model { id: 12, version: 0, data: 1000, update_epoch_millis:0, create_epoch_millis: 0 };
-        let second = c3p0_common::Model { id: 12, version: 0, data: 1000, update_epoch_millis:0, create_epoch_millis: 0 };
+        let first =
+            c3p0_common::Model { id: 12, version: 0, data: 1000, update_epoch_millis: 0, create_epoch_millis: 0 };
+        let second =
+            c3p0_common::Model { id: 12, version: 0, data: 1000, update_epoch_millis: 0, create_epoch_millis: 0 };
 
         // Act
         validate_ownership_id_and_version(&mut error_details, &first, &second);
@@ -153,8 +163,10 @@ mod tests {
         // Arrange
         let mut error_details = ErrorDetails::default();
 
-        let first = c3p0_common::Model { id: 13, version: 0, data: 1000, update_epoch_millis:0, create_epoch_millis: 0 };
-        let second = c3p0_common::Model { id: 12, version: 0, data: 1000, update_epoch_millis:0, create_epoch_millis: 0 };
+        let first =
+            c3p0_common::Model { id: 13, version: 0, data: 1000, update_epoch_millis: 0, create_epoch_millis: 0 };
+        let second =
+            c3p0_common::Model { id: 12, version: 0, data: 1000, update_epoch_millis: 0, create_epoch_millis: 0 };
 
         // Act
         validate_ownership_id_and_version(&mut error_details, &first, &second);
@@ -169,8 +181,10 @@ mod tests {
         // Arrange
         let mut error_details = ErrorDetails::default();
 
-        let first = c3p0_common::Model { id: 12, version: 1, data: 1000, update_epoch_millis:0, create_epoch_millis: 0 };
-        let second = c3p0_common::Model { id: 12, version: 0, data: 1000, update_epoch_millis:0, create_epoch_millis: 0 };
+        let first =
+            c3p0_common::Model { id: 12, version: 1, data: 1000, update_epoch_millis: 0, create_epoch_millis: 0 };
+        let second =
+            c3p0_common::Model { id: 12, version: 0, data: 1000, update_epoch_millis: 0, create_epoch_millis: 0 };
 
         // Act
         validate_ownership_id_and_version(&mut error_details, &first, &second);
@@ -185,8 +199,10 @@ mod tests {
         // Arrange
         let mut error_details = ErrorDetails::default();
 
-        let first = c3p0_common::Model { id: 12, version: 0, data: 1001, update_epoch_millis:0, create_epoch_millis: 0 };
-        let second = c3p0_common::Model { id: 12, version: 0, data: 1000, update_epoch_millis:0, create_epoch_millis: 0 };
+        let first =
+            c3p0_common::Model { id: 12, version: 0, data: 1001, update_epoch_millis: 0, create_epoch_millis: 0 };
+        let second =
+            c3p0_common::Model { id: 12, version: 0, data: 1000, update_epoch_millis: 0, create_epoch_millis: 0 };
 
         // Act
         validate_ownership_id_and_version(&mut error_details, &first, &second);

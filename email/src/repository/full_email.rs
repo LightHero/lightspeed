@@ -128,11 +128,15 @@ impl EmailClient for FullEmailClient {
     }
 
     fn clear_emails(&self) -> Result<(), LightSpeedError> {
-        Err(LightSpeedError::InternalServerError { message: "FullEmailService.clear_emails - Cannot clear_emails".to_owned() })
+        Err(LightSpeedError::InternalServerError {
+            message: "FullEmailService.clear_emails - Cannot clear_emails".to_owned(),
+        })
     }
 
     fn retain_emails(&self, _: Box<dyn FnMut(&EmailMessage) -> bool>) -> Result<(), LightSpeedError> {
-        Err(LightSpeedError::InternalServerError { message: "FullEmailService.clear_emails - Cannot retain_emails".to_owned() })
+        Err(LightSpeedError::InternalServerError {
+            message: "FullEmailService.clear_emails - Cannot retain_emails".to_owned(),
+        })
     }
 }
 

@@ -22,7 +22,10 @@ impl FixedRecipientEmailClient {
 }
 
 impl EmailClient for FixedRecipientEmailClient {
-    fn send(&self, mut email_message: EmailMessage) -> Pin<Box<dyn Future<Output = Result<(), LightSpeedError>> + Send>> {
+    fn send(
+        &self,
+        mut email_message: EmailMessage,
+    ) -> Pin<Box<dyn Future<Output = Result<(), LightSpeedError>> + Send>> {
         let client = self.client.clone();
         let fixed_to_recipients = self.fixed_to_recipients.clone();
 

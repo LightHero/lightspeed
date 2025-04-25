@@ -1,6 +1,6 @@
 use crate::repository::email::EmailClientType;
-use lightspeed_core::model::boolean::Boolean;
 use clap::Parser;
+use lightspeed_core::model::boolean::Boolean;
 
 #[derive(Debug, Clone, Parser, Default)]
 #[clap(rename_all = "kebab-case")]

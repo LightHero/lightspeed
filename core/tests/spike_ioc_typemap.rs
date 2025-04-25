@@ -20,7 +20,7 @@ impl Factory<Arc<BeanA>> for Container {
 
 pub struct BeanB {
     // Enabling this, the code compiles, but it throws a stackoverflow at runtime. No bueno...
-//bean_a: Arc<BeanA>
+    //bean_a: Arc<BeanA>
 }
 
 impl Factory<Arc<BeanB>> for Container {

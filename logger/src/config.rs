@@ -1,6 +1,6 @@
 use crate::LoggerError;
-use std::str::FromStr;
 use clap::Parser;
+use std::str::FromStr;
 
 /// Defines the Logger configuration.
 #[derive(Debug, Clone, Parser)]
