@@ -12,7 +12,6 @@ keywords = []
 
 [dependencies]
 lightspeed_core = { version = "0.45.3", path = "../core" }
-clap = { version = "3.1", default-features = false, features = ["derive", "env", "std"] }
 lettre = { version = "0.11", default-features = false, features = ["smtp-transport", "builder", "hostname", "pool", "tokio1-rustls-tls"] }
 log = "0.4"
 parking_lot = "0.12"

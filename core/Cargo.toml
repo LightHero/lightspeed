@@ -13,7 +13,6 @@ keywords = []
 [dependencies]
 c3p0_common = { version = "0.72.4" }
 chrono = { version = "0.4", default-features = false, features = ["clock"] }
-clap = { version = "3.1", default-features = false, features = ["derive", "env", "std"] }
 jsonwebtoken = "9.0"
 log = "0.4"
 rand = "0.8"
