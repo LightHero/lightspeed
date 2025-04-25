@@ -1,7 +1,7 @@
 [package]
 name = "lightspeed"
 license = "MIT"
-version = "0.45.3"
+version = "0.45.4"
 authors = ["Francesco Cina <ufoscout@gmail.com>"]
 description = "LightSpeed"
 edition = "2018"
@@ -14,12 +14,12 @@ keywords = []
 
 [dependencies]
 c3p0 = { version = "0.72.4", features = ["postgres", "migrate"] }
-lightspeed_cache = { version = "0.45.3", path = "../cache", optional = true }
-lightspeed_core = { version = "0.45.3", path = "../core", optional = true }
-lightspeed_email = { version = "0.45.3", path = "../email", optional = true }
-lightspeed_hash = { version = "0.45.3", path = "../hash", optional = true }
-lightspeed_logger = { version = "0.45.3", path = "../logger", optional = true }
-lightspeed_scheduler = { version = "0.45.3", path = "../scheduler", optional = true }
+lightspeed_cache = { version = "0.45.4", path = "../cache", optional = true }
+lightspeed_core = { version = "0.45.4", path = "../core", optional = true }
+lightspeed_email = { version = "0.45.4", path = "../email", optional = true }
+lightspeed_hash = { version = "0.45.4", path = "../hash", optional = true }
+lightspeed_logger = { version = "0.45.4", path = "../logger", optional = true }
+lightspeed_scheduler = { version = "0.45.4", path = "../scheduler", optional = true }
 
 [features]
 default = ["core"]
