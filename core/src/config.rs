@@ -1,4 +1,3 @@
-
 /// Defines the JSON Web Token configuration.
 #[derive(Debug, Clone)]
 pub struct JwtConfig {
