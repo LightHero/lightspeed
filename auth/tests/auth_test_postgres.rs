@@ -3,9 +3,9 @@
 use std::sync::OnceLock;
 use std::time::Duration;
 
+use c3p0::postgres::PgC3p0Pool;
 use c3p0::postgres::deadpool::{self, Runtime};
 use c3p0::postgres::tokio_postgres::NoTls;
-use c3p0::postgres::PgC3p0Pool;
 use maybe_once::tokio::*;
 
 use lightspeed_auth::LsAuthModule;
@@ -41,7 +41,7 @@ async fn init() -> MaybeType {
     config.pool = Some(pool_config);
 
     let c3p0 = PgC3p0Pool::new(config.create_pool(Some(Runtime::Tokio1), NoTls).unwrap());
-    
+
     let repo_manager = RepoManager::new(c3p0.clone());
 
     let auth_config = AuthConfig { bcrypt_password_hash_cost: 4, ..Default::default() };

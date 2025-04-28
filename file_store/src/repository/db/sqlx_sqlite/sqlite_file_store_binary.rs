@@ -1,7 +1,7 @@
 use crate::model::BinaryContent;
 use crate::repository::db::DBFileStoreBinaryRepository;
-use c3p0::sqlx::sqlx::{Row, Sqlite, Transaction, query};
 use c3p0::sqlx::error::into_c3p0_error;
+use c3p0::sqlx::sqlx::{Row, Sqlite, Transaction, query};
 use lightspeed_core::error::{ErrorCodes, LsError};
 use std::borrow::Cow;
 

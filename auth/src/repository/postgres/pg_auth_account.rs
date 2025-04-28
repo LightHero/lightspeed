@@ -1,4 +1,7 @@
-use crate::{model::auth_account::{AuthAccountData, AuthAccountDataCodec, AuthAccountModel, AuthAccountStatus}, repository::AuthAccountRepository};
+use crate::{
+    model::auth_account::{AuthAccountData, AuthAccountDataCodec, AuthAccountModel, AuthAccountStatus},
+    repository::AuthAccountRepository,
+};
 use c3p0::postgres::*;
 use c3p0::*;
 use lightspeed_core::error::{ErrorCodes, LsError};
@@ -11,7 +14,9 @@ pub struct PostgresAuthAccountRepository {
 
 impl Default for PostgresAuthAccountRepository {
     fn default() -> Self {
-        PostgresAuthAccountRepository { repo: PgC3p0JsonBuilder::new("LS_AUTH_ACCOUNT").build_with_codec(AuthAccountDataCodec {}) }
+        PostgresAuthAccountRepository {
+            repo: PgC3p0JsonBuilder::new("LS_AUTH_ACCOUNT").build_with_codec(AuthAccountDataCodec {}),
+        }
     }
 }
 
@@ -34,7 +39,10 @@ impl AuthAccountRepository for PostgresAuthAccountRepository {
         "#,
             self.queries().find_base_sql_query
         );
-        Ok(self.repo.fetch_all_with_sql(tx, &sql, &[&(*start_user_id as i64), &status.as_ref(), &(limit as i64)]).await?)
+        Ok(self
+            .repo
+            .fetch_all_with_sql(tx, &sql, &[&(*start_user_id as i64), &status.as_ref(), &(limit as i64)])
+            .await?)
     }
 
     async fn fetch_by_id(&self, tx: &mut Self::Tx<'_>, user_id: &u64) -> Result<AuthAccountModel, LsError> {

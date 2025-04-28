@@ -1,7 +1,7 @@
 use crate::model::{FileStoreDataData, FileStoreDataDataCodec, FileStoreDataModel};
 use crate::repository::db::FileStoreDataRepository;
-use c3p0::sqlx::sqlx::{Postgres, Row, Transaction, query};
 use c3p0::sqlx::error::into_c3p0_error;
+use c3p0::sqlx::sqlx::{Postgres, Row, Transaction, query};
 use c3p0::{sqlx::*, *};
 use lightspeed_core::error::LsError;
 

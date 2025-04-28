@@ -9,7 +9,8 @@ use super::AuthRepositoryManager;
 pub mod pg_auth_account;
 pub mod pg_token;
 
-const MIGRATIONS: include_dir::Dir = include_dir::include_dir!("$CARGO_MANIFEST_DIR/src_resources/db/postgres/migrations");
+const MIGRATIONS: include_dir::Dir =
+    include_dir::include_dir!("$CARGO_MANIFEST_DIR/src_resources/db/postgres/migrations");
 
 #[derive(Clone)]
 pub struct PostgresAuthRepositoryManager {
@@ -42,12 +43,11 @@ impl AuthRepositoryManager for PostgresAuthRepositoryManager {
             })?)
             .build();
 
-        migrate
-            .migrate()
-            .await
-            .map_err(|err| LsError::ModuleStartError { message: format!("PostgresAuthRepositoryManager - db migration failed: {:?}", err) })?;
+        migrate.migrate().await.map_err(|err| LsError::ModuleStartError {
+            message: format!("PostgresAuthRepositoryManager - db migration failed: {:?}", err),
+        })?;
 
-            Ok(())
+        Ok(())
     }
 
     fn auth_account_repo(&self) -> PostgresAuthAccountRepository {
