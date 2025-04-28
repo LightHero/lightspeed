@@ -101,7 +101,7 @@ impl AuthAccountRepository for PostgresAuthAccountRepository {
     }
 
     async fn delete_by_id(&self, tx: &mut Self::Tx<'_>, user_id: &u64) -> Result<u64, LsError> {
-        Ok(self.repo.delete_by_id(tx, &user_id).await?)
+        Ok(self.repo.delete_by_id(tx, user_id).await?)
     }
 }
 
