@@ -1,6 +1,6 @@
 use crate::model::BinaryContent;
 use crate::repository::db::DBFileStoreBinaryRepository;
-use ::sqlx::{MySql, Row, Transaction, query};
+use c3p0::sqlx::sqlx::{MySql, Row, Transaction, query};
 use c3p0::sqlx::error::into_c3p0_error;
 use lightspeed_core::error::{ErrorCodes, LsError};
 use std::borrow::Cow;

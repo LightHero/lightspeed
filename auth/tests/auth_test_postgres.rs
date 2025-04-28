@@ -1,4 +1,4 @@
-#![cfg(feature = "tokio_postgres")]
+#![cfg(feature = "postgres")]
 
 use std::sync::OnceLock;
 use std::time::Duration;

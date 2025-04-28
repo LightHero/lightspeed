@@ -1,6 +1,6 @@
 use crate::model::{FileStoreDataData, FileStoreDataDataCodec, FileStoreDataModel};
 use crate::repository::db::FileStoreDataRepository;
-use ::sqlx::{Row, Sqlite, Transaction, query};
+use c3p0::sqlx::sqlx::{Row, Sqlite, Transaction, query};
 use c3p0::sqlx::error::into_c3p0_error;
 use c3p0::{sqlx::*, *};
 use lightspeed_core::error::LsError;
@@ -57,7 +57,7 @@ impl FileStoreDataRepository for SqliteFileStoreDataRepository {
             self.repo.queries().find_base_sql_query
         );
 
-        Ok(self.repo.fetch_one_with_sql(tx, ::sqlx::query(&sql).bind(repository).bind(file_path)).await?)
+        Ok(self.repo.fetch_one_with_sql(tx, query(&sql).bind(repository).bind(file_path)).await?)
     }
 
     async fn fetch_all_by_repository(
@@ -81,7 +81,7 @@ impl FileStoreDataRepository for SqliteFileStoreDataRepository {
             offset
         );
 
-        Ok(self.repo.fetch_all_with_sql(tx, ::sqlx::query(&sql).bind(repository)).await?)
+        Ok(self.repo.fetch_all_with_sql(tx, query(&sql).bind(repository)).await?)
     }
 
     async fn save(

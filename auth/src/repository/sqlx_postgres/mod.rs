@@ -1,6 +1,6 @@
 use crate::repository::AuthRepositoryManager;
-use crate::repository::pg::pg_auth_account::PgAuthAccountRepository;
-use crate::repository::pg::pg_token::PgTokenRepository;
+use crate::repository::sqlx_postgres::pg_auth_account::PgAuthAccountRepository;
+use crate::repository::sqlx_postgres::pg_token::PgTokenRepository;
 use ::sqlx::{migrate::Migrator, *};
 use c3p0::sqlx::*;
 use lightspeed_core::error::LsError;

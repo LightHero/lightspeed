@@ -1,7 +1,7 @@
 use crate::repository::db::DBFileStoreRepositoryManager;
-use crate::repository::db::sqlite::sqlite_file_store_binary::SqliteFileStoreBinaryRepository;
-use crate::repository::db::sqlite::sqlite_file_store_data::SqliteFileStoreDataRepository;
-use ::sqlx::{migrate::Migrator, *};
+use crate::repository::db::sqlx_sqlite::sqlite_file_store_binary::SqliteFileStoreBinaryRepository;
+use crate::repository::db::sqlx_sqlite::sqlite_file_store_data::SqliteFileStoreDataRepository;
+use c3p0::sqlx::sqlx::{migrate::Migrator, *};
 use c3p0::sqlx::*;
 use lightspeed_core::error::LsError;
 
