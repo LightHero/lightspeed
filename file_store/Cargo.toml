@@ -18,7 +18,8 @@ log = { workspace = true }
 opendal = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }
-sqlx = { workspace = true }
+
+sqlx = { workspace = true, optional = true }
 
 axum = { workspace = true, optional = true }
 mime = { workspace = true, optional = true }
@@ -41,6 +42,6 @@ tower = { workspace = true }
 default = []
 
 axum = ["dep:axum", "lightspeed_core/axum", "mime", "mime_guess"]
-mysql_unsupported = ["c3p0/sqlx_mysql"]
-postgres = ["c3p0/sqlx_postgres"]
-sqlite = ["c3p0/sqlx_sqlite"]
+sqlx_mysql_unsupported = ["c3p0/sqlx_mysql", "c3p0/migrate", "sqlx"]
+sqlx_postgres = ["c3p0/sqlx_postgres", "c3p0/migrate", "sqlx"]
+sqlx_sqlite = ["c3p0/sqlx_sqlite", "c3p0/migrate", "sqlx"]

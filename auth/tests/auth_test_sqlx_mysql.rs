@@ -1,4 +1,4 @@
-#![cfg(feature = "mysql")]
+#![cfg(feature = "sqlx_mysql")]
 
 use std::sync::OnceLock;
 
@@ -6,7 +6,7 @@ use maybe_once::tokio::*;
 
 use lightspeed_auth::LsAuthModule;
 use lightspeed_auth::config::AuthConfig;
-use lightspeed_auth::repository::mysql::MySqlAuthRepositoryManager;
+use lightspeed_auth::repository::sqlx_mysql::MySqlAuthRepositoryManager;
 use lightspeed_core::module::LsModule;
 use lightspeed_test_utils::mysql::new_mysql_db;
 use testcontainers::mysql::Mysql;

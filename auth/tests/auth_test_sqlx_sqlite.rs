@@ -1,4 +1,4 @@
-#![cfg(feature = "sqlite")]
+#![cfg(feature = "sqlx_sqlite")]
 
 use std::sync::OnceLock;
 
@@ -6,7 +6,7 @@ use maybe_once::tokio::*;
 
 use lightspeed_auth::LsAuthModule;
 use lightspeed_auth::config::AuthConfig;
-use lightspeed_auth::repository::sqlite::SqliteAuthRepositoryManager;
+use lightspeed_auth::repository::sqlx_sqlite::SqliteAuthRepositoryManager;
 use lightspeed_core::module::LsModule;
 use lightspeed_test_utils::sqlite::new_sqlite_db;
 

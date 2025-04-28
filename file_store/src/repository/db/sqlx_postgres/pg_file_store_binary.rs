@@ -1,23 +1,23 @@
 use crate::model::BinaryContent;
 use crate::repository::db::DBFileStoreBinaryRepository;
-use ::sqlx::{Row, Sqlite, Transaction, query};
 use c3p0::sqlx::error::into_c3p0_error;
+use c3p0::sqlx::sqlx::{Postgres, Row, Transaction, query};
 use lightspeed_core::error::{ErrorCodes, LsError};
 use std::borrow::Cow;
 
 #[derive(Clone)]
-pub struct SqliteFileStoreBinaryRepository {
+pub struct PgFileStoreBinaryRepository {
     table_name: &'static str,
 }
 
-impl Default for SqliteFileStoreBinaryRepository {
+impl Default for PgFileStoreBinaryRepository {
     fn default() -> Self {
-        SqliteFileStoreBinaryRepository { table_name: "LS_FILE_STORE_BINARY" }
+        PgFileStoreBinaryRepository { table_name: "LS_FILE_STORE_BINARY" }
     }
 }
 
-impl DBFileStoreBinaryRepository for SqliteFileStoreBinaryRepository {
-    type Tx<'a> = Transaction<'a, Sqlite>;
+impl DBFileStoreBinaryRepository for PgFileStoreBinaryRepository {
+    type Tx<'a> = Transaction<'a, Postgres>;
 
     async fn read_file(
         &self,
@@ -25,7 +25,7 @@ impl DBFileStoreBinaryRepository for SqliteFileStoreBinaryRepository {
         repository_name: &str,
         file_path: &str,
     ) -> Result<BinaryContent<'_>, LsError> {
-        let sql = &format!("SELECT DATA FROM {} WHERE repository = ? AND filepath = ?", self.table_name);
+        let sql = &format!("SELECT DATA FROM {} WHERE repository = $1 AND filepath = $2", self.table_name);
 
         let res = query(sql)
             .bind(repository_name)
@@ -49,14 +49,14 @@ impl DBFileStoreBinaryRepository for SqliteFileStoreBinaryRepository {
             BinaryContent::InMemory { content } => Cow::Borrowed(content),
             BinaryContent::OpenDal { operator, path } => {
                 let buffer = operator.read(path).await.map_err(|err| LsError::BadRequest {
-                    message: format!("SqliteFileStoreBinaryRepository - Cannot read file [{path}]. Err: {err:?}"),
+                    message: format!("PgFileStoreBinaryRepository - Cannot read file [{path}]. Err: {err:?}"),
                     code: ErrorCodes::IO_ERROR,
                 })?;
                 Cow::Owned(Cow::Owned(buffer.to_vec()))
             }
         };
 
-        let sql = &format!("INSERT INTO {} (repository, filepath, data) VALUES (?, ?, ?)", self.table_name);
+        let sql = &format!("INSERT INTO {} (repository, filepath, data) VALUES ($1, $2, $3)", self.table_name);
 
         let res = query(sql)
             .bind(repository_name)
@@ -69,7 +69,7 @@ impl DBFileStoreBinaryRepository for SqliteFileStoreBinaryRepository {
     }
 
     async fn delete_file(&self, tx: &mut Self::Tx<'_>, repository_name: &str, file_path: &str) -> Result<u64, LsError> {
-        let sql = &format!("DELETE FROM {} WHERE repository = ? AND filepath = ?", self.table_name);
+        let sql = &format!("DELETE FROM {} WHERE repository = $1 AND filepath = $2", self.table_name);
         let res =
             query(sql).bind(repository_name).bind(file_path).execute(tx.as_mut()).await.map_err(into_c3p0_error)?;
         Ok(res.rows_affected())

@@ -5,14 +5,17 @@ use crate::model::token::{TokenData, TokenModel};
 use c3p0::*;
 use lightspeed_core::error::LsError;
 
-#[cfg(feature = "mysql")]
-pub mod mysql;
-
 #[cfg(feature = "postgres")]
-pub mod pg;
+pub mod postgres;
 
-#[cfg(feature = "sqlite")]
-pub mod sqlite;
+#[cfg(feature = "sqlx_mysql")]
+pub mod sqlx_mysql;
+
+#[cfg(feature = "sqlx_postgres")]
+pub mod sqlx_postgres;
+
+#[cfg(feature = "sqlx_sqlite")]
+pub mod sqlx_sqlite;
 
 pub trait AuthRepositoryManager: Clone + Send + Sync {
     type Tx<'a>: Send + Sync;

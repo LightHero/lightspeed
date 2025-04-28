@@ -1,25 +1,25 @@
 use crate::model::{FileStoreDataData, FileStoreDataDataCodec, FileStoreDataModel};
 use crate::repository::db::FileStoreDataRepository;
-use ::sqlx::{MySql, Row, Transaction, query};
 use c3p0::sqlx::error::into_c3p0_error;
+use c3p0::sqlx::sqlx::{Row, Sqlite, Transaction, query};
 use c3p0::{sqlx::*, *};
 use lightspeed_core::error::LsError;
 
 #[derive(Clone)]
-pub struct MySqlFileStoreDataRepository {
-    repo: SqlxMySqlC3p0Json<u64, FileStoreDataData, FileStoreDataDataCodec>,
+pub struct SqliteFileStoreDataRepository {
+    repo: SqlxSqliteC3p0Json<u64, FileStoreDataData, FileStoreDataDataCodec>,
 }
 
-impl Default for MySqlFileStoreDataRepository {
+impl Default for SqliteFileStoreDataRepository {
     fn default() -> Self {
-        MySqlFileStoreDataRepository {
-            repo: SqlxMySqlC3p0JsonBuilder::new("LS_FILE_STORE_DATA").build_with_codec(FileStoreDataDataCodec {}),
+        SqliteFileStoreDataRepository {
+            repo: SqlxSqliteC3p0JsonBuilder::new("LS_FILE_STORE_DATA").build_with_codec(FileStoreDataDataCodec {}),
         }
     }
 }
 
-impl FileStoreDataRepository for MySqlFileStoreDataRepository {
-    type Tx<'a> = Transaction<'a, MySql>;
+impl FileStoreDataRepository for SqliteFileStoreDataRepository {
+    type Tx<'a> = Transaction<'a, Sqlite>;
 
     async fn exists_by_repository(
         &self,
@@ -27,7 +27,7 @@ impl FileStoreDataRepository for MySqlFileStoreDataRepository {
         repository: &str,
         file_path: &str,
     ) -> Result<bool, LsError> {
-        let sql = "SELECT EXISTS (SELECT 1 FROM LS_FILE_STORE_DATA WHERE (data -> '$.repository') = ? AND (data -> '$.file_path') = ?)";
+        let sql = "SELECT EXISTS (SELECT 1 FROM LS_FILE_STORE_DATA WHERE (data ->> '$.repository') = ? AND (data ->> '$.file_path') = ?)";
 
         let res = query(sql)
             .bind(repository)
@@ -52,12 +52,12 @@ impl FileStoreDataRepository for MySqlFileStoreDataRepository {
         let sql = format!(
             r#"
             {}
-            WHERE (data -> '$.repository') = ? AND (data -> '$.file_path') = ?
+            WHERE (data ->> '$.repository') = ? AND (data ->> '$.file_path') = ?
         "#,
             self.repo.queries().find_base_sql_query
         );
 
-        Ok(self.repo.fetch_one_with_sql(tx, ::sqlx::query(&sql).bind(repository).bind(file_path)).await?)
+        Ok(self.repo.fetch_one_with_sql(tx, query(&sql).bind(repository).bind(file_path)).await?)
     }
 
     async fn fetch_all_by_repository(
@@ -70,7 +70,7 @@ impl FileStoreDataRepository for MySqlFileStoreDataRepository {
     ) -> Result<Vec<FileStoreDataModel>, LsError> {
         let sql = format!(
             r#"{}
-               WHERE (data -> '$.repository') = ?
+               WHERE (data ->> '$.repository') = ?
                 order by id {}
                 limit {}
                 offset {}
@@ -81,7 +81,7 @@ impl FileStoreDataRepository for MySqlFileStoreDataRepository {
             offset
         );
 
-        Ok(self.repo.fetch_all_with_sql(tx, ::sqlx::query(&sql).bind(repository)).await?)
+        Ok(self.repo.fetch_all_with_sql(tx, query(&sql).bind(repository)).await?)
     }
 
     async fn save(

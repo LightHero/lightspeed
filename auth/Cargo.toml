@@ -19,7 +19,7 @@ log = { workspace = true }
 poem-openapi = { workspace = true, optional = true }
 serde = { workspace = true }
 serde_json = { workspace = true }
-sqlx = { workspace = true }
+sqlx = { workspace = true, optional = true}
 strum = { workspace = true }
 
 [dev-dependencies]
@@ -33,6 +33,7 @@ tokio = { workspace = true, features = ["rt-multi-thread"] }
 [features]
 default = []
 poem_openapi = ["dep:poem-openapi", "lightspeed_core/poem_openapi"]
-mysql = ["c3p0/sqlx_mysql"]
-postgres = ["c3p0/sqlx_postgres"]
-sqlite = ["c3p0/sqlx_sqlite"]
+postgres = ["c3p0/postgres", "c3p0/migrate"]
+sqlx_mysql = ["c3p0/sqlx_mysql", "c3p0/migrate", "sqlx"]
+sqlx_postgres = ["c3p0/sqlx_postgres", "c3p0/migrate", "sqlx"]
+sqlx_sqlite = ["c3p0/sqlx_sqlite", "c3p0/migrate", "sqlx"]

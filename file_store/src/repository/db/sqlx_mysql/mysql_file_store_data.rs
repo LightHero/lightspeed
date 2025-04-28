@@ -1,25 +1,25 @@
 use crate::model::{FileStoreDataData, FileStoreDataDataCodec, FileStoreDataModel};
 use crate::repository::db::FileStoreDataRepository;
-use ::sqlx::{Row, Sqlite, Transaction, query};
 use c3p0::sqlx::error::into_c3p0_error;
+use c3p0::sqlx::sqlx::{MySql, Row, Transaction, query};
 use c3p0::{sqlx::*, *};
 use lightspeed_core::error::LsError;
 
 #[derive(Clone)]
-pub struct SqliteFileStoreDataRepository {
-    repo: SqlxSqliteC3p0Json<u64, FileStoreDataData, FileStoreDataDataCodec>,
+pub struct MySqlFileStoreDataRepository {
+    repo: SqlxMySqlC3p0Json<u64, FileStoreDataData, FileStoreDataDataCodec>,
 }
 
-impl Default for SqliteFileStoreDataRepository {
+impl Default for MySqlFileStoreDataRepository {
     fn default() -> Self {
-        SqliteFileStoreDataRepository {
-            repo: SqlxSqliteC3p0JsonBuilder::new("LS_FILE_STORE_DATA").build_with_codec(FileStoreDataDataCodec {}),
+        MySqlFileStoreDataRepository {
+            repo: SqlxMySqlC3p0JsonBuilder::new("LS_FILE_STORE_DATA").build_with_codec(FileStoreDataDataCodec {}),
         }
     }
 }
 
-impl FileStoreDataRepository for SqliteFileStoreDataRepository {
-    type Tx<'a> = Transaction<'a, Sqlite>;
+impl FileStoreDataRepository for MySqlFileStoreDataRepository {
+    type Tx<'a> = Transaction<'a, MySql>;
 
     async fn exists_by_repository(
         &self,
@@ -27,7 +27,7 @@ impl FileStoreDataRepository for SqliteFileStoreDataRepository {
         repository: &str,
         file_path: &str,
     ) -> Result<bool, LsError> {
-        let sql = "SELECT EXISTS (SELECT 1 FROM LS_FILE_STORE_DATA WHERE (data ->> '$.repository') = ? AND (data ->> '$.file_path') = ?)";
+        let sql = "SELECT EXISTS (SELECT 1 FROM LS_FILE_STORE_DATA WHERE (data -> '$.repository') = ? AND (data -> '$.file_path') = ?)";
 
         let res = query(sql)
             .bind(repository)
@@ -52,7 +52,7 @@ impl FileStoreDataRepository for SqliteFileStoreDataRepository {
         let sql = format!(
             r#"
             {}
-            WHERE (data ->> '$.repository') = ? AND (data ->> '$.file_path') = ?
+            WHERE (data -> '$.repository') = ? AND (data -> '$.file_path') = ?
         "#,
             self.repo.queries().find_base_sql_query
         );
@@ -70,7 +70,7 @@ impl FileStoreDataRepository for SqliteFileStoreDataRepository {
     ) -> Result<Vec<FileStoreDataModel>, LsError> {
         let sql = format!(
             r#"{}
-               WHERE (data ->> '$.repository') = ?
+               WHERE (data -> '$.repository') = ?
                 order by id {}
                 limit {}
                 offset {}

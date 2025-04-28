@@ -1,14 +1,15 @@
 use crate::repository::db::DBFileStoreRepositoryManager;
-use crate::repository::db::mysql::mysql_file_store_binary::MySqlFileStoreBinaryRepository;
-use crate::repository::db::mysql::mysql_file_store_data::MySqlFileStoreDataRepository;
-use ::sqlx::{migrate::Migrator, *};
+use crate::repository::db::sqlx_mysql::mysql_file_store_binary::MySqlFileStoreBinaryRepository;
+use crate::repository::db::sqlx_mysql::mysql_file_store_data::MySqlFileStoreDataRepository;
+use ::sqlx::migrate::Migrator;
+use c3p0::sqlx::sqlx::*;
 use c3p0::sqlx::*;
 use lightspeed_core::error::LsError;
 
 pub mod mysql_file_store_binary;
 pub mod mysql_file_store_data;
 
-static MIGRATOR: Migrator = migrate!("src_resources/db/mysql/migrations");
+static MIGRATOR: Migrator = migrate!("src_resources/db/sqlx_mysql/migrations");
 
 #[derive(Clone)]
 pub struct MySqlFileStoreRepositoryManager {

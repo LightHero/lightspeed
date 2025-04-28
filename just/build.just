@@ -61,11 +61,12 @@ for_each_feature command:
   declare -a features=(
     "actix_web"
     "axum"
-    "mysql"
     "poem"
     "poem_openapi"
     "postgres"
-    "sqlite"
+    "sqlx_postgres"
+    "sqlx_mysql"
+    "sqlx_sqlite"
   )
 
   for i in "${features[@]}"

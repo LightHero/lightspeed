@@ -1,9 +1,9 @@
-#![cfg(feature = "sqlite")]
+#![cfg(feature = "sqlx_sqlite")]
 
 use std::sync::OnceLock;
 
 use lightspeed_file_store::LsFileStoreModule;
-use lightspeed_file_store::repository::db::sqlite::SqliteFileStoreRepositoryManager;
+use lightspeed_file_store::repository::db::sqlx_sqlite::SqliteFileStoreRepositoryManager;
 use maybe_once::tokio::*;
 
 use lightspeed_core::module::LsModule;
