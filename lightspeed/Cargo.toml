@@ -44,6 +44,7 @@ axum = ["lightspeed_core?/axum", "lightspeed_file_store?/axum"]
 poem = ["lightspeed_core?/poem"]
 poem_openapi = ["lightspeed_core?/poem_openapi", "poem", "lightspeed_auth?/poem_openapi"]
 
+postgres = ["lightspeed_auth?/postgres"]
 sqlx_mysql = ["lightspeed_auth?/sqlx_mysql"]
 sqlx_postgres = ["lightspeed_auth?/sqlx_postgres", "lightspeed_file_store?/sqlx_postgres"]
 sqlx_sqlite = ["lightspeed_auth?/sqlx_sqlite", "lightspeed_file_store?/sqlx_sqlite"]
