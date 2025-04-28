@@ -14,6 +14,9 @@ pub mod pg;
 #[cfg(feature = "sqlite")]
 pub mod sqlite;
 
+#[cfg(feature = "tokio_postgres")]
+pub mod postgres;
+
 pub trait AuthRepositoryManager: Clone + Send + Sync {
     type Tx<'a>: Send + Sync;
     type C3P0: for<'a> C3p0Pool<Tx<'a> = Self::Tx<'a>>;
