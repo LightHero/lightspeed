@@ -9,7 +9,7 @@ use ::sqlx::migrate::Migrator;
 pub mod mysql_file_store_binary;
 pub mod mysql_file_store_data;
 
-static MIGRATOR: Migrator = migrate!("src_resources/db/mysql/migrations");
+static MIGRATOR: Migrator = migrate!("src_resources/db/sqlx_mysql/migrations");
 
 #[derive(Clone)]
 pub struct MySqlFileStoreRepositoryManager {

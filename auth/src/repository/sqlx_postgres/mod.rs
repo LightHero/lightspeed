@@ -8,7 +8,7 @@ use lightspeed_core::error::LsError;
 pub mod pg_auth_account;
 pub mod pg_token;
 
-static MIGRATOR: Migrator = ::sqlx::migrate!("src_resources/db/pg/migrations");
+static MIGRATOR: Migrator = ::sqlx::migrate!("src_resources/db/sqlx_postgres/migrations");
 
 #[derive(Clone)]
 pub struct PgAuthRepositoryManager {

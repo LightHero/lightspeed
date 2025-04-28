@@ -8,7 +8,7 @@ use lightspeed_core::error::LsError;
 pub mod pg_file_store_binary;
 pub mod pg_file_store_data;
 
-static MIGRATOR: Migrator = migrate!("src_resources/db/pg/migrations");
+static MIGRATOR: Migrator = migrate!("src_resources/db/sqlx_postgres/migrations");
 
 #[derive(Clone)]
 pub struct PgFileStoreRepositoryManager {

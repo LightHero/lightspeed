@@ -8,7 +8,7 @@ use lightspeed_core::error::LsError;
 pub mod sqlite_file_store_binary;
 pub mod sqlite_file_store_data;
 
-static MIGRATOR: Migrator = migrate!("src_resources/db/sqlite/migrations");
+static MIGRATOR: Migrator = migrate!("src_resources/db/sqlx_sqlite/migrations");
 
 #[derive(Clone)]
 pub struct SqliteFileStoreRepositoryManager {
