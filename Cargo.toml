@@ -15,21 +15,21 @@ members = [
 ]
 
 [workspace.package]
-version = "0.64.2"
+version = "0.64.3"
 edition = "2024"
 
 [workspace.dependencies]
-lightspeed_auth = { version = "0.64.2", path = "./auth" }
-lightspeed_cache = { version = "0.64.2", path = "./cache" }
-# lightspeed_cms = { version = "0.64.2", path = "./cms" }
-lightspeed_core = { version = "0.64.2", path = "./core" }
-lightspeed_email = { version = "0.64.2", path = "./email" }
-lightspeed_file_store = { version = "0.64.2", path = "./file_store" }
-lightspeed_hash = { version = "0.64.2", path = "./hash" }
-lightspeed_logger = { version = "0.64.2", path = "./logger" }
-lightspeed_persistence = { version = "0.64.2", path = "./persistence" }
-lightspeed_scheduler = { version = "0.64.2", path = "./scheduler" }
-lightspeed_test_utils = { version = "0.64.2", path = "./test_utils" }
+lightspeed_auth = { version = "0.64.3", path = "./auth" }
+lightspeed_cache = { version = "0.64.3", path = "./cache" }
+# lightspeed_cms = { version = "0.64.3", path = "./cms" }
+lightspeed_core = { version = "0.64.3", path = "./core" }
+lightspeed_email = { version = "0.64.3", path = "./email" }
+lightspeed_file_store = { version = "0.64.3", path = "./file_store" }
+lightspeed_hash = { version = "0.64.3", path = "./hash" }
+lightspeed_logger = { version = "0.64.3", path = "./logger" }
+lightspeed_persistence = { version = "0.64.3", path = "./persistence" }
+lightspeed_scheduler = { version = "0.64.3", path = "./scheduler" }
+lightspeed_test_utils = { version = "0.64.3", path = "./test_utils" }
 
 actix-files = { version = "0.6.0" }
 actix-rt = "2"
