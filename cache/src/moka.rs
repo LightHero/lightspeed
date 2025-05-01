@@ -1,6 +1,10 @@
-use moka::future::Cache as MokaCache;
+use ::moka::future::Cache as MokaCache;
 use std::hash::Hash;
 use std::sync::Arc;
+
+pub mod moka {
+    pub use ::moka::future::*;
+}
 
 #[derive(Clone)]
 pub struct Cache<K: Hash + Eq, V> {
