@@ -150,7 +150,7 @@ mod test {
         let cache = Cache::new(1000);
         cache.insert("hello", "world").await;
 
-        let result = cache.get_or_insert_with("hello", || async { "new world!" }).await;
+        let result = cache.get_or_insert_with("hello", async || { "new world!" }).await;
 
         assert_eq!("world", result);
     }
@@ -164,7 +164,7 @@ mod test {
 
         sleep(Duration::from_millis(2));
 
-        let result = cache.get_or_insert_with("hello", || async { "new world" }).await;
+        let result = cache.get_or_insert_with("hello", async || { "new world" }).await;
 
         assert_eq!("new world", result);
     }
@@ -173,7 +173,7 @@ mod test {
     async fn should_insert_on_get_if_not_present() {
         let cache = Cache::new(100);
 
-        let result = cache.get_or_insert_with(&"hello", || async { "new world" }).await;
+        let result = cache.get_or_insert_with(&"hello", async || { "new world" }).await;
 
         assert_eq!("new world", result);
     }
