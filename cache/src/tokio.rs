@@ -12,7 +12,7 @@ pub struct Cache<K: Hash + Eq, V> {
     ttl_ms: i64,
 }
 
-impl <K: Hash + Eq, V> Clone for Cache<K, V> {
+impl<K: Hash + Eq, V> Clone for Cache<K, V> {
     fn clone(&self) -> Self {
         Self { map: self.map.clone(), ttl_ms: self.ttl_ms }
     }
@@ -114,7 +114,6 @@ mod test {
 
     #[tokio::test]
     async fn should_accept_not_cloneable_key_and_value() {
-
         #[derive(Debug, Hash, Eq, PartialEq)]
         struct NotCloneable;
 
@@ -125,7 +124,6 @@ mod test {
         assert!(cache.get(&NotCloneable).await.is_some());
         assert!(cloned_cache.get(&NotCloneable).await.is_some());
     }
-
 
     #[tokio::test]
     async fn should_return_entry_not_expired() {
