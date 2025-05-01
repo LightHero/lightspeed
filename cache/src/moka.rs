@@ -2,11 +2,10 @@ use ::moka::future::Cache as MokaCache;
 use std::hash::Hash;
 use std::sync::Arc;
 
+#[allow(clippy::module_inception)]
 pub mod moka {
     pub use ::moka::future::*;
 }
-
-
 
 pub struct Cache<K: Hash + Eq, V> {
     inner: MokaCache<K, V>,
@@ -29,28 +28,17 @@ impl<K: Hash + Eq + Send + Sync + 'static, V: Send + Sync + 'static + Clone> Cac
     }
 
     #[inline]
-    pub async fn get_or_insert_with<F: AsyncFnOnce() -> V>(
-        &self,
-        key: K,
-        default: F,
-    ) -> V {
+    pub async fn get_or_insert_with<F: AsyncFnOnce() -> V>(&self, key: K, default: F) -> V {
         self.inner.entry(key).or_insert_with(async { default().await }).await.into_value()
     }
 
     #[inline]
-    pub async fn get_or_try_insert_with<
-        F: AsyncFnOnce() -> Result<V, E>,
-        E: Send + Sync + 'static,
-    >(
+    pub async fn get_or_try_insert_with<F: AsyncFnOnce() -> Result<V, E>, E: Send + Sync + 'static>(
         &self,
         key: K,
         default: F,
     ) -> Result<V, Arc<E>> {
-        self.inner
-            .entry(key)
-            .or_try_insert_with(async { default().await })
-            .await
-            .map(|v| v.into_value())
+        self.inner.entry(key).or_try_insert_with(async { default().await }).await.map(|v| v.into_value())
     }
 
     #[inline]
@@ -62,7 +50,6 @@ impl<K: Hash + Eq + Send + Sync + 'static, V: Send + Sync + 'static + Clone> Cac
     pub async fn remove(&self, key: &K) -> Option<V> {
         self.inner.remove(key).await
     }
-    
 }
 
 #[cfg(test)]

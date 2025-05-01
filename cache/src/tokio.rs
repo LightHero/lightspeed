@@ -1,6 +1,6 @@
 use chrono::prelude::Local;
-use std::{collections::HashMap, sync::Arc};
 use std::hash::Hash;
+use std::{collections::HashMap, sync::Arc};
 use tokio::sync::{RwLock, RwLockWriteGuard};
 
 type InnerMap<K, V> = Arc<RwLock<HashMap<K, (V, i64)>>>;
@@ -38,11 +38,7 @@ impl<K: Hash + Eq, V: Clone> Cache<K, V> {
         }
     }
 
-    pub async fn get_or_insert_with<F: AsyncFnOnce() -> V>(
-        &self,
-        key: K,
-        default: F,
-    ) -> V {
+    pub async fn get_or_insert_with<F: AsyncFnOnce() -> V>(&self, key: K, default: F) -> V {
         match self.get(&key).await {
             Some(value) => value,
             None => {
