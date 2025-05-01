@@ -7,7 +7,6 @@ pub struct Cache<K: Hash + Eq, V> {
     inner: MokaCache<K, Arc<V>>,
 }
 
-
 impl<K: Hash + Eq + Send + Sync + 'static, V: Send + Sync + 'static> Cache<K, V> {
     pub fn new(inner: MokaCache<K, Arc<V>>) -> Self {
         Self { inner }
@@ -28,12 +27,20 @@ impl<K: Hash + Eq + Send + Sync + 'static, V: Send + Sync + 'static> Cache<K, V>
     }
 
     #[inline]
-    pub async fn get_or_try_insert_with<F: FnOnce() -> Fut, Fut: std::future::Future<Output = Result<V, E>>, E: Send + Sync + 'static>(
+    pub async fn get_or_try_insert_with<
+        F: FnOnce() -> Fut,
+        Fut: std::future::Future<Output = Result<V, E>>,
+        E: Send + Sync + 'static,
+    >(
         &self,
         key: K,
         default: F,
     ) -> Result<Arc<V>, Arc<E>> {
-        self.inner.entry(key).or_try_insert_with(async { default().await.map(|v| Arc::new(v)) }).await.map(|v| v.into_value())
+        self.inner
+            .entry(key)
+            .or_try_insert_with(async { default().await.map(|v| Arc::new(v)) })
+            .await
+            .map(|v| v.into_value())
     }
 
     #[inline]
@@ -45,9 +52,7 @@ impl<K: Hash + Eq + Send + Sync + 'static, V: Send + Sync + 'static> Cache<K, V>
     pub async fn remove(&self, key: &K) {
         self.inner.remove(key).await;
     }
-
 }
-
 
 #[cfg(test)]
 mod test {
@@ -144,7 +149,7 @@ mod test {
     }
 
     #[tokio::test]
-    async  fn clone_should_link_to_same_map() {
+    async fn clone_should_link_to_same_map() {
         let cache = new_cache(Duration::from_secs(1000));
         let cloned_cache = cache.clone();
 
