@@ -6,10 +6,16 @@ use tokio::sync::{RwLock, RwLockWriteGuard};
 
 type InnerMap<K, V> = Arc<RwLock<HashMap<K, (Arc<V>, i64)>>>;
 
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 pub struct Cache<K: Hash + Eq, V> {
     map: InnerMap<K, V>,
     ttl_ms: i64,
+}
+
+impl <K: Hash + Eq, V> Clone for Cache<K, V> {
+    fn clone(&self) -> Self {
+        Self { map: self.map.clone(), ttl_ms: self.ttl_ms }
+    }
 }
 
 impl<K: Hash + Eq, V> Cache<K, V> {
@@ -105,6 +111,21 @@ mod test {
     use std::thread::sleep;
     use std::time::Duration;
     use thiserror::Error;
+
+    #[tokio::test]
+    async fn should_accept_not_cloneable_key_and_value() {
+
+        #[derive(Debug, Hash, Eq, PartialEq)]
+        struct NotCloneable;
+
+        let cache = Cache::<NotCloneable, NotCloneable>::new(1000);
+        cache.insert(NotCloneable, NotCloneable).await;
+
+        let cloned_cache = cache.clone();
+        assert!(cache.get(&NotCloneable).await.is_some());
+        assert!(cloned_cache.get(&NotCloneable).await.is_some());
+    }
+
 
     #[tokio::test]
     async fn should_return_entry_not_expired() {

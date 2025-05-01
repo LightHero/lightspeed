@@ -6,9 +6,14 @@ pub mod moka {
     pub use ::moka::future::*;
 }
 
-#[derive(Clone)]
 pub struct Cache<K: Hash + Eq, V> {
     inner: MokaCache<K, Arc<V>>,
+}
+
+impl <K: Hash + Eq, V> Clone for Cache<K, V> {
+    fn clone(&self) -> Self {
+        Self { inner: self.inner.clone() }
+    }
 }
 
 impl<K: Hash + Eq + Send + Sync + 'static, V: Send + Sync + 'static> Cache<K, V> {
@@ -66,6 +71,20 @@ mod test {
 
     fn new_cache<K: Hash + Eq + Send + Sync + 'static, V: Send + Sync + 'static>(ttl: Duration) -> Cache<K, V> {
         Cache::new(MokaCache::builder().time_to_live(ttl).build())
+    }
+
+    #[tokio::test]
+    async fn should_accept_not_cloneable_key_and_value() {
+
+        #[derive(Debug, Hash, Eq, PartialEq)]
+        struct NotCloneable;
+
+        let cache = new_cache::<NotCloneable, NotCloneable>(Duration::from_secs(1000));
+        cache.insert(NotCloneable, NotCloneable).await;
+
+        let cloned_cache = cache.clone();
+        assert!(cache.get(&NotCloneable).await.is_some());
+        assert!(cloned_cache.get(&NotCloneable).await.is_some());
     }
 
     #[tokio::test]
