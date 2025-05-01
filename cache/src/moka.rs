@@ -6,8 +6,10 @@ pub mod moka {
     pub use ::moka::future::*;
 }
 
+
+
 pub struct Cache<K: Hash + Eq, V> {
-    inner: MokaCache<K, Arc<V>>,
+    inner: MokaCache<K, V>,
 }
 
 impl<K: Hash + Eq, V> Clone for Cache<K, V> {
@@ -16,51 +18,51 @@ impl<K: Hash + Eq, V> Clone for Cache<K, V> {
     }
 }
 
-impl<K: Hash + Eq + Send + Sync + 'static, V: Send + Sync + 'static> Cache<K, V> {
-    pub fn new(inner: MokaCache<K, Arc<V>>) -> Self {
+impl<K: Hash + Eq + Send + Sync + 'static, V: Send + Sync + 'static + Clone> Cache<K, V> {
+    pub fn new(inner: MokaCache<K, V>) -> Self {
         Self { inner }
     }
 
     #[inline]
-    pub async fn get(&self, key: &K) -> Option<Arc<V>> {
+    pub async fn get(&self, key: &K) -> Option<V> {
         self.inner.get(key).await
     }
 
     #[inline]
-    pub async fn get_or_insert_with<F: FnOnce() -> Fut, Fut: std::future::Future<Output = V>>(
+    pub async fn get_or_insert_with<F: AsyncFnOnce() -> V>(
         &self,
         key: K,
         default: F,
-    ) -> Arc<V> {
-        self.inner.entry(key).or_insert_with(async { default().await.into() }).await.into_value()
+    ) -> V {
+        self.inner.entry(key).or_insert_with(async { default().await }).await.into_value()
     }
 
     #[inline]
     pub async fn get_or_try_insert_with<
-        F: FnOnce() -> Fut,
-        Fut: std::future::Future<Output = Result<V, E>>,
+        F: AsyncFnOnce() -> Result<V, E>,
         E: Send + Sync + 'static,
     >(
         &self,
         key: K,
         default: F,
-    ) -> Result<Arc<V>, Arc<E>> {
+    ) -> Result<V, Arc<E>> {
         self.inner
             .entry(key)
-            .or_try_insert_with(async { default().await.map(|v| Arc::new(v)) })
+            .or_try_insert_with(async { default().await })
             .await
             .map(|v| v.into_value())
     }
 
     #[inline]
     pub async fn insert(&self, key: K, value: V) {
-        self.inner.insert(key, Arc::new(value)).await;
+        self.inner.insert(key, value).await;
     }
 
     #[inline]
-    pub async fn remove(&self, key: &K) {
-        self.inner.remove(key).await;
+    pub async fn remove(&self, key: &K) -> Option<V> {
+        self.inner.remove(key).await
     }
+    
 }
 
 #[cfg(test)]
@@ -69,7 +71,7 @@ mod test {
     use std::time::Duration;
     use thiserror::Error;
 
-    fn new_cache<K: Hash + Eq + Send + Sync + 'static, V: Send + Sync + 'static>(ttl: Duration) -> Cache<K, V> {
+    fn new_cache<K: Hash + Eq + Send + Sync + 'static, V: Send + Sync + 'static + Clone>(ttl: Duration) -> Cache<K, V> {
         Cache::new(MokaCache::builder().time_to_live(ttl).build())
     }
 
@@ -78,8 +80,8 @@ mod test {
         #[derive(Debug, Hash, Eq, PartialEq)]
         struct NotCloneable;
 
-        let cache = new_cache::<NotCloneable, NotCloneable>(Duration::from_secs(1000));
-        cache.insert(NotCloneable, NotCloneable).await;
+        let cache = new_cache(Duration::from_secs(1000));
+        cache.insert(NotCloneable, 0u64).await;
 
         let cloned_cache = cache.clone();
         assert!(cache.get(&NotCloneable).await.is_some());
@@ -94,7 +96,7 @@ mod test {
         let result = cache.get(&"hello").await;
 
         assert!(result.is_some());
-        assert_eq!(&"world", result.unwrap().as_ref());
+        assert_eq!("world", result.unwrap());
     }
 
     #[tokio::test]
@@ -104,7 +106,7 @@ mod test {
 
         let result = cache.get_or_insert_with("hello", || async { "new world!" }).await;
 
-        assert_eq!(&"world", result.as_ref());
+        assert_eq!("world", result);
     }
 
     #[tokio::test]
@@ -113,7 +115,7 @@ mod test {
 
         let result = cache.get_or_insert_with(&"hello", || async { "new world" }).await;
 
-        assert_eq!(&"new world", result.as_ref());
+        assert_eq!("new world", result);
     }
 
     #[tokio::test]
@@ -131,7 +133,7 @@ mod test {
 
         let result = cache.get_or_try_insert_with("hello", insert_new_world_ok).await.unwrap();
 
-        assert_eq!(&"world", result.as_ref());
+        assert_eq!("world", result);
     }
 
     async fn insert_new_world_ok() -> Result<&'static str, TestError> {
@@ -148,7 +150,7 @@ mod test {
 
         let result = cache.get_or_try_insert_with(&"hello", insert_new_world_ok).await.unwrap();
 
-        assert_eq!(&"new world", result.as_ref());
+        assert_eq!("new world", result);
     }
 
     #[tokio::test]

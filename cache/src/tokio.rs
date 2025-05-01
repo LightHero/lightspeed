@@ -1,10 +1,9 @@
 use chrono::prelude::Local;
-use std::collections::HashMap;
+use std::{collections::HashMap, sync::Arc};
 use std::hash::Hash;
-use std::sync::Arc;
 use tokio::sync::{RwLock, RwLockWriteGuard};
 
-type InnerMap<K, V> = Arc<RwLock<HashMap<K, (Arc<V>, i64)>>>;
+type InnerMap<K, V> = Arc<RwLock<HashMap<K, (V, i64)>>>;
 
 #[derive(Debug)]
 pub struct Cache<K: Hash + Eq, V> {
@@ -18,12 +17,12 @@ impl<K: Hash + Eq, V> Clone for Cache<K, V> {
     }
 }
 
-impl<K: Hash + Eq, V> Cache<K, V> {
+impl<K: Hash + Eq, V: Clone> Cache<K, V> {
     pub fn new(ttl_seconds: u32) -> Self {
         Self { map: Arc::new(RwLock::new(HashMap::default())), ttl_ms: (ttl_seconds as i64) * 1000 }
     }
 
-    pub async fn get(&self, key: &K) -> Option<Arc<V>> {
+    pub async fn get(&self, key: &K) -> Option<V> {
         let read = self.map.read().await;
         match read.get(key) {
             Some(value) => {
@@ -39,11 +38,11 @@ impl<K: Hash + Eq, V> Cache<K, V> {
         }
     }
 
-    pub async fn get_or_insert_with<F: FnOnce() -> Fut, Fut: std::future::Future<Output = V>>(
+    pub async fn get_or_insert_with<F: AsyncFnOnce() -> V>(
         &self,
         key: K,
         default: F,
-    ) -> Arc<V> {
+    ) -> V {
         match self.get(&key).await {
             Some(value) => value,
             None => {
@@ -51,7 +50,7 @@ impl<K: Hash + Eq, V> Cache<K, V> {
                 match write.get(&key) {
                     Some(val) => val.0.clone(),
                     None => {
-                        let new_value = Arc::new(default().await);
+                        let new_value = default().await;
                         self.insert_to_guard(write, key, new_value.clone());
                         new_value
                     }
@@ -60,11 +59,11 @@ impl<K: Hash + Eq, V> Cache<K, V> {
         }
     }
 
-    pub async fn get_or_try_insert_with<F: FnOnce() -> Fut, Fut: std::future::Future<Output = Result<V, E>>, E>(
+    pub async fn get_or_try_insert_with<F: AsyncFnOnce() -> Result<V, E>, E>(
         &self,
         key: K,
         default: F,
-    ) -> Result<Arc<V>, E> {
+    ) -> Result<V, E> {
         match self.get(&key).await {
             Some(value) => Ok(value),
             None => {
@@ -72,7 +71,7 @@ impl<K: Hash + Eq, V> Cache<K, V> {
                 match write.get(&key) {
                     Some(val) => Ok(val.0.clone()),
                     None => {
-                        let new_value = Arc::new(default().await?);
+                        let new_value = default().await?;
                         self.insert_to_guard(write, key, new_value.clone());
                         Ok(new_value)
                     }
@@ -83,20 +82,20 @@ impl<K: Hash + Eq, V> Cache<K, V> {
 
     pub async fn insert(&self, key: K, value: V) {
         let write = self.map.write().await;
-        self.insert_to_guard(write, key, Arc::new(value));
+        self.insert_to_guard(write, key, value);
     }
 
-    pub async fn remove(&self, key: &K) {
+    pub async fn remove(&self, key: &K) -> Option<V> {
         let mut write = self.map.write().await;
-        write.remove(key);
+        write.remove(key).map(|v| v.0)
     }
 
-    fn insert_to_guard(&self, mut write: RwLockWriteGuard<'_, HashMap<K, (Arc<V>, i64)>>, key: K, value: Arc<V>) {
+    fn insert_to_guard(&self, mut write: RwLockWriteGuard<'_, HashMap<K, (V, i64)>>, key: K, value: V) {
         write.insert(key, self.to_value(value));
     }
 
     #[inline]
-    fn to_value(&self, value: Arc<V>) -> (Arc<V>, i64) {
+    fn to_value(&self, value: V) -> (V, i64) {
         (value, current_epoch_mills() + self.ttl_ms)
     }
 }
@@ -117,8 +116,8 @@ mod test {
         #[derive(Debug, Hash, Eq, PartialEq)]
         struct NotCloneable;
 
-        let cache = Cache::<NotCloneable, NotCloneable>::new(1000);
-        cache.insert(NotCloneable, NotCloneable).await;
+        let cache = Cache::<NotCloneable, u64>::new(1000);
+        cache.insert(NotCloneable, 3).await;
 
         let cloned_cache = cache.clone();
         assert!(cache.get(&NotCloneable).await.is_some());
@@ -133,7 +132,7 @@ mod test {
         let result = cache.get(&"hello").await;
 
         assert!(result.is_some());
-        assert_eq!(&"world", result.unwrap().as_ref());
+        assert_eq!("world", result.unwrap());
     }
 
     #[tokio::test]
@@ -157,7 +156,7 @@ mod test {
 
         let result = cache.get_or_insert_with("hello", || async { "new world!" }).await;
 
-        assert_eq!(&"world", result.as_ref());
+        assert_eq!("world", result);
     }
 
     #[tokio::test]
@@ -171,7 +170,7 @@ mod test {
 
         let result = cache.get_or_insert_with("hello", || async { "new world" }).await;
 
-        assert_eq!(&"new world", result.as_ref());
+        assert_eq!("new world", result);
     }
 
     #[tokio::test]
@@ -180,7 +179,7 @@ mod test {
 
         let result = cache.get_or_insert_with(&"hello", || async { "new world" }).await;
 
-        assert_eq!(&"new world", result.as_ref());
+        assert_eq!("new world", result);
     }
 
     #[tokio::test]
@@ -198,7 +197,7 @@ mod test {
 
         let result = cache.get_or_try_insert_with("hello", insert_new_world_ok).await.unwrap();
 
-        assert_eq!(&"world", result.as_ref());
+        assert_eq!("world", result);
     }
 
     async fn insert_new_world_ok() -> Result<&'static str, TestError> {
@@ -220,7 +219,7 @@ mod test {
 
         let result = cache.get_or_try_insert_with("hello", insert_new_world_ok).await.unwrap();
 
-        assert_eq!(&"new world", result.as_ref());
+        assert_eq!("new world", result);
     }
 
     #[tokio::test]
@@ -229,7 +228,7 @@ mod test {
 
         let result = cache.get_or_try_insert_with(&"hello", insert_new_world_ok).await.unwrap();
 
-        assert_eq!(&"new world", result.as_ref());
+        assert_eq!("new world", result);
     }
 
     #[tokio::test]
