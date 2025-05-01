@@ -39,6 +39,8 @@ hash = ["dep:lightspeed_hash"]
 logger = ["dep:lightspeed_logger"]
 scheduler = ["dep:lightspeed_scheduler"]
 
+cache_moka = ["cache", "lightspeed_cache/moka"]
+
 actix_web = ["lightspeed_core?/actix_web"]
 axum = ["lightspeed_core?/axum", "lightspeed_file_store?/axum"]
 poem = ["lightspeed_core?/poem"]

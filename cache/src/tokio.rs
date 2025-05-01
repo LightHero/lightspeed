@@ -6,15 +6,10 @@ use tokio::sync::{RwLock, RwLockWriteGuard};
 
 type InnerMap<K, V> = Arc<RwLock<HashMap<K, (Arc<V>, i64)>>>;
 
+#[derive(Debug, Clone)]
 pub struct Cache<K: Hash + Eq, V> {
     map: InnerMap<K, V>,
     ttl_ms: i64,
-}
-
-impl<K: Hash + Eq, V> Clone for Cache<K, V> {
-    fn clone(&self) -> Self {
-        Self { map: self.map.clone(), ttl_ms: self.ttl_ms }
-    }
 }
 
 impl<K: Hash + Eq, V> Cache<K, V> {

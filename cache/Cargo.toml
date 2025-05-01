@@ -13,8 +13,8 @@ keywords = []
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-chrono = { workspace = true }
-dashmap = { workspace = true, optional = true }
+chrono = { workspace = true, optional = true }
+moka = { workspace = true, optional = true }
 tokio = { workspace = true, features = ["sync"], optional = true }
 
 [dev-dependencies]
@@ -23,5 +23,5 @@ tokio = { workspace = true, features = ["macros", "rt"] }
 
 [features]
 default = ["tokio"]
-dashmap = ["dep:dashmap"]
-tokio = ["dep:tokio"]
+moka = ["dep:moka"]
+tokio = ["dep:tokio", "dep:chrono"]
