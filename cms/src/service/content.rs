@@ -21,7 +21,7 @@ pub struct LsContentService<RepoManager: CmsRepositoryManager> {
 impl<RepoManager: CmsRepositoryManager> LsContentService<RepoManager> {
 
     pub fn new(c3p0: RepoManager::C3P0, repo_factory: RepoManager) -> Self {
-        LsContentService { c3p0, repo_factory, content_repos: Cache::new(u32::max_value()) }
+        LsContentService { c3p0, repo_factory, content_repos: Cache::new(u32::MAX) }
     }
 
     pub async fn create_content_table(&self, schema: &SchemaModel) -> Result<(), LsError> {
