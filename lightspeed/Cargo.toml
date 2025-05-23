@@ -16,7 +16,7 @@ keywords = []
 c3p0 = { workspace = true, optional = true }
 lightspeed_auth = { workspace = true, optional = true }
 lightspeed_cache = { workspace = true, optional = true }
-# lightspeed_cms = { workspace = true, optional = true }
+lightspeed_cms = { workspace = true, optional = true }
 lightspeed_core = { workspace = true, optional = true }
 lightspeed_email = { workspace = true, optional = true }
 lightspeed_file_store = { workspace = true, optional = true }
@@ -31,7 +31,7 @@ c3p0 = ["dep:c3p0"]
 
 auth = ["dep:lightspeed_auth", "c3p0"]
 cache = ["dep:lightspeed_cache"]
-# cms = ["dep:lightspeed_cms"]
+cms = ["dep:lightspeed_cms"]
 core = ["dep:lightspeed_core"]
 email = ["dep:lightspeed_email"]
 file_store = ["dep:lightspeed_file_store", "c3p0"]
@@ -46,7 +46,21 @@ axum = ["lightspeed_core?/axum", "lightspeed_file_store?/axum"]
 poem = ["lightspeed_core?/poem"]
 poem_openapi = ["lightspeed_core?/poem_openapi", "poem", "lightspeed_auth?/poem_openapi"]
 
-postgres = ["lightspeed_auth?/postgres"]
-sqlx_mysql = ["lightspeed_auth?/sqlx_mysql"]
-sqlx_postgres = ["lightspeed_auth?/sqlx_postgres", "lightspeed_file_store?/sqlx_postgres"]
-sqlx_sqlite = ["lightspeed_auth?/sqlx_sqlite", "lightspeed_file_store?/sqlx_sqlite"]
+postgres = [
+    "lightspeed_auth?/postgres", 
+    "lightspeed_cms?/postgres"
+]
+sqlx_mysql = [
+    "lightspeed_auth?/sqlx_mysql", 
+    "lightspeed_cms?/sqlx_mysql"
+]
+sqlx_postgres = [
+    "lightspeed_auth?/sqlx_postgres", 
+    "lightspeed_cms?/sqlx_postgres", 
+    "lightspeed_file_store?/sqlx_postgres"
+]
+sqlx_sqlite = [
+    "lightspeed_auth?/sqlx_sqlite", 
+    "lightspeed_cms?/sqlx_sqlite", 
+    "lightspeed_file_store?/sqlx_sqlite"
+]
