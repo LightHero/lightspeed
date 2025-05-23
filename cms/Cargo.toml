@@ -23,6 +23,7 @@ sqlx = { workspace = true, optional = true }
 [dev-dependencies]
 config = { workspace = true }
 lightspeed_logger = { workspace = true }
+lightspeed_test_utils = { workspace = true }
 maybe-once = { workspace = true }
 testcontainers = { workspace = true }
 tokio = { workspace = true, features = ["rt-multi-thread"] }

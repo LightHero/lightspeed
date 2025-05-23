@@ -26,7 +26,7 @@ impl<RepoManager: CmsRepositoryManager> LsProjectService<RepoManager> {
 
     pub async fn create_project(&self, create_project_dto: CreateProjectDto) -> Result<ProjectModel, LsError> {
         self.c3p0
-            .transaction(|conn| async {
+            .transaction(async |conn| {
                 let name_already_exists = self.project_repo.exists_by_name(conn, &create_project_dto.name).await?;
 
                 let data = ProjectData { name: create_project_dto.name };
@@ -43,7 +43,7 @@ impl<RepoManager: CmsRepositoryManager> LsProjectService<RepoManager> {
 
     pub async fn delete(&self, project_model: ProjectModel) -> Result<ProjectModel, LsError> {
         self.c3p0
-            .transaction(|conn| async {
+            .transaction(async |conn| {
                 self.schema_service.delete_by_project_id(conn, project_model.id).await?;
                 self.project_repo.delete(conn, project_model).await
             })

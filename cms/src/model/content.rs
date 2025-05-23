@@ -27,7 +27,7 @@ pub type ContentModel = Model<u64, ContentData>;
 
 #[derive(Clone, Serialize, Deserialize)]
 pub struct ContentData {
-    pub schema_id: i64,
+    pub schema_id: u64,
     pub content: Content,
 }
 

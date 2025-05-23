@@ -19,7 +19,7 @@ impl<RepoManager: CmsRepositoryManager> LsSchemaService<RepoManager> {
 
     pub async fn create_schema(&self, create_schema_dto: CreateSchemaDto) -> Result<SchemaModel, LsError> {
         self.c3p0
-            .transaction(|conn| async {
+            .transaction(async |conn| {
                 let name_already_exists = self
                     .schema_repo
                     .exists_by_name_and_project_id(conn, &create_schema_dto.name, create_schema_dto.project_id)
@@ -42,10 +42,10 @@ impl<RepoManager: CmsRepositoryManager> LsSchemaService<RepoManager> {
     }
 
     pub async fn delete(&self, schema_model: SchemaModel) -> Result<SchemaModel, LsError> {
-        self.c3p0.transaction(|conn| async { self.schema_repo.delete(conn, schema_model).await }).await
+        self.c3p0.transaction(async |conn| { self.schema_repo.delete(conn, schema_model).await }).await
     }
 
-    pub async fn delete_by_project_id(&self, conn: &mut RepoManager::Tx, project_id: i64) -> Result<u64, LsError> {
+    pub async fn delete_by_project_id(&self, conn: &mut RepoManager::Tx<'_>, project_id: u64) -> Result<u64, LsError> {
         self.schema_repo.delete_by_project_id(conn, project_id).await
     }
 }

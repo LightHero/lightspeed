@@ -23,7 +23,7 @@ pub fn field_name_regex() -> &'static Regex {
 #[derive(Clone, Serialize, Deserialize)]
 pub struct SchemaData {
     pub name: String,
-    pub project_id: i64,
+    pub project_id: u64,
     pub schema: Schema,
 }
 
