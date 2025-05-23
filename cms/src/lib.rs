@@ -43,7 +43,6 @@ impl<RepoManager: CmsRepositoryManager> LsCmsModule<RepoManager> {
     }
 }
 
-#[async_trait::async_trait]
 impl<RepoManager: CmsRepositoryManager> lightspeed_core::module::LsModule for LsCmsModule<RepoManager> {
     async fn start(&mut self) -> Result<(), LsError> {
         info!("Starting LsCmsModule");

@@ -1,10 +1,10 @@
 use c3p0::Model;
 use lightspeed_core::error::{ErrorDetails, LsError};
-use lightspeed_core::service::validator::order::validate_ge;
 use lightspeed_core::service::validator::Validable;
+use lightspeed_core::service::validator::order::validate_ge;
 use serde::{Deserialize, Serialize};
 
-pub type ProjectModel = Model<ProjectData>;
+pub type ProjectModel = Model<u64, ProjectData>;
 
 #[derive(Clone, Serialize, Deserialize)]
 pub struct ProjectData {
@@ -23,8 +23,8 @@ pub mod test {
 
     use super::*;
     use lightspeed_core::error::ErrorDetail;
-    use lightspeed_core::service::validator::order::MUST_BE_GREATER_OR_EQUAL;
     use lightspeed_core::service::validator::Validator;
+    use lightspeed_core::service::validator::order::MUST_BE_GREATER_OR_EQUAL;
 
     #[test]
     pub fn validation_should_fail_if_name_too_short() {

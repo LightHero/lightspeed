@@ -5,7 +5,7 @@ use std::time::Duration;
 
 pub enum Scheduler {
     /// Set to execute on set time periods
-    Cron(cron::Schedule),
+    Cron(Box<cron::Schedule>),
 
     /// Set to execute exactly `duration` away from the previous execution.
     /// If
@@ -124,9 +124,9 @@ impl TryToScheduler for &[&dyn TryToScheduler] {
 
 impl TryToScheduler for &str {
     fn to_scheduler(&self) -> Result<Scheduler, SchedulerError> {
-        Ok(Scheduler::Cron(self.parse().map_err(|err| SchedulerError::ScheduleDefinitionError {
+        Ok(Scheduler::Cron(Box::new(self.parse().map_err(|err| SchedulerError::ScheduleDefinitionError {
             message: format!("Cannot create schedule for [{self}]. Err: {err:?}"),
-        })?))
+        })?)))
     }
 }
 

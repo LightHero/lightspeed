@@ -1,19 +1,20 @@
+use std::sync::OnceLock;
+
 use c3p0::Model;
 use lightspeed_core::error::{ErrorDetails, LsError};
 use lightspeed_core::service::validator::order::{validate_ge, validate_le};
-use lightspeed_core::service::validator::{Validable, ERR_NOT_UNIQUE};
-use once_cell::sync::OnceCell;
+use lightspeed_core::service::validator::{ERR_NOT_UNIQUE, Validable};
 use regex::Regex;
 use serde::{Deserialize, Serialize};
 
-pub type SchemaModel = Model<SchemaData>;
+pub type SchemaModel = Model<u64, SchemaData>;
 pub const SCHEMA_FIELD_NAME_MAX_LENGHT: usize = 32;
 pub const SCHAME_FIELD_NAME_VALIDATION_REGEX: &str = r#"^[a-z0-9_]+$"#;
 
 const NOT_VALID_FIELD_NAME: &str = "NOT_VALID_FIELD_NAME";
 
 pub fn field_name_regex() -> &'static Regex {
-    static REGEX: OnceCell<Regex> = OnceCell::new();
+    static REGEX: OnceLock<Regex> = OnceLock::new();
     REGEX.get_or_init(|| {
         Regex::new(SCHAME_FIELD_NAME_VALIDATION_REGEX).expect("field name validation regex should be valid")
     })
@@ -22,7 +23,7 @@ pub fn field_name_regex() -> &'static Regex {
 #[derive(Clone, Serialize, Deserialize)]
 pub struct SchemaData {
     pub name: String,
-    pub project_id: i64,
+    pub project_id: u64,
     pub schema: Schema,
 }
 
@@ -114,8 +115,8 @@ pub enum LocalizableOptions {
 mod test {
     use super::*;
     use lightspeed_core::error::ErrorDetail;
-    use lightspeed_core::service::validator::order::MUST_BE_GREATER_OR_EQUAL;
     use lightspeed_core::service::validator::Validator;
+    use lightspeed_core::service::validator::order::MUST_BE_GREATER_OR_EQUAL;
 
     #[test]
     fn schema_validation_should_fail_if_name_is_empty() {

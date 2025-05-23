@@ -15,15 +15,24 @@ lightspeed_cache = { workspace = true }
 lightspeed_core = { workspace = true }
 c3p0 = { workspace = true }
 log = { workspace = true }
-once_cell = { workspace = true }
 regex = { workspace = true }
 serde = { workspace = true }
-sqlx = { workspace = true }
+sqlx = { workspace = true, optional = true }
 
 
 [dev-dependencies]
 config = { workspace = true }
 lightspeed_logger = { workspace = true }
+lightspeed_test_utils = { workspace = true }
 maybe-once = { workspace = true }
 testcontainers = { workspace = true }
 tokio = { workspace = true, features = ["rt-multi-thread"] }
+
+
+[features]
+default = []
+# poem_openapi = ["dep:poem-openapi", "lightspeed_core/poem_openapi"]
+postgres = ["c3p0/postgres", "c3p0/migrate"]
+sqlx_mysql = ["c3p0/sqlx_mysql", "c3p0/migrate", "sqlx"]
+sqlx_postgres = ["c3p0/sqlx_postgres", "c3p0/migrate", "sqlx"]
+sqlx_sqlite = ["c3p0/sqlx_sqlite", "c3p0/migrate", "sqlx"]
