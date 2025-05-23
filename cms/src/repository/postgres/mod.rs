@@ -1,7 +1,7 @@
+use crate::repository::CmsRepositoryManager;
 use crate::repository::postgres::pg_content::PostgresContentRepository;
 use crate::repository::postgres::pg_project::PostgresProjectRepository;
 use crate::repository::postgres::pg_schema::PostgresSchemaRepository;
-use crate::repository::CmsRepositoryManager;
 use c3p0::postgres::*;
 use c3p0::*;
 use lightspeed_core::error::LsError;
@@ -34,7 +34,6 @@ impl CmsRepositoryManager for PostgresCmsRepositoryManager {
     fn c3p0(&self) -> &Self::C3P0 {
         &self.c3p0
     }
-
 
     async fn start(&self) -> Result<(), LsError> {
         let migrate_table_name = format!("LS_CMS_{}", C3P0_MIGRATE_TABLE_DEFAULT);

@@ -3,7 +3,7 @@ use std::sync::OnceLock;
 use c3p0::Model;
 use lightspeed_core::error::{ErrorDetails, LsError};
 use lightspeed_core::service::validator::order::{validate_ge, validate_le};
-use lightspeed_core::service::validator::{Validable, ERR_NOT_UNIQUE};
+use lightspeed_core::service::validator::{ERR_NOT_UNIQUE, Validable};
 use regex::Regex;
 use serde::{Deserialize, Serialize};
 
@@ -115,8 +115,8 @@ pub enum LocalizableOptions {
 mod test {
     use super::*;
     use lightspeed_core::error::ErrorDetail;
-    use lightspeed_core::service::validator::order::MUST_BE_GREATER_OR_EQUAL;
     use lightspeed_core::service::validator::Validator;
+    use lightspeed_core::service::validator::order::MUST_BE_GREATER_OR_EQUAL;
 
     #[test]
     fn schema_validation_should_fail_if_name_is_empty() {

@@ -5,7 +5,7 @@ use crate::repository::ProjectRepository;
 use crate::service::schema::LsSchemaService;
 use c3p0::*;
 use lightspeed_core::error::{ErrorDetails, LsError};
-use lightspeed_core::service::validator::{Validator, ERR_NOT_UNIQUE};
+use lightspeed_core::service::validator::{ERR_NOT_UNIQUE, Validator};
 use std::sync::Arc;
 
 #[derive(Clone)]

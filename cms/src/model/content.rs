@@ -281,8 +281,8 @@ mod test {
     use super::*;
     use crate::model::schema::{SchemaField, SchemaFieldArity, SchemaFieldType};
     use lightspeed_core::error::{ErrorDetail, LsError};
-    use lightspeed_core::service::validator::order::{MUST_BE_GREATER_OR_EQUAL, MUST_BE_LESS_OR_EQUAL};
     use lightspeed_core::service::validator::Validator;
+    use lightspeed_core::service::validator::order::{MUST_BE_GREATER_OR_EQUAL, MUST_BE_LESS_OR_EQUAL};
 
     /*
         #[test]

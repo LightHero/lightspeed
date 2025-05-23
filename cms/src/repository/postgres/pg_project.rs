@@ -37,8 +37,7 @@ impl ProjectRepository for PostgresProjectRepository {
             where LS_CMS_PROJECT.DATA ->> 'name' = $1)
         "#;
 
-        let res = tx.fetch_one_value(sql, &[&name])
-            .await?;
+        let res = tx.fetch_one_value(sql, &[&name]).await?;
 
         // let res = ::sqlx::query(sql)
         //     .bind(name)
@@ -49,15 +48,27 @@ impl ProjectRepository for PostgresProjectRepository {
         Ok(res)
     }
 
-    async fn save(&self, tx: &mut Self::Tx<'_>, model: NewModel<ProjectData>) -> Result<Model<u64, ProjectData>, LsError> {
+    async fn save(
+        &self,
+        tx: &mut Self::Tx<'_>,
+        model: NewModel<ProjectData>,
+    ) -> Result<Model<u64, ProjectData>, LsError> {
         Ok(self.repo.save(tx, model).await?)
     }
 
-    async fn update(&self, tx: &mut Self::Tx<'_>, model: Model<u64, ProjectData>) -> Result<Model<u64, ProjectData>, LsError> {
+    async fn update(
+        &self,
+        tx: &mut Self::Tx<'_>,
+        model: Model<u64, ProjectData>,
+    ) -> Result<Model<u64, ProjectData>, LsError> {
         Ok(self.repo.update(tx, model).await?)
     }
 
-    async fn delete(&self, tx: &mut Self::Tx<'_>, model: Model<u64, ProjectData>) -> Result<Model<u64, ProjectData>, LsError> {
+    async fn delete(
+        &self,
+        tx: &mut Self::Tx<'_>,
+        model: Model<u64, ProjectData>,
+    ) -> Result<Model<u64, ProjectData>, LsError> {
         Ok(self.repo.delete(tx, model).await?)
     }
 }

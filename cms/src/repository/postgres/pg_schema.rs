@@ -42,8 +42,7 @@ impl SchemaRepository for PostgresSchemaRepository {
             where DATA ->> 'name' = $1 AND (DATA ->> 'project_id')::bigint = $2 )
         "#;
 
-        let res = tx.fetch_one_value(sql, &[&name, &(project_id as i64)])
-            .await?;
+        let res = tx.fetch_one_value(sql, &[&name, &(project_id as i64)]).await?;
 
         // let res = ::sqlx::query(sql)
         //     .bind(name)
@@ -56,15 +55,27 @@ impl SchemaRepository for PostgresSchemaRepository {
         Ok(res)
     }
 
-    async fn save(&self, tx: &mut Self::Tx<'_>, model: NewModel<SchemaData>) -> Result<Model<u64, SchemaData>, LsError> {
+    async fn save(
+        &self,
+        tx: &mut Self::Tx<'_>,
+        model: NewModel<SchemaData>,
+    ) -> Result<Model<u64, SchemaData>, LsError> {
         Ok(self.repo.save(tx, model).await?)
     }
 
-    async fn update(&self, tx: &mut Self::Tx<'_>, model: Model<u64, SchemaData>) -> Result<Model<u64, SchemaData>, LsError> {
+    async fn update(
+        &self,
+        tx: &mut Self::Tx<'_>,
+        model: Model<u64, SchemaData>,
+    ) -> Result<Model<u64, SchemaData>, LsError> {
         Ok(self.repo.update(tx, model).await?)
     }
 
-    async fn delete(&self, tx: &mut Self::Tx<'_>, model: Model<u64, SchemaData>) -> Result<Model<u64, SchemaData>, LsError> {
+    async fn delete(
+        &self,
+        tx: &mut Self::Tx<'_>,
+        model: Model<u64, SchemaData>,
+    ) -> Result<Model<u64, SchemaData>, LsError> {
         Ok(self.repo.delete(tx, model).await?)
     }
 
@@ -75,6 +86,5 @@ impl SchemaRepository for PostgresSchemaRepository {
         "#;
 
         Ok(tx.execute(sql, &[&(project_id as i64)]).await?)
-
     }
 }

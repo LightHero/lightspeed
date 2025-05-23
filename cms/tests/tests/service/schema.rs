@@ -1,4 +1,4 @@
-use crate::{data};
+use crate::data;
 use c3p0::*;
 use lightspeed_cms::dto::create_schema_dto::CreateSchemaDto;
 use lightspeed_cms::model::schema::Schema;

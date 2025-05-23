@@ -4,7 +4,7 @@ use crate::repository::CmsRepositoryManager;
 use crate::repository::SchemaRepository;
 use c3p0::*;
 use lightspeed_core::error::{ErrorDetails, LsError};
-use lightspeed_core::service::validator::{Validator, ERR_NOT_UNIQUE};
+use lightspeed_core::service::validator::{ERR_NOT_UNIQUE, Validator};
 
 #[derive(Clone)]
 pub struct LsSchemaService<RepoManager: CmsRepositoryManager> {
@@ -42,7 +42,7 @@ impl<RepoManager: CmsRepositoryManager> LsSchemaService<RepoManager> {
     }
 
     pub async fn delete(&self, schema_model: SchemaModel) -> Result<SchemaModel, LsError> {
-        self.c3p0.transaction(async |conn| { self.schema_repo.delete(conn, schema_model).await }).await
+        self.c3p0.transaction(async |conn| self.schema_repo.delete(conn, schema_model).await).await
     }
 
     pub async fn delete_by_project_id(&self, conn: &mut RepoManager::Tx<'_>, project_id: u64) -> Result<u64, LsError> {

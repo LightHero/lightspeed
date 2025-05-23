@@ -51,9 +51,7 @@ impl ContentRepository for PostgresContentRepository {
             field_name
         );
 
-        let res = tx.fetch_one_value(&sql, &[&field_value]).await
-            .map(|val: i64| val as u64)
-        ?;
+        let res = tx.fetch_one_value(&sql, &[&field_value]).await.map(|val: i64| val as u64)?;
 
         // let res = ::sqlx::query(&sql)
         //     .bind(field_value)
@@ -89,15 +87,27 @@ impl ContentRepository for PostgresContentRepository {
         Ok(self.repo.fetch_one_by_id(tx, &id).await?)
     }
 
-    async fn save(&self, tx: &mut Self::Tx<'_>, model: NewModel<ContentData>) -> Result<Model<u64, ContentData>, LsError> {
+    async fn save(
+        &self,
+        tx: &mut Self::Tx<'_>,
+        model: NewModel<ContentData>,
+    ) -> Result<Model<u64, ContentData>, LsError> {
         Ok(self.repo.save(tx, model).await?)
     }
 
-    async fn update(&self, tx: &mut Self::Tx<'_>, model: Model<u64, ContentData>) -> Result<Model<u64, ContentData>, LsError> {
+    async fn update(
+        &self,
+        tx: &mut Self::Tx<'_>,
+        model: Model<u64, ContentData>,
+    ) -> Result<Model<u64, ContentData>, LsError> {
         Ok(self.repo.update(tx, model).await?)
     }
 
-    async fn delete(&self, tx: &mut Self::Tx<'_>, model: Model<u64, ContentData>) -> Result<Model<u64, ContentData>, LsError> {
+    async fn delete(
+        &self,
+        tx: &mut Self::Tx<'_>,
+        model: Model<u64, ContentData>,
+    ) -> Result<Model<u64, ContentData>, LsError> {
         Ok(self.repo.delete(tx, model).await?)
     }
 }

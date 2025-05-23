@@ -1,4 +1,4 @@
-use crate::{data};
+use crate::data;
 use c3p0::*;
 use lightspeed_cms::dto::create_project_dto::CreateProjectDto;
 use lightspeed_cms::dto::create_schema_dto::CreateSchemaDto;
@@ -105,7 +105,7 @@ fn should_delete_all_schemas_when_project_is_deleted() -> Result<(), LsError> {
         schema.name = new_hyphenated_uuid();
         let saved_schema_2 = cms_module.schema_service.create_schema(schema.clone()).await?;
 
-        schema.project_id = schema.project_id-1;
+        schema.project_id = schema.project_id - 1;
         let saved_schema_other = cms_module.schema_service.create_schema(schema).await?;
 
         // Act

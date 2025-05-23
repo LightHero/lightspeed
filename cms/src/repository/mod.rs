@@ -23,23 +23,47 @@ pub trait CmsRepositoryManager: Clone + Send + Sync {
 }
 
 pub trait ProjectRepository: Clone + Send + Sync {
-     type Tx<'a>: Send + Sync;
+    type Tx<'a>: Send + Sync;
 
-    fn fetch_by_id(&self, tx: &mut Self::Tx<'_>, id: u64) -> impl std::future::Future<Output = Result<ProjectModel, LsError>> + Send;
+    fn fetch_by_id(
+        &self,
+        tx: &mut Self::Tx<'_>,
+        id: u64,
+    ) -> impl std::future::Future<Output = Result<ProjectModel, LsError>> + Send;
 
-    fn exists_by_name(&self, tx: &mut Self::Tx<'_>, name: &str) -> impl std::future::Future<Output = Result<bool, LsError>> + Send;
+    fn exists_by_name(
+        &self,
+        tx: &mut Self::Tx<'_>,
+        name: &str,
+    ) -> impl std::future::Future<Output = Result<bool, LsError>> + Send;
 
-    fn save(&self, tx: &mut Self::Tx<'_>, model: NewModel<ProjectData>) -> impl std::future::Future<Output = Result<ProjectModel, LsError>> + Send;
+    fn save(
+        &self,
+        tx: &mut Self::Tx<'_>,
+        model: NewModel<ProjectData>,
+    ) -> impl std::future::Future<Output = Result<ProjectModel, LsError>> + Send;
 
-    fn update(&self, tx: &mut Self::Tx<'_>, model: ProjectModel) -> impl std::future::Future<Output = Result<ProjectModel, LsError>> + Send;
+    fn update(
+        &self,
+        tx: &mut Self::Tx<'_>,
+        model: ProjectModel,
+    ) -> impl std::future::Future<Output = Result<ProjectModel, LsError>> + Send;
 
-    fn delete(&self, tx: &mut Self::Tx<'_>, model: ProjectModel) -> impl std::future::Future<Output = Result<ProjectModel, LsError>> + Send;
+    fn delete(
+        &self,
+        tx: &mut Self::Tx<'_>,
+        model: ProjectModel,
+    ) -> impl std::future::Future<Output = Result<ProjectModel, LsError>> + Send;
 }
 
 pub trait SchemaRepository: Clone + Send + Sync {
-     type Tx<'a>: Send + Sync;
+    type Tx<'a>: Send + Sync;
 
-    fn fetch_by_id(&self, tx: &mut Self::Tx<'_>, id: u64) -> impl std::future::Future<Output = Result<SchemaModel, LsError>> + Send;
+    fn fetch_by_id(
+        &self,
+        tx: &mut Self::Tx<'_>,
+        id: u64,
+    ) -> impl std::future::Future<Output = Result<SchemaModel, LsError>> + Send;
 
     fn exists_by_name_and_project_id(
         &self,
@@ -48,17 +72,33 @@ pub trait SchemaRepository: Clone + Send + Sync {
         project_id: u64,
     ) -> impl std::future::Future<Output = Result<bool, LsError>> + Send;
 
-    fn save(&self, tx: &mut Self::Tx<'_>, model: NewModel<SchemaData>) -> impl std::future::Future<Output = Result<SchemaModel, LsError>> + Send;
+    fn save(
+        &self,
+        tx: &mut Self::Tx<'_>,
+        model: NewModel<SchemaData>,
+    ) -> impl std::future::Future<Output = Result<SchemaModel, LsError>> + Send;
 
-    fn update(&self, tx: &mut Self::Tx<'_>, model: SchemaModel) -> impl std::future::Future<Output = Result<SchemaModel, LsError>> + Send;
+    fn update(
+        &self,
+        tx: &mut Self::Tx<'_>,
+        model: SchemaModel,
+    ) -> impl std::future::Future<Output = Result<SchemaModel, LsError>> + Send;
 
-    fn delete(&self, tx: &mut Self::Tx<'_>, model: SchemaModel) -> impl std::future::Future<Output = Result<SchemaModel, LsError>> + Send;
+    fn delete(
+        &self,
+        tx: &mut Self::Tx<'_>,
+        model: SchemaModel,
+    ) -> impl std::future::Future<Output = Result<SchemaModel, LsError>> + Send;
 
-    fn delete_by_project_id(&self, tx: &mut Self::Tx<'_>, project_id: u64) -> impl std::future::Future<Output = Result<u64, LsError>> + Send;
+    fn delete_by_project_id(
+        &self,
+        tx: &mut Self::Tx<'_>,
+        project_id: u64,
+    ) -> impl std::future::Future<Output = Result<u64, LsError>> + Send;
 }
 
 pub trait ContentRepository: Clone + Send + Sync {
-   type Tx<'a>: Send + Sync;
+    type Tx<'a>: Send + Sync;
 
     fn create_table(&self, tx: &mut Self::Tx<'_>) -> impl std::future::Future<Output = Result<(), LsError>> + Send;
 
@@ -80,13 +120,33 @@ pub trait ContentRepository: Clone + Send + Sync {
         field_name: &str,
     ) -> impl std::future::Future<Output = Result<(), LsError>> + Send;
 
-    fn drop_unique_constraint(&self, tx: &mut Self::Tx<'_>, index_name: &str) -> impl std::future::Future<Output = Result<(), LsError>> + Send;
+    fn drop_unique_constraint(
+        &self,
+        tx: &mut Self::Tx<'_>,
+        index_name: &str,
+    ) -> impl std::future::Future<Output = Result<(), LsError>> + Send;
 
-    fn fetch_by_id(&self, tx: &mut Self::Tx<'_>, id: u64) -> impl std::future::Future<Output = Result<ContentModel, LsError>> + Send;
+    fn fetch_by_id(
+        &self,
+        tx: &mut Self::Tx<'_>,
+        id: u64,
+    ) -> impl std::future::Future<Output = Result<ContentModel, LsError>> + Send;
 
-    fn save(&self, tx: &mut Self::Tx<'_>, model: NewModel<ContentData>) -> impl std::future::Future<Output = Result<ContentModel, LsError>> + Send;
+    fn save(
+        &self,
+        tx: &mut Self::Tx<'_>,
+        model: NewModel<ContentData>,
+    ) -> impl std::future::Future<Output = Result<ContentModel, LsError>> + Send;
 
-    fn update(&self, tx: &mut Self::Tx<'_>, model: ContentModel) -> impl std::future::Future<Output = Result<ContentModel, LsError>> + Send;
+    fn update(
+        &self,
+        tx: &mut Self::Tx<'_>,
+        model: ContentModel,
+    ) -> impl std::future::Future<Output = Result<ContentModel, LsError>> + Send;
 
-    fn delete(&self, tx: &mut Self::Tx<'_>, model: ContentModel) -> impl std::future::Future<Output = Result<ContentModel, LsError>> + Send;
+    fn delete(
+        &self,
+        tx: &mut Self::Tx<'_>,
+        model: ContentModel,
+    ) -> impl std::future::Future<Output = Result<ContentModel, LsError>> + Send;
 }

@@ -2,7 +2,7 @@ use crate::data;
 use lightspeed_cms::dto::create_schema_dto::CreateSchemaDto;
 use lightspeed_cms::model::content::{Content, ContentData, ContentFieldValue, ContentFieldValueArity};
 use lightspeed_cms::model::schema::{
-    Schema, SchemaField, SchemaFieldArity, SchemaFieldType, SCHEMA_FIELD_NAME_MAX_LENGHT,
+    SCHEMA_FIELD_NAME_MAX_LENGHT, Schema, SchemaField, SchemaFieldArity, SchemaFieldType,
 };
 use lightspeed_core::error::{ErrorDetail, LsError};
 use lightspeed_core::service::random::LsRandomService;

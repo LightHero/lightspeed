@@ -6,7 +6,7 @@ use crate::repository::ContentRepository;
 use c3p0::*;
 use lightspeed_cache::Cache;
 use lightspeed_core::error::LsError;
-use lightspeed_core::service::validator::{Validator, ERR_NOT_UNIQUE};
+use lightspeed_core::service::validator::{ERR_NOT_UNIQUE, Validator};
 use std::sync::Arc;
 
 const CMS_CONTENT_TABLE_PREFIX: &str = "LS_CMS_CONTENT_";
@@ -19,7 +19,6 @@ pub struct LsContentService<RepoManager: CmsRepositoryManager> {
 }
 
 impl<RepoManager: CmsRepositoryManager> LsContentService<RepoManager> {
-
     pub fn new(c3p0: RepoManager::C3P0, repo_factory: RepoManager) -> Self {
         LsContentService { c3p0, repo_factory, content_repos: Cache::new(u32::MAX) }
     }
