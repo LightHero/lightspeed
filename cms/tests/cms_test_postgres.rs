@@ -10,7 +10,7 @@ use lightspeed_test_utils::pg::new_pg_db;
 use maybe_once::tokio::*;
 
 use lightspeed_cms::config::CmsConfig;
-use lightspeed_cms::repository::pg::PgCmsRepositoryManager;
+use lightspeed_cms::repository::postgres::PostgresCmsRepositoryManager;
 use lightspeed_cms::LsCmsModule;
 use lightspeed_core::module::LsModule;
 
@@ -19,7 +19,7 @@ use testcontainers::testcontainers::ContainerAsync;
 
 mod tests;
 
-pub type RepoManager = PgCmsRepositoryManager;
+pub type RepoManager = PostgresCmsRepositoryManager;
 
 pub type MaybeType = (LsCmsModule<RepoManager>, ContainerAsync<Postgres>);
 

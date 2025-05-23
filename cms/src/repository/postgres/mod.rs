@@ -1,6 +1,6 @@
-use crate::repository::pg::pg_content::PgContentRepository;
-use crate::repository::pg::pg_project::PgProjectRepository;
-use crate::repository::pg::pg_schema::PgSchemaRepository;
+use crate::repository::postgres::pg_content::PostgresContentRepository;
+use crate::repository::postgres::pg_project::PostgresProjectRepository;
+use crate::repository::postgres::pg_schema::PostgresSchemaRepository;
 use crate::repository::CmsRepositoryManager;
 use c3p0::postgres::*;
 use c3p0::*;
@@ -14,22 +14,22 @@ const MIGRATIONS: include_dir::Dir =
     include_dir::include_dir!("$CARGO_MANIFEST_DIR/src_resources/db/postgres/migrations");
 
 #[derive(Clone)]
-pub struct PgCmsRepositoryManager {
+pub struct PostgresCmsRepositoryManager {
     c3p0: PgC3p0Pool,
 }
 
-impl PgCmsRepositoryManager {
+impl PostgresCmsRepositoryManager {
     pub fn new(c3p0: PgC3p0Pool) -> Self {
         Self { c3p0 }
     }
 }
 
-impl CmsRepositoryManager for PgCmsRepositoryManager {
+impl CmsRepositoryManager for PostgresCmsRepositoryManager {
     type Tx<'a> = PgTx<'a>;
     type C3P0 = PgC3p0Pool;
-    type ContentRepo = PgContentRepository;
-    type ProjectRepo = PgProjectRepository;
-    type SchemaRepo = PgSchemaRepository;
+    type ContentRepo = PostgresContentRepository;
+    type ProjectRepo = PostgresProjectRepository;
+    type SchemaRepo = PostgresSchemaRepository;
 
     fn c3p0(&self) -> &Self::C3P0 {
         &self.c3p0
@@ -54,14 +54,14 @@ impl CmsRepositoryManager for PgCmsRepositoryManager {
     }
 
     fn content_repo(&self, table_name: &str) -> Self::ContentRepo {
-        PgContentRepository::new(table_name)
+        PostgresContentRepository::new(table_name)
     }
 
     fn project_repo(&self) -> Self::ProjectRepo {
-        PgProjectRepository::default()
+        PostgresProjectRepository::default()
     }
 
     fn schema_repo(&self) -> Self::SchemaRepo {
-        PgSchemaRepository::default()
+        PostgresSchemaRepository::default()
     }
 }

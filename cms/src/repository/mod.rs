@@ -5,7 +5,7 @@ use c3p0::*;
 use lightspeed_core::error::LsError;
 
 #[cfg(feature = "postgres")]
-pub mod pg;
+pub mod postgres;
 
 pub trait CmsRepositoryManager: Clone + Send + Sync {
     type Tx<'a>: Send + Sync;

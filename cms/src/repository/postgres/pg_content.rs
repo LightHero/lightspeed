@@ -6,17 +6,17 @@ use lightspeed_core::error::LsError;
 use std::ops::Deref;
 
 #[derive(Clone)]
-pub struct PgContentRepository {
+pub struct PostgresContentRepository {
     repo: PgC3p0Json<u64, i64, ContentData, DefaultJsonCodec>,
 }
 
-impl PgContentRepository {
+impl PostgresContentRepository {
     pub fn new(table_name: &str) -> Self {
         Self { repo: PgC3p0JsonBuilder::new(table_name).build() }
     }
 }
 
-impl Deref for PgContentRepository {
+impl Deref for PostgresContentRepository {
     type Target = PgC3p0Json<u64, i64, ContentData, DefaultJsonCodec>;
 
     fn deref(&self) -> &Self::Target {
@@ -24,7 +24,7 @@ impl Deref for PgContentRepository {
     }
 }
 
-impl ContentRepository for PgContentRepository {
+impl ContentRepository for PostgresContentRepository {
     type Tx<'a> = PgTx<'a>;
 
     async fn create_table(&self, tx: &mut Self::Tx<'_>) -> Result<(), LsError> {

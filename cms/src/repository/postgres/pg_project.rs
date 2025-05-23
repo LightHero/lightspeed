@@ -6,11 +6,11 @@ use lightspeed_core::error::LsError;
 use std::ops::Deref;
 
 #[derive(Clone)]
-pub struct PgProjectRepository {
+pub struct PostgresProjectRepository {
     repo: PgC3p0Json<u64, i64, ProjectData, DefaultJsonCodec>,
 }
 
-impl Deref for PgProjectRepository {
+impl Deref for PostgresProjectRepository {
     type Target = PgC3p0Json<u64, i64, ProjectData, DefaultJsonCodec>;
 
     fn deref(&self) -> &Self::Target {
@@ -18,13 +18,13 @@ impl Deref for PgProjectRepository {
     }
 }
 
-impl Default for PgProjectRepository {
+impl Default for PostgresProjectRepository {
     fn default() -> Self {
-        PgProjectRepository { repo: PgC3p0JsonBuilder::new("LS_CMS_PROJECT").build() }
+        PostgresProjectRepository { repo: PgC3p0JsonBuilder::new("LS_CMS_PROJECT").build() }
     }
 }
 
-impl ProjectRepository for PgProjectRepository {
+impl ProjectRepository for PostgresProjectRepository {
     type Tx<'a> = PgTx<'a>;
 
     async fn fetch_by_id(&self, tx: &mut Self::Tx<'_>, id: u64) -> Result<Model<u64, ProjectData>, LsError> {

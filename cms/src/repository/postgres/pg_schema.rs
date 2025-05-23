@@ -6,11 +6,11 @@ use lightspeed_core::error::LsError;
 use std::ops::Deref;
 
 #[derive(Clone)]
-pub struct PgSchemaRepository {
+pub struct PostgresSchemaRepository {
     repo: PgC3p0Json<u64, i64, SchemaData, DefaultJsonCodec>,
 }
 
-impl Deref for PgSchemaRepository {
+impl Deref for PostgresSchemaRepository {
     type Target = PgC3p0Json<u64, i64, SchemaData, DefaultJsonCodec>;
 
     fn deref(&self) -> &Self::Target {
@@ -18,13 +18,13 @@ impl Deref for PgSchemaRepository {
     }
 }
 
-impl Default for PgSchemaRepository {
+impl Default for PostgresSchemaRepository {
     fn default() -> Self {
-        PgSchemaRepository { repo: PgC3p0JsonBuilder::new("LS_CMS_SCHEMA").build() }
+        PostgresSchemaRepository { repo: PgC3p0JsonBuilder::new("LS_CMS_SCHEMA").build() }
     }
 }
 
-impl SchemaRepository for PgSchemaRepository {
+impl SchemaRepository for PostgresSchemaRepository {
     type Tx<'a> = PgTx<'a>;
 
     async fn fetch_by_id(&self, tx: &mut Self::Tx<'_>, id: u64) -> Result<Model<u64, SchemaData>, LsError> {
