@@ -4,7 +4,7 @@ use lightspeed_core::service::validator::order::validate_ge;
 use lightspeed_core::service::validator::Validable;
 use serde::{Deserialize, Serialize};
 
-pub type ProjectModel = Model<ProjectData>;
+pub type ProjectModel = Model<u64, ProjectData>;
 
 #[derive(Clone, Serialize, Deserialize)]
 pub struct ProjectData {

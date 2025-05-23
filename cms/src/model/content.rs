@@ -3,10 +3,10 @@ use c3p0::Model;
 use lightspeed_core::error::ErrorDetails;
 use lightspeed_core::service::validator::order::{validate_ge, validate_le};
 use lightspeed_core::service::validator::{ERR_UNKNOWN_FIELD, ERR_VALUE_REQUIRED};
-use once_cell::sync::OnceCell;
 use regex::Regex;
 use serde::{Deserialize, Serialize};
 use std::collections::{BTreeMap, HashMap};
+use std::sync::OnceLock;
 
 pub const SLUG_VALIDATION_REGEX: &str = r#"^[a-z0-9]+(?:-[a-z0-9]+)*$"#;
 
@@ -19,11 +19,11 @@ const SHOULD_HAVE_LOCALIZABLE_ARITY: &str = "SHOULD_HAVE_LOCALIZABLE_ARITY";
 const NOT_VALID_SLUG: &str = "NOT_VALID_SLUG";
 
 pub fn slug_regex() -> &'static Regex {
-    static REGEX: OnceCell<Regex> = OnceCell::new();
+    static REGEX: OnceLock<Regex> = OnceLock::new();
     REGEX.get_or_init(|| Regex::new(SLUG_VALIDATION_REGEX).expect("slug validation regex should be valid"))
 }
 
-pub type ContentModel = Model<ContentData>;
+pub type ContentModel = Model<u64, ContentData>;
 
 #[derive(Clone, Serialize, Deserialize)]
 pub struct ContentData {

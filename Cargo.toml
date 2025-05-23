@@ -3,7 +3,7 @@ resolver = "2"
 members = [
     "auth",
     "cache",
-    # "cms",
+    "cms",
     "core",
     "email",
     "file_store",
@@ -21,7 +21,7 @@ edition = "2024"
 [workspace.dependencies]
 lightspeed_auth = { version = "0.64.3", path = "./auth" }
 lightspeed_cache = { version = "0.64.3", path = "./cache" }
-# lightspeed_cms = { version = "0.64.3", path = "./cms" }
+lightspeed_cms = { version = "0.64.3", path = "./cms" }
 lightspeed_core = { version = "0.64.3", path = "./core" }
 lightspeed_email = { version = "0.64.3", path = "./email" }
 lightspeed_file_store = { version = "0.64.3", path = "./file_store" }
@@ -66,7 +66,7 @@ sha2 = "0.10"
 sqlx = { version = "0.8", default-features = false, features = ["macros", "migrate"] }
 strum = { version = "0.27", features = ["derive"] }
 tempfile = "3"
-testcontainers = { package = "testcontainers-modules", version = "0.11", features = ["mysql", "postgres"] }
+testcontainers = { package = "testcontainers-modules", version = "0.12", features = ["mysql", "postgres"] }
 thiserror = { version = "2" }
 tokio = { version = "1", default-features = false }
 tower = { version = "0.5", default-features = false }
@@ -78,7 +78,7 @@ uuid = { version = "1", features = ["v4"] }
 validator = { version = "0.20", default-features = false }
 
 [profile.dev]
-debug = false
+debug = "line-tables-only"
 
 # Set the settings for all dependencies (but not this crate itself or any workspace member).
 # This includes build dependencies.
