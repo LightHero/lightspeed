@@ -27,9 +27,8 @@ pub trait Headers {
 
 impl Headers for HeaderMap {
     fn get_as_str(&self, header_name: &str) -> Option<Result<&str, LsError>> {
-        self.get(header_name).map(|header| {
-            header.to_str().map_err(|err| LsError::ParseAuthHeaderError { message: format!("{:?}", err) })
-        })
+        self.get(header_name)
+            .map(|header| header.to_str().map_err(|err| LsError::ParseAuthHeaderError { message: format!("{err:?}") }))
     }
 }
 
@@ -53,12 +52,12 @@ impl<Id: IdType + MaybeWeb> WebAuthService<Id> {
 
     pub fn token_string_from_request<'a, H: Headers>(&self, req: &'a H) -> Result<&'a str, LsError> {
         if let Some(header) = req.get_as_str(JWT_TOKEN_HEADER) {
-            header.map_err(|err| LsError::ParseAuthHeaderError { message: format!("{:?}", err) }).and_then(|header| {
-                trace!("Token found in request: [{}]", header);
+            header.map_err(|err| LsError::ParseAuthHeaderError { message: format!("{err:?}") }).and_then(|header| {
+                trace!("Token found in request: [{header}]");
                 if header.len() > JWT_TOKEN_HEADER_SUFFIX_LEN {
                     Ok(&header[JWT_TOKEN_HEADER_SUFFIX_LEN..])
                 } else {
-                    Err(LsError::ParseAuthHeaderError { message: format!("Unexpected auth header: {}", header) })
+                    Err(LsError::ParseAuthHeaderError { message: format!("Unexpected auth header: {header}") })
                 }
             })
         } else {
@@ -76,7 +75,7 @@ impl<Id: IdType + MaybeWeb> WebAuthService<Id> {
 
     pub fn auth_from_token_string(&self, token: &str) -> Result<AuthContext<Id>, LsError> {
         let auth = self.jwt_service.parse_payload::<Auth<Id>>(token);
-        trace!("Auth built from request: [{:?}]", auth);
+        trace!("Auth built from request: [{auth:?}]");
         Ok(self.auth_service.auth(auth?))
     }
 }

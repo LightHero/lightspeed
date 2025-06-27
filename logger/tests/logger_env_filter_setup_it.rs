@@ -9,7 +9,7 @@ mod inner1 {
 
         log::debug!("inner1 - this is debug");
         tracing::info!("inner1 - this is info");
-        log::warn!("inner1 - this is warn. Yaks {}", yaks);
+        log::warn!("inner1 - this is warn. Yaks {yaks}");
     }
 }
 

@@ -47,7 +47,7 @@ impl<RepoManager: AuthRepositoryManager> LsAuthAccountService<RepoManager> {
         username: &str,
         password: &str,
     ) -> Result<Auth<u64>, LsError> {
-        debug!("login attempt with username [{}]", username);
+        debug!("login attempt with username [{username}]");
         let model = self.auth_repo.fetch_by_username_optional(conn, username).await?;
 
         if let Some(user) = model {
@@ -145,7 +145,7 @@ impl<RepoManager: AuthRepositoryManager> LsAuthAccountService<RepoManager> {
         conn: &mut RepoManager::Tx<'_>,
         username: &str,
     ) -> Result<TokenModel, LsError> {
-        debug!("Generate activation token for username [{}]", username);
+        debug!("Generate activation token for username [{username}]");
         self.token_service.generate_and_save_token_with_conn(conn, username, TokenType::AccountActivation).await
     }
 
@@ -167,7 +167,7 @@ impl<RepoManager: AuthRepositoryManager> LsAuthAccountService<RepoManager> {
         username: &str,
         email: &str,
     ) -> Result<(AuthAccountModel, TokenModel), LsError> {
-        debug!("Generate new activation token for username [{}] and email [{}]", username, email);
+        debug!("Generate new activation token for username [{username}] and email [{email}]");
         let auth_account = self.fetch_by_username_with_conn(conn, username).await?;
 
         Validator::validate(&|error_details: &mut ErrorDetails| {
@@ -210,7 +210,7 @@ impl<RepoManager: AuthRepositoryManager> LsAuthAccountService<RepoManager> {
         conn: &mut RepoManager::Tx<'_>,
         previous_activation_token: &str,
     ) -> Result<(AuthAccountModel, TokenModel), LsError> {
-        debug!("Generate new activation token from previous token [{}]", previous_activation_token);
+        debug!("Generate new activation token from previous token [{previous_activation_token}]");
         let token = self.token_service.fetch_by_token_with_conn(conn, previous_activation_token, false).await?;
 
         Validator::validate(&|error_details: &mut ErrorDetails| {
@@ -250,7 +250,7 @@ impl<RepoManager: AuthRepositoryManager> LsAuthAccountService<RepoManager> {
         conn: &mut RepoManager::Tx<'_>,
         activation_token: &str,
     ) -> Result<AuthAccountModel, LsError> {
-        debug!("Activate user called with token [{}]", activation_token);
+        debug!("Activate user called with token [{activation_token}]");
 
         let token = self.token_service.fetch_by_token_with_conn(conn, activation_token, true).await?;
 
@@ -295,7 +295,7 @@ impl<RepoManager: AuthRepositoryManager> LsAuthAccountService<RepoManager> {
         conn: &mut RepoManager::Tx<'_>,
         username: &str,
     ) -> Result<(AuthAccountModel, TokenModel), LsError> {
-        info!("Generate reset password token for username [{}]", username);
+        info!("Generate reset password token for username [{username}]");
 
         let user = self.auth_repo.fetch_by_username(conn, username).await?;
 
@@ -409,7 +409,7 @@ impl<RepoManager: AuthRepositoryManager> LsAuthAccountService<RepoManager> {
         conn: &mut RepoManager::Tx<'_>,
         user_id: &u64,
     ) -> Result<AuthAccountModel, LsError> {
-        debug!("Fetch user with user_id [{:?}]", user_id);
+        debug!("Fetch user with user_id [{user_id:?}]");
         self.auth_repo.fetch_by_id(conn, user_id).await
     }
 
@@ -422,7 +422,7 @@ impl<RepoManager: AuthRepositoryManager> LsAuthAccountService<RepoManager> {
         conn: &mut RepoManager::Tx<'_>,
         username: &str,
     ) -> Result<AuthAccountModel, LsError> {
-        debug!("Fetch user with username [{}]", username);
+        debug!("Fetch user with username [{username}]");
         self.auth_repo.fetch_by_username(conn, username).await
     }
 
@@ -444,7 +444,7 @@ impl<RepoManager: AuthRepositoryManager> LsAuthAccountService<RepoManager> {
         start_user_id: &u64,
         limit: u32,
     ) -> Result<Vec<AuthAccountModel>, LsError> {
-        debug!("Fetch all with status [{}], start_user_id {:?}, limit {}", status, start_user_id, limit);
+        debug!("Fetch all with status [{status}], start_user_id {start_user_id:?}, limit {limit}");
         self.auth_repo.fetch_all_by_status(conn, status, start_user_id, limit).await
     }
 
@@ -458,7 +458,7 @@ impl<RepoManager: AuthRepositoryManager> LsAuthAccountService<RepoManager> {
         user_id: &u64,
         roles: &[String],
     ) -> Result<AuthAccountModel, LsError> {
-        info!("Add roles [{:?}] to user_id [{:?}]", roles, user_id);
+        info!("Add roles [{roles:?}] to user_id [{user_id:?}]");
 
         let mut account = self.fetch_by_user_id_with_conn(conn, user_id).await?;
         for role in roles {
@@ -479,7 +479,7 @@ impl<RepoManager: AuthRepositoryManager> LsAuthAccountService<RepoManager> {
         user_id: &u64,
         roles: &[String],
     ) -> Result<AuthAccountModel, LsError> {
-        info!("delete roles [{:?}] to user_id [{:?}]", roles, user_id);
+        info!("delete roles [{roles:?}] to user_id [{user_id:?}]");
 
         let mut account = self.fetch_by_user_id_with_conn(conn, user_id).await?;
         for role in roles {
@@ -507,8 +507,7 @@ impl<RepoManager: AuthRepositoryManager> LsAuthAccountService<RepoManager> {
         new_email: Option<String>,
     ) -> Result<AuthAccountModel, LsError> {
         info!(
-            "Change user data of user_id [{:?}]. New username: [{:?}]. New email: [{:?}]",
-            user_id, new_username, new_email
+            "Change user data of user_id [{user_id:?}]. New username: [{new_username:?}]. New email: [{new_email:?}]"
         );
 
         let mut user = self.auth_repo.fetch_by_id(conn, user_id).await?;
@@ -541,7 +540,7 @@ impl<RepoManager: AuthRepositoryManager> LsAuthAccountService<RepoManager> {
         conn: &mut RepoManager::Tx<'_>,
         user_id: &u64,
     ) -> Result<AuthAccountModel, LsError> {
-        debug!("Disable user with user_id [{:?}]", user_id);
+        debug!("Disable user with user_id [{user_id:?}]");
         let mut user = self.auth_repo.fetch_by_id(conn, user_id).await?;
 
         match &user.data.status {
@@ -569,7 +568,7 @@ impl<RepoManager: AuthRepositoryManager> LsAuthAccountService<RepoManager> {
         conn: &mut RepoManager::Tx<'_>,
         user_id: &u64,
     ) -> Result<AuthAccountModel, LsError> {
-        debug!("Reactivate disabled user with user_id [{:?}]", user_id);
+        debug!("Reactivate disabled user with user_id [{user_id:?}]");
         let mut user = self.auth_repo.fetch_by_id(conn, user_id).await?;
 
         match &user.data.status {
@@ -595,7 +594,7 @@ impl<RepoManager: AuthRepositoryManager> LsAuthAccountService<RepoManager> {
         conn: &mut RepoManager::Tx<'_>,
         user_id: &u64,
     ) -> Result<u64, LsError> {
-        debug!("Delete user with user_id [{:?}]", user_id);
+        debug!("Delete user with user_id [{user_id:?}]");
         self.auth_repo.delete_by_id(conn, user_id).await
     }
 }

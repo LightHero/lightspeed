@@ -25,7 +25,7 @@ impl<RepoManager: AuthRepositoryManager> LsTokenService<RepoManager> {
         token_type: TokenType,
     ) -> Result<TokenModel, LsError> {
         let username = username.into();
-        info!("Generate and save token of type [{:?}] for username [{}]", token_type, username);
+        info!("Generate and save token of type [{token_type:?}] for username [{username}]");
 
         let issued_at = current_epoch_seconds();
         let expire_at_epoch = issued_at + (self.auth_config.activation_token_validity_minutes * 60);
@@ -44,7 +44,7 @@ impl<RepoManager: AuthRepositoryManager> LsTokenService<RepoManager> {
         token: &str,
         validate: bool,
     ) -> Result<TokenModel, LsError> {
-        debug!("Fetch by token [{}]", token);
+        debug!("Fetch by token [{token}]");
         let token_model = self.token_repo.fetch_by_token(conn, token).await?;
 
         if validate {
@@ -59,7 +59,7 @@ impl<RepoManager: AuthRepositoryManager> LsTokenService<RepoManager> {
         conn: &mut RepoManager::Tx<'_>,
         username: &str,
     ) -> Result<Vec<TokenModel>, LsError> {
-        debug!("Fetch by username [{}]", username);
+        debug!("Fetch by username [{username}]");
         self.token_repo.fetch_by_username(conn, username).await
     }
 

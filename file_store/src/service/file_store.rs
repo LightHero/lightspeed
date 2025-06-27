@@ -52,7 +52,7 @@ impl<RepoManager: DBFileStoreRepositoryManager> LsFileStoreService<RepoManager> 
         conn: &mut RepoManager::Tx<'_>,
         id: u64,
     ) -> Result<FileStoreDataModel, LsError> {
-        debug!("LsFileStoreService - Read file by id [{}]", id);
+        debug!("LsFileStoreService - Read file by id [{id}]");
         self.db_data_repo.fetch_one_by_id(conn, id).await
     }
 
@@ -66,7 +66,7 @@ impl<RepoManager: DBFileStoreRepositoryManager> LsFileStoreService<RepoManager> 
         repository: &str,
         file_path: &str,
     ) -> Result<bool, LsError> {
-        debug!("LsFileStoreService - Check if file exists by repository [{:?}]", repository);
+        debug!("LsFileStoreService - Check if file exists by repository [{repository:?}]");
         self.db_data_repo.exists_by_repository(conn, repository, file_path).await
     }
 
@@ -86,7 +86,7 @@ impl<RepoManager: DBFileStoreRepositoryManager> LsFileStoreService<RepoManager> 
         repository: &str,
         file_path: &str,
     ) -> Result<FileStoreDataModel, LsError> {
-        debug!("LsFileStoreService - Read file data by repository [{:?}]", repository);
+        debug!("LsFileStoreService - Read file data by repository [{repository:?}]");
         self.db_data_repo.fetch_one_by_repository(conn, repository, file_path).await
     }
 
@@ -112,12 +112,12 @@ impl<RepoManager: DBFileStoreRepositoryManager> LsFileStoreService<RepoManager> 
         max: usize,
         sort: &OrderBy,
     ) -> Result<Vec<FileStoreDataModel>, LsError> {
-        debug!("LsFileStoreService - Read file data by repository [{:?}]", repository);
+        debug!("LsFileStoreService - Read file data by repository [{repository:?}]");
         self.db_data_repo.fetch_all_by_repository(conn, repository, offset, max, sort).await
     }
 
     pub async fn read_file_content(&self, repository: &str, file_path: &str) -> Result<BinaryContent<'_>, LsError> {
-        debug!("LsFileStoreService - Read repository [{}] file [{}]", repository, file_path);
+        debug!("LsFileStoreService - Read repository [{repository}] file [{file_path}]");
         match self.get_repository(repository)? {
             RepositoryStoreType::DB => {
                 self.c3p0
@@ -136,7 +136,7 @@ impl<RepoManager: DBFileStoreRepositoryManager> LsFileStoreService<RepoManager> 
         repository: &str,
         file_path: &str,
     ) -> Result<BinaryContent<'_>, LsError> {
-        debug!("LsFileStoreService - Read repository [{}] file [{}]", repository, file_path);
+        debug!("LsFileStoreService - Read repository [{repository}] file [{file_path}]");
         match self.get_repository(repository)? {
             RepositoryStoreType::DB => self.db_binary_repo.read_file(conn, repository, file_path).await,
             RepositoryStoreType::Opendal(opendal_file_store_binary_repository) => {
@@ -155,8 +155,7 @@ impl<RepoManager: DBFileStoreRepositoryManager> LsFileStoreService<RepoManager> 
         content: &'a BinaryContent<'a>,
     ) -> Result<FileStoreDataModel, LsError> {
         info!(
-            "LsFileStoreService - Repository [{}] - Save file [{}], content type [{}]",
-            repository, file_path, content_type
+            "LsFileStoreService - Repository [{repository}] - Save file [{file_path}], content type [{content_type}]"
         );
 
         match self.get_repository(&repository)? {
@@ -202,7 +201,7 @@ impl<RepoManager: DBFileStoreRepositoryManager> LsFileStoreService<RepoManager> 
     }
 
     pub async fn delete_file_by_id_with_conn(&self, conn: &mut RepoManager::Tx<'_>, id: u64) -> Result<(), LsError> {
-        info!("LsFileStoreService - Delete file by id [{}]", id);
+        info!("LsFileStoreService - Delete file by id [{id}]");
 
         let file_data = self.read_file_data_by_id_with_conn(conn, id).await?;
 

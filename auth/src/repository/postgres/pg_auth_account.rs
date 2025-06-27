@@ -51,7 +51,7 @@ impl AuthAccountRepository for PostgresAuthAccountRepository {
 
     async fn fetch_by_username(&self, tx: &mut Self::Tx<'_>, username: &str) -> Result<AuthAccountModel, LsError> {
         self.fetch_by_username_optional(tx, username).await?.ok_or_else(|| LsError::BadRequest {
-            message: format!("No user found with username [{}]", username),
+            message: format!("No user found with username [{username}]"),
             code: ErrorCodes::NOT_FOUND,
         })
     }

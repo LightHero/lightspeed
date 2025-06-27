@@ -54,7 +54,7 @@ impl EmailClient for FullEmailClient {
     fn send(&self, email_message: EmailMessage) -> Pin<Box<dyn Future<Output = Result<(), LsError>> + Send>> {
         let client = self.client.clone();
         Box::pin(async move {
-            debug!("Sending email {:?}", email_message);
+            debug!("Sending email {email_message:?}");
 
             let mut builder = Message::builder();
 

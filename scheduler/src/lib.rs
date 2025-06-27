@@ -90,7 +90,7 @@ impl JobExecutorInternal {
                     let name = job_clone.job.name().to_owned();
 
                     let fut = instrument(timestamp, group.clone(), name.clone(), async move {
-                        info!("Start execution of Job [{}/{}]", group, name);
+                        info!("Start execution of Job [{group}/{name}]");
                         let start = std::time::Instant::now();
                         let result = job_clone.run().await;
 
@@ -107,15 +107,11 @@ impl JobExecutorInternal {
 
                         match result {
                             Ok(()) => {
-                                info!(
-                                    "Execution of Job [{}/{}] completed successfully in {}",
-                                    group, name, duration_fmt
-                                );
+                                info!("Execution of Job [{group}/{name}] completed successfully in {duration_fmt}");
                             }
                             Err(err) => {
                                 error!(
-                                    "Execution of Job [{}/{}] completed with errors in {}. Err: {:?}",
-                                    group, name, duration_fmt, err
+                                    "Execution of Job [{group}/{name}] completed with errors in {duration_fmt}. Err: {err:?}"
                                 );
                             }
                         }

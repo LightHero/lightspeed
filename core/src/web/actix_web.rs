@@ -5,9 +5,9 @@ use actix_web::{HttpRequest, HttpResponse, ResponseError, http};
 
 impl Headers for HttpRequest {
     fn get_as_str(&self, header_name: &str) -> Option<Result<&str, LsError>> {
-        self.headers().get(header_name).map(|header| {
-            header.to_str().map_err(|err| LsError::ParseAuthHeaderError { message: format!("{:?}", err) })
-        })
+        self.headers()
+            .get(header_name)
+            .map(|header| header.to_str().map_err(|err| LsError::ParseAuthHeaderError { message: format!("{err:?}") }))
     }
 }
 
@@ -106,7 +106,7 @@ mod test {
 
         let request = TestRequest::get()
             .uri("/username")
-            .append_header((JWT_TOKEN_HEADER, format!("{}{}", JWT_TOKEN_HEADER_SUFFIX, token)))
+            .append_header((JWT_TOKEN_HEADER, format!("{JWT_TOKEN_HEADER_SUFFIX}{token}")))
             .to_request();
 
         // Act
@@ -133,7 +133,7 @@ mod test {
 
         let request = TestRequest::get()
             .uri("/username")
-            .append_header((JWT_TOKEN_HEADER, format!("{}{}", JWT_TOKEN_HEADER_SUFFIX, token)))
+            .append_header((JWT_TOKEN_HEADER, format!("{JWT_TOKEN_HEADER_SUFFIX}{token}")))
             .to_request();
 
         // Act
@@ -160,7 +160,7 @@ mod test {
 
         let request = TestRequest::get()
             .uri("/admin")
-            .append_header((JWT_TOKEN_HEADER, format!("{}{}", JWT_TOKEN_HEADER_SUFFIX, token)))
+            .append_header((JWT_TOKEN_HEADER, format!("{JWT_TOKEN_HEADER_SUFFIX}{token}")))
             .to_request();
 
         // Act

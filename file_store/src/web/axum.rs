@@ -48,7 +48,7 @@ pub async fn into_response(
 
     let mut response_builder = Builder::new();
 
-    response_builder = response_builder.header(header::CONTENT_TYPE, format!("{}; charset=utf-8", ct));
+    response_builder = response_builder.header(header::CONTENT_TYPE, format!("{ct}; charset=utf-8"));
 
     if set_content_disposition {
         debug!("Set content disposition");
@@ -81,7 +81,7 @@ pub async fn into_response(
 
     response_builder
         .body(body)
-        .map_err(|err| LsError::InternalServerError { message: format!("Cannot set body request. Err: {:?}", err) })
+        .map_err(|err| LsError::InternalServerError { message: format!("Cannot set body request. Err: {err:?}") })
 }
 
 #[cfg(test)]

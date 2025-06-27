@@ -60,7 +60,7 @@ fn response(http_code: StatusCode, details: &WebErrorDetails) -> Response<Body> 
             res
         }
         Err(err) => {
-            error!("response_with_message - cannot serialize body. Err: {:?}", err);
+            error!("response_with_message - cannot serialize body. Err: {err:?}");
             let mut res = Response::new(Body::empty());
             *res.status_mut() = http::StatusCode::INTERNAL_SERVER_ERROR;
             res
@@ -127,7 +127,7 @@ mod test {
                 Request::builder()
                     .method(http::Method::GET)
                     .uri("/username")
-                    .header(JWT_TOKEN_HEADER, format!("{}{}", JWT_TOKEN_HEADER_SUFFIX, token))
+                    .header(JWT_TOKEN_HEADER, format!("{JWT_TOKEN_HEADER_SUFFIX}{token}"))
                     .body(Body::empty())
                     .unwrap(),
             )
@@ -159,7 +159,7 @@ mod test {
                 Request::builder()
                     .method(http::Method::GET)
                     .uri("/username")
-                    .header(JWT_TOKEN_HEADER, format!("{}{}", JWT_TOKEN_HEADER_SUFFIX, token))
+                    .header(JWT_TOKEN_HEADER, format!("{JWT_TOKEN_HEADER_SUFFIX}{token}"))
                     .body(Body::empty())
                     .unwrap(),
             )
@@ -191,7 +191,7 @@ mod test {
                 Request::builder()
                     .method(http::Method::GET)
                     .uri("/admin")
-                    .header(JWT_TOKEN_HEADER, format!("{}{}", JWT_TOKEN_HEADER_SUFFIX, token))
+                    .header(JWT_TOKEN_HEADER, format!("{JWT_TOKEN_HEADER_SUFFIX}{token}"))
                     .body(Body::empty())
                     .unwrap(),
             )

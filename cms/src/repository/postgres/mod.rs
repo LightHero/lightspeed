@@ -36,17 +36,17 @@ impl CmsRepositoryManager for PostgresCmsRepositoryManager {
     }
 
     async fn start(&self) -> Result<(), LsError> {
-        let migrate_table_name = format!("LS_CMS_{}", C3P0_MIGRATE_TABLE_DEFAULT);
+        let migrate_table_name = format!("LS_CMS_{C3P0_MIGRATE_TABLE_DEFAULT}");
 
         let migrate = C3p0MigrateBuilder::new(self.c3p0().clone())
             .with_table_name(migrate_table_name)
             .with_migrations(from_embed(&MIGRATIONS).map_err(|err| LsError::ModuleStartError {
-                message: format!("PostgresCmsRepositoryManager - failed to read db migrations: {:?}", err),
+                message: format!("PostgresCmsRepositoryManager - failed to read db migrations: {err:?}"),
             })?)
             .build();
 
         migrate.migrate().await.map_err(|err| LsError::ModuleStartError {
-            message: format!("PostgresCmsRepositoryManager - db migration failed: {:?}", err),
+            message: format!("PostgresCmsRepositoryManager - db migration failed: {err:?}"),
         })?;
 
         Ok(())

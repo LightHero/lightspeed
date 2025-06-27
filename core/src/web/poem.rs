@@ -36,7 +36,7 @@ impl ResponseError for LsError {
     where
         Self: StdError + Send + Sync + 'static,
     {
-        error!("Converting error into poem response. Err: {:?}", self);
+        error!("Converting error into poem response. Err: {self:?}");
         match self {
             LsError::InvalidTokenError { .. }
             | LsError::ExpiredTokenError { .. }
@@ -83,7 +83,7 @@ fn response(http_code: StatusCode, details: &WebErrorDetails) -> Response {
             .header(http::header::CONTENT_TYPE, http::HeaderValue::from_static("application/json"))
             .body(body),
         Err(err) => {
-            error!("response_with_message - cannot serialize body. Err: {:?}", err);
+            error!("response_with_message - cannot serialize body. Err: {err:?}");
             Response::builder().status(StatusCode::INTERNAL_SERVER_ERROR).finish()
         }
     }
@@ -115,7 +115,7 @@ pub mod openapi {
 
     impl From<LsError> for LightSpeedErrorResponse {
         fn from(err: LsError) -> Self {
-            error!("Converting error into poem response. Err: {:?}", err);
+            error!("Converting error into poem response. Err: {err:?}");
             match err {
                 LsError::InvalidTokenError { .. }
                 | LsError::ExpiredTokenError { .. }
@@ -203,7 +203,7 @@ mod test {
 
         // Act
         let resp =
-            cli.get("/username").header(JWT_TOKEN_HEADER, format!("{}{}", JWT_TOKEN_HEADER_SUFFIX, token)).send().await;
+            cli.get("/username").header(JWT_TOKEN_HEADER, format!("{JWT_TOKEN_HEADER_SUFFIX}{token}")).send().await;
 
         // Assert
         resp.assert_status(StatusCode::UNAUTHORIZED);
@@ -227,7 +227,7 @@ mod test {
 
         // Act
         let resp =
-            cli.get("/username").header(JWT_TOKEN_HEADER, format!("{}{}", JWT_TOKEN_HEADER_SUFFIX, token)).send().await;
+            cli.get("/username").header(JWT_TOKEN_HEADER, format!("{JWT_TOKEN_HEADER_SUFFIX}{token}")).send().await;
 
         // Assert
         resp.assert_status_is_ok();
@@ -250,8 +250,7 @@ mod test {
         let cli = TestClient::new(app);
 
         // Act
-        let resp =
-            cli.get("/admin").header(JWT_TOKEN_HEADER, format!("{}{}", JWT_TOKEN_HEADER_SUFFIX, token)).send().await;
+        let resp = cli.get("/admin").header(JWT_TOKEN_HEADER, format!("{JWT_TOKEN_HEADER_SUFFIX}{token}")).send().await;
 
         // Assert
         resp.assert_status(StatusCode::FORBIDDEN);
@@ -338,7 +337,7 @@ mod test {
             // Assert
             assert_eq!(resp.status(), StatusCode::OK);
             let body = resp.into_body().into_string().await.unwrap();
-            println!("{:?}", body)
+            println!("{body:?}")
         }
 
         #[tokio::test]
@@ -401,7 +400,7 @@ mod test {
             // Act
             let resp = cli
                 .get("/api/username")
-                .header(JWT_TOKEN_HEADER, format!("{}{}", JWT_TOKEN_HEADER_SUFFIX, token))
+                .header(JWT_TOKEN_HEADER, format!("{JWT_TOKEN_HEADER_SUFFIX}{token}"))
                 .send()
                 .await;
 
@@ -431,7 +430,7 @@ mod test {
             // Act
             let resp = cli
                 .get("/api/username")
-                .header(JWT_TOKEN_HEADER, format!("{}{}", JWT_TOKEN_HEADER_SUFFIX, token))
+                .header(JWT_TOKEN_HEADER, format!("{JWT_TOKEN_HEADER_SUFFIX}{token}"))
                 .send()
                 .await;
 
@@ -461,7 +460,7 @@ mod test {
             // Act
             let resp = cli
                 .get("/api/admin")
-                .header(JWT_TOKEN_HEADER, format!("{}{}", JWT_TOKEN_HEADER_SUFFIX, token))
+                .header(JWT_TOKEN_HEADER, format!("{JWT_TOKEN_HEADER_SUFFIX}{token}"))
                 .send()
                 .await;
 

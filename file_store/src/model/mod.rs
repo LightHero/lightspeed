@@ -20,7 +20,7 @@ impl<'a> BinaryContent<'a> {
                 .read(path)
                 .await
                 .map_err(|err| LsError::BadRequest {
-                    message: format!("Failed to read file from store: {}", err),
+                    message: format!("Failed to read file from store: {err}"),
                     code: ErrorCodes::IO_ERROR,
                 })?
                 .to_vec()
