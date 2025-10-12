@@ -69,11 +69,11 @@ impl<Id: IdType + MaybeWeb> WebAuthService<Id> {
         Ok(self.jwt_service.generate_from_payload(auth)?.1)
     }
 
-    pub fn auth_from_request<H: Headers>(&self, req: &H) -> Result<AuthContext<Id>, LsError> {
+    pub fn auth_from_request<H: Headers>(&self, req: &H) -> Result<AuthContext<'_, Id>, LsError> {
         self.token_string_from_request(req).and_then(|token| self.auth_from_token_string(token))
     }
 
-    pub fn auth_from_token_string(&self, token: &str) -> Result<AuthContext<Id>, LsError> {
+    pub fn auth_from_token_string(&self, token: &str) -> Result<AuthContext<'_, Id>, LsError> {
         let auth = self.jwt_service.parse_payload::<Auth<Id>>(token);
         trace!("Auth built from request: [{auth:?}]");
         Ok(self.auth_service.auth(auth?))
