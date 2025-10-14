@@ -8,7 +8,7 @@ use mysql_token::MySqlTokenRepository;
 pub mod mysql_auth_account;
 pub mod mysql_token;
 
-static MIGRATOR: Migrator = ::sqlx::migrate!("src_resources/db/sqlx_mysql/migrations");
+static MIGRATOR: Migrator = ::sqlx::migrate!("src_resources/db/mysql/migrations");
 
 #[derive(Clone)]
 pub struct MySqlAuthRepositoryManager {

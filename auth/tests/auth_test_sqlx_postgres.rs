@@ -6,7 +6,7 @@ use maybe_once::tokio::*;
 
 use lightspeed_auth::LsAuthModule;
 use lightspeed_auth::config::AuthConfig;
-use lightspeed_auth::repository::sqlx_postgres::PgAuthRepositoryManager;
+use lightspeed_auth::repository::postgres::PgAuthRepositoryManager;
 use lightspeed_core::module::LsModule;
 use lightspeed_test_utils::pg::new_pg_db;
 use testcontainers::postgres::Postgres;

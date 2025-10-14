@@ -5,17 +5,14 @@ use crate::model::token::{TokenData, TokenModel};
 use c3p0::*;
 use lightspeed_core::error::LsError;
 
+#[cfg(feature = "mysql")]
+pub mod mysql;
+
 #[cfg(feature = "postgres")]
 pub mod postgres;
 
-#[cfg(feature = "sqlx_mysql")]
-pub mod sqlx_mysql;
-
-#[cfg(feature = "sqlx_postgres")]
-pub mod sqlx_postgres;
-
-#[cfg(feature = "sqlx_sqlite")]
-pub mod sqlx_sqlite;
+#[cfg(feature = "sqlite")]
+pub mod sqlite;
 
 pub trait AuthRepositoryManager: Clone + Send + Sync {
     type Tx<'a>: Send + Sync;
@@ -67,7 +64,7 @@ pub trait AuthAccountRepository: Clone + Send + Sync {
     fn save(
         &self,
         tx: &mut Self::Tx<'_>,
-        model: NewModel<AuthAccountData>,
+        model: NewRecord<AuthAccountData>,
     ) -> impl Future<Output = Result<AuthAccountModel, LsError>> + Send;
 
     fn update(
@@ -103,7 +100,7 @@ pub trait TokenRepository: Clone + Send + Sync {
     fn save(
         &self,
         tx: &mut Self::Tx<'_>,
-        model: NewModel<TokenData>,
+        model: NewRecord<TokenData>,
     ) -> impl Future<Output = Result<TokenModel, LsError>> + Send;
 
     fn delete(

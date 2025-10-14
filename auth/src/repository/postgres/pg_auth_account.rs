@@ -1,27 +1,30 @@
-use crate::{
-    model::auth_account::{AuthAccountData, AuthAccountDataCodec, AuthAccountModel, AuthAccountStatus},
-    repository::AuthAccountRepository,
-};
-use c3p0::postgres::*;
+use crate::model::auth_account::{AuthAccountData, AuthAccountDataCodec, AuthAccountModel, AuthAccountStatus};
+use crate::repository::AuthAccountRepository;
+use ::sqlx::{Postgres, Transaction};
+use c3p0::sqlx::*;
 use c3p0::*;
 use lightspeed_core::error::{ErrorCodes, LsError};
 use std::ops::Deref;
 
 #[derive(Clone)]
-pub struct PostgresAuthAccountRepository {
-    repo: PgC3p0Json<u64, i64, AuthAccountData, AuthAccountDataCodec>,
+pub struct PgAuthAccountRepository {
+    repo: SqlxPgC3p0Json<u64, AuthAccountData, AuthAccountDataCodec>,
 }
 
-impl Default for PostgresAuthAccountRepository {
+impl Default for PgAuthAccountRepository {
     fn default() -> Self {
-        PostgresAuthAccountRepository {
-            repo: PgC3p0JsonBuilder::new("LS_AUTH_ACCOUNT").build_with_codec(AuthAccountDataCodec {}),
-        }
+        Self::new()
     }
 }
 
-impl AuthAccountRepository for PostgresAuthAccountRepository {
-    type Tx<'a> = PgTx<'a>;
+impl PgAuthAccountRepository {
+    pub fn new() -> Self {
+        Self { repo: SqlxPgC3p0JsonBuilder::new("LS_AUTH_ACCOUNT").build_with_codec(AuthAccountDataCodec {}) }
+    }
+}
+
+impl AuthAccountRepository for PgAuthAccountRepository {
+    type Tx<'a> = Transaction<'a, Postgres>;
 
     async fn fetch_all_by_status(
         &self,
@@ -39,9 +42,13 @@ impl AuthAccountRepository for PostgresAuthAccountRepository {
         "#,
             self.queries().find_base_sql_query
         );
+
         Ok(self
             .repo
-            .fetch_all_with_sql(tx, &sql, &[&(*start_user_id as i64), &status.as_ref(), &(limit as i64)])
+            .fetch_all_with_sql(
+                tx,
+                self.repo.query_with_id(&sql, start_user_id).bind(status.as_ref()).bind(limit as i64),
+            )
             .await?)
     }
 
@@ -61,7 +68,7 @@ impl AuthAccountRepository for PostgresAuthAccountRepository {
         tx: &mut Self::Tx<'_>,
         username: &str,
     ) -> Result<Option<AuthAccountModel>, LsError> {
-        let sql = format!(
+        let sql = &format!(
             r#"
             {}
             where DATA ->> 'username' = $1
@@ -69,7 +76,7 @@ impl AuthAccountRepository for PostgresAuthAccountRepository {
         "#,
             self.queries().find_base_sql_query
         );
-        Ok(self.repo.fetch_one_optional_with_sql(tx, &sql, &[&username]).await?)
+        Ok(self.repo.fetch_one_optional_with_sql(tx, ::sqlx::query(sql).bind(username)).await?)
     }
 
     async fn fetch_by_email_optional(
@@ -85,7 +92,7 @@ impl AuthAccountRepository for PostgresAuthAccountRepository {
         "#,
             self.queries().find_base_sql_query
         );
-        Ok(self.repo.fetch_one_optional_with_sql(tx, &sql, &[&email]).await?)
+        Ok(self.repo.fetch_one_optional_with_sql(tx, ::sqlx::query(&sql).bind(email)).await?)
     }
 
     async fn save(&self, tx: &mut Self::Tx<'_>, model: NewModel<AuthAccountData>) -> Result<AuthAccountModel, LsError> {
@@ -105,8 +112,8 @@ impl AuthAccountRepository for PostgresAuthAccountRepository {
     }
 }
 
-impl Deref for PostgresAuthAccountRepository {
-    type Target = PgC3p0Json<u64, i64, AuthAccountData, AuthAccountDataCodec>;
+impl Deref for PgAuthAccountRepository {
+    type Target = SqlxPgC3p0Json<u64, AuthAccountData, AuthAccountDataCodec>;
 
     fn deref(&self) -> &Self::Target {
         &self.repo

@@ -8,7 +8,7 @@ use sqlite_token::SqliteTokenRepository;
 pub mod sqlite_auth_account;
 pub mod sqlite_token;
 
-static MIGRATOR: Migrator = ::sqlx::migrate!("src_resources/db/sqlx_sqlite/migrations");
+static MIGRATOR: Migrator = ::sqlx::migrate!("src_resources/db/sqlite/migrations");
 
 #[derive(Clone)]
 pub struct SqliteAuthRepositoryManager {

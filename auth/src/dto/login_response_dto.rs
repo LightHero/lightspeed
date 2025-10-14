@@ -4,6 +4,6 @@ use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize)]
 pub struct LoginResponseDto {
-    pub auth: Auth<u64>,
+    pub auth: Auth,
     pub token: TokenDto,
 }

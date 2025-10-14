@@ -12,9 +12,9 @@ pub struct ChangePasswordDto {
     pub new_password_confirm: String,
 }
 
-impl Owned<u64> for ChangePasswordDto {
-    fn get_owner_id(&self) -> &u64 {
-        &self.user_id
+impl Owned for ChangePasswordDto {
+    fn get_owner_id(&self) -> u64 {
+        self.user_id
     }
 }
 

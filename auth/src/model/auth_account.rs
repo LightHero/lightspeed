@@ -1,10 +1,8 @@
-use c3p0::{C3p0Error, JsonCodec, Model};
+use c3p0::{Codec, DataType, Record};
 use serde::{Deserialize, Serialize};
-use serde_json::Value;
-use std::borrow::Cow;
 use strum::{AsRefStr, Display};
 
-pub type AuthAccountModel = Model<u64, AuthAccountData>;
+pub type AuthAccountModel = Record<AuthAccountData>;
 
 #[derive(Clone, Serialize, Deserialize)]
 pub struct AuthAccountData {
@@ -16,6 +14,11 @@ pub struct AuthAccountData {
     pub status: AuthAccountStatus,
 }
 
+impl DataType for AuthAccountData {
+    const TABLE_NAME: &'static str = "LS_AUTH_ACCOUNT";
+    type CODEC = AuthAccountDataToken;
+}
+
 #[derive(Debug, PartialEq, Clone, Serialize, Deserialize, AsRefStr, Display)]
 pub enum AuthAccountStatus {
     Active,
@@ -25,23 +28,18 @@ pub enum AuthAccountStatus {
 
 #[derive(Clone, Serialize, Deserialize)]
 #[serde(tag = "_json_tag")]
-enum AuthAccountDataVersioning<'a> {
-    V1(Cow<'a, AuthAccountData>),
+enum AuthAccountDataToken {
+    V1(AuthAccountData),
 }
 
-#[derive(Clone)]
-pub struct AuthAccountDataCodec {}
-
-impl JsonCodec<AuthAccountData> for AuthAccountDataCodec {
-    fn data_from_value(&self, value: Value) -> Result<AuthAccountData, C3p0Error> {
-        let versioning = serde_json::from_value(value)?;
-        let data = match versioning {
-            AuthAccountDataVersioning::V1(data_v1) => data_v1.into_owned(),
-        };
-        Ok(data)
+impl Codec<AuthAccountData> for AuthAccountDataToken {
+    fn encode(data: AuthAccountData) -> Self {
+        AuthAccountDataToken::V1(data)
     }
 
-    fn data_to_value(&self, data: &AuthAccountData) -> Result<Value, C3p0Error> {
-        serde_json::to_value(AuthAccountDataVersioning::V1(Cow::Borrowed(data))).map_err(C3p0Error::from)
+    fn decode(data: Self) -> AuthAccountData {
+        match data {
+            AuthAccountDataToken::V1(data) => data,
+        }
     }
 }

@@ -1,6 +1,6 @@
 use crate::repository::db::DBFileStoreRepositoryManager;
-use crate::repository::db::sqlx_postgres::pg_file_store_binary::PgFileStoreBinaryRepository;
-use crate::repository::db::sqlx_postgres::pg_file_store_data::PgFileStoreDataRepository;
+use crate::repository::db::postgres::pg_file_store_binary::PgFileStoreBinaryRepository;
+use crate::repository::db::postgres::pg_file_store_data::PgFileStoreDataRepository;
 use c3p0::sqlx::sqlx::{migrate::Migrator, *};
 use c3p0::sqlx::*;
 use lightspeed_core::error::LsError;
@@ -8,7 +8,7 @@ use lightspeed_core::error::LsError;
 pub mod pg_file_store_binary;
 pub mod pg_file_store_data;
 
-static MIGRATOR: Migrator = migrate!("src_resources/db/sqlx_postgres/migrations");
+static MIGRATOR: Migrator = migrate!("src_resources/db/postgres/migrations");
 
 #[derive(Clone)]
 pub struct PgFileStoreRepositoryManager {

@@ -3,5 +3,5 @@ use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize)]
 pub struct AuthDto {
-    pub auth: Auth<u64>,
+    pub auth: Auth,
 }

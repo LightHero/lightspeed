@@ -37,7 +37,7 @@ impl<RepoManager: AuthRepositoryManager> LsAuthAccountService<RepoManager> {
         LsAuthAccountService { c3p0, auth_config, auth_repo, password_service, token_service }
     }
 
-    pub async fn login(&self, username: &str, password: &str) -> Result<Auth<u64>, LsError> {
+    pub async fn login(&self, username: &str, password: &str) -> Result<Auth, LsError> {
         self.c3p0.transaction(async |conn| self.login_with_conn(conn, username, password).await).await
     }
 
@@ -46,7 +46,7 @@ impl<RepoManager: AuthRepositoryManager> LsAuthAccountService<RepoManager> {
         conn: &mut RepoManager::Tx<'_>,
         username: &str,
         password: &str,
-    ) -> Result<Auth<u64>, LsError> {
+    ) -> Result<Auth, LsError> {
         debug!("login attempt with username [{username}]");
         let model = self.auth_repo.fetch_by_username_optional(conn, username).await?;
 
@@ -125,7 +125,7 @@ impl<RepoManager: AuthRepositoryManager> LsAuthAccountService<RepoManager> {
             .auth_repo
             .save(
                 conn,
-                NewModel::new(AuthAccountData {
+                NewRecord::new(AuthAccountData {
                     username,
                     email: create_login_dto.email,
                     password: hashed_password,
