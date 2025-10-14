@@ -10,7 +10,7 @@ pub mod model_dto;
 
 pub struct ModelWithOwner<Data> {
     pub id: u64,
-    pub version: i32,
+    pub version: u32,
     pub user_id: u64,
     pub data: Data,
 }
@@ -26,7 +26,7 @@ impl<Data: DataType> WithIdAndVersion for ModelWithOwner<Data> {
         self.id
     }
 
-    fn get_version(&self) -> i32 {
+    fn get_version(&self) -> u32 {
         self.version
     }
 }

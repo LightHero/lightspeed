@@ -20,7 +20,6 @@ serde = { workspace = true }
 serde_json = { workspace = true }
 
 sqlx = { workspace = true, optional = true }
-
 axum = { workspace = true, optional = true }
 mime = { workspace = true, optional = true }
 mime_guess = { workspace = true, optional = true }

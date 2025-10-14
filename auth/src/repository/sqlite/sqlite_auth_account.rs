@@ -1,6 +1,5 @@
 use crate::model::auth_account::{AuthAccountData, AuthAccountDataCodec, AuthAccountModel, AuthAccountStatus};
 use crate::repository::AuthAccountRepository;
-use ::sqlx::{Sqlite, Transaction};
 use c3p0::sqlx::*;
 use c3p0::*;
 use lightspeed_core::error::{ErrorCodes, LsError};

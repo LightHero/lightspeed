@@ -1,8 +1,8 @@
 use crate::repository::db::DBFileStoreRepositoryManager;
 use crate::repository::db::sqlite::sqlite_file_store_binary::SqliteFileStoreBinaryRepository;
 use crate::repository::db::sqlite::sqlite_file_store_data::SqliteFileStoreDataRepository;
-use c3p0::sqlx::sqlx::{migrate::Migrator, *};
-use c3p0::sqlx::*;
+use c3p0::sqlx::{migrate::Migrator, *};
+use c3p0::*;
 use lightspeed_core::error::LsError;
 
 pub mod sqlite_file_store_binary;
@@ -12,18 +12,18 @@ static MIGRATOR: Migrator = migrate!("src_resources/db/sqlite/migrations");
 
 #[derive(Clone)]
 pub struct SqliteFileStoreRepositoryManager {
-    c3p0: SqlxSqliteC3p0Pool,
+    c3p0: SqliteC3p0Pool,
 }
 
 impl SqliteFileStoreRepositoryManager {
-    pub fn new(c3p0: SqlxSqliteC3p0Pool) -> Self {
+    pub fn new(c3p0: SqliteC3p0Pool) -> Self {
         Self { c3p0 }
     }
 }
 
 impl DBFileStoreRepositoryManager for SqliteFileStoreRepositoryManager {
-    type Tx<'a> = Transaction<'a, Sqlite>;
-    type C3P0 = SqlxSqliteC3p0Pool;
+    type DB = Sqlite;
+    type C3P0 = SqliteC3p0Pool;
     type FileStoreBinaryRepo = SqliteFileStoreBinaryRepository;
     type FileStoreDataRepo = SqliteFileStoreDataRepository;
 

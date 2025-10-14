@@ -2,8 +2,8 @@ use crate::repository::db::DBFileStoreRepositoryManager;
 use crate::repository::db::mysql::mysql_file_store_binary::MySqlFileStoreBinaryRepository;
 use crate::repository::db::mysql::mysql_file_store_data::MySqlFileStoreDataRepository;
 use ::sqlx::migrate::Migrator;
-use c3p0::sqlx::sqlx::*;
 use c3p0::sqlx::*;
+use c3p0::*;
 use lightspeed_core::error::LsError;
 
 pub mod mysql_file_store_binary;
@@ -13,18 +13,18 @@ static MIGRATOR: Migrator = migrate!("src_resources/db/mysql/migrations");
 
 #[derive(Clone)]
 pub struct MySqlFileStoreRepositoryManager {
-    c3p0: SqlxMySqlC3p0Pool,
+    c3p0: MySqlC3p0Pool,
 }
 
 impl MySqlFileStoreRepositoryManager {
-    pub fn new(c3p0: SqlxMySqlC3p0Pool) -> Self {
+    pub fn new(c3p0: MySqlC3p0Pool) -> Self {
         Self { c3p0 }
     }
 }
 
 impl DBFileStoreRepositoryManager for MySqlFileStoreRepositoryManager {
-    type Tx<'a> = Transaction<'a, MySql>;
-    type C3P0 = SqlxMySqlC3p0Pool;
+    type DB = MySql;
+    type C3P0 = MySqlC3p0Pool;
     type FileStoreBinaryRepo = MySqlFileStoreBinaryRepository;
     type FileStoreDataRepo = MySqlFileStoreDataRepository;
 

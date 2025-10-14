@@ -1,6 +1,7 @@
 use crate::model::{BinaryContent, FileStoreDataData, FileStoreDataModel};
 use c3p0::*;
 use lightspeed_core::error::LsError;
+use ::sqlx::Database;
 
 #[cfg(feature = "mysql_unsupported")]
 pub mod mysql;
@@ -12,10 +13,10 @@ pub mod postgres;
 pub mod sqlite;
 
 pub trait DBFileStoreRepositoryManager: Clone + Send + Sync {
-    type Tx<'a>: Send + Sync;
-    type C3P0: for<'a> C3p0Pool<Tx<'a> = Self::Tx<'a>>;
-    type FileStoreBinaryRepo: for<'a> DBFileStoreBinaryRepository<Tx<'a> = Self::Tx<'a>>;
-    type FileStoreDataRepo: for<'a> FileStoreDataRepository<Tx<'a> = Self::Tx<'a>>;
+    type DB: Database;
+    type C3P0: C3p0Pool<DB = Self::DB>;
+    type FileStoreBinaryRepo: DBFileStoreBinaryRepository<DB = Self::DB>;
+    type FileStoreDataRepo: FileStoreDataRepository<DB = Self::DB>;
 
     fn c3p0(&self) -> &Self::C3P0;
     fn start(&self) -> impl Future<Output = Result<(), LsError>> + Send;
@@ -25,18 +26,18 @@ pub trait DBFileStoreRepositoryManager: Clone + Send + Sync {
 }
 
 pub trait DBFileStoreBinaryRepository: Clone + Send + Sync {
-    type Tx<'a>: Send + Sync;
+    type DB: Database;
 
     fn read_file(
         &self,
-        tx: &mut Self::Tx<'_>,
+        tx: &mut <Self::DB as Database>::Connection,
         repository_name: &str,
         file_path: &str,
     ) -> impl Future<Output = Result<BinaryContent<'_>, LsError>> + Send;
 
     fn save_file<'a>(
         &self,
-        tx: &mut Self::Tx<'_>,
+        tx: &mut <Self::DB as Database>::Connection,
         repository_name: &str,
         file_path: &str,
         content: &'a BinaryContent<'a>,
@@ -44,38 +45,38 @@ pub trait DBFileStoreBinaryRepository: Clone + Send + Sync {
 
     fn delete_file(
         &self,
-        tx: &mut Self::Tx<'_>,
+        tx: &mut <Self::DB as Database>::Connection,
         repository_name: &str,
         file_path: &str,
     ) -> impl Future<Output = Result<u64, LsError>> + Send;
 }
 
 pub trait FileStoreDataRepository: Clone + Send + Sync {
-    type Tx<'a>: Send + Sync;
+    type DB: Database;
 
     fn exists_by_repository(
         &self,
-        tx: &mut Self::Tx<'_>,
+        tx: &mut <Self::DB as Database>::Connection,
         repository: &str,
         file_path: &str,
     ) -> impl Future<Output = Result<bool, LsError>> + Send;
 
     fn fetch_one_by_id(
         &self,
-        tx: &mut Self::Tx<'_>,
+        tx: &mut <Self::DB as Database>::Connection,
         id: u64,
     ) -> impl Future<Output = Result<FileStoreDataModel, LsError>> + Send;
 
     fn fetch_one_by_repository(
         &self,
-        tx: &mut Self::Tx<'_>,
+        tx: &mut <Self::DB as Database>::Connection,
         repository: &str,
         file_path: &str,
     ) -> impl Future<Output = Result<FileStoreDataModel, LsError>> + Send;
 
     fn fetch_all_by_repository(
         &self,
-        tx: &mut Self::Tx<'_>,
+        tx: &mut <Self::DB as Database>::Connection,
         repository: &str,
         offset: usize,
         max: usize,
@@ -84,9 +85,9 @@ pub trait FileStoreDataRepository: Clone + Send + Sync {
 
     fn save(
         &self,
-        tx: &mut Self::Tx<'_>,
+        tx: &mut <Self::DB as Database>::Connection,
         model: NewModel<FileStoreDataData>,
     ) -> impl Future<Output = Result<FileStoreDataModel, LsError>> + Send;
 
-    fn delete_by_id(&self, tx: &mut Self::Tx<'_>, id: u64) -> impl Future<Output = Result<u64, LsError>> + Send;
+    fn delete_by_id(&self, tx: &mut <Self::DB as Database>::Connection, id: u64) -> impl Future<Output = Result<u64, LsError>> + Send;
 }

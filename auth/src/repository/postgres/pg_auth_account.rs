@@ -1,6 +1,5 @@
 use crate::model::auth_account::{AuthAccountData, AuthAccountDataCodec, AuthAccountModel, AuthAccountStatus};
 use crate::repository::AuthAccountRepository;
-use ::sqlx::{Postgres, Transaction};
 use c3p0::sqlx::*;
 use c3p0::*;
 use lightspeed_core::error::{ErrorCodes, LsError};
@@ -8,7 +7,7 @@ use std::ops::Deref;
 
 #[derive(Clone)]
 pub struct PgAuthAccountRepository {
-    repo: SqlxPgC3p0Json<u64, AuthAccountData, AuthAccountDataCodec>,
+    repo: PgC3p0Json<u64, AuthAccountData, AuthAccountDataCodec>,
 }
 
 impl Default for PgAuthAccountRepository {

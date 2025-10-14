@@ -1,29 +1,29 @@
 use crate::repository::AuthRepositoryManager;
 use crate::repository::postgres::pg_auth_account::PgAuthAccountRepository;
 use crate::repository::postgres::pg_token::PgTokenRepository;
-use ::sqlx::{migrate::Migrator, *};
-use c3p0::sqlx::*;
+use c3p0::sqlx::{migrate::Migrator, *};
+use c3p0::*;
 use lightspeed_core::error::LsError;
 
 pub mod pg_auth_account;
 pub mod pg_token;
 
-static MIGRATOR: Migrator = ::sqlx::migrate!("src_resources/db/postgres/migrations");
+static MIGRATOR: Migrator = c3p0::sqlx::migrate!("src_resources/db/postgres/migrations");
 
 #[derive(Clone)]
 pub struct PgAuthRepositoryManager {
-    c3p0: SqlxPgC3p0Pool,
+    c3p0: PgC3p0Pool,
 }
 
 impl PgAuthRepositoryManager {
-    pub fn new(c3p0: SqlxPgC3p0Pool) -> PgAuthRepositoryManager {
+    pub fn new(c3p0: PgC3p0Pool) -> PgAuthRepositoryManager {
         PgAuthRepositoryManager { c3p0 }
     }
 }
 
 impl AuthRepositoryManager for PgAuthRepositoryManager {
-    type Tx<'a> = Transaction<'a, Postgres>;
-    type C3P0 = SqlxPgC3p0Pool;
+    type DB = Postgres;
+    type C3P0 = PgC3p0Pool;
     type AuthAccountRepo = PgAuthAccountRepository;
     type TokenRepo = PgTokenRepository;
 

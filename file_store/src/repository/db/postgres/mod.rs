@@ -1,8 +1,8 @@
 use crate::repository::db::DBFileStoreRepositoryManager;
 use crate::repository::db::postgres::pg_file_store_binary::PgFileStoreBinaryRepository;
 use crate::repository::db::postgres::pg_file_store_data::PgFileStoreDataRepository;
-use c3p0::sqlx::sqlx::{migrate::Migrator, *};
-use c3p0::sqlx::*;
+use c3p0::sqlx::{migrate::Migrator, *};
+use c3p0::*;
 use lightspeed_core::error::LsError;
 
 pub mod pg_file_store_binary;
@@ -12,18 +12,18 @@ static MIGRATOR: Migrator = migrate!("src_resources/db/postgres/migrations");
 
 #[derive(Clone)]
 pub struct PgFileStoreRepositoryManager {
-    c3p0: SqlxPgC3p0Pool,
+    c3p0: PgC3p0Pool,
 }
 
 impl PgFileStoreRepositoryManager {
-    pub fn new(c3p0: SqlxPgC3p0Pool) -> Self {
+    pub fn new(c3p0: PgC3p0Pool) -> Self {
         Self { c3p0 }
     }
 }
 
 impl DBFileStoreRepositoryManager for PgFileStoreRepositoryManager {
-    type Tx<'a> = Transaction<'a, Postgres>;
-    type C3P0 = SqlxPgC3p0Pool;
+    type DB = Postgres;
+    type C3P0 = PgC3p0Pool;
     type FileStoreBinaryRepo = PgFileStoreBinaryRepository;
     type FileStoreDataRepo = PgFileStoreDataRepository;
 

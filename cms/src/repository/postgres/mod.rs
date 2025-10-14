@@ -5,6 +5,7 @@ use crate::repository::postgres::pg_schema::PostgresSchemaRepository;
 use c3p0::postgres::*;
 use c3p0::*;
 use lightspeed_core::error::LsError;
+use ::sqlx::Postgres;
 
 pub mod pg_content;
 pub mod pg_project;
@@ -25,7 +26,7 @@ impl PostgresCmsRepositoryManager {
 }
 
 impl CmsRepositoryManager for PostgresCmsRepositoryManager {
-    type Tx<'a> = PgTx<'a>;
+    type DB = Postgres;
     type C3P0 = PgC3p0Pool;
     type ContentRepo = PostgresContentRepository;
     type ProjectRepo = PostgresProjectRepository;
