@@ -31,7 +31,6 @@ tokio = { workspace = true, features = ["rt-multi-thread"] }
 
 [features]
 default = []
-postgres = ["c3p0/postgres", "c3p0/migrate"]
-sqlx_mysql = ["c3p0/sqlx_mysql", "c3p0/migrate", "sqlx"]
-sqlx_postgres = ["c3p0/sqlx_postgres", "c3p0/migrate", "sqlx"]
-sqlx_sqlite = ["c3p0/sqlx_sqlite", "c3p0/migrate", "sqlx"]
+mysql = ["c3p0/mysql", "c3p0/migrate", "sqlx"]
+postgres = ["c3p0/postgres", "c3p0/migrate", "sqlx"]
+sqlite = ["c3p0/sqlite", "c3p0/migrate", "sqlx"]

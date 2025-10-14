@@ -47,17 +47,12 @@ postgres = [
     "lightspeed_auth?/postgres", 
     "lightspeed_cms?/postgres"
 ]
-sqlx_mysql = [
-    "lightspeed_auth?/sqlx_mysql", 
-    "lightspeed_cms?/sqlx_mysql"
+mysql = [
+    "lightspeed_auth?/mysql", 
+    "lightspeed_cms?/mysql"
 ]
-sqlx_postgres = [
-    "lightspeed_auth?/sqlx_postgres", 
-    "lightspeed_cms?/sqlx_postgres", 
-    "lightspeed_file_store?/sqlx_postgres"
-]
-sqlx_sqlite = [
-    "lightspeed_auth?/sqlx_sqlite", 
-    "lightspeed_cms?/sqlx_sqlite", 
-    "lightspeed_file_store?/sqlx_sqlite"
+sqlite = [
+    "lightspeed_auth?/sqlite", 
+    "lightspeed_cms?/sqlite", 
+    "lightspeed_file_store?/sqlite"
 ]

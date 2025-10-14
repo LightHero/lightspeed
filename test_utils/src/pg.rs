@@ -1,6 +1,6 @@
-use c3p0::sqlx::SqlxPgC3p0Pool;
-use c3p0::sqlx::sqlx::PgPool;
-use c3p0::sqlx::sqlx::postgres::PgConnectOptions;
+use c3p0::sqlx::postgres::PgConnectOptions;
+use c3p0::sqlx::PgPool;
+use c3p0::*;
 use testcontainers::postgres::Postgres;
 use testcontainers::testcontainers::ContainerAsync;
 use testcontainers::testcontainers::runners::AsyncRunner;
@@ -15,7 +15,7 @@ use testcontainers::testcontainers::runners::AsyncRunner;
 /// The returned Sqlx pool is configured to connect to the database with the same defaults as the
 /// container.
 ///
-pub async fn new_pg_db() -> (SqlxPgC3p0Pool, ContainerAsync<Postgres>) {
+pub async fn new_pg_db() -> (PgC3p0Pool, ContainerAsync<Postgres>) {
     let node = Postgres::default().start().await.unwrap();
 
     let options = PgConnectOptions::new()
@@ -27,7 +27,7 @@ pub async fn new_pg_db() -> (SqlxPgC3p0Pool, ContainerAsync<Postgres>) {
 
     let pool = PgPool::connect_with(options).await.unwrap();
 
-    let c3p0 = SqlxPgC3p0Pool::new(pool);
+    let c3p0 = PgC3p0Pool::new(pool);
 
     (c3p0, node)
 }

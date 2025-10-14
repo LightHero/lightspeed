@@ -2,11 +2,8 @@ use crate::error::LsError;
 use crate::service::auth::{Auth, AuthContext, LsAuthService};
 use crate::service::jwt::LsJwtService;
 use ::http::{HeaderMap, Request};
-use c3p0::IdType;
 use log::*;
 use std::sync::Arc;
-
-use self::types::MaybeWeb;
 
 #[cfg(feature = "axum")]
 pub mod axum;
@@ -34,15 +31,14 @@ impl<T> Headers for Request<T> {
 }
 
 #[derive(Clone)]
-pub struct WebAuthService<Id> {
-    phantom_id: std::marker::PhantomData<Id>,
+pub struct WebAuthService {
     auth_service: Arc<LsAuthService>,
     jwt_service: Arc<LsJwtService>,
 }
 
-impl<Id: IdType + MaybeWeb> WebAuthService<Id> {
+impl WebAuthService {
     pub fn new(auth_service: Arc<LsAuthService>, jwt_service: Arc<LsJwtService>) -> Self {
-        Self { phantom_id: std::marker::PhantomData, auth_service, jwt_service }
+        Self { auth_service, jwt_service }
     }
 
     pub fn token_string_from_request<'a, H: Headers>(&self, req: &'a H) -> Result<&'a str, LsError> {
@@ -60,16 +56,16 @@ impl<Id: IdType + MaybeWeb> WebAuthService<Id> {
         }
     }
 
-    pub fn token_from_auth(&self, auth: &Auth<Id>) -> Result<String, LsError> {
+    pub fn token_from_auth(&self, auth: &Auth) -> Result<String, LsError> {
         Ok(self.jwt_service.generate_from_payload(auth)?.1)
     }
 
-    pub fn auth_from_request<H: Headers>(&self, req: &H) -> Result<AuthContext<'_, Id>, LsError> {
+    pub fn auth_from_request<H: Headers>(&self, req: &H) -> Result<AuthContext<'_>, LsError> {
         self.token_string_from_request(req).and_then(|token| self.auth_from_token_string(token))
     }
 
-    pub fn auth_from_token_string(&self, token: &str) -> Result<AuthContext<'_, Id>, LsError> {
-        let auth = self.jwt_service.parse_payload::<Auth<Id>>(token);
+    pub fn auth_from_token_string(&self, token: &str) -> Result<AuthContext<'_>, LsError> {
+        let auth = self.jwt_service.parse_payload::<Auth>(token);
         trace!("Auth built from request: [{auth:?}]");
         Ok(self.auth_service.auth(auth?))
     }

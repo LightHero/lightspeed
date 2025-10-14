@@ -35,8 +35,8 @@ arc-swap = "1.6"
 axum = { version = "0.8" }
 base64 = "0.22"
 bcrypt = "0.17"
-c3p0 = { version = "0.72" }
-#c3p0 = { git = "https://github.com/ufoscout/c3p0", branch = "master", features = ["sqlx_postgres"] }
+c3p0 = { version = "0.80.1" }
+#c3p0 = { git = "https://github.com/ufoscout/c3p0", branch = "master", features = ["postgres"] }
 chrono = { version = "0.4", default-features = false, features = ["clock"] }
 chrono-tz = "0.10"
 config = "0.15"

@@ -84,8 +84,6 @@ mod test {
     use std::sync::Arc;
     use tower::ServiceExt; // for `app.oneshot()`
 
-    type AuthIdType = u64;
-
     #[tokio::test]
     async fn access_protected_url_should_return_unauthorized_if_no_token() {
         // Arrange
@@ -105,7 +103,7 @@ mod test {
     async fn access_protected_url_should_return_unauthorized_if_expired_token() {
         // Arrange
         let token = JWT {
-            payload: Auth::<AuthIdType> {
+            payload: Auth {
                 username: "Amelia".to_owned(),
                 id: 100,
                 session_id: "a_0".to_owned(),
@@ -141,7 +139,7 @@ mod test {
     #[tokio::test]
     async fn access_protected_url_should_return_ok_if_valid_token() {
         // Arrange
-        let auth = Auth::<AuthIdType> {
+        let auth = Auth {
             username: "Amelia".to_owned(),
             id: 100,
             session_id: "a_0".to_owned(),
@@ -173,7 +171,7 @@ mod test {
     #[tokio::test]
     async fn access_admin_url_should_return_forbidden_if_not_admin_role() {
         // Arrange
-        let auth = Auth::<AuthIdType> {
+        let auth = Auth {
             username: "Amelia".to_owned(),
             id: 100,
             session_id: "a_0".to_owned(),
@@ -243,7 +241,7 @@ mod test {
         })
     }
 
-    fn new_service() -> WebAuthService<AuthIdType> {
+    fn new_service() -> WebAuthService {
         WebAuthService::new(
             Arc::new(LsAuthService::new(InMemoryRolesProvider::new(
                 vec![Role { name: "admin".to_owned(), permissions: vec![] }].into(),

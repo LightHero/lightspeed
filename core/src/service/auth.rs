@@ -1,15 +1,14 @@
 use crate::error::LsError;
 use crate::utils::current_epoch_seconds;
-use crate::web::types::MaybeWeb;
-use c3p0::IdType;
+use c3p0::DataType;
 use serde::{Deserialize, Serialize};
 use std::borrow::Cow;
 use std::collections::BTreeMap;
 use std::sync::Arc;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct Auth<Id: MaybeWeb> {
-    pub id: Id,
+pub struct Auth {
+    pub id: u64,
     pub username: String,
     pub session_id: String,
     pub roles: Vec<String>,
@@ -17,9 +16,9 @@ pub struct Auth<Id: MaybeWeb> {
     pub expiration_ts_seconds: i64,
 }
 
-impl<Id: IdType + MaybeWeb> Auth<Id> {
+impl Auth {
     pub fn new<S: Into<String>>(
-        id: Id,
+        id: u64,
         username: S,
         roles: Vec<String>,
         creation_ts_seconds: i64,
@@ -36,19 +35,19 @@ pub struct Role {
     pub permissions: Vec<String>,
 }
 
-pub trait Owned<Id> {
-    fn get_owner_id(&self) -> &Id;
+pub trait Owned {
+    fn get_owner_id(&self) -> u64;
 }
 
-impl<Id: Eq, Data: Owned<Id>> Owned<Id> for c3p0::Model<Id, Data> {
-    fn get_owner_id(&self) -> &Id {
+impl<DATA: Owned + DataType> Owned for c3p0::Record<DATA> {
+    fn get_owner_id(&self) -> u64 {
         self.data.get_owner_id()
     }
 }
 
-impl<Id: Eq> Owned<Id> for Id {
-    fn get_owner_id(&self) -> &Id {
-        self
+impl Owned for u64 {
+    fn get_owner_id(&self) -> u64 {
+        *self
     }
 }
 
@@ -64,7 +63,8 @@ impl LsAuthService {
         }
     }
 
-    pub fn auth<Id: IdType + MaybeWeb>(&self, auth: Auth<Id>) -> AuthContext<'_, Id> {
+
+    pub fn auth(&self, auth: Auth) -> AuthContext<'_> {
         AuthContext { auth, permission_roles_map: &self.permission_roles_map }
     }
 
@@ -80,20 +80,20 @@ impl LsAuthService {
     }
 }
 
-pub struct AuthContext<'a, Id: IdType + MaybeWeb> {
-    pub auth: Auth<Id>,
+pub struct AuthContext<'a> {
+    pub auth: Auth,
     permission_roles_map: &'a BTreeMap<String, Vec<String>>,
 }
 
-impl<Id: IdType + MaybeWeb> AuthContext<'_, Id> {
-    pub fn is_authenticated(&self) -> Result<&AuthContext<'_, Id>, LsError> {
+impl AuthContext<'_> {
+    pub fn is_authenticated(&self) -> Result<&AuthContext<'_>, LsError> {
         if self.auth.username.is_empty() || self.auth.expiration_ts_seconds < current_epoch_seconds() {
             return Err(LsError::UnauthenticatedError {});
         };
         Ok(self)
     }
 
-    pub fn has_role(&self, role: &str) -> Result<&AuthContext<'_, Id>, LsError> {
+    pub fn has_role(&self, role: &str) -> Result<&AuthContext<'_>, LsError> {
         self.is_authenticated()?;
         if !self.has_role_bool(role) {
             return Err(LsError::ForbiddenError {
@@ -103,7 +103,7 @@ impl<Id: IdType + MaybeWeb> AuthContext<'_, Id> {
         Ok(self)
     }
 
-    pub fn has_any_role(&self, roles: &[&str]) -> Result<&AuthContext<'_, Id>, LsError> {
+    pub fn has_any_role(&self, roles: &[&str]) -> Result<&AuthContext<'_>, LsError> {
         self.is_authenticated()?;
         for role in roles {
             if self.has_role_bool(role) {
@@ -113,7 +113,7 @@ impl<Id: IdType + MaybeWeb> AuthContext<'_, Id> {
         Err(LsError::ForbiddenError { message: format!("User [{:?}] does not have the required role", self.auth.id) })
     }
 
-    pub fn has_all_roles(&self, roles: &[&str]) -> Result<&AuthContext<'_, Id>, LsError> {
+    pub fn has_all_roles(&self, roles: &[&str]) -> Result<&AuthContext<'_>, LsError> {
         self.is_authenticated()?;
         for role in roles {
             if !self.has_role_bool(role) {
@@ -125,7 +125,7 @@ impl<Id: IdType + MaybeWeb> AuthContext<'_, Id> {
         Ok(self)
     }
 
-    pub fn has_permission(&self, permission: &str) -> Result<&AuthContext<'_, Id>, LsError> {
+    pub fn has_permission(&self, permission: &str) -> Result<&AuthContext<'_>, LsError> {
         self.is_authenticated()?;
 
         if !self.has_permission_bool(permission) {
@@ -136,7 +136,7 @@ impl<Id: IdType + MaybeWeb> AuthContext<'_, Id> {
         Ok(self)
     }
 
-    pub fn has_any_permission(&self, permissions: &[&str]) -> Result<&AuthContext<'_, Id>, LsError> {
+    pub fn has_any_permission(&self, permissions: &[&str]) -> Result<&AuthContext<'_>, LsError> {
         self.is_authenticated()?;
 
         for permission in permissions {
@@ -149,7 +149,7 @@ impl<Id: IdType + MaybeWeb> AuthContext<'_, Id> {
         })
     }
 
-    pub fn has_all_permissions(&self, permissions: &[&str]) -> Result<&AuthContext<'_, Id>, LsError> {
+    pub fn has_all_permissions(&self, permissions: &[&str]) -> Result<&AuthContext<'_>, LsError> {
         self.is_authenticated()?;
         for permission in permissions {
             if !self.has_permission_bool(permission) {
@@ -164,8 +164,8 @@ impl<Id: IdType + MaybeWeb> AuthContext<'_, Id> {
         Ok(self)
     }
 
-    pub fn is_owner<T: Owned<Id>>(&self, obj: &T) -> Result<&AuthContext<'_, Id>, LsError> {
-        if &self.auth.id == obj.get_owner_id() {
+    pub fn is_owner<T: Owned>(&self, obj: &T) -> Result<&AuthContext<'_>, LsError> {
+        if self.auth.id == obj.get_owner_id() {
             Ok(self)
         } else {
             Err(LsError::ForbiddenError {
@@ -178,8 +178,8 @@ impl<Id: IdType + MaybeWeb> AuthContext<'_, Id> {
         }
     }
 
-    pub fn is_owner_or_has_role<T: Owned<Id>>(&self, obj: &T, role: &str) -> Result<&AuthContext<'_, Id>, LsError> {
-        if (&self.auth.id == obj.get_owner_id()) || self.has_role_bool(role) {
+    pub fn is_owner_or_has_role<T: Owned>(&self, obj: &T, role: &str) -> Result<&AuthContext<'_>, LsError> {
+        if (self.auth.id == obj.get_owner_id()) || self.has_role_bool(role) {
             Ok(self)
         } else {
             Err(LsError::ForbiddenError {
@@ -193,12 +193,12 @@ impl<Id: IdType + MaybeWeb> AuthContext<'_, Id> {
         }
     }
 
-    pub fn is_owner_or_has_permission<T: Owned<Id>>(
+    pub fn is_owner_or_has_permission<T: Owned>(
         &self,
         obj: &T,
         permission: &str,
-    ) -> Result<&AuthContext<'_, Id>, LsError> {
-        if (&self.auth.id == obj.get_owner_id()) || self.has_permission_bool(permission) {
+    ) -> Result<&AuthContext<'_>, LsError> {
+        if (self.auth.id == obj.get_owner_id()) || self.has_permission_bool(permission) {
             Ok(self)
         } else {
             Err(LsError::ForbiddenError {
@@ -829,9 +829,9 @@ mod test {
         owner_id: i64,
     }
 
-    impl Owned<i64> for Ownable {
-        fn get_owner_id(&self) -> &i64 {
-            &self.owner_id
+    impl Owned for Ownable {
+        fn get_owner_id(&self) -> u64 {
+            self.owner_id as u64
         }
     }
 }
