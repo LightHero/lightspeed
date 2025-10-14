@@ -129,7 +129,6 @@ impl From<c3p0::error::C3p0Error> for LsError {
 }
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
-#[cfg_attr(feature = "poem_openapi", derive(poem_openapi::Object))]
 pub struct ErrorDetail {
     error: String,
     params: Vec<String>,
@@ -160,7 +159,6 @@ impl From<(&str, Vec<String>)> for ErrorDetail {
 }
 
 #[derive(Debug, Serialize, Deserialize)]
-#[cfg_attr(feature = "poem_openapi", derive(poem_openapi::Object))]
 pub struct WebErrorDetails {
     pub code: u16,
     pub message: Option<String>,

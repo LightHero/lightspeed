@@ -8,13 +8,8 @@ use std::sync::Arc;
 
 use self::types::MaybeWeb;
 
-// Cannot use actix_web with poem or axum at the same time because they use a different http crate version
-#[cfg(feature = "actix_web")]
-pub mod actix_web;
 #[cfg(feature = "axum")]
 pub mod axum;
-#[cfg(feature = "poem")]
-pub mod poem;
 pub mod types;
 
 pub const JWT_TOKEN_HEADER: &str = "Authorization";

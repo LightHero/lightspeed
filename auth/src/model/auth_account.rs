@@ -17,7 +17,6 @@ pub struct AuthAccountData {
 }
 
 #[derive(Debug, PartialEq, Clone, Serialize, Deserialize, AsRefStr, Display)]
-#[cfg_attr(feature = "poem_openapi", derive(poem_openapi::Enum))]
 pub enum AuthAccountStatus {
     Active,
     PendingActivation,

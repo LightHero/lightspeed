@@ -4,7 +4,6 @@ use serde::{Deserialize, Serialize};
 use crate::web::types::MaybeWeb;
 
 #[derive(Clone, Serialize, Deserialize)]
-#[cfg_attr(feature = "poem_openapi", derive(poem_openapi::Object))]
 pub struct ModelDto<Id: MaybeWeb, Data: MaybeWeb> {
     pub id: Id,
     pub version: VersionType,

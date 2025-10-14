@@ -41,10 +41,7 @@ scheduler = ["dep:lightspeed_scheduler"]
 
 cache_moka = ["cache", "lightspeed_cache/moka"]
 
-actix_web = ["lightspeed_core?/actix_web"]
 axum = ["lightspeed_core?/axum", "lightspeed_file_store?/axum"]
-poem = ["lightspeed_core?/poem"]
-poem_openapi = ["lightspeed_core?/poem_openapi", "poem", "lightspeed_auth?/poem_openapi"]
 
 postgres = [
     "lightspeed_auth?/postgres", 

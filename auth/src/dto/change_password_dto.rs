@@ -5,7 +5,6 @@ use lightspeed_core::service::validator::must_match::validate_must_be_equals;
 use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize)]
-#[cfg_attr(feature = "poem_openapi", derive(poem_openapi::Object))]
 pub struct ChangePasswordDto {
     pub user_id: u64,
     pub old_password: String,

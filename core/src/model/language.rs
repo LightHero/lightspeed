@@ -4,7 +4,6 @@ use std::str::FromStr;
 use strum::{AsRefStr, Display, EnumIter};
 
 #[derive(Clone, Debug, Display, EnumIter, AsRefStr, Serialize, Deserialize, PartialEq, Eq, Hash)]
-#[cfg_attr(feature = "poem_openapi", derive(poem_openapi::Enum))]
 pub enum Language {
     De,
     En,

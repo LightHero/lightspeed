@@ -31,9 +31,6 @@ lightspeed_persistence = { version = "0.64.3", path = "./persistence" }
 lightspeed_scheduler = { version = "0.64.3", path = "./scheduler" }
 lightspeed_test_utils = { version = "0.64.3", path = "./test_utils" }
 
-actix-files = { version = "0.6.0" }
-actix-rt = "2"
-actix-web = { version = "4.0.1" }
 arc-swap = "1.6"
 axum = { version = "0.8" }
 base64 = "0.22"
@@ -56,8 +53,6 @@ mime_guess = { version = "2.0" }
 moka = { version = "0.12", default-features = false, features = ["future"] }
 opendal = { version = "0.54", default-features = false }
 parking_lot = "0.12"
-poem = { version = "3" }
-poem-openapi = { version = "5" }
 rand = "0.9"
 regex = "1"
 serde = { version = "1.0", features = ["derive", "rc"] }

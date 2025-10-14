@@ -59,10 +59,7 @@ for_each_feature command:
   set -e
 
   declare -a features=(
-    "actix_web"
     "axum"
-    "poem"
-    "poem_openapi"
     "postgres"
     "sqlx_postgres"
     "sqlx_mysql"
