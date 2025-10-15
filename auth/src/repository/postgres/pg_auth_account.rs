@@ -29,21 +29,17 @@ impl AuthAccountRepository for PgAuthAccountRepository {
         start_user_id: u64,
         limit: u32,
     ) -> Result<Vec<AuthAccountModel>, LsError> {
-        let sql = format!(
-            r#"
-            {}
+        Ok(AuthAccountModel::query_with(r#"
             where id >= $1 and DATA ->> 'status' = $2
             order by id asc
             limit $3
-        "#,
-            self.queries().find_base_sql_query
-        );
-
-        Ok(tx
-            .fetch_all_with_sql(
-                sqlx::query(&sql).bind(start_user_id as i64).bind(status.as_ref()).bind(limit as i64),
-            )
+        "#)
+            .bind(start_user_id as i64)
+            .bind(status.as_ref())
+            .bind(limit as i64)
+            .fetch_all(tx)
             .await?)
+
     }
 
     async fn fetch_by_id(&self, tx: &mut PgConnection, user_id: u64) -> Result<AuthAccountModel, LsError> {
@@ -62,15 +58,13 @@ impl AuthAccountRepository for PgAuthAccountRepository {
         tx: &mut PgConnection,
         username: &str,
     ) -> Result<Option<AuthAccountModel>, LsError> {
-        let sql = &format!(
-            r#"
-            {}
+        Ok(AuthAccountModel::query_with(r#"
             where DATA ->> 'username' = $1
             limit 1
-        "#,
-            self.queries().find_base_sql_query
-        );
-        Ok(self.repo.fetch_one_optional_with_sql(tx, ::sqlx::query(sql).bind(username)).await?)
+        "#)
+            .bind(username)
+            .fetch_optional(tx)
+            .await?)
     }
 
     async fn fetch_by_email_optional(
@@ -78,15 +72,13 @@ impl AuthAccountRepository for PgAuthAccountRepository {
         tx: &mut PgConnection,
         email: &str,
     ) -> Result<Option<AuthAccountModel>, LsError> {
-        let sql = format!(
-            r#"
-            {}
+        Ok(AuthAccountModel::query_with(r#"
             where DATA ->> 'email' = $1
             limit 1
-        "#,
-            self.queries().find_base_sql_query
-        );
-        Ok(self.repo.fetch_one_optional_with_sql(tx, ::sqlx::query(&sql).bind(email)).await?)
+        "#)
+            .bind(email)
+            .fetch_optional(tx)
+            .await?)
     }
 
     async fn save(&self, tx: &mut PgConnection, model: NewRecord<AuthAccountData>) -> Result<AuthAccountModel, LsError> {

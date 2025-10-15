@@ -1,8 +1,7 @@
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::collections::hash_map::Entry;
-use std::error::Error;
-use std::fmt::{Display, Formatter};
+use thiserror::Error;
 
 pub struct ErrorCodes {}
 
@@ -18,114 +17,55 @@ impl ErrorCodes {
     pub const WRONG_CREDENTIALS: &'static str = "WRONG_CREDENTIALS";
 }
 
-#[derive(Debug)]
+#[derive(Error, Debug)]
 pub enum LsError {
+     #[error("InvalidTokenError: {message}")]
     InvalidTokenError { message: String },
+    #[error("ExpiredTokenError: {message}")]
     ExpiredTokenError { message: String },
+    #[error("GenerateTokenError: {message}")]
     GenerateTokenError { message: String },
+    #[error("MissingAuthTokenError")]
     MissingAuthTokenError,
+    #[error("ParseAuthHeaderError: {message}")]
     ParseAuthHeaderError { message: String },
 
     // Module
+    #[error("ModuleBuilderError: {message}")]
     ModuleBuilderError { message: String },
+    #[error("ModuleStartError: {message}")]
     ModuleStartError { message: String },
+    #[error("ConfigurationError: {message}")]
     ConfigurationError { message: String },
 
     // Auth
+    #[error("UnauthenticatedError")]
     UnauthenticatedError,
+    #[error("ForbiddenError: {message}")]
     ForbiddenError { message: String },
+    #[error("PasswordEncryptionError: {message}")]
     PasswordEncryptionError { message: String },
 
+    #[error("InvalidTokenError: {message}")]
     InternalServerError { message: String },
 
-    C3p0Error { source: c3p0::error::C3p0Error },
+    #[error("C3p0Error: {source:?}")]
+    C3p0Error { #[from] source: c3p0::error::C3p0Error },
 
+    #[error("SqlxError: {source:?}")]
+    SqlxError { #[from] source: c3p0::sqlx::Error },
+
+    #[error("ValidationError: {details:?}")]
     ValidationError { details: RootErrorDetails },
 
+    #[error("BadRequest: {message} - {code}")]
     BadRequest { message: String, code: &'static str },
 
+    #[error("RequestConflict: {message} - {code}")]
     RequestConflict { message: String, code: &'static str },
 
+    #[error("ServiceUnavailable: {message} - {code}")]
     ServiceUnavailable { message: String, code: &'static str },
-}
-
-impl Display for LsError {
-    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        match self {
-            LsError::InvalidTokenError { message } => write!(f, "InvalidTokenError: [{message}]"),
-            LsError::ExpiredTokenError { message } => write!(f, "ExpiredTokenError: [{message}]"),
-            LsError::GenerateTokenError { message } => write!(f, "GenerateTokenError: [{message}]"),
-            LsError::MissingAuthTokenError => write!(f, "MissingAuthTokenError"),
-            LsError::ParseAuthHeaderError { message } => write!(f, "ParseAuthHeaderError: [{message}]"),
-
-            // Module
-            LsError::ModuleBuilderError { message } => write!(f, "ModuleBuilderError: [{message}]"),
-            LsError::ModuleStartError { message } => write!(f, "ModuleStartError: [{message}]"),
-            LsError::ConfigurationError { message } => write!(f, "ConfigurationError: [{message}]"),
-
-            // Auth
-            LsError::UnauthenticatedError => write!(f, "UnauthenticatedError"),
-            LsError::ForbiddenError { message } => write!(f, "ForbiddenError: [{message}]"),
-            LsError::PasswordEncryptionError { message } => write!(f, "PasswordEncryptionError: [{message}]"),
-
-            LsError::InternalServerError { message } => write!(f, "InternalServerError: [{message}]"),
-
-            LsError::C3p0Error { .. } => write!(f, "C3p0Error"),
-
-            LsError::ValidationError { details } => write!(f, "ValidationError: [{details:?}]"),
-
-            LsError::BadRequest { message, code } => {
-                write!(f, "BadRequest. Code [{code}]. Message [{message}]")
-            }
-
-            LsError::RequestConflict { message, code } => {
-                write!(f, "RequestConflict. Code [{code}]. Message [{message}]")
-            }
-
-            LsError::ServiceUnavailable { message, code } => {
-                write!(f, "ServiceUnavailable. Code [{code}]. Message [{message}]")
-            }
-        }
-    }
-}
-
-impl Error for LsError {
-    fn source(&self) -> Option<&(dyn Error + 'static)> {
-        match self {
-            LsError::InvalidTokenError { .. } |
-            LsError::ExpiredTokenError{ .. } |
-            LsError::GenerateTokenError { .. } |
-            LsError::MissingAuthTokenError |
-            LsError::ParseAuthHeaderError { .. } |
-
-            LsError::ModuleBuilderError { .. } |
-            LsError::ModuleStartError { .. } |
-            LsError::ConfigurationError { .. } |
-
-            // Auth
-            LsError::UnauthenticatedError |
-            LsError::ForbiddenError { .. } |
-            LsError::PasswordEncryptionError { .. } |
-
-            LsError::InternalServerError { .. } |
-
-
-            LsError::ValidationError { .. } |
-
-            LsError::BadRequest { .. } |
-
-            LsError::RequestConflict { .. } |
-            LsError::ServiceUnavailable { .. } => None,
-
-            LsError::C3p0Error { source } => Some(source),
-        }
-    }
-}
-
-impl From<c3p0::error::C3p0Error> for LsError {
-    fn from(err: c3p0::error::C3p0Error) -> Self {
-        LsError::C3p0Error { source: err }
-    }
 }
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
