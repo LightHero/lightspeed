@@ -1,14 +1,11 @@
-use crate::model::auth_account::{AuthAccountData, AuthAccountDataCodec, AuthAccountModel, AuthAccountStatus};
+use crate::model::auth_account::{AuthAccountData, AuthAccountModel, AuthAccountStatus};
 use crate::repository::AuthAccountRepository;
 use c3p0::sqlx::*;
 use c3p0::*;
 use lightspeed_core::error::{ErrorCodes, LsError};
-use std::ops::Deref;
 
 #[derive(Clone)]
-pub struct PgAuthAccountRepository {
-    repo: PgC3p0Json<u64, AuthAccountData, AuthAccountDataCodec>,
-}
+pub struct PgAuthAccountRepository {}
 
 impl Default for PgAuthAccountRepository {
     fn default() -> Self {
@@ -18,18 +15,18 @@ impl Default for PgAuthAccountRepository {
 
 impl PgAuthAccountRepository {
     pub fn new() -> Self {
-        Self { repo: SqlxPgC3p0JsonBuilder::new("LS_AUTH_ACCOUNT").build_with_codec(AuthAccountDataCodec {}) }
+        Self {}
     }
 }
 
 impl AuthAccountRepository for PgAuthAccountRepository {
-    type Tx<'a> = Transaction<'a, Postgres>;
+    type DB = Postgres;
 
     async fn fetch_all_by_status(
         &self,
-        tx: &mut Self::Tx<'_>,
+        tx: &mut PgConnection,
         status: AuthAccountStatus,
-        start_user_id: &u64,
+        start_user_id: u64,
         limit: u32,
     ) -> Result<Vec<AuthAccountModel>, LsError> {
         let sql = format!(
@@ -42,20 +39,18 @@ impl AuthAccountRepository for PgAuthAccountRepository {
             self.queries().find_base_sql_query
         );
 
-        Ok(self
-            .repo
+        Ok(tx
             .fetch_all_with_sql(
-                tx,
-                self.repo.query_with_id(&sql, start_user_id).bind(status.as_ref()).bind(limit as i64),
+                sqlx::query(&sql).bind(start_user_id as i64).bind(status.as_ref()).bind(limit as i64),
             )
             .await?)
     }
 
-    async fn fetch_by_id(&self, tx: &mut Self::Tx<'_>, user_id: &u64) -> Result<AuthAccountModel, LsError> {
-        Ok(self.repo.fetch_one_by_id(tx, user_id).await?)
+    async fn fetch_by_id(&self, tx: &mut PgConnection, user_id: u64) -> Result<AuthAccountModel, LsError> {
+        Ok(tx.fetch_one_by_id(user_id).await?)
     }
 
-    async fn fetch_by_username(&self, tx: &mut Self::Tx<'_>, username: &str) -> Result<AuthAccountModel, LsError> {
+    async fn fetch_by_username(&self, tx: &mut PgConnection, username: &str) -> Result<AuthAccountModel, LsError> {
         self.fetch_by_username_optional(tx, username).await?.ok_or_else(|| LsError::BadRequest {
             message: format!("No user found with username [{username}]"),
             code: ErrorCodes::NOT_FOUND,
@@ -64,7 +59,7 @@ impl AuthAccountRepository for PgAuthAccountRepository {
 
     async fn fetch_by_username_optional(
         &self,
-        tx: &mut Self::Tx<'_>,
+        tx: &mut PgConnection,
         username: &str,
     ) -> Result<Option<AuthAccountModel>, LsError> {
         let sql = &format!(
@@ -80,7 +75,7 @@ impl AuthAccountRepository for PgAuthAccountRepository {
 
     async fn fetch_by_email_optional(
         &self,
-        tx: &mut Self::Tx<'_>,
+        tx: &mut PgConnection,
         email: &str,
     ) -> Result<Option<AuthAccountModel>, LsError> {
         let sql = format!(
@@ -94,27 +89,19 @@ impl AuthAccountRepository for PgAuthAccountRepository {
         Ok(self.repo.fetch_one_optional_with_sql(tx, ::sqlx::query(&sql).bind(email)).await?)
     }
 
-    async fn save(&self, tx: &mut Self::Tx<'_>, model: NewModel<AuthAccountData>) -> Result<AuthAccountModel, LsError> {
-        Ok(self.repo.save(tx, model).await?)
+    async fn save(&self, tx: &mut PgConnection, model: NewRecord<AuthAccountData>) -> Result<AuthAccountModel, LsError> {
+        Ok(tx.save(model).await?)
     }
 
-    async fn update(&self, tx: &mut Self::Tx<'_>, model: AuthAccountModel) -> Result<AuthAccountModel, LsError> {
-        Ok(self.repo.update(tx, model).await?)
+    async fn update(&self, tx: &mut PgConnection, model: AuthAccountModel) -> Result<AuthAccountModel, LsError> {
+        Ok(tx.update(model).await?)
     }
 
-    async fn delete(&self, tx: &mut Self::Tx<'_>, model: AuthAccountModel) -> Result<AuthAccountModel, LsError> {
-        Ok(self.repo.delete(tx, model).await?)
+    async fn delete(&self, tx: &mut PgConnection, model: AuthAccountModel) -> Result<AuthAccountModel, LsError> {
+        Ok(tx.delete(model).await?)
     }
 
-    async fn delete_by_id(&self, tx: &mut Self::Tx<'_>, user_id: &u64) -> Result<u64, LsError> {
-        Ok(self.repo.delete_by_id(tx, user_id).await?)
-    }
-}
-
-impl Deref for PgAuthAccountRepository {
-    type Target = SqlxPgC3p0Json<u64, AuthAccountData, AuthAccountDataCodec>;
-
-    fn deref(&self) -> &Self::Target {
-        &self.repo
+    async fn delete_by_id(&self, tx: &mut PgConnection, user_id: u64) -> Result<u64, LsError> {
+        Ok(tx.delete_by_id::<AuthAccountData>(user_id).await?)
     }
 }

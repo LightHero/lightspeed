@@ -1,8 +1,9 @@
 use crate::model::BinaryContent;
 use crate::repository::db::DBFileStoreBinaryRepository;
-use c3p0::sqlx::error::into_c3p0_error;
-use c3p0::sqlx::sqlx::{MySql, Row, Transaction, query};
+use c3p0::error::into_c3p0_error;
+use c3p0::sqlx::{MySql, Row, Transaction, query};
 use lightspeed_core::error::{ErrorCodes, LsError};
+use sqlx::MySqlConnection;
 use std::borrow::Cow;
 
 #[derive(Clone)]
@@ -17,11 +18,11 @@ impl Default for MySqlFileStoreBinaryRepository {
 }
 
 impl DBFileStoreBinaryRepository for MySqlFileStoreBinaryRepository {
-    type Tx<'a> = Transaction<'a, MySql>;
+    type DB = MySql;
 
     async fn read_file(
         &self,
-        tx: &mut Self::Tx<'_>,
+        tx: &mut MySqlConnection,
         repository_name: &str,
         file_path: &str,
     ) -> Result<BinaryContent<'_>, LsError> {
@@ -40,7 +41,7 @@ impl DBFileStoreBinaryRepository for MySqlFileStoreBinaryRepository {
 
     async fn save_file<'a>(
         &self,
-        tx: &mut Self::Tx<'_>,
+        tx: &mut MySqlConnection,
         repository_name: &str,
         file_path: &str,
         content: &'a BinaryContent<'a>,
@@ -68,7 +69,7 @@ impl DBFileStoreBinaryRepository for MySqlFileStoreBinaryRepository {
         Ok(res.rows_affected())
     }
 
-    async fn delete_file(&self, tx: &mut Self::Tx<'_>, repository_name: &str, file_path: &str) -> Result<u64, LsError> {
+    async fn delete_file(&self, tx: &mut MySqlConnection, repository_name: &str, file_path: &str) -> Result<u64, LsError> {
         let sql = &format!("DELETE FROM {} WHERE repository = ? AND filepath = ?", self.table_name);
         let res =
             query(sql).bind(repository_name).bind(file_path).execute(tx.as_mut()).await.map_err(into_c3p0_error)?;

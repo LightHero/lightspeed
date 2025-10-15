@@ -23,11 +23,11 @@ impl MySqlAuthAccountRepository {
 }
 
 impl AuthAccountRepository for MySqlAuthAccountRepository {
-    type Tx<'a> = Transaction<'a, MySql>;
+    type DB = MySql;
 
     async fn fetch_all_by_status(
         &self,
-        tx: &mut Self::Tx<'_>,
+        tx: &mut MySqlConnection,
         status: AuthAccountStatus,
         start_user_id: &u64,
         limit: u32,
@@ -51,11 +51,11 @@ impl AuthAccountRepository for MySqlAuthAccountRepository {
             .await?)
     }
 
-    async fn fetch_by_id(&self, tx: &mut Self::Tx<'_>, user_id: &u64) -> Result<AuthAccountModel, LsError> {
+    async fn fetch_by_id(&self, tx: &mut MySqlConnection, user_id: &u64) -> Result<AuthAccountModel, LsError> {
         Ok(self.repo.fetch_one_by_id(tx, user_id).await?)
     }
 
-    async fn fetch_by_username(&self, tx: &mut Self::Tx<'_>, username: &str) -> Result<AuthAccountModel, LsError> {
+    async fn fetch_by_username(&self, tx: &mut MySqlConnection, username: &str) -> Result<AuthAccountModel, LsError> {
         self.fetch_by_username_optional(tx, username).await?.ok_or_else(|| LsError::BadRequest {
             message: format!("No user found with username [{username}]"),
             code: ErrorCodes::NOT_FOUND,
@@ -64,7 +64,7 @@ impl AuthAccountRepository for MySqlAuthAccountRepository {
 
     async fn fetch_by_username_optional(
         &self,
-        tx: &mut Self::Tx<'_>,
+        tx: &mut MySqlConnection,
         username: &str,
     ) -> Result<Option<AuthAccountModel>, LsError> {
         let sql = &format!(
@@ -80,7 +80,7 @@ impl AuthAccountRepository for MySqlAuthAccountRepository {
 
     async fn fetch_by_email_optional(
         &self,
-        tx: &mut Self::Tx<'_>,
+        tx: &mut MySqlConnection,
         email: &str,
     ) -> Result<Option<AuthAccountModel>, LsError> {
         let sql = format!(
@@ -94,19 +94,19 @@ impl AuthAccountRepository for MySqlAuthAccountRepository {
         Ok(self.repo.fetch_one_optional_with_sql(tx, ::sqlx::query(&sql).bind(email)).await?)
     }
 
-    async fn save(&self, tx: &mut Self::Tx<'_>, model: NewModel<AuthAccountData>) -> Result<AuthAccountModel, LsError> {
+    async fn save(&self, tx: &mut MySqlConnection, model: NewModel<AuthAccountData>) -> Result<AuthAccountModel, LsError> {
         Ok(self.repo.save(tx, model).await?)
     }
 
-    async fn update(&self, tx: &mut Self::Tx<'_>, model: AuthAccountModel) -> Result<AuthAccountModel, LsError> {
+    async fn update(&self, tx: &mut MySqlConnection, model: AuthAccountModel) -> Result<AuthAccountModel, LsError> {
         Ok(self.repo.update(tx, model).await?)
     }
 
-    async fn delete(&self, tx: &mut Self::Tx<'_>, model: AuthAccountModel) -> Result<AuthAccountModel, LsError> {
+    async fn delete(&self, tx: &mut MySqlConnection, model: AuthAccountModel) -> Result<AuthAccountModel, LsError> {
         Ok(self.repo.delete(tx, model).await?)
     }
 
-    async fn delete_by_id(&self, tx: &mut Self::Tx<'_>, user_id: &u64) -> Result<u64, LsError> {
+    async fn delete_by_id(&self, tx: &mut MySqlConnection, user_id: &u64) -> Result<u64, LsError> {
         Ok(self.repo.delete_by_id(tx, user_id).await?)
     }
 }

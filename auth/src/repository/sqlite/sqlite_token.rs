@@ -31,9 +31,9 @@ impl SqliteTokenRepository {
 }
 
 impl TokenRepository for SqliteTokenRepository {
-    type Tx<'a> = Transaction<'a, Sqlite>;
+    type DB = Sqlite;
 
-    async fn fetch_by_token(&self, tx: &mut Self::Tx<'_>, token_string: &str) -> Result<TokenModel, LsError> {
+    async fn fetch_by_token(&self, tx: &mut SqliteConnection, token_string: &str) -> Result<TokenModel, LsError> {
         let sql = &format!(
             r#"
             {}
@@ -45,7 +45,7 @@ impl TokenRepository for SqliteTokenRepository {
         Ok(self.repo.fetch_one_with_sql(tx, ::sqlx::query(sql).bind(token_string)).await?)
     }
 
-    async fn fetch_by_username(&self, tx: &mut Self::Tx<'_>, username: &str) -> Result<Vec<TokenModel>, LsError> {
+    async fn fetch_by_username(&self, tx: &mut SqliteConnection, username: &str) -> Result<Vec<TokenModel>, LsError> {
         let sql = format!(
             r#"
             {}
@@ -57,11 +57,11 @@ impl TokenRepository for SqliteTokenRepository {
         Ok(self.repo.fetch_all_with_sql(tx, ::sqlx::query(&sql).bind(username)).await?)
     }
 
-    async fn save(&self, tx: &mut Self::Tx<'_>, model: NewModel<TokenData>) -> Result<TokenModel, LsError> {
+    async fn save(&self, tx: &mut SqliteConnection, model: NewModel<TokenData>) -> Result<TokenModel, LsError> {
         Ok(self.repo.save(tx, model).await?)
     }
 
-    async fn delete(&self, tx: &mut Self::Tx<'_>, model: TokenModel) -> Result<TokenModel, LsError> {
+    async fn delete(&self, tx: &mut SqliteConnection, model: TokenModel) -> Result<TokenModel, LsError> {
         Ok(self.repo.delete(tx, model).await?)
     }
 }

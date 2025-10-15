@@ -1,13 +1,12 @@
 use crate::model::{FileStoreDataData, FileStoreDataDataCodec, FileStoreDataModel};
 use crate::repository::db::FileStoreDataRepository;
-use c3p0::sqlx::error::into_c3p0_error;
-use c3p0::sqlx::sqlx::{MySql, Row, Transaction, query};
+use c3p0::error::into_c3p0_error;
 use c3p0::{sqlx::*, *};
 use lightspeed_core::error::LsError;
 
 #[derive(Clone)]
 pub struct MySqlFileStoreDataRepository {
-    repo: SqlxMySqlC3p0Json<u64, FileStoreDataData, FileStoreDataDataCodec>,
+    repo: MySqlC3p0Json<u64, FileStoreDataData, FileStoreDataDataCodec>,
 }
 
 impl Default for MySqlFileStoreDataRepository {
@@ -19,11 +18,11 @@ impl Default for MySqlFileStoreDataRepository {
 }
 
 impl FileStoreDataRepository for MySqlFileStoreDataRepository {
-    type Tx<'a> = Transaction<'a, MySql>;
+    type DB = MySql;
 
     async fn exists_by_repository(
         &self,
-        tx: &mut Self::Tx<'_>,
+        tx: &mut MySqlConnection,
         repository: &str,
         file_path: &str,
     ) -> Result<bool, LsError> {
@@ -39,13 +38,13 @@ impl FileStoreDataRepository for MySqlFileStoreDataRepository {
         Ok(res)
     }
 
-    async fn fetch_one_by_id(&self, tx: &mut Self::Tx<'_>, id: u64) -> Result<FileStoreDataModel, LsError> {
+    async fn fetch_one_by_id(&self, tx: &mut MySqlConnection, id: u64) -> Result<FileStoreDataModel, LsError> {
         Ok(self.repo.fetch_one_by_id(tx, &id).await?)
     }
 
     async fn fetch_one_by_repository(
         &self,
-        tx: &mut Self::Tx<'_>,
+        tx: &mut MySqlConnection,
         repository: &str,
         file_path: &str,
     ) -> Result<FileStoreDataModel, LsError> {
@@ -62,7 +61,7 @@ impl FileStoreDataRepository for MySqlFileStoreDataRepository {
 
     async fn fetch_all_by_repository(
         &self,
-        tx: &mut Self::Tx<'_>,
+        tx: &mut MySqlConnection,
         repository: &str,
         offset: usize,
         max: usize,
@@ -86,13 +85,13 @@ impl FileStoreDataRepository for MySqlFileStoreDataRepository {
 
     async fn save(
         &self,
-        tx: &mut Self::Tx<'_>,
+        tx: &mut MySqlConnection,
         model: NewModel<FileStoreDataData>,
     ) -> Result<FileStoreDataModel, LsError> {
         Ok(self.repo.save(tx, model).await?)
     }
 
-    async fn delete_by_id(&self, tx: &mut Self::Tx<'_>, id: u64) -> Result<u64, LsError> {
+    async fn delete_by_id(&self, tx: &mut MySqlConnection, id: u64) -> Result<u64, LsError> {
         Ok(self.repo.delete_by_id(tx, &id).await?)
     }
 }
