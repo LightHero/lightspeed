@@ -1,7 +1,7 @@
 use crate::data;
 use c3p0::*;
 use lightspeed_cms::dto::create_schema_dto::CreateSchemaDto;
-use lightspeed_cms::model::schema::Schema;
+use lightspeed_cms::model::schema::{Schema, SchemaData};
 use lightspeed_cms::repository::CmsRepositoryManager;
 use lightspeed_core::error::{ErrorDetail, LsError};
 use lightspeed_core::service::validator::ERR_NOT_UNIQUE;
@@ -15,7 +15,6 @@ fn should_create_schema() -> Result<(), LsError> {
         let cms_module = &data.0;
 
         let c3p0 = cms_module.repo_manager.c3p0();
-        let schema_repo = cms_module.repo_manager.schema_repo();
 
         let schema = CreateSchemaDto {
             name: new_hyphenated_uuid(),
@@ -26,9 +25,9 @@ fn should_create_schema() -> Result<(), LsError> {
         let saved_schema = cms_module.schema_service.create_schema(schema).await?;
 
         c3p0.transaction(async |conn| {
-            assert!(schema_repo.exists_by_id(conn, &saved_schema.id).await?);
+            assert!(conn.exists_by_id::<SchemaData>(saved_schema.id).await?);
             assert!(cms_module.schema_service.delete(saved_schema.clone()).await.is_ok());
-            assert!(!schema_repo.exists_by_id(conn, &saved_schema.id).await?);
+            assert!(!conn.exists_by_id::<SchemaData>(saved_schema.id).await?);
 
             Ok(())
         })
@@ -43,7 +42,6 @@ fn schema_name_should_be_unique_per_project() -> Result<(), LsError> {
         let cms_module = &data.0;
 
         let c3p0 = cms_module.repo_manager.c3p0();
-        let schema_repo = &cms_module.repo_manager.schema_repo();
 
         let mut schema = CreateSchemaDto {
             name: new_hyphenated_uuid(),
@@ -53,8 +51,8 @@ fn schema_name_should_be_unique_per_project() -> Result<(), LsError> {
 
         let schema_clone = schema.clone();
         c3p0.transaction::<_, C3p0Error, _>(async |conn| {
-            assert!(schema_repo.save(conn, NewModel::new(schema_clone.clone())).await.is_ok());
-            assert!(schema_repo.save(conn, NewModel::new(schema_clone)).await.is_err());
+            assert!(conn.save(NewRecord::new(schema_clone.clone())).await.is_ok());
+            assert!(conn.save(NewRecord::new(schema_clone)).await.is_err());
             Ok(())
         })
         .await?;
@@ -62,7 +60,7 @@ fn schema_name_should_be_unique_per_project() -> Result<(), LsError> {
         schema.project_id = 2;
 
         c3p0.transaction(async |conn| {
-            assert!(schema_repo.save(conn, NewModel::new(schema.clone())).await.is_ok());
+            assert!(conn.save(NewRecord::new(schema.clone())).await.is_ok());
 
             Ok(())
         })
@@ -106,7 +104,6 @@ fn should_delete_schemas_by_project_id() -> Result<(), LsError> {
 
         // Arrange
         let c3p0 = cms_module.repo_manager.c3p0();
-        let schema_repo = cms_module.repo_manager.schema_repo();
 
         let project_id = 10;
 
@@ -129,9 +126,9 @@ fn should_delete_schemas_by_project_id() -> Result<(), LsError> {
             assert_eq!(2, cms_module.schema_service.delete_by_project_id(conn, project_id).await?);
 
             // Assert
-            assert!(!schema_repo.exists_by_id(conn, &saved_schema_1.id).await?);
-            assert!(!schema_repo.exists_by_id(conn, &saved_schema_2.id).await?);
-            assert!(schema_repo.exists_by_id(conn, &saved_schema_other.id).await?);
+            assert!(!conn.exists_by_id::<SchemaData>(saved_schema_1.id).await?);
+            assert!(!conn.exists_by_id::<SchemaData>(saved_schema_2.id).await?);
+            assert!(conn.exists_by_id::<SchemaData>(saved_schema_other.id).await?);
 
             Ok(())
         })

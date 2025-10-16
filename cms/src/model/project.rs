@@ -17,6 +17,7 @@ impl DataType for ProjectData {
 }
 
 #[derive(Clone, Serialize, Deserialize)]
+#[serde(tag = "_codec_tag")]
 pub enum ProjectDataCodec {
     V1(ProjectData),
 }

@@ -3,7 +3,7 @@ use crate::model::project::{ProjectData, ProjectModel};
 use crate::model::schema::{SchemaData, SchemaModel};
 use c3p0::*;
 use lightspeed_core::error::LsError;
-use ::sqlx::Database;
+use c3p0::sqlx::Database;
 
 #[cfg(feature = "postgres")]
 pub mod postgres;

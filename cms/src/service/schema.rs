@@ -5,7 +5,7 @@ use crate::repository::SchemaRepository;
 use c3p0::*;
 use lightspeed_core::error::{ErrorDetails, LsError};
 use lightspeed_core::service::validator::{ERR_NOT_UNIQUE, Validator};
-use ::sqlx::Database;
+use c3p0::sqlx::Database;
 
 #[derive(Clone)]
 pub struct LsSchemaService<RepoManager: CmsRepositoryManager> {

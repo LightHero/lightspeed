@@ -37,6 +37,7 @@ impl DataType for ContentData {
 }
 
 #[derive(Clone, Serialize, Deserialize)]
+#[serde(tag = "_codec_tag")]
 pub enum ContentDataCodec {
     V1(ContentData),
 }

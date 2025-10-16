@@ -33,6 +33,7 @@ impl DataType for SchemaData {
 }
 
 #[derive(Clone, Serialize, Deserialize)]
+#[serde(tag = "_codec_tag")]
 pub enum SchemaDataCodec {
     V1(SchemaData),
 }
