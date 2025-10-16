@@ -6,7 +6,7 @@ use lightspeed_core::error::LsError;
 use lightspeed_core::service::validator::Validator;
 use lightspeed_core::utils::*;
 use log::*;
-use ::sqlx::Database;
+use c3p0::sqlx::Database;
 
 #[derive(Clone)]
 pub struct LsTokenService<RepoManager: AuthRepositoryManager> {

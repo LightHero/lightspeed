@@ -2,57 +2,13 @@ use crate::data;
 use lightspeed_cms::dto::create_schema_dto::CreateSchemaDto;
 use lightspeed_cms::model::content::{Content, ContentData, ContentFieldValue, ContentFieldValueArity};
 use lightspeed_cms::model::schema::{
-    SCHEMA_FIELD_NAME_MAX_LENGHT, Schema, SchemaField, SchemaFieldArity, SchemaFieldType,
+    Schema, SchemaField, SchemaFieldArity, SchemaFieldType,
 };
 use lightspeed_core::error::{ErrorDetail, LsError};
-use lightspeed_core::service::random::LsRandomService;
 use lightspeed_core::service::validator::ERR_NOT_UNIQUE;
 use lightspeed_core::utils::new_hyphenated_uuid;
 use lightspeed_test_utils::tokio_test;
 use std::collections::HashMap;
-
-#[test]
-fn should_create_and_drop_content_table() -> Result<(), LsError> {
-    tokio_test(async {
-        let data = data(false).await;
-        let cms_module = &data.0;
-
-        let content_service = &cms_module.content_service;
-        let schema_service = &cms_module.schema_service;
-
-        let mut schema = CreateSchemaDto {
-            name: new_hyphenated_uuid(),
-            project_id: 0,
-            schema: Schema { created_ms: 0, updated_ms: 0, fields: vec![] },
-        };
-
-        let saved_schema_1 = schema_service.create_schema(schema.clone()).await?;
-
-        schema.name = new_hyphenated_uuid();
-        let saved_schema_2 = schema_service.create_schema(schema).await?;
-
-        assert!(content_service.count_all_by_schema_id(saved_schema_1.id).await.is_err());
-        assert!(content_service.count_all_by_schema_id(saved_schema_2.id).await.is_err());
-
-        assert!(content_service.create_content_table(&saved_schema_1).await.is_ok());
-        assert!(content_service.count_all_by_schema_id(saved_schema_1.id).await.is_ok());
-        assert!(content_service.count_all_by_schema_id(saved_schema_2.id).await.is_err());
-
-        assert!(content_service.create_content_table(&saved_schema_2).await.is_ok());
-        assert!(content_service.count_all_by_schema_id(saved_schema_1.id).await.is_ok());
-        assert!(content_service.count_all_by_schema_id(saved_schema_2.id).await.is_ok());
-
-        assert!(content_service.drop_content_table(saved_schema_2.id).await.is_ok());
-        assert!(content_service.count_all_by_schema_id(saved_schema_1.id).await.is_ok());
-        assert!(content_service.count_all_by_schema_id(saved_schema_2.id).await.is_err());
-
-        assert!(content_service.drop_content_table(saved_schema_1.id).await.is_ok());
-        assert!(content_service.count_all_by_schema_id(saved_schema_1.id).await.is_err());
-        assert!(content_service.count_all_by_schema_id(saved_schema_2.id).await.is_err());
-
-        Ok(())
-    })
-}
 
 #[test]
 fn should_save_and_delete_content() -> Result<(), LsError> {
@@ -70,11 +26,9 @@ fn should_save_and_delete_content() -> Result<(), LsError> {
         };
 
         let saved_schema_1 = schema_service.create_schema(schema.clone()).await?;
-        assert!(content_service.create_content_table(&saved_schema_1).await.is_ok());
 
         schema.name = new_hyphenated_uuid();
         let saved_schema_2 = schema_service.create_schema(schema).await?;
-        assert!(content_service.create_content_table(&saved_schema_2).await.is_ok());
 
         assert_eq!(0, content_service.count_all_by_schema_id(saved_schema_1.id).await?);
         assert_eq!(0, content_service.count_all_by_schema_id(saved_schema_2.id).await?);
@@ -130,7 +84,6 @@ fn should_validate_content_on_save() -> Result<(), LsError> {
         };
 
         let saved_schema_1 = schema_service.create_schema(schema.clone()).await?;
-        assert!(content_service.create_content_table(&saved_schema_1).await.is_ok());
 
         let content = ContentData {
             schema_id: saved_schema_1.id,
@@ -176,7 +129,6 @@ fn should_create_unique_constraints_for_slug_schema_fields() -> Result<(), LsErr
         };
 
         let saved_schema_1 = schema_service.create_schema(schema.clone()).await?;
-        content_service.create_content_table(&saved_schema_1).await?;
 
         let content = ContentData {
             schema_id: saved_schema_1.id,
@@ -243,7 +195,6 @@ fn should_create_unique_constraints_for_string_unique_schema_fields() -> Result<
         };
 
         let saved_schema_1 = schema_service.create_schema(schema.clone()).await?;
-        content_service.create_content_table(&saved_schema_1).await?;
 
         let content = ContentData {
             schema_id: saved_schema_1.id,
@@ -310,7 +261,6 @@ fn should_create_unique_constraints_for_number_unique_schema_fields() -> Result<
         };
 
         let saved_schema_1 = schema_service.create_schema(schema.clone()).await?;
-        content_service.create_content_table(&saved_schema_1).await?;
 
         let content = ContentData {
             schema_id: saved_schema_1.id,
@@ -370,7 +320,6 @@ fn should_create_unique_constraints_for_boolean_unique_schema_fields() -> Result
         };
 
         let saved_schema_1 = schema_service.create_schema(schema.clone()).await?;
-        content_service.create_content_table(&saved_schema_1).await?;
 
         let content = ContentData {
             schema_id: saved_schema_1.id,
@@ -399,43 +348,6 @@ fn should_create_unique_constraints_for_boolean_unique_schema_fields() -> Result
             }
             _ => panic!(),
         };
-
-        Ok(())
-    })
-}
-
-#[test]
-fn should_create_unique_constraints_for_field_name_with_max_length() -> Result<(), LsError> {
-    tokio_test(async {
-        let data = data(false).await;
-        let cms_module = &data.0;
-
-        let content_service = &cms_module.content_service;
-        let schema_service = &cms_module.schema_service;
-
-        let field_name = LsRandomService::random_string(SCHEMA_FIELD_NAME_MAX_LENGHT).to_lowercase();
-        let schema = CreateSchemaDto {
-            name: new_hyphenated_uuid(),
-            project_id: 0,
-            schema: Schema {
-                created_ms: 0,
-                updated_ms: 0,
-                fields: vec![SchemaField {
-                    name: field_name.to_owned(),
-                    required: true,
-                    description: "".to_owned(),
-                    field_type: SchemaFieldType::String {
-                        default: None,
-                        max_length: None,
-                        min_length: None,
-                        arity: SchemaFieldArity::Unique,
-                    },
-                }],
-            },
-        };
-
-        let saved_schema_1 = schema_service.create_schema(schema.clone()).await?;
-        assert!(content_service.create_content_table(&saved_schema_1).await.is_ok());
 
         Ok(())
     })

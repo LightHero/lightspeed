@@ -7,7 +7,7 @@ use c3p0::*;
 use lightspeed_core::error::{ErrorCodes, LsError};
 use lightspeed_core::utils::current_epoch_seconds;
 use log::*;
-use ::sqlx::Database;
+use c3p0::sqlx::Database;
 use std::collections::HashMap;
 
 #[derive(Clone)]

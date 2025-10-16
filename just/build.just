@@ -61,9 +61,8 @@ for_each_feature command:
   declare -a features=(
     "axum"
     "postgres"
-    "sqlx_postgres"
-    "sqlx_mysql"
-    "sqlx_sqlite"
+    "mysql"
+    "sqlite"
   )
 
   for i in "${features[@]}"

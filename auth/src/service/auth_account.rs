@@ -13,7 +13,7 @@ use lightspeed_core::service::auth::Auth;
 use lightspeed_core::service::validator::{ERR_NOT_UNIQUE, Validator};
 use lightspeed_core::utils::current_epoch_seconds;
 use log::*;
-use ::sqlx::Database;
+use c3p0::sqlx::Database;
 use std::sync::Arc;
 
 pub const WRONG_TYPE: &str = "WRONG_TYPE";

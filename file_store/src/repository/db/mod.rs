@@ -1,7 +1,7 @@
 use crate::model::{BinaryContent, FileStoreDataData, FileStoreDataModel};
 use c3p0::{sql::OrderBy, *};
 use lightspeed_core::error::LsError;
-use ::sqlx::Database;
+use c3p0::sqlx::Database;
 
 #[cfg(feature = "mysql_unsupported")]
 pub mod mysql;
