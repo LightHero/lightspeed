@@ -31,7 +31,7 @@ impl AuthAccountRepository for SqliteAuthAccountRepository {
         limit: u32,
     ) -> Result<Vec<AuthAccountModel>, LsError> {
         Ok(AuthAccountModel::query_with(r#"
-            where id >= ? and DATA -> '$.status' = ?
+            where id >= ? and DATA ->> '$.status' = ?
             order by id asc
             limit ?
         "#)
