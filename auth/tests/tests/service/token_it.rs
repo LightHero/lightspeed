@@ -13,7 +13,6 @@ fn should_delete_token() -> Result<(), LsError> {
         let auth_module = &data.0;
 
         let c3p0 = auth_module.repo_manager.c3p0();
-        let token_repo = auth_module.repo_manager.token_repo();
 
         let token = NewRecord {
             data: TokenData {
@@ -82,7 +81,6 @@ fn should_validate_token_on_fetch() -> Result<(), LsError> {
         let auth_module = &data.0;
 
         let c3p0 = auth_module.repo_manager.c3p0();
-        let token_repo = auth_module.repo_manager.token_repo();
 
         c3p0.transaction(async |conn| {
             let token = NewRecord {
@@ -114,7 +112,6 @@ fn should_return_all_tokens_by_username() -> Result<(), LsError> {
         let token_service = &auth_module.token_service;
 
         let c3p0 = auth_module.repo_manager.c3p0();
-        let token_repo = auth_module.repo_manager.token_repo();
 
         let username_1 = new_hyphenated_uuid();
         let username_2 = new_hyphenated_uuid();
