@@ -6,13 +6,11 @@ use c3p0::{sqlx::*, *};
 use lightspeed_core::error::LsError;
 
 #[derive(Clone)]
-pub struct SqliteFileStoreDataRepository {
-}
+pub struct SqliteFileStoreDataRepository {}
 
 impl Default for SqliteFileStoreDataRepository {
     fn default() -> Self {
-        SqliteFileStoreDataRepository {
-        }
+        SqliteFileStoreDataRepository {}
     }
 }
 
@@ -27,12 +25,7 @@ impl FileStoreDataRepository for SqliteFileStoreDataRepository {
     ) -> Result<bool, LsError> {
         let sql = "SELECT EXISTS (SELECT 1 FROM LS_FILE_STORE_DATA WHERE (data ->> '$.repository') = ? AND (data ->> '$.file_path') = ?)";
 
-        let res = query(sql)
-            .bind(repository)
-            .bind(file_path)
-            .fetch_one(tx)
-            .await
-            .and_then(|row| row.try_get(0))?;
+        let res = query(sql).bind(repository).bind(file_path).fetch_one(tx).await.and_then(|row| row.try_get(0))?;
         Ok(res)
     }
 
@@ -46,12 +39,15 @@ impl FileStoreDataRepository for SqliteFileStoreDataRepository {
         repository: &str,
         file_path: &str,
     ) -> Result<FileStoreDataModel, LsError> {
-        Ok(FileStoreDataModel::query_with(r#"
+        Ok(FileStoreDataModel::query_with(
+            r#"
             WHERE (data ->> '$.repository') = ? AND (data ->> '$.file_path') = ?
-        "#)
-            .bind(repository).bind(file_path)
-            .fetch_one(tx)
-            .await?)
+        "#,
+        )
+        .bind(repository)
+        .bind(file_path)
+        .fetch_one(tx)
+        .await?)
     }
 
     async fn fetch_all_by_repository(
@@ -62,20 +58,18 @@ impl FileStoreDataRepository for SqliteFileStoreDataRepository {
         max: usize,
         sort: OrderBy,
     ) -> Result<Vec<FileStoreDataModel>, LsError> {
-            Ok(FileStoreDataModel::query_with(&format!(
+        Ok(FileStoreDataModel::query_with(&format!(
             r#"
                WHERE (data ->> '$.repository') = ?
                 order by id {}
                 limit {}
                 offset {}
                "#,
-            sort,
-            max,
-            offset
+            sort, max, offset
         ))
-            .bind(repository)
-            .fetch_all(tx)
-            .await?)
+        .bind(repository)
+        .fetch_all(tx)
+        .await?)
     }
 
     async fn save(

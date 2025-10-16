@@ -5,9 +5,7 @@ use c3p0::*;
 use lightspeed_core::error::LsError;
 
 #[derive(Clone)]
-pub struct SqliteTokenRepository {
-}
-
+pub struct SqliteTokenRepository {}
 
 impl Default for SqliteTokenRepository {
     fn default() -> Self {
@@ -17,7 +15,7 @@ impl Default for SqliteTokenRepository {
 
 impl SqliteTokenRepository {
     pub fn new() -> Self {
-        Self {  }
+        Self {}
     }
 }
 
@@ -25,22 +23,26 @@ impl TokenRepository for SqliteTokenRepository {
     type DB = Sqlite;
 
     async fn fetch_by_token(&self, tx: &mut SqliteConnection, token_string: &str) -> Result<TokenModel, LsError> {
-        Ok(TokenModel::query_with(r#"
+        Ok(TokenModel::query_with(
+            r#"
             where data ->> '$.token' = ?
             limit 1
-        "#)
-            .bind(token_string)
-            .fetch_one(tx)
-            .await?)
+        "#,
+        )
+        .bind(token_string)
+        .fetch_one(tx)
+        .await?)
     }
 
     async fn fetch_by_username(&self, tx: &mut SqliteConnection, username: &str) -> Result<Vec<TokenModel>, LsError> {
-        Ok(TokenModel::query_with(r#"
+        Ok(TokenModel::query_with(
+            r#"
             where data ->> '$.username' = ?
-        "#)
-            .bind(username)
-            .fetch_all(tx)
-            .await?)
+        "#,
+        )
+        .bind(username)
+        .fetch_all(tx)
+        .await?)
     }
 
     async fn save(&self, tx: &mut SqliteConnection, model: NewRecord<TokenData>) -> Result<TokenModel, LsError> {

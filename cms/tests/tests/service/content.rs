@@ -1,9 +1,7 @@
 use crate::data;
 use lightspeed_cms::dto::create_schema_dto::CreateSchemaDto;
 use lightspeed_cms::model::content::{Content, ContentData, ContentFieldValue, ContentFieldValueArity};
-use lightspeed_cms::model::schema::{
-    Schema, SchemaField, SchemaFieldArity, SchemaFieldType,
-};
+use lightspeed_cms::model::schema::{Schema, SchemaField, SchemaFieldArity, SchemaFieldType};
 use lightspeed_core::error::{ErrorDetail, LsError};
 use lightspeed_core::service::validator::ERR_NOT_UNIQUE;
 use lightspeed_core::utils::new_hyphenated_uuid;

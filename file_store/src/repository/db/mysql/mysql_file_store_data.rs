@@ -5,13 +5,11 @@ use c3p0::{sqlx::*, *};
 use lightspeed_core::error::LsError;
 
 #[derive(Clone)]
-pub struct MySqlFileStoreDataRepository {
-}
+pub struct MySqlFileStoreDataRepository {}
 
 impl Default for MySqlFileStoreDataRepository {
     fn default() -> Self {
-        MySqlFileStoreDataRepository {
-        }
+        MySqlFileStoreDataRepository {}
     }
 }
 
@@ -26,12 +24,7 @@ impl FileStoreDataRepository for MySqlFileStoreDataRepository {
     ) -> Result<bool, LsError> {
         let sql = "SELECT EXISTS (SELECT 1 FROM LS_FILE_STORE_DATA WHERE (data -> '$.repository') = ? AND (data -> '$.file_path') = ?)";
 
-        let res = query(sql)
-            .bind(repository)
-            .bind(file_path)
-            .fetch_one(tx)
-            .await
-            .and_then(|row| row.try_get(0))?;
+        let res = query(sql).bind(repository).bind(file_path).fetch_one(tx).await.and_then(|row| row.try_get(0))?;
         Ok(res)
     }
 
@@ -45,12 +38,15 @@ impl FileStoreDataRepository for MySqlFileStoreDataRepository {
         repository: &str,
         file_path: &str,
     ) -> Result<FileStoreDataModel, LsError> {
-         Ok(FileStoreDataModel::query_with(r#"
+        Ok(FileStoreDataModel::query_with(
+            r#"
             WHERE (data -> '$.repository') = ? AND (data -> '$.file_path') = ?
-        "#)
-            .bind(repository).bind(file_path)
-            .fetch_one(tx)
-            .await?)
+        "#,
+        )
+        .bind(repository)
+        .bind(file_path)
+        .fetch_one(tx)
+        .await?)
     }
 
     async fn fetch_all_by_repository(
@@ -68,13 +64,11 @@ impl FileStoreDataRepository for MySqlFileStoreDataRepository {
                 limit {}
                 offset {}
                "#,
-            sort,
-            max,
-            offset
+            sort, max, offset
         ))
-            .bind(repository)
-            .fetch_all(tx)
-            .await?)
+        .bind(repository)
+        .fetch_all(tx)
+        .await?)
     }
 
     async fn save(

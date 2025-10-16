@@ -63,7 +63,6 @@ impl LsAuthService {
         }
     }
 
-
     pub fn auth(&self, auth: Auth) -> AuthContext<'_> {
         AuthContext { auth, permission_roles_map: &self.permission_roles_map }
     }
@@ -193,11 +192,7 @@ impl AuthContext<'_> {
         }
     }
 
-    pub fn is_owner_or_has_permission<T: Owned>(
-        &self,
-        obj: &T,
-        permission: &str,
-    ) -> Result<&AuthContext<'_>, LsError> {
+    pub fn is_owner_or_has_permission<T: Owned>(&self, obj: &T, permission: &str) -> Result<&AuthContext<'_>, LsError> {
         if (self.auth.id == obj.get_owner_id()) || self.has_permission_bool(permission) {
             Ok(self)
         } else {

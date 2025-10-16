@@ -1,5 +1,5 @@
-use c3p0::sqlx::mysql::{MySqlConnectOptions, MySqlSslMode};
 use c3p0::sqlx::MySqlPool;
+use c3p0::sqlx::mysql::{MySqlConnectOptions, MySqlSslMode};
 use c3p0::*;
 use testcontainers::mysql::Mysql;
 use testcontainers::testcontainers::ContainerAsync;

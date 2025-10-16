@@ -1,12 +1,11 @@
 use crate::model::content::ContentData;
 use crate::repository::ContentRepository;
+use ::sqlx::{PgConnection, Postgres, Row};
 use c3p0::*;
 use lightspeed_core::error::LsError;
-use ::sqlx::{PgConnection, Postgres, Row};
 
 #[derive(Clone)]
-pub struct PostgresContentRepository {
-}
+pub struct PostgresContentRepository {}
 
 impl PostgresContentRepository {
     pub fn new() -> Self {
@@ -18,10 +17,7 @@ impl ContentRepository for PostgresContentRepository {
     type DB = Postgres;
 
     async fn count_all_by_schema(&self, tx: &mut PgConnection, schema_id: u64) -> Result<u64, LsError> {
-        let sql = format!(
-            "SELECT COUNT(*) FROM {} WHERE (DATA ->> 'schema_id')::bigint = $1",
-            ContentData::TABLE_NAME
-        );
+        let sql = format!("SELECT COUNT(*) FROM {} WHERE (DATA ->> 'schema_id')::bigint = $1", ContentData::TABLE_NAME);
 
         Ok(sqlx::query(sqlx::AssertSqlSafe(sql))
             .bind(schema_id as i64)
@@ -51,34 +47,21 @@ impl ContentRepository for PostgresContentRepository {
             .await
             .and_then(|row| row.try_get(0))
             .map(|val: i64| val as u64)?)
-
     }
 
     async fn fetch_by_id(&self, tx: &mut PgConnection, id: u64) -> Result<Record<ContentData>, LsError> {
         Ok(tx.fetch_one_by_id(id).await?)
     }
 
-    async fn save(
-        &self,
-        tx: &mut PgConnection,
-        model: NewRecord<ContentData>,
-    ) -> Result<Record<ContentData>, LsError> {
+    async fn save(&self, tx: &mut PgConnection, model: NewRecord<ContentData>) -> Result<Record<ContentData>, LsError> {
         Ok(tx.save(model).await?)
     }
 
-    async fn update(
-        &self,
-        tx: &mut PgConnection,
-        model: Record<ContentData>,
-    ) -> Result<Record<ContentData>, LsError> {
+    async fn update(&self, tx: &mut PgConnection, model: Record<ContentData>) -> Result<Record<ContentData>, LsError> {
         Ok(tx.update(model).await?)
     }
 
-    async fn delete(
-        &self,
-        tx: &mut PgConnection,
-        model: Record<ContentData>,
-    ) -> Result<Record<ContentData>, LsError> {
+    async fn delete(&self, tx: &mut PgConnection, model: Record<ContentData>) -> Result<Record<ContentData>, LsError> {
         Ok(tx.delete(model).await?)
     }
 }

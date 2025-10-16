@@ -1,12 +1,12 @@
 use crate::config::AuthConfig;
 use crate::model::token::{TokenData, TokenModel, TokenType};
 use crate::repository::{AuthRepositoryManager, TokenRepository};
+use c3p0::sqlx::Database;
 use c3p0::*;
 use lightspeed_core::error::LsError;
 use lightspeed_core::service::validator::Validator;
 use lightspeed_core::utils::*;
 use log::*;
-use c3p0::sqlx::Database;
 
 #[derive(Clone)]
 pub struct LsTokenService<RepoManager: AuthRepositoryManager> {

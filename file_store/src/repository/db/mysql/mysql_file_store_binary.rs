@@ -66,10 +66,14 @@ impl DBFileStoreBinaryRepository for MySqlFileStoreBinaryRepository {
         Ok(res.rows_affected())
     }
 
-    async fn delete_file(&self, tx: &mut MySqlConnection, repository_name: &str, file_path: &str) -> Result<u64, LsError> {
+    async fn delete_file(
+        &self,
+        tx: &mut MySqlConnection,
+        repository_name: &str,
+        file_path: &str,
+    ) -> Result<u64, LsError> {
         let sql = format!("DELETE FROM {} WHERE repository = ? AND filepath = ?", self.table_name);
-        let res =
-            query(AssertSqlSafe(sql)).bind(repository_name).bind(file_path).execute(tx).await?;
+        let res = query(AssertSqlSafe(sql)).bind(repository_name).bind(file_path).execute(tx).await?;
         Ok(res.rows_affected())
     }
 }

@@ -2,10 +2,10 @@ use crate::repository::CmsRepositoryManager;
 use crate::repository::postgres::pg_content::PostgresContentRepository;
 use crate::repository::postgres::pg_project::PostgresProjectRepository;
 use crate::repository::postgres::pg_schema::PostgresSchemaRepository;
+use ::sqlx::Postgres;
 use c3p0::postgres::*;
 use c3p0::sqlx::{migrate::Migrator, *};
 use lightspeed_core::error::LsError;
-use ::sqlx::Postgres;
 
 pub mod pg_content;
 pub mod pg_project;

@@ -6,13 +6,11 @@ use c3p0::{sqlx::*, *};
 use lightspeed_core::error::LsError;
 
 #[derive(Clone)]
-pub struct PgFileStoreDataRepository {
-}
+pub struct PgFileStoreDataRepository {}
 
 impl Default for PgFileStoreDataRepository {
     fn default() -> Self {
-        PgFileStoreDataRepository {
-        }
+        PgFileStoreDataRepository {}
     }
 }
 
@@ -27,12 +25,8 @@ impl FileStoreDataRepository for PgFileStoreDataRepository {
     ) -> Result<bool, LsError> {
         let sql = "SELECT EXISTS (SELECT 1 FROM LS_FILE_STORE_DATA WHERE (data ->> 'repository') = $1 AND (data ->> 'file_path') = $2)";
 
-        let res = query(sql)
-            .bind(repository)
-            .bind(file_path)
-            .fetch_one(tx.as_mut())
-            .await
-            .and_then(|row| row.try_get(0))?;
+        let res =
+            query(sql).bind(repository).bind(file_path).fetch_one(tx.as_mut()).await.and_then(|row| row.try_get(0))?;
         Ok(res)
     }
 
@@ -46,12 +40,15 @@ impl FileStoreDataRepository for PgFileStoreDataRepository {
         repository: &str,
         file_path: &str,
     ) -> Result<FileStoreDataModel, LsError> {
-        Ok(FileStoreDataModel::query_with(r#"
+        Ok(FileStoreDataModel::query_with(
+            r#"
             WHERE (data ->> 'repository') = $1 AND (data ->> 'file_path') = $2
-        "#)
-            .bind(repository).bind(file_path)
-            .fetch_one(tx)
-            .await?)
+        "#,
+        )
+        .bind(repository)
+        .bind(file_path)
+        .fetch_one(tx)
+        .await?)
     }
 
     async fn fetch_all_by_repository(
@@ -69,13 +66,11 @@ impl FileStoreDataRepository for PgFileStoreDataRepository {
                 limit {}
                 offset {}
                "#,
-            sort,
-            max,
-            offset
+            sort, max, offset
         ))
-            .bind(repository)
-            .fetch_all(tx)
-            .await?)
+        .bind(repository)
+        .fetch_all(tx)
+        .await?)
     }
 
     async fn save(

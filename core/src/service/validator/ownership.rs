@@ -1,4 +1,4 @@
-use c3p0::{DataType};
+use c3p0::DataType;
 
 use crate::error::ErrorDetails;
 use crate::service::auth::Owned;
@@ -41,10 +41,7 @@ pub fn validate_id_and_version<F: WithIdAndVersion, S: WithIdAndVersion>(
     }
 }
 
-pub fn validate_ownership_id_and_version<
-    F: Owned + WithIdAndVersion,
-    S: Owned + WithIdAndVersion,
->(
+pub fn validate_ownership_id_and_version<F: Owned + WithIdAndVersion, S: Owned + WithIdAndVersion>(
     error_details: &mut ErrorDetails,
     first: &F,
     second: &S,

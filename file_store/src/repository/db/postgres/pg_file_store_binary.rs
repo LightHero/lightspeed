@@ -68,8 +68,7 @@ impl DBFileStoreBinaryRepository for PgFileStoreBinaryRepository {
 
     async fn delete_file(&self, tx: &mut PgConnection, repository_name: &str, file_path: &str) -> Result<u64, LsError> {
         let sql = format!("DELETE FROM {} WHERE repository = $1 AND filepath = $2", self.table_name);
-        let res =
-            query(AssertSqlSafe(sql)).bind(repository_name).bind(file_path).execute(tx).await?;
+        let res = query(AssertSqlSafe(sql)).bind(repository_name).bind(file_path).execute(tx).await?;
         Ok(res.rows_affected())
     }
 }

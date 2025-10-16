@@ -43,7 +43,6 @@ impl Codec<TokenData> for TokenDataCodec {
     }
 }
 
-
 impl Validable for TokenData {
     fn validate(&self, error_details: &mut ErrorDetails) -> Result<(), LsError> {
         if current_epoch_seconds() > self.expire_at_epoch_seconds {

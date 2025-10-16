@@ -94,7 +94,7 @@ fn should_validate_token_on_fetch() -> Result<(), LsError> {
                 },
             };
 
-            let saved_token = conn.save( token).await?;
+            let saved_token = conn.save(token).await?;
 
             assert!(
                 auth_module.token_service.fetch_by_token_with_conn(conn, &saved_token.data.token, true).await.is_err()
@@ -124,31 +124,27 @@ fn should_return_all_tokens_by_username() -> Result<(), LsError> {
             assert_eq!(0, token_service.fetch_all_by_username_with_conn(conn, &username_2).await?.len());
 
             let token_1 = conn
-                .save(
-                    NewRecord {
-                        data: TokenData {
-                            token: new_hyphenated_uuid(),
-                            expire_at_epoch_seconds: current_epoch_seconds() - 1,
-                            token_type: TokenType::ResetPassword,
-                            username: username_1.clone(),
-                        },
+                .save(NewRecord {
+                    data: TokenData {
+                        token: new_hyphenated_uuid(),
+                        expire_at_epoch_seconds: current_epoch_seconds() - 1,
+                        token_type: TokenType::ResetPassword,
+                        username: username_1.clone(),
                     },
-                )
+                })
                 .await?;
 
             assert_eq!(1, token_service.fetch_all_by_username_with_conn(conn, &username_1).await?.len());
 
             let token_2 = conn
-                .save(
-                    NewRecord {
-                        data: TokenData {
-                            token: new_hyphenated_uuid(),
-                            expire_at_epoch_seconds: current_epoch_seconds() - 1,
-                            token_type: TokenType::AccountActivation,
-                            username: username_1.clone(),
-                        },
+                .save(NewRecord {
+                    data: TokenData {
+                        token: new_hyphenated_uuid(),
+                        expire_at_epoch_seconds: current_epoch_seconds() - 1,
+                        token_type: TokenType::AccountActivation,
+                        username: username_1.clone(),
                     },
-                )
+                })
                 .await?;
 
             assert_eq!(0, token_service.fetch_all_by_username_with_conn(conn, &username_2).await?.len());

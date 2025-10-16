@@ -5,9 +5,7 @@ use c3p0::*;
 use lightspeed_core::error::LsError;
 
 #[derive(Clone)]
-pub struct MySqlTokenRepository {
-}
-
+pub struct MySqlTokenRepository {}
 
 impl Default for MySqlTokenRepository {
     fn default() -> Self {
@@ -17,7 +15,7 @@ impl Default for MySqlTokenRepository {
 
 impl MySqlTokenRepository {
     pub fn new() -> Self {
-        Self {  }
+        Self {}
     }
 }
 
@@ -25,22 +23,26 @@ impl TokenRepository for MySqlTokenRepository {
     type DB = MySql;
 
     async fn fetch_by_token(&self, tx: &mut MySqlConnection, token_string: &str) -> Result<TokenModel, LsError> {
-        Ok(TokenModel::query_with(r#"
+        Ok(TokenModel::query_with(
+            r#"
             where data -> '$.token' = ?
             limit 1
-        "#)
-            .bind(token_string)
-            .fetch_one(tx)
-            .await?)
+        "#,
+        )
+        .bind(token_string)
+        .fetch_one(tx)
+        .await?)
     }
 
     async fn fetch_by_username(&self, tx: &mut MySqlConnection, username: &str) -> Result<Vec<TokenModel>, LsError> {
-        Ok(TokenModel::query_with(r#"
+        Ok(TokenModel::query_with(
+            r#"
             where data -> '$.username' = ?
-        "#)
-            .bind(username)
-            .fetch_all(tx)
-            .await?)
+        "#,
+        )
+        .bind(username)
+        .fetch_all(tx)
+        .await?)
     }
 
     async fn save(&self, tx: &mut MySqlConnection, model: NewRecord<TokenData>) -> Result<TokenModel, LsError> {

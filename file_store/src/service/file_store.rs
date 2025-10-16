@@ -3,11 +3,11 @@ use crate::model::{BinaryContent, FileStoreDataData, FileStoreDataModel};
 use crate::repository::db::{DBFileStoreBinaryRepository, DBFileStoreRepositoryManager, FileStoreDataRepository};
 use crate::repository::opendal::opendal_file_store_binary::OpendalFileStoreBinaryRepository;
 use c3p0::sql::OrderBy;
+use c3p0::sqlx::Database;
 use c3p0::*;
 use lightspeed_core::error::{ErrorCodes, LsError};
 use lightspeed_core::utils::current_epoch_seconds;
 use log::*;
-use c3p0::sqlx::Database;
 use std::collections::HashMap;
 
 #[derive(Clone)]
@@ -202,7 +202,11 @@ impl<RepoManager: DBFileStoreRepositoryManager> LsFileStoreService<RepoManager> 
         self.c3p0.transaction(async |conn| self.delete_file_by_id_with_conn(conn, id).await).await
     }
 
-    pub async fn delete_file_by_id_with_conn(&self, conn: &mut <RepoManager::DB as Database>::Connection, id: u64) -> Result<(), LsError> {
+    pub async fn delete_file_by_id_with_conn(
+        &self,
+        conn: &mut <RepoManager::DB as Database>::Connection,
+        id: u64,
+    ) -> Result<(), LsError> {
         info!("LsFileStoreService - Delete file by id [{id}]");
 
         let file_data = self.read_file_data_by_id_with_conn(conn, id).await?;

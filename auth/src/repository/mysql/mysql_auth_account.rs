@@ -5,8 +5,7 @@ use c3p0::*;
 use lightspeed_core::error::{ErrorCodes, LsError};
 
 #[derive(Clone)]
-pub struct MySqlAuthAccountRepository {
-}
+pub struct MySqlAuthAccountRepository {}
 
 impl Default for MySqlAuthAccountRepository {
     fn default() -> Self {
@@ -16,7 +15,7 @@ impl Default for MySqlAuthAccountRepository {
 
 impl MySqlAuthAccountRepository {
     pub fn new() -> Self {
-        Self { }
+        Self {}
     }
 }
 
@@ -30,16 +29,18 @@ impl AuthAccountRepository for MySqlAuthAccountRepository {
         start_user_id: u64,
         limit: u32,
     ) -> Result<Vec<AuthAccountModel>, LsError> {
-        Ok(AuthAccountModel::query_with(r#"
+        Ok(AuthAccountModel::query_with(
+            r#"
             where id >= ? and DATA -> '$.status' = ?
             order by id asc
             limit ?
-        "#)
-            .bind(start_user_id as i64)
-            .bind(status.as_ref())
-            .bind(limit as i64)
-            .fetch_all(tx)
-            .await?)
+        "#,
+        )
+        .bind(start_user_id as i64)
+        .bind(status.as_ref())
+        .bind(limit as i64)
+        .fetch_all(tx)
+        .await?)
     }
 
     async fn fetch_by_id(&self, tx: &mut MySqlConnection, user_id: u64) -> Result<AuthAccountModel, LsError> {
@@ -58,13 +59,15 @@ impl AuthAccountRepository for MySqlAuthAccountRepository {
         tx: &mut MySqlConnection,
         username: &str,
     ) -> Result<Option<AuthAccountModel>, LsError> {
-                Ok(AuthAccountModel::query_with(r#"
+        Ok(AuthAccountModel::query_with(
+            r#"
             where DATA -> '$.username' = ?
             limit 1
-        "#)
-            .bind(username)
-            .fetch_optional(tx)
-            .await?)
+        "#,
+        )
+        .bind(username)
+        .fetch_optional(tx)
+        .await?)
     }
 
     async fn fetch_by_email_optional(
@@ -72,16 +75,22 @@ impl AuthAccountRepository for MySqlAuthAccountRepository {
         tx: &mut MySqlConnection,
         email: &str,
     ) -> Result<Option<AuthAccountModel>, LsError> {
-        Ok(AuthAccountModel::query_with(r#"
+        Ok(AuthAccountModel::query_with(
+            r#"
             where DATA -> '$.email' = ?
             limit 1
-        "#)
-            .bind(email)
-            .fetch_optional(tx)
-            .await?)
+        "#,
+        )
+        .bind(email)
+        .fetch_optional(tx)
+        .await?)
     }
 
-    async fn save(&self, tx: &mut MySqlConnection, model: NewRecord<AuthAccountData>) -> Result<AuthAccountModel, LsError> {
+    async fn save(
+        &self,
+        tx: &mut MySqlConnection,
+        model: NewRecord<AuthAccountData>,
+    ) -> Result<AuthAccountModel, LsError> {
         Ok(tx.save(model).await?)
     }
 

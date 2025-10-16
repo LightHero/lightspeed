@@ -24,7 +24,7 @@ async fn init() -> MaybeType {
 
     let repo_manager = RepoManager::new(c3p0.clone());
 
-  let cms_config = CmsConfig::default();
+    let cms_config = CmsConfig::default();
 
     let mut cms_module = LsCmsModule::new(repo_manager, cms_config);
     cms_module.start().await.unwrap();

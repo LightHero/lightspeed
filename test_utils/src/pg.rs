@@ -1,5 +1,5 @@
-use c3p0::sqlx::postgres::PgConnectOptions;
 use c3p0::sqlx::PgPool;
+use c3p0::sqlx::postgres::PgConnectOptions;
 use c3p0::*;
 use testcontainers::postgres::Postgres;
 use testcontainers::testcontainers::ContainerAsync;

@@ -370,11 +370,8 @@ fn should_regenerate_activation_token_even_if_token_expired() -> Result<(), LsEr
         let (_, mut token) = create_user(auth_module, false).await?;
         token.data.expire_at_epoch_seconds = 0;
 
-        let token_model = &auth_module
-            .repo_manager
-            .c3p0()
-            .transaction(async |conn| conn.update(token.clone()).await)
-            .await?;
+        let token_model =
+            &auth_module.repo_manager.c3p0().transaction(async |conn| conn.update(token.clone()).await).await?;
 
         assert!(
             auth_module
@@ -1071,11 +1068,8 @@ fn should_change_username() -> Result<(), LsError> {
 
         // Act
         let new_username = new_hyphenated_uuid();
-        let updated_user = auth_module
-            .auth_account_service
-            .change_user_data(user.id, Some(new_username.clone()), None)
-            .await
-            .unwrap();
+        let updated_user =
+            auth_module.auth_account_service.change_user_data(user.id, Some(new_username.clone()), None).await.unwrap();
 
         // Assert
 
@@ -1243,8 +1237,7 @@ fn should_activate_a_disabled_user() -> Result<(), LsError> {
         assert!(auth_module.auth_account_service.disable_by_user_id(user.id).await.is_ok());
 
         // Act
-        let updated_user =
-            auth_module.auth_account_service.reactivate_disabled_user_by_user_id(user.id).await.unwrap();
+        let updated_user = auth_module.auth_account_service.reactivate_disabled_user_by_user_id(user.id).await.unwrap();
 
         // Assert
         assert_eq!(AuthAccountStatus::Active, updated_user.data.status);
@@ -1361,11 +1354,8 @@ fn should_return_users_by_status() -> Result<(), LsError> {
         assert!(auth_module.auth_account_service.disable_by_user_id(user_disabled_1.id).await.is_ok());
 
         // Act
-        let all_active_users = auth_module
-            .auth_account_service
-            .fetch_all_by_status(AuthAccountStatus::Active, 0, u32::MAX)
-            .await
-            .unwrap();
+        let all_active_users =
+            auth_module.auth_account_service.fetch_all_by_status(AuthAccountStatus::Active, 0, u32::MAX).await.unwrap();
 
         let all_pending_users = auth_module
             .auth_account_service

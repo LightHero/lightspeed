@@ -19,7 +19,7 @@ impl ErrorCodes {
 
 #[derive(Error, Debug)]
 pub enum LsError {
-     #[error("InvalidTokenError: {message}")]
+    #[error("InvalidTokenError: {message}")]
     InvalidTokenError { message: String },
     #[error("ExpiredTokenError: {message}")]
     ExpiredTokenError { message: String },
@@ -50,10 +50,16 @@ pub enum LsError {
     InternalServerError { message: String },
 
     #[error("C3p0Error: {source:?}")]
-    C3p0Error { #[from] source: c3p0::error::C3p0Error },
+    C3p0Error {
+        #[from]
+        source: c3p0::error::C3p0Error,
+    },
 
     #[error("SqlxError: {source:?}")]
-    SqlxError { #[from] source: c3p0::sqlx::Error },
+    SqlxError {
+        #[from]
+        source: c3p0::sqlx::Error,
+    },
 
     #[error("ValidationError: {details:?}")]
     ValidationError { details: RootErrorDetails },

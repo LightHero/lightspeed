@@ -34,7 +34,6 @@ impl Codec<ProjectData> for ProjectDataCodec {
     }
 }
 
-
 impl Validable for ProjectData {
     fn validate(&self, error_details: &mut ErrorDetails) -> Result<(), LsError> {
         validate_ge(error_details, "name", 3, self.name.len());

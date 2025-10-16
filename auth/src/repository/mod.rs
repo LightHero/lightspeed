@@ -80,7 +80,11 @@ pub trait AuthAccountRepository: Clone + Send + Sync {
         model: AuthAccountModel,
     ) -> impl Future<Output = Result<AuthAccountModel, LsError>> + Send;
 
-    fn delete_by_id(&self, tx: &mut <Self::DB as Database>::Connection, user_id: u64) -> impl Future<Output = Result<u64, LsError>> + Send;
+    fn delete_by_id(
+        &self,
+        tx: &mut <Self::DB as Database>::Connection,
+        user_id: u64,
+    ) -> impl Future<Output = Result<u64, LsError>> + Send;
 }
 
 pub trait TokenRepository: Clone + Send + Sync {

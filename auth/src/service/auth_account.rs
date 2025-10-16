@@ -7,13 +7,13 @@ use crate::model::token::{TokenModel, TokenType};
 use crate::repository::{AuthAccountRepository, AuthRepositoryManager};
 use crate::service::password_codec::LsPasswordCodecService;
 use crate::service::token::LsTokenService;
+use c3p0::sqlx::Database;
 use c3p0::*;
 use lightspeed_core::error::*;
 use lightspeed_core::service::auth::Auth;
 use lightspeed_core::service::validator::{ERR_NOT_UNIQUE, Validator};
 use lightspeed_core::utils::current_epoch_seconds;
 use log::*;
-use c3p0::sqlx::Database;
 use std::sync::Arc;
 
 pub const WRONG_TYPE: &str = "WRONG_TYPE";

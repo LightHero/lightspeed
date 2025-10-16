@@ -1,9 +1,9 @@
 use crate::model::content::{ContentData, ContentModel};
 use crate::model::project::{ProjectData, ProjectModel};
 use crate::model::schema::{SchemaData, SchemaModel};
+use c3p0::sqlx::Database;
 use c3p0::*;
 use lightspeed_core::error::LsError;
-use c3p0::sqlx::Database;
 
 #[cfg(feature = "postgres")]
 pub mod postgres;
@@ -101,7 +101,11 @@ pub trait SchemaRepository: Clone + Send + Sync {
 pub trait ContentRepository: Clone + Send + Sync {
     type DB: Database;
 
-    fn count_all_by_schema(&self, tx: &mut <Self::DB as Database>::Connection, schema_id: u64) -> impl std::future::Future<Output = Result<u64, LsError>> + Send;
+    fn count_all_by_schema(
+        &self,
+        tx: &mut <Self::DB as Database>::Connection,
+        schema_id: u64,
+    ) -> impl std::future::Future<Output = Result<u64, LsError>> + Send;
 
     fn count_all_by_schema_field_value(
         &self,

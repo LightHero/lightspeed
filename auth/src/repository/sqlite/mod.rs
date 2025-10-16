@@ -1,5 +1,8 @@
 use crate::repository::AuthRepositoryManager;
-use c3p0::{sqlx::{migrate::Migrator, *}, SqliteC3p0Pool};
+use c3p0::{
+    SqliteC3p0Pool,
+    sqlx::{migrate::Migrator, *},
+};
 use lightspeed_core::error::LsError;
 use sqlite_auth_account::SqliteAuthAccountRepository;
 use sqlite_token::SqliteTokenRepository;
@@ -21,7 +24,7 @@ impl SqliteAuthRepositoryManager {
 }
 
 impl AuthRepositoryManager for SqliteAuthRepositoryManager {
-    type DB =  Sqlite;
+    type DB = Sqlite;
     type C3P0 = SqliteC3p0Pool;
     type AuthAccountRepo = SqliteAuthAccountRepository;
     type TokenRepo = SqliteTokenRepository;

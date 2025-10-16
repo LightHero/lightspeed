@@ -33,22 +33,12 @@ impl<Data: DataType> WithIdAndVersion for ModelWithOwner<Data> {
 
 impl<Data: DataType, T: Owned + WithIdAndVersion> From<(&T, Data)> for ModelWithOwner<Data> {
     fn from((model, data): (&T, Data)) -> Self {
-        ModelWithOwner {
-            id: model.get_id(),
-            version: model.get_version(),
-            user_id: model.get_owner_id(),
-            data,
-        }
+        ModelWithOwner { id: model.get_id(), version: model.get_version(), user_id: model.get_owner_id(), data }
     }
 }
 
 impl<T: Owned + WithIdAndVersion> From<&T> for ModelWithOwner<()> {
     fn from(model: &T) -> Self {
-        ModelWithOwner {
-            id: model.get_id(),
-            version: model.get_version(),
-            user_id: model.get_owner_id(),
-            data: (),
-        }
+        ModelWithOwner { id: model.get_id(), version: model.get_version(), user_id: model.get_owner_id(), data: () }
     }
 }

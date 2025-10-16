@@ -1,17 +1,15 @@
 use crate::model::project::ProjectData;
 use crate::repository::ProjectRepository;
+use ::sqlx::{PgConnection, Postgres, Row};
 use c3p0::*;
 use lightspeed_core::error::LsError;
-use ::sqlx::{PgConnection, Postgres, Row};
 
 #[derive(Clone)]
-pub struct PostgresProjectRepository {
-}
-
+pub struct PostgresProjectRepository {}
 
 impl Default for PostgresProjectRepository {
     fn default() -> Self {
-        PostgresProjectRepository { }
+        PostgresProjectRepository {}
     }
 }
 
@@ -28,36 +26,20 @@ impl ProjectRepository for PostgresProjectRepository {
             where LS_CMS_PROJECT.DATA ->> 'name' = $1)
         "#;
 
-        let res = ::sqlx::query(sql)
-            .bind(name)
-            .fetch_one(tx)
-            .await
-            .and_then(|row| row.try_get(0))?;
+        let res = ::sqlx::query(sql).bind(name).fetch_one(tx).await.and_then(|row| row.try_get(0))?;
 
         Ok(res)
     }
 
-    async fn save(
-        &self,
-        tx: &mut PgConnection,
-        model: NewRecord<ProjectData>,
-    ) -> Result<Record<ProjectData>, LsError> {
+    async fn save(&self, tx: &mut PgConnection, model: NewRecord<ProjectData>) -> Result<Record<ProjectData>, LsError> {
         Ok(tx.save(model).await?)
     }
 
-    async fn update(
-        &self,
-        tx: &mut PgConnection,
-        model: Record<ProjectData>,
-    ) -> Result<Record<ProjectData>, LsError> {
+    async fn update(&self, tx: &mut PgConnection, model: Record<ProjectData>) -> Result<Record<ProjectData>, LsError> {
         Ok(tx.update(model).await?)
     }
 
-    async fn delete(
-        &self,
-        tx: &mut PgConnection,
-        model: Record<ProjectData>,
-    ) -> Result<Record<ProjectData>, LsError> {
+    async fn delete(&self, tx: &mut PgConnection, model: Record<ProjectData>) -> Result<Record<ProjectData>, LsError> {
         Ok(tx.delete(model).await?)
     }
 }

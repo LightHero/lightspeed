@@ -19,11 +19,7 @@ impl<RepoManager: CmsRepositoryManager> LsContentService<RepoManager> {
     }
 
     pub async fn count_all_by_schema_id(&self, schema_id: u64) -> Result<u64, LsError> {
-        self.c3p0
-            .transaction(async |conn| {
-                self.content_repo.count_all_by_schema(conn, schema_id).await
-            })
-            .await
+        self.c3p0.transaction(async |conn| self.content_repo.count_all_by_schema(conn, schema_id).await).await
     }
 
     pub async fn create_content(
@@ -64,7 +60,15 @@ impl<RepoManager: CmsRepositoryManager> LsContentService<RepoManager> {
                             };
 
                             if let Some(value) = field_value {
-                                let count = self.content_repo.count_all_by_schema_field_value(conn, create_content_dto.schema_id, &field.name, &value).await?;
+                                let count = self
+                                    .content_repo
+                                    .count_all_by_schema_field_value(
+                                        conn,
+                                        create_content_dto.schema_id,
+                                        &field.name,
+                                        &value,
+                                    )
+                                    .await?;
                                 if count > 0 {
                                     let scoped_name = format!("fields[{}]", &field.name);
                                     validator.error_details().add_detail(scoped_name, ERR_NOT_UNIQUE);
@@ -82,11 +86,6 @@ impl<RepoManager: CmsRepositoryManager> LsContentService<RepoManager> {
     }
 
     pub async fn delete_content(&self, content_model: ContentModel) -> Result<ContentModel, LsError> {
-        self.c3p0
-            .transaction(async |conn| {
-                self.content_repo.delete(conn, content_model).await
-            })
-            .await
+        self.c3p0.transaction(async |conn| self.content_repo.delete(conn, content_model).await).await
     }
-
 }
