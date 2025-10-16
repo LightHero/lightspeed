@@ -18,7 +18,7 @@ pub trait CmsRepositoryManager: Clone + Send + Sync {
     fn c3p0(&self) -> &Self::C3P0;
     fn start(&self) -> impl std::future::Future<Output = Result<(), LsError>> + Send;
 
-    fn content_repo(&self, qualified_table_name: &str) -> Self::ContentRepo;
+    fn content_repo(&self) -> Self::ContentRepo;
     fn project_repo(&self) -> Self::ProjectRepo;
     fn schema_repo(&self) -> Self::SchemaRepo;
 }
@@ -101,10 +101,6 @@ pub trait SchemaRepository: Clone + Send + Sync {
 pub trait ContentRepository: Clone + Send + Sync {
     type DB: Database;
 
-    fn create_table(&self, tx: &mut <Self::DB as Database>::Connection) -> impl std::future::Future<Output = Result<(), LsError>> + Send;
-
-    fn drop_table(&self, tx: &mut <Self::DB as Database>::Connection) -> impl std::future::Future<Output = Result<(), LsError>> + Send;
-
     fn count_all(&self, tx: &mut <Self::DB as Database>::Connection) -> impl std::future::Future<Output = Result<u64, LsError>> + Send;
 
     fn count_all_by_field_value(
@@ -113,19 +109,6 @@ pub trait ContentRepository: Clone + Send + Sync {
         field_name: &str,
         field_value: &str,
     ) -> impl std::future::Future<Output = Result<u64, LsError>> + Send;
-
-    fn create_unique_constraint(
-        &self,
-        tx: &mut <Self::DB as Database>::Connection,
-        index_name: &str,
-        field_name: &str,
-    ) -> impl std::future::Future<Output = Result<(), LsError>> + Send;
-
-    fn drop_unique_constraint(
-        &self,
-        tx: &mut <Self::DB as Database>::Connection,
-        index_name: &str,
-    ) -> impl std::future::Future<Output = Result<(), LsError>> + Send;
 
     fn fetch_by_id(
         &self,

@@ -1,15 +1,38 @@
-use c3p0::Model;
+use c3p0::{Codec, DataType, Record};
 use lightspeed_core::error::{ErrorDetails, LsError};
 use lightspeed_core::service::validator::Validable;
 use lightspeed_core::service::validator::order::validate_ge;
 use serde::{Deserialize, Serialize};
 
-pub type ProjectModel = Model<u64, ProjectData>;
+pub type ProjectModel = Record<ProjectData>;
 
 #[derive(Clone, Serialize, Deserialize)]
 pub struct ProjectData {
     pub name: String,
 }
+
+impl DataType for ProjectData {
+    const TABLE_NAME: &'static str = "LS_CMS_PROJECT";
+    type CODEC = ProjectDataCodec;
+}
+
+#[derive(Clone, Serialize, Deserialize)]
+pub enum ProjectDataCodec {
+    V1(ProjectData),
+}
+
+impl Codec<ProjectData> for ProjectDataCodec {
+    fn encode(data: ProjectData) -> Self {
+        ProjectDataCodec::V1(data)
+    }
+
+    fn decode(data: Self) -> ProjectData {
+        match data {
+            ProjectDataCodec::V1(data) => data,
+        }
+    }
+}
+
 
 impl Validable for ProjectData {
     fn validate(&self, error_details: &mut ErrorDetails) -> Result<(), LsError> {
