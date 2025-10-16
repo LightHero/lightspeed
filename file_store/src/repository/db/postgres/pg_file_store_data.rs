@@ -5,14 +5,8 @@ use c3p0::sqlx::{Postgres, Row, query};
 use c3p0::{sqlx::*, *};
 use lightspeed_core::error::LsError;
 
-#[derive(Clone)]
+#[derive(Clone, Default)]
 pub struct PgFileStoreDataRepository {}
-
-impl Default for PgFileStoreDataRepository {
-    fn default() -> Self {
-        PgFileStoreDataRepository {}
-    }
-}
 
 impl FileStoreDataRepository for PgFileStoreDataRepository {
     type DB = Postgres;

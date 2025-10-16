@@ -34,45 +34,43 @@ impl<RepoManager: CmsRepositoryManager> LsContentService<RepoManager> {
                 create_content_dto.content.validate(schema, validator.error_details());
 
                 for field in &schema.fields {
-                    if let SchemaFieldArity::Unique = field.field_type.get_arity() {
-                        if let Some(content_field) = create_content_dto.content.fields.get(&field.name) {
-                            let field_value = match content_field {
-                                ContentFieldValue::Slug { value } | ContentFieldValue::String { value } => {
-                                    match value {
-                                        ContentFieldValueArity::Single { value: Some(field_value) } => {
-                                            Some(field_value.to_string())
-                                        }
-                                        _ => None,
-                                    }
+                    if let SchemaFieldArity::Unique = field.field_type.get_arity()
+                        && let Some(content_field) = create_content_dto.content.fields.get(&field.name)
+                    {
+                        let field_value = match content_field {
+                            ContentFieldValue::Slug { value } | ContentFieldValue::String { value } => match value {
+                                ContentFieldValueArity::Single { value: Some(field_value) } => {
+                                    Some(field_value.to_string())
                                 }
-                                ContentFieldValue::Boolean { value } => match value {
-                                    ContentFieldValueArity::Single { value: Some(field_value) } => {
-                                        Some(field_value.to_string())
-                                    }
-                                    _ => None,
-                                },
-                                ContentFieldValue::Number { value } => match value {
-                                    ContentFieldValueArity::Single { value: Some(field_value) } => {
-                                        Some(field_value.to_string())
-                                    }
-                                    _ => None,
-                                },
-                            };
+                                _ => None,
+                            },
+                            ContentFieldValue::Boolean { value } => match value {
+                                ContentFieldValueArity::Single { value: Some(field_value) } => {
+                                    Some(field_value.to_string())
+                                }
+                                _ => None,
+                            },
+                            ContentFieldValue::Number { value } => match value {
+                                ContentFieldValueArity::Single { value: Some(field_value) } => {
+                                    Some(field_value.to_string())
+                                }
+                                _ => None,
+                            },
+                        };
 
-                            if let Some(value) = field_value {
-                                let count = self
-                                    .content_repo
-                                    .count_all_by_schema_field_value(
-                                        conn,
-                                        create_content_dto.schema_id,
-                                        &field.name,
-                                        &value,
-                                    )
-                                    .await?;
-                                if count > 0 {
-                                    let scoped_name = format!("fields[{}]", &field.name);
-                                    validator.error_details().add_detail(scoped_name, ERR_NOT_UNIQUE);
-                                }
+                        if let Some(value) = field_value {
+                            let count = self
+                                .content_repo
+                                .count_all_by_schema_field_value(
+                                    conn,
+                                    create_content_dto.schema_id,
+                                    &field.name,
+                                    &value,
+                                )
+                                .await?;
+                            if count > 0 {
+                                let scoped_name = format!("fields[{}]", &field.name);
+                                validator.error_details().add_detail(scoped_name, ERR_NOT_UNIQUE);
                             }
                         }
                     }

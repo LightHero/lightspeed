@@ -51,30 +51,29 @@ impl<RepoManager: AuthRepositoryManager> LsAuthAccountService<RepoManager> {
         debug!("login attempt with username [{username}]");
         let model = self.auth_repo.fetch_by_username_optional(conn, username).await?;
 
-        if let Some(user) = model {
-            if self.password_service.verify_match(password, &user.data.password)? {
-                match &user.data.status {
-                    AuthAccountStatus::Active => {}
-                    _ => {
-                        return Err(LsError::BadRequest {
-                            message: format!("User [{username}] not in status Active"),
-                            code: ErrorCodes::INACTIVE_USER,
-                        });
-                    }
-                };
+        if let Some(user) = model
+            && self.password_service.verify_match(password, &user.data.password)?
+        {
+            match &user.data.status {
+                AuthAccountStatus::Active => {}
+                _ => {
+                    return Err(LsError::BadRequest {
+                        message: format!("User [{username}] not in status Active"),
+                        code: ErrorCodes::INACTIVE_USER,
+                    });
+                }
+            };
 
-                let creation_ts_seconds = current_epoch_seconds();
-                let expiration_ts_seconds =
-                    creation_ts_seconds + (self.auth_config.auth_session_max_validity_minutes * 60);
+            let creation_ts_seconds = current_epoch_seconds();
+            let expiration_ts_seconds = creation_ts_seconds + (self.auth_config.auth_session_max_validity_minutes * 60);
 
-                return Ok(Auth::new(
-                    user.id,
-                    user.data.username,
-                    user.data.roles,
-                    creation_ts_seconds,
-                    expiration_ts_seconds,
-                ));
-            }
+            return Ok(Auth::new(
+                user.id,
+                user.data.username,
+                user.data.roles,
+                creation_ts_seconds,
+                expiration_ts_seconds,
+            ));
         };
 
         Err(LsError::BadRequest { message: "Wrong credentials".to_string(), code: ErrorCodes::WRONG_CREDENTIALS })

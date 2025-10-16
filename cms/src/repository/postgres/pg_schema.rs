@@ -4,14 +4,8 @@ use ::sqlx::{PgConnection, Postgres, Row};
 use c3p0::*;
 use lightspeed_core::error::LsError;
 
-#[derive(Clone)]
+#[derive(Clone, Default)]
 pub struct PostgresSchemaRepository {}
-
-impl Default for PostgresSchemaRepository {
-    fn default() -> Self {
-        PostgresSchemaRepository {}
-    }
-}
 
 impl SchemaRepository for PostgresSchemaRepository {
     type DB = Postgres;

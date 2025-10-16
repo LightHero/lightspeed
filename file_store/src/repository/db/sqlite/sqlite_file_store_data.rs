@@ -5,14 +5,8 @@ use c3p0::sqlx::{Row, Sqlite, query};
 use c3p0::{sqlx::*, *};
 use lightspeed_core::error::LsError;
 
-#[derive(Clone)]
+#[derive(Clone, Default)]
 pub struct SqliteFileStoreDataRepository {}
-
-impl Default for SqliteFileStoreDataRepository {
-    fn default() -> Self {
-        SqliteFileStoreDataRepository {}
-    }
-}
 
 impl FileStoreDataRepository for SqliteFileStoreDataRepository {
     type DB = Sqlite;

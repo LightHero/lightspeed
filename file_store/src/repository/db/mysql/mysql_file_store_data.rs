@@ -4,14 +4,8 @@ use c3p0::sql::OrderBy;
 use c3p0::{sqlx::*, *};
 use lightspeed_core::error::LsError;
 
-#[derive(Clone)]
+#[derive(Clone, Default)]
 pub struct MySqlFileStoreDataRepository {}
-
-impl Default for MySqlFileStoreDataRepository {
-    fn default() -> Self {
-        MySqlFileStoreDataRepository {}
-    }
-}
 
 impl FileStoreDataRepository for MySqlFileStoreDataRepository {
     type DB = MySql;

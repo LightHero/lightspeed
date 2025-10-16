@@ -7,6 +7,12 @@ use lightspeed_core::error::LsError;
 #[derive(Clone)]
 pub struct PostgresContentRepository {}
 
+impl Default for PostgresContentRepository {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl PostgresContentRepository {
     pub fn new() -> Self {
         Self {}
