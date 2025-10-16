@@ -1,18 +1,16 @@
-use crate::model::{FileStoreDataData, FileStoreDataDataCodec, FileStoreDataModel};
+use crate::model::{FileStoreDataData, FileStoreDataModel};
 use crate::repository::db::FileStoreDataRepository;
-use c3p0::error::into_c3p0_error;
+use c3p0::sql::OrderBy;
 use c3p0::{sqlx::*, *};
 use lightspeed_core::error::LsError;
 
 #[derive(Clone)]
 pub struct MySqlFileStoreDataRepository {
-    repo: MySqlC3p0Json<u64, FileStoreDataData, FileStoreDataDataCodec>,
 }
 
 impl Default for MySqlFileStoreDataRepository {
     fn default() -> Self {
         MySqlFileStoreDataRepository {
-            repo: SqlxMySqlC3p0JsonBuilder::new("LS_FILE_STORE_DATA").build_with_codec(FileStoreDataDataCodec {}),
         }
     }
 }
@@ -31,15 +29,14 @@ impl FileStoreDataRepository for MySqlFileStoreDataRepository {
         let res = query(sql)
             .bind(repository)
             .bind(file_path)
-            .fetch_one(tx.as_mut())
+            .fetch_one(tx)
             .await
-            .and_then(|row| row.try_get(0))
-            .map_err(into_c3p0_error)?;
+            .and_then(|row| row.try_get(0))?;
         Ok(res)
     }
 
     async fn fetch_one_by_id(&self, tx: &mut MySqlConnection, id: u64) -> Result<FileStoreDataModel, LsError> {
-        Ok(self.repo.fetch_one_by_id(tx, &id).await?)
+        Ok(tx.fetch_one_by_id(id).await?)
     }
 
     async fn fetch_one_by_repository(
@@ -48,15 +45,12 @@ impl FileStoreDataRepository for MySqlFileStoreDataRepository {
         repository: &str,
         file_path: &str,
     ) -> Result<FileStoreDataModel, LsError> {
-        let sql = format!(
-            r#"
-            {}
+         Ok(FileStoreDataModel::query_with(r#"
             WHERE (data -> '$.repository') = ? AND (data -> '$.file_path') = ?
-        "#,
-            self.repo.queries().find_base_sql_query
-        );
-
-        Ok(self.repo.fetch_one_with_sql(tx, ::sqlx::query(&sql).bind(repository).bind(file_path)).await?)
+        "#)
+            .bind(repository).bind(file_path)
+            .fetch_one(tx)
+            .await?)
     }
 
     async fn fetch_all_by_repository(
@@ -65,33 +59,33 @@ impl FileStoreDataRepository for MySqlFileStoreDataRepository {
         repository: &str,
         offset: usize,
         max: usize,
-        sort: &OrderBy,
+        sort: OrderBy,
     ) -> Result<Vec<FileStoreDataModel>, LsError> {
-        let sql = format!(
-            r#"{}
+        Ok(FileStoreDataModel::query_with(&format!(
+            r#"
                WHERE (data -> '$.repository') = ?
                 order by id {}
                 limit {}
                 offset {}
                "#,
-            self.repo.queries().find_base_sql_query,
-            sort.to_sql(),
+            sort,
             max,
             offset
-        );
-
-        Ok(self.repo.fetch_all_with_sql(tx, ::sqlx::query(&sql).bind(repository)).await?)
+        ))
+            .bind(repository)
+            .fetch_all(tx)
+            .await?)
     }
 
     async fn save(
         &self,
         tx: &mut MySqlConnection,
-        model: NewModel<FileStoreDataData>,
+        model: NewRecord<FileStoreDataData>,
     ) -> Result<FileStoreDataModel, LsError> {
-        Ok(self.repo.save(tx, model).await?)
+        Ok(tx.save(model).await?)
     }
 
     async fn delete_by_id(&self, tx: &mut MySqlConnection, id: u64) -> Result<u64, LsError> {
-        Ok(self.repo.delete_by_id(tx, &id).await?)
+        Ok(tx.delete_by_id::<FileStoreDataData>(id).await?)
     }
 }

@@ -1,5 +1,5 @@
 use crate::model::{BinaryContent, FileStoreDataData, FileStoreDataModel};
-use c3p0::*;
+use c3p0::{sql::OrderBy, *};
 use lightspeed_core::error::LsError;
 use ::sqlx::Database;
 
@@ -80,13 +80,13 @@ pub trait FileStoreDataRepository: Clone + Send + Sync {
         repository: &str,
         offset: usize,
         max: usize,
-        sort: &OrderBy,
+        sort: OrderBy,
     ) -> impl Future<Output = Result<Vec<FileStoreDataModel>, LsError>> + Send;
 
     fn save(
         &self,
         tx: &mut <Self::DB as Database>::Connection,
-        model: NewModel<FileStoreDataData>,
+        model: NewRecord<FileStoreDataData>,
     ) -> impl Future<Output = Result<FileStoreDataModel, LsError>> + Send;
 
     fn delete_by_id(&self, tx: &mut <Self::DB as Database>::Connection, id: u64) -> impl Future<Output = Result<u64, LsError>> + Send;

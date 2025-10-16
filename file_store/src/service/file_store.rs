@@ -2,10 +2,12 @@ use crate::config::RepositoryType;
 use crate::model::{BinaryContent, FileStoreDataData, FileStoreDataModel};
 use crate::repository::db::{DBFileStoreBinaryRepository, DBFileStoreRepositoryManager, FileStoreDataRepository};
 use crate::repository::opendal::opendal_file_store_binary::OpendalFileStoreBinaryRepository;
+use c3p0::sql::OrderBy;
 use c3p0::*;
 use lightspeed_core::error::{ErrorCodes, LsError};
 use lightspeed_core::utils::current_epoch_seconds;
 use log::*;
+use ::sqlx::Database;
 use std::collections::HashMap;
 
 #[derive(Clone)]
@@ -49,7 +51,7 @@ impl<RepoManager: DBFileStoreRepositoryManager> LsFileStoreService<RepoManager> 
 
     pub async fn read_file_data_by_id_with_conn(
         &self,
-        conn: &mut RepoManager::Tx<'_>,
+        conn: &mut <RepoManager::DB as Database>::Connection,
         id: u64,
     ) -> Result<FileStoreDataModel, LsError> {
         debug!("LsFileStoreService - Read file by id [{id}]");
@@ -62,7 +64,7 @@ impl<RepoManager: DBFileStoreRepositoryManager> LsFileStoreService<RepoManager> 
 
     pub async fn exists_by_repository_with_conn(
         &self,
-        conn: &mut RepoManager::Tx<'_>,
+        conn: &mut <RepoManager::DB as Database>::Connection,
         repository: &str,
         file_path: &str,
     ) -> Result<bool, LsError> {
@@ -82,7 +84,7 @@ impl<RepoManager: DBFileStoreRepositoryManager> LsFileStoreService<RepoManager> 
 
     pub async fn read_file_data_by_repository_with_conn(
         &self,
-        conn: &mut RepoManager::Tx<'_>,
+        conn: &mut <RepoManager::DB as Database>::Connection,
         repository: &str,
         file_path: &str,
     ) -> Result<FileStoreDataModel, LsError> {
@@ -95,7 +97,7 @@ impl<RepoManager: DBFileStoreRepositoryManager> LsFileStoreService<RepoManager> 
         repository: &str,
         offset: usize,
         max: usize,
-        sort: &OrderBy,
+        sort: OrderBy,
     ) -> Result<Vec<FileStoreDataModel>, LsError> {
         self.c3p0
             .transaction(async |conn| {
@@ -106,11 +108,11 @@ impl<RepoManager: DBFileStoreRepositoryManager> LsFileStoreService<RepoManager> 
 
     pub async fn read_all_file_data_by_repository_with_conn(
         &self,
-        conn: &mut RepoManager::Tx<'_>,
+        conn: &mut <RepoManager::DB as Database>::Connection,
         repository: &str,
         offset: usize,
         max: usize,
-        sort: &OrderBy,
+        sort: OrderBy,
     ) -> Result<Vec<FileStoreDataModel>, LsError> {
         debug!("LsFileStoreService - Read file data by repository [{repository:?}]");
         self.db_data_repo.fetch_all_by_repository(conn, repository, offset, max, sort).await
@@ -132,7 +134,7 @@ impl<RepoManager: DBFileStoreRepositoryManager> LsFileStoreService<RepoManager> 
 
     pub async fn read_file_content_with_conn(
         &self,
-        conn: &mut RepoManager::Tx<'_>,
+        conn: &mut <RepoManager::DB as Database>::Connection,
         repository: &str,
         file_path: &str,
     ) -> Result<BinaryContent<'_>, LsError> {
@@ -147,7 +149,7 @@ impl<RepoManager: DBFileStoreRepositoryManager> LsFileStoreService<RepoManager> 
 
     pub async fn save_file_with_conn<'a>(
         &self,
-        conn: &mut RepoManager::Tx<'_>,
+        conn: &mut <RepoManager::DB as Database>::Connection,
         repository: String,
         file_path: String,
         filename: String,
@@ -170,7 +172,7 @@ impl<RepoManager: DBFileStoreRepositoryManager> LsFileStoreService<RepoManager> 
         self.db_data_repo
             .save(
                 conn,
-                NewModel::new(FileStoreDataData {
+                NewRecord::new(FileStoreDataData {
                     repository,
                     file_path,
                     content_type,
@@ -200,7 +202,7 @@ impl<RepoManager: DBFileStoreRepositoryManager> LsFileStoreService<RepoManager> 
         self.c3p0.transaction(async |conn| self.delete_file_by_id_with_conn(conn, id).await).await
     }
 
-    pub async fn delete_file_by_id_with_conn(&self, conn: &mut RepoManager::Tx<'_>, id: u64) -> Result<(), LsError> {
+    pub async fn delete_file_by_id_with_conn(&self, conn: &mut <RepoManager::DB as Database>::Connection, id: u64) -> Result<(), LsError> {
         info!("LsFileStoreService - Delete file by id [{id}]");
 
         let file_data = self.read_file_data_by_id_with_conn(conn, id).await?;
