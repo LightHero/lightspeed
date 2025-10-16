@@ -27,7 +27,7 @@ pub enum TokenType {
 
 #[derive(Clone, Serialize, Deserialize)]
 #[serde(tag = "_json_tag")]
-enum TokenDataCodec {
+pub enum TokenDataCodec {
     V1(TokenData),
 }
 

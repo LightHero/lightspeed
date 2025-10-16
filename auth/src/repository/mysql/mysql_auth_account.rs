@@ -1,13 +1,11 @@
-use crate::model::auth_account::{AuthAccountData, AuthAccountDataCodec, AuthAccountModel, AuthAccountStatus};
+use crate::model::auth_account::{AuthAccountData, AuthAccountModel, AuthAccountStatus};
 use crate::repository::AuthAccountRepository;
 use c3p0::sqlx::*;
 use c3p0::*;
 use lightspeed_core::error::{ErrorCodes, LsError};
-use std::ops::Deref;
 
 #[derive(Clone)]
 pub struct MySqlAuthAccountRepository {
-    repo: SqlxMySqlC3p0Json<u64, AuthAccountData, AuthAccountDataCodec>,
 }
 
 impl Default for MySqlAuthAccountRepository {
@@ -18,7 +16,7 @@ impl Default for MySqlAuthAccountRepository {
 
 impl MySqlAuthAccountRepository {
     pub fn new() -> Self {
-        Self { repo: SqlxMySqlC3p0JsonBuilder::new("LS_AUTH_ACCOUNT").build_with_codec(AuthAccountDataCodec {}) }
+        Self { }
     }
 }
 
@@ -29,30 +27,23 @@ impl AuthAccountRepository for MySqlAuthAccountRepository {
         &self,
         tx: &mut MySqlConnection,
         status: AuthAccountStatus,
-        start_user_id: &u64,
+        start_user_id: u64,
         limit: u32,
     ) -> Result<Vec<AuthAccountModel>, LsError> {
-        let sql = format!(
-            r#"
-            {}
+        Ok(AuthAccountModel::query_with(r#"
             where id >= ? and DATA -> '$.status' = ?
             order by id asc
             limit ?
-        "#,
-            self.queries().find_base_sql_query
-        );
-
-        Ok(self
-            .repo
-            .fetch_all_with_sql(
-                tx,
-                self.repo.query_with_id(&sql, start_user_id).bind(status.as_ref()).bind(limit as i64),
-            )
+        "#)
+            .bind(start_user_id as i64)
+            .bind(status.as_ref())
+            .bind(limit as i64)
+            .fetch_all(tx)
             .await?)
     }
 
-    async fn fetch_by_id(&self, tx: &mut MySqlConnection, user_id: &u64) -> Result<AuthAccountModel, LsError> {
-        Ok(self.repo.fetch_one_by_id(tx, user_id).await?)
+    async fn fetch_by_id(&self, tx: &mut MySqlConnection, user_id: u64) -> Result<AuthAccountModel, LsError> {
+        Ok(tx.fetch_one_by_id(user_id).await?)
     }
 
     async fn fetch_by_username(&self, tx: &mut MySqlConnection, username: &str) -> Result<AuthAccountModel, LsError> {
@@ -67,15 +58,13 @@ impl AuthAccountRepository for MySqlAuthAccountRepository {
         tx: &mut MySqlConnection,
         username: &str,
     ) -> Result<Option<AuthAccountModel>, LsError> {
-        let sql = &format!(
-            r#"
-            {}
+                Ok(AuthAccountModel::query_with(r#"
             where DATA -> '$.username' = ?
             limit 1
-        "#,
-            self.queries().find_base_sql_query
-        );
-        Ok(self.repo.fetch_one_optional_with_sql(tx, ::sqlx::query(sql).bind(username)).await?)
+        "#)
+            .bind(username)
+            .fetch_optional(tx)
+            .await?)
     }
 
     async fn fetch_by_email_optional(
@@ -83,38 +72,28 @@ impl AuthAccountRepository for MySqlAuthAccountRepository {
         tx: &mut MySqlConnection,
         email: &str,
     ) -> Result<Option<AuthAccountModel>, LsError> {
-        let sql = format!(
-            r#"
-            {}
+        Ok(AuthAccountModel::query_with(r#"
             where DATA -> '$.email' = ?
             limit 1
-        "#,
-            self.queries().find_base_sql_query
-        );
-        Ok(self.repo.fetch_one_optional_with_sql(tx, ::sqlx::query(&sql).bind(email)).await?)
+        "#)
+            .bind(email)
+            .fetch_optional(tx)
+            .await?)
     }
 
-    async fn save(&self, tx: &mut MySqlConnection, model: NewModel<AuthAccountData>) -> Result<AuthAccountModel, LsError> {
-        Ok(self.repo.save(tx, model).await?)
+    async fn save(&self, tx: &mut MySqlConnection, model: NewRecord<AuthAccountData>) -> Result<AuthAccountModel, LsError> {
+        Ok(tx.save(model).await?)
     }
 
     async fn update(&self, tx: &mut MySqlConnection, model: AuthAccountModel) -> Result<AuthAccountModel, LsError> {
-        Ok(self.repo.update(tx, model).await?)
+        Ok(tx.update(model).await?)
     }
 
     async fn delete(&self, tx: &mut MySqlConnection, model: AuthAccountModel) -> Result<AuthAccountModel, LsError> {
-        Ok(self.repo.delete(tx, model).await?)
+        Ok(tx.delete(model).await?)
     }
 
-    async fn delete_by_id(&self, tx: &mut MySqlConnection, user_id: &u64) -> Result<u64, LsError> {
-        Ok(self.repo.delete_by_id(tx, user_id).await?)
-    }
-}
-
-impl Deref for MySqlAuthAccountRepository {
-    type Target = SqlxMySqlC3p0Json<u64, AuthAccountData, AuthAccountDataCodec>;
-
-    fn deref(&self) -> &Self::Target {
-        &self.repo
+    async fn delete_by_id(&self, tx: &mut MySqlConnection, user_id: u64) -> Result<u64, LsError> {
+        Ok(tx.delete_by_id::<AuthAccountData>(user_id).await?)
     }
 }

@@ -1,4 +1,4 @@
-#![cfg(feature = "sqlx_postgres")]
+#![cfg(feature = "mysql")]
 
 use std::sync::OnceLock;
 
@@ -6,20 +6,20 @@ use maybe_once::tokio::*;
 
 use lightspeed_auth::LsAuthModule;
 use lightspeed_auth::config::AuthConfig;
-use lightspeed_auth::repository::postgres::PgAuthRepositoryManager;
+use lightspeed_auth::repository::mysql::MySqlAuthRepositoryManager;
 use lightspeed_core::module::LsModule;
-use lightspeed_test_utils::pg::new_pg_db;
-use testcontainers::postgres::Postgres;
+use lightspeed_test_utils::mysql::new_mysql_db;
+use testcontainers::mysql::Mysql;
 use testcontainers::testcontainers::ContainerAsync;
 
 mod tests;
 
-pub type RepoManager = PgAuthRepositoryManager;
+pub type RepoManager = MySqlAuthRepositoryManager;
 
-pub type MaybeType = (LsAuthModule<RepoManager>, ContainerAsync<Postgres>);
+pub type MaybeType = (LsAuthModule<RepoManager>, ContainerAsync<Mysql>);
 
 async fn init() -> MaybeType {
-    let (c3p0, node) = new_pg_db().await;
+    let (c3p0, node) = new_mysql_db().await;
 
     let repo_manager = RepoManager::new(c3p0.clone());
 

@@ -1,25 +1,23 @@
-#![cfg(feature = "sqlx_postgres")]
+#![cfg(feature = "sqlite")]
 
 use std::sync::OnceLock;
 
+use lightspeed_file_store::LsFileStoreModule;
+use lightspeed_file_store::repository::db::sqlite::SqliteFileStoreRepositoryManager;
 use maybe_once::tokio::*;
 
 use lightspeed_core::module::LsModule;
-use lightspeed_file_store::LsFileStoreModule;
-use lightspeed_file_store::repository::db::postgres::PgFileStoreRepositoryManager;
-use lightspeed_test_utils::pg::new_pg_db;
-use testcontainers::postgres::Postgres;
-use testcontainers::testcontainers::ContainerAsync;
+use lightspeed_test_utils::sqlite::new_sqlite_db;
 use tests::get_config;
 
 mod tests;
 
-pub type RepoManager = PgFileStoreRepositoryManager;
+pub type RepoManager = SqliteFileStoreRepositoryManager;
 
-pub type MaybeType = (LsFileStoreModule<RepoManager>, ContainerAsync<Postgres>);
+pub type MaybeType = (LsFileStoreModule<RepoManager>, ());
 
 async fn init() -> MaybeType {
-    let (c3p0, node) = new_pg_db().await;
+    let c3p0 = new_sqlite_db().await;
 
     let repo_manager = RepoManager::new(c3p0.clone());
 
@@ -30,7 +28,7 @@ async fn init() -> MaybeType {
         file_store_module.start().await.unwrap();
     }
 
-    (file_store_module, node)
+    (file_store_module, ())
 }
 
 pub async fn data(serial: bool) -> Data<'static, MaybeType> {

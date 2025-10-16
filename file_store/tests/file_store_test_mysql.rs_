@@ -1,4 +1,4 @@
-#![cfg(feature = "sqlx_mysql_unsupported")]
+#![cfg(feature = "mysql_unsupported")]
 
 ///
 /// DISABLED because mysql is not supported

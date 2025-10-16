@@ -1,22 +1,13 @@
-use crate::model::token::{TokenData, TokenDataCodec, TokenModel};
+use crate::model::token::{TokenData, TokenModel};
 use crate::repository::TokenRepository;
 use c3p0::sqlx::*;
 use c3p0::*;
 use lightspeed_core::error::LsError;
-use std::ops::Deref;
 
 #[derive(Clone)]
 pub struct MySqlTokenRepository {
-    repo: SqlxMySqlC3p0Json<u64, TokenData, TokenDataCodec>,
 }
 
-impl Deref for MySqlTokenRepository {
-    type Target = SqlxMySqlC3p0Json<u64, TokenData, TokenDataCodec>;
-
-    fn deref(&self) -> &Self::Target {
-        &self.repo
-    }
-}
 
 impl Default for MySqlTokenRepository {
     fn default() -> Self {
@@ -26,42 +17,37 @@ impl Default for MySqlTokenRepository {
 
 impl MySqlTokenRepository {
     pub fn new() -> Self {
-        Self { repo: SqlxMySqlC3p0JsonBuilder::new("LS_AUTH_TOKEN").build_with_codec(TokenDataCodec {}) }
+        Self {  }
     }
 }
 
 impl TokenRepository for MySqlTokenRepository {
-    type Tx<'a> = Transaction<'a, MySql>;
+    type DB = MySql;
 
     async fn fetch_by_token(&self, tx: &mut MySqlConnection, token_string: &str) -> Result<TokenModel, LsError> {
-        let sql = &format!(
-            r#"
-            {}
+        Ok(TokenModel::query_with(r#"
             where data -> '$.token' = ?
             limit 1
-        "#,
-            self.queries().find_base_sql_query
-        );
-        Ok(self.repo.fetch_one_with_sql(tx, ::sqlx::query(sql).bind(token_string)).await?)
+        "#)
+            .bind(token_string)
+            .fetch_one(tx)
+            .await?)
     }
 
     async fn fetch_by_username(&self, tx: &mut MySqlConnection, username: &str) -> Result<Vec<TokenModel>, LsError> {
-        let sql = format!(
-            r#"
-            {}
+        Ok(TokenModel::query_with(r#"
             where data -> '$.username' = ?
-        "#,
-            self.queries().find_base_sql_query
-        );
-
-        Ok(self.repo.fetch_all_with_sql(tx, ::sqlx::query(&sql).bind(username)).await?)
+        "#)
+            .bind(username)
+            .fetch_all(tx)
+            .await?)
     }
 
-    async fn save(&self, tx: &mut MySqlConnection, model: NewModel<TokenData>) -> Result<TokenModel, LsError> {
-        Ok(self.repo.save(tx, model).await?)
+    async fn save(&self, tx: &mut MySqlConnection, model: NewRecord<TokenData>) -> Result<TokenModel, LsError> {
+        Ok(tx.save(model).await?)
     }
 
     async fn delete(&self, tx: &mut MySqlConnection, model: TokenModel) -> Result<TokenModel, LsError> {
-        Ok(self.repo.delete(tx, model).await?)
+        Ok(tx.delete(model).await?)
     }
 }

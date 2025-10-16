@@ -28,7 +28,7 @@ pub enum AuthAccountStatus {
 
 #[derive(Clone, Serialize, Deserialize)]
 #[serde(tag = "_json_tag")]
-enum AuthAccountDataToken {
+pub enum AuthAccountDataToken {
     V1(AuthAccountData),
 }
 
