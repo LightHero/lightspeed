@@ -17,23 +17,35 @@ impl PostgresContentRepository {
 impl ContentRepository for PostgresContentRepository {
     type DB = Postgres;
 
-    async fn count_all(&self, tx: &mut PgConnection) -> Result<u64, LsError> {
-        Ok(tx.count_all::<ContentData>().await?)
+    async fn count_all_by_schema(&self, tx: &mut PgConnection, schema_id: u64) -> Result<u64, LsError> {
+        let sql = format!(
+            "SELECT COUNT(*) FROM {} WHERE (DATA ->> 'schema_id')::bigint = $1",
+            ContentData::TABLE_NAME
+        );
+
+        Ok(sqlx::query(sqlx::AssertSqlSafe(sql))
+            .bind(schema_id as i64)
+            .fetch_one(tx)
+            .await
+            .and_then(|row| row.try_get(0))
+            .map(|val: i64| val as u64)?)
     }
 
-    async fn count_all_by_field_value(
+    async fn count_all_by_schema_field_value(
         &self,
         tx: &mut PgConnection,
+        schema_id: u64,
         field_name: &str,
         field_value: &str,
     ) -> Result<u64, LsError> {
         let sql = format!(
-            "SELECT COUNT(*) FROM {} WHERE  (DATA -> 'content' -> 'fields' -> '{}' -> 'value' ->> 'value') = $1 ",
+            "SELECT COUNT(*) FROM {} WHERE (DATA ->> 'schema_id')::bigint = $1 AND (DATA -> 'content' -> 'fields' -> '{}' -> 'value' ->> 'value') = $2 ",
             ContentData::TABLE_NAME,
             field_name
         );
 
         Ok(sqlx::query(sqlx::AssertSqlSafe(sql))
+            .bind(schema_id as i64)
             .bind(field_value)
             .fetch_one(tx)
             .await

@@ -101,11 +101,12 @@ pub trait SchemaRepository: Clone + Send + Sync {
 pub trait ContentRepository: Clone + Send + Sync {
     type DB: Database;
 
-    fn count_all(&self, tx: &mut <Self::DB as Database>::Connection) -> impl std::future::Future<Output = Result<u64, LsError>> + Send;
+    fn count_all_by_schema(&self, tx: &mut <Self::DB as Database>::Connection, schema_id: u64) -> impl std::future::Future<Output = Result<u64, LsError>> + Send;
 
-    fn count_all_by_field_value(
+    fn count_all_by_schema_field_value(
         &self,
         tx: &mut <Self::DB as Database>::Connection,
+        schema_id: u64,
         field_name: &str,
         field_value: &str,
     ) -> impl std::future::Future<Output = Result<u64, LsError>> + Send;
