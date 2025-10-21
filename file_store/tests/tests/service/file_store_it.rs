@@ -1,4 +1,5 @@
 use crate::data;
+use c3p0::sql::OrderBy;
 use c3p0::*;
 use lightspeed_core::error::LsError;
 use lightspeed_file_store::model::BinaryContent;
@@ -707,7 +708,7 @@ fn should_read_all_file_data_by_repository() -> Result<(), LsError> {
             .await?;
 
         let all_repo_files =
-            file_store.read_all_file_data_by_repository(save_repository, 0, 100, &OrderBy::Asc).await.unwrap();
+            file_store.read_all_file_data_by_repository(save_repository, 0, 100, OrderBy::Asc).await.unwrap();
         assert!(!all_repo_files.is_empty());
 
         file_store
@@ -721,7 +722,7 @@ fn should_read_all_file_data_by_repository() -> Result<(), LsError> {
             .await?;
 
         let all_repo_files =
-            file_store.read_all_file_data_by_repository(save_repository, 0, 2, &OrderBy::Asc).await.unwrap();
+            file_store.read_all_file_data_by_repository(save_repository, 0, 2, OrderBy::Asc).await.unwrap();
         assert_eq!(all_repo_files.len(), 2);
 
         file_store
@@ -735,7 +736,7 @@ fn should_read_all_file_data_by_repository() -> Result<(), LsError> {
             .await?;
 
         let all_repo_files =
-            file_store.read_all_file_data_by_repository(save_repository, 0, 10000, &OrderBy::Asc).await.unwrap();
+            file_store.read_all_file_data_by_repository(save_repository, 0, 10000, OrderBy::Asc).await.unwrap();
         assert!(all_repo_files.len() >= 3);
 
         assert!(all_repo_files.iter().any(|file| file.data.filename == file_name_1));
@@ -743,7 +744,7 @@ fn should_read_all_file_data_by_repository() -> Result<(), LsError> {
         assert!(all_repo_files.iter().any(|file| file.data.filename == file_name_3));
 
         let all_repo_files =
-            file_store.read_all_file_data_by_repository(save_repository, 1, 1, &OrderBy::Asc).await.unwrap();
+            file_store.read_all_file_data_by_repository(save_repository, 1, 1, OrderBy::Asc).await.unwrap();
         assert_eq!(1, all_repo_files.len());
 
         Ok(())

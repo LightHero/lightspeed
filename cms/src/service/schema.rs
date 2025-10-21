@@ -2,6 +2,7 @@ use crate::dto::create_schema_dto::CreateSchemaDto;
 use crate::model::schema::{SchemaData, SchemaModel};
 use crate::repository::CmsRepositoryManager;
 use crate::repository::SchemaRepository;
+use c3p0::sqlx::Database;
 use c3p0::*;
 use lightspeed_core::error::{ErrorDetails, LsError};
 use lightspeed_core::service::validator::{ERR_NOT_UNIQUE, Validator};
@@ -36,7 +37,7 @@ impl<RepoManager: CmsRepositoryManager> LsSchemaService<RepoManager> {
                     }
                     Ok(())
                 }))?;
-                self.schema_repo.save(conn, NewModel::new(data)).await
+                self.schema_repo.save(conn, NewRecord::new(data)).await
             })
             .await
     }
@@ -45,7 +46,11 @@ impl<RepoManager: CmsRepositoryManager> LsSchemaService<RepoManager> {
         self.c3p0.transaction(async |conn| self.schema_repo.delete(conn, schema_model).await).await
     }
 
-    pub async fn delete_by_project_id(&self, conn: &mut RepoManager::Tx<'_>, project_id: u64) -> Result<u64, LsError> {
+    pub async fn delete_by_project_id(
+        &self,
+        conn: &mut <RepoManager::DB as Database>::Connection,
+        project_id: u64,
+    ) -> Result<u64, LsError> {
         self.schema_repo.delete_by_project_id(conn, project_id).await
     }
 }

@@ -3,7 +3,7 @@ use c3p0::*;
 use lightspeed_cms::dto::create_project_dto::CreateProjectDto;
 use lightspeed_cms::dto::create_schema_dto::CreateSchemaDto;
 use lightspeed_cms::model::project::ProjectData;
-use lightspeed_cms::model::schema::Schema;
+use lightspeed_cms::model::schema::{Schema, SchemaData};
 use lightspeed_cms::repository::CmsRepositoryManager;
 use lightspeed_core::error::{ErrorDetail, LsError};
 use lightspeed_core::service::validator::ERR_NOT_UNIQUE;
@@ -17,16 +17,15 @@ fn should_create_project() -> Result<(), LsError> {
         let cms_module = &data.0;
 
         let c3p0 = cms_module.repo_manager.c3p0();
-        let project_repo = cms_module.repo_manager.project_repo();
 
         let project = CreateProjectDto { name: new_hyphenated_uuid() };
 
         let saved_project = cms_module.project_service.create_project(project).await?;
 
         c3p0.transaction(async |conn| {
-            assert!(project_repo.exists_by_id(conn, &saved_project.id).await?);
+            assert!(conn.exists_by_id::<ProjectData>(saved_project.id).await?);
             assert!(cms_module.project_service.delete(saved_project.clone()).await.is_ok());
-            assert!(!project_repo.exists_by_id(conn, &saved_project.id).await?);
+            assert!(!conn.exists_by_id::<ProjectData>(saved_project.id).await?);
 
             Ok(())
         })
@@ -41,13 +40,12 @@ fn project_name_should_be_unique() -> Result<(), LsError> {
         let cms_module = &data.0;
 
         let c3p0 = cms_module.repo_manager.c3p0();
-        let project_repo = cms_module.repo_manager.project_repo();
 
-        let project = NewModel { version: 0, data: ProjectData { name: new_hyphenated_uuid() } };
+        let project = NewRecord { data: ProjectData { name: new_hyphenated_uuid() } };
 
         c3p0.transaction(async |conn| {
-            assert!(project_repo.save(conn, project.clone()).await.is_ok());
-            assert!(project_repo.save(conn, project).await.is_err());
+            assert!(conn.save(project.clone()).await.is_ok());
+            assert!(conn.save(project).await.is_err());
 
             Ok(())
         })
@@ -87,7 +85,6 @@ fn should_delete_all_schemas_when_project_is_deleted() -> Result<(), LsError> {
 
         // Arrange
         let c3p0 = cms_module.repo_manager.c3p0();
-        let schema_repo = cms_module.repo_manager.schema_repo();
         let project_service = &cms_module.project_service;
 
         let project = CreateProjectDto { name: new_hyphenated_uuid() };
@@ -113,9 +110,9 @@ fn should_delete_all_schemas_when_project_is_deleted() -> Result<(), LsError> {
 
         // Assert
         c3p0.transaction(async |conn| {
-            assert!(!schema_repo.exists_by_id(conn, &saved_schema_1.id).await?);
-            assert!(!schema_repo.exists_by_id(conn, &saved_schema_2.id).await?);
-            assert!(schema_repo.exists_by_id(conn, &saved_schema_other.id).await?);
+            assert!(!conn.exists_by_id::<SchemaData>(saved_schema_1.id).await?);
+            assert!(!conn.exists_by_id::<SchemaData>(saved_schema_2.id).await?);
+            assert!(conn.exists_by_id::<SchemaData>(saved_schema_other.id).await?);
 
             Ok(())
         })

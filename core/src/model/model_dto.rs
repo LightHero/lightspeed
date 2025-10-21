@@ -1,18 +1,17 @@
-use c3p0::{DataType, IdType, Model, VersionType};
+use c3p0::{DataType, Record};
 use serde::{Deserialize, Serialize};
 
 use crate::web::types::MaybeWeb;
 
 #[derive(Clone, Serialize, Deserialize)]
-#[cfg_attr(feature = "poem_openapi", derive(poem_openapi::Object))]
-pub struct ModelDto<Id: MaybeWeb, Data: MaybeWeb> {
-    pub id: Id,
-    pub version: VersionType,
+pub struct RecordDto<Data: MaybeWeb> {
+    pub id: u64,
+    pub version: u32,
     pub data: Data,
 }
 
-impl<Id: IdType + MaybeWeb, Data: DataType + MaybeWeb> From<Model<Id, Data>> for ModelDto<Id, Data> {
-    fn from(model: Model<Id, Data>) -> Self {
+impl<Data: DataType + MaybeWeb> From<Record<Data>> for RecordDto<Data> {
+    fn from(model: Record<Data>) -> Self {
         Self { id: model.id, version: model.version, data: model.data }
     }
 }

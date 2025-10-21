@@ -1,0 +1,46 @@
+#![cfg(feature = "mysql_unsupported")]
+
+///
+/// DISABLED because mysql is not supported
+/// see: https://github.com/LightHero/lightspeed/issues/22
+///  
+
+use std::sync::OnceLock;
+
+use lightspeed_file_store::LsFileStoreModule;
+use lightspeed_file_store::config::FileStoreConfig;
+use lightspeed_file_store::repository::db::mysql::MySqlFileStoreRepositoryManager;
+use maybe_once::tokio::*;
+
+use lightspeed_core::module::LsModule;
+use test_utils::mysql::new_mysql_db;
+use testcontainers::mysql::Mysql;
+use testcontainers::testcontainers::ContainerAsync;
+
+mod tests;
+
+pub type RepoManager = MySqlFileStoreRepositoryManager;
+
+pub type MaybeType = (LsFileStoreModule<RepoManager>, ContainerAsync<Mysql>);
+
+async fn init() -> MaybeType {
+    let (c3p0, node) = new_mysql_db().await;
+
+    let repo_manager = RepoManager::new(c3p0.clone());
+
+    let mut file_store_config = FileStoreConfig::default();
+    file_store_config.fs_repo_base_folders.push(("REPO_ONE".to_owned(), "../target/repo_one".to_owned()));
+    file_store_config.fs_repo_base_folders.push(("REPO_TWO".to_owned(), "../target/repo_two".to_owned()));
+
+    let mut file_store_module = LsFileStoreModule::new(repo_manager, file_store_config).unwrap();
+    {
+        file_store_module.start().await.unwrap();
+    }
+
+    (file_store_module, node)
+}
+
+pub async fn data(serial: bool) -> Data<'static, MaybeType> {
+    static DATA: OnceLock<MaybeOnceAsync<MaybeType>> = OnceLock::new();
+    DATA.get_or_init(|| MaybeOnceAsync::new(|| Box::pin(init()))).data(serial).await
+}

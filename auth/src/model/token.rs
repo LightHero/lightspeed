@@ -3,10 +3,8 @@ use lightspeed_core::error::{ErrorDetails, LsError};
 use lightspeed_core::service::validator::Validable;
 use lightspeed_core::utils::current_epoch_seconds;
 use serde::{Deserialize, Serialize};
-use serde_json::Value;
-use std::borrow::Cow;
 
-pub type TokenModel = Model<u64, TokenData>;
+pub type TokenModel = Record<TokenData>;
 
 #[derive(Clone, Serialize, Deserialize)]
 pub struct TokenData {
@@ -16,6 +14,11 @@ pub struct TokenData {
     pub expire_at_epoch_seconds: i64,
 }
 
+impl DataType for TokenData {
+    const TABLE_NAME: &'static str = "LS_AUTH_TOKEN";
+    type CODEC = TokenDataCodec;
+}
+
 #[derive(Debug, PartialEq, Clone, Serialize, Deserialize)]
 pub enum TokenType {
     AccountActivation,
@@ -23,25 +26,20 @@ pub enum TokenType {
 }
 
 #[derive(Clone, Serialize, Deserialize)]
-#[serde(tag = "_json_tag")]
-enum TokenDataVersioning<'a> {
-    V1(Cow<'a, TokenData>),
+#[serde(tag = "_codec_tag")]
+pub enum TokenDataCodec {
+    V1(TokenData),
 }
 
-#[derive(Clone)]
-pub struct TokenDataCodec {}
-
-impl JsonCodec<TokenData> for TokenDataCodec {
-    fn data_from_value(&self, value: Value) -> Result<TokenData, C3p0Error> {
-        let versioning = serde_json::from_value(value)?;
-        let data = match versioning {
-            TokenDataVersioning::V1(data_v1) => data_v1.into_owned(),
-        };
-        Ok(data)
+impl Codec<TokenData> for TokenDataCodec {
+    fn encode(data: TokenData) -> Self {
+        TokenDataCodec::V1(data)
     }
 
-    fn data_to_value(&self, data: &TokenData) -> Result<Value, C3p0Error> {
-        serde_json::to_value(TokenDataVersioning::V1(Cow::Borrowed(data))).map_err(C3p0Error::from)
+    fn decode(data: Self) -> TokenData {
+        match data {
+            TokenDataCodec::V1(data) => data,
+        }
     }
 }
 

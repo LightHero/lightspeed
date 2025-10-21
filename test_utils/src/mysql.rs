@@ -1,6 +1,6 @@
-use c3p0::sqlx::SqlxMySqlC3p0Pool;
-use c3p0::sqlx::sqlx::MySqlPool;
-use c3p0::sqlx::sqlx::mysql::{MySqlConnectOptions, MySqlSslMode};
+use c3p0::sqlx::MySqlPool;
+use c3p0::sqlx::mysql::{MySqlConnectOptions, MySqlSslMode};
+use c3p0::*;
 use testcontainers::mysql::Mysql;
 use testcontainers::testcontainers::ContainerAsync;
 use testcontainers::testcontainers::runners::AsyncRunner;
@@ -14,7 +14,7 @@ use testcontainers::testcontainers::runners::AsyncRunner;
 ///
 /// The returned Sqlx pool is configured to connect to the database with the same defaults as the
 /// container.
-pub async fn new_mysql_db() -> (SqlxMySqlC3p0Pool, ContainerAsync<Mysql>) {
+pub async fn new_mysql_db() -> (MySqlC3p0Pool, ContainerAsync<Mysql>) {
     let node = Mysql::default().start().await.unwrap();
 
     let options = MySqlConnectOptions::new()
@@ -27,7 +27,7 @@ pub async fn new_mysql_db() -> (SqlxMySqlC3p0Pool, ContainerAsync<Mysql>) {
 
     let pool = MySqlPool::connect_with(options).await.unwrap();
 
-    let c3p0 = SqlxMySqlC3p0Pool::new(pool);
+    let c3p0 = MySqlC3p0Pool::new(pool);
 
     (c3p0, node)
 }

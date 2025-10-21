@@ -11,7 +11,7 @@ repository = "https://github.com/LightHero/lightspeed"
 keywords = []
 
 [dependencies]
-c3p0 = { workspace = true, features = ["sqlx_mysql", "sqlx_postgres", "sqlx_sqlite"] }
+c3p0 = { workspace = true, features = ["mysql", "postgres", "sqlite"] }
 maybe-once = { workspace = true }
 testcontainers = { workspace = true }
 tokio = { workspace = true, features = ["rt-multi-thread"] }

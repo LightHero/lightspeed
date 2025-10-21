@@ -1,6 +1,7 @@
 use crate::config::AuthConfig;
 use crate::model::token::{TokenData, TokenModel, TokenType};
 use crate::repository::{AuthRepositoryManager, TokenRepository};
+use c3p0::sqlx::Database;
 use c3p0::*;
 use lightspeed_core::error::LsError;
 use lightspeed_core::service::validator::Validator;
@@ -20,7 +21,7 @@ impl<RepoManager: AuthRepositoryManager> LsTokenService<RepoManager> {
 
     pub async fn generate_and_save_token_with_conn<S: Into<String>>(
         &self,
-        conn: &mut RepoManager::Tx<'_>,
+        conn: &mut <RepoManager::DB as Database>::Connection,
         username: S,
         token_type: TokenType,
     ) -> Result<TokenModel, LsError> {
@@ -29,7 +30,7 @@ impl<RepoManager: AuthRepositoryManager> LsTokenService<RepoManager> {
 
         let issued_at = current_epoch_seconds();
         let expire_at_epoch = issued_at + (self.auth_config.activation_token_validity_minutes * 60);
-        let token = NewModel::new(TokenData {
+        let token = NewRecord::new(TokenData {
             token: new_hyphenated_uuid(),
             token_type,
             username,
@@ -40,7 +41,7 @@ impl<RepoManager: AuthRepositoryManager> LsTokenService<RepoManager> {
 
     pub async fn fetch_by_token_with_conn(
         &self,
-        conn: &mut RepoManager::Tx<'_>,
+        conn: &mut <RepoManager::DB as Database>::Connection,
         token: &str,
         validate: bool,
     ) -> Result<TokenModel, LsError> {
@@ -56,7 +57,7 @@ impl<RepoManager: AuthRepositoryManager> LsTokenService<RepoManager> {
 
     pub async fn fetch_all_by_username_with_conn(
         &self,
-        conn: &mut RepoManager::Tx<'_>,
+        conn: &mut <RepoManager::DB as Database>::Connection,
         username: &str,
     ) -> Result<Vec<TokenModel>, LsError> {
         debug!("Fetch by username [{username}]");
@@ -65,7 +66,7 @@ impl<RepoManager: AuthRepositoryManager> LsTokenService<RepoManager> {
 
     pub async fn delete_with_conn(
         &self,
-        conn: &mut RepoManager::Tx<'_>,
+        conn: &mut <RepoManager::DB as Database>::Connection,
         token_model: TokenModel,
     ) -> Result<TokenModel, LsError> {
         debug!("Delete token_model with id [{:?}] and token [{}]", token_model.id, token_model.data.token);

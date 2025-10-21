@@ -36,7 +36,7 @@ impl<RepoManager: CmsRepositoryManager> LsProjectService<RepoManager> {
                     }
                     Ok(())
                 }))?;
-                self.project_repo.save(conn, NewModel::new(data)).await
+                self.project_repo.save(conn, NewRecord::new(data)).await
             })
             .await
     }

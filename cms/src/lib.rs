@@ -29,7 +29,7 @@ impl<RepoManager: CmsRepositoryManager> LsCmsModule<RepoManager> {
         println!("Creating LsCmsModule");
         info!("Creating LsCmsModule");
 
-        let content_service = Arc::new(LsContentService::new(repo_manager.c3p0().clone(), repo_manager.clone()));
+        let content_service = Arc::new(LsContentService::new(repo_manager.c3p0().clone(), repo_manager.content_repo()));
 
         let schema_service = Arc::new(LsSchemaService::new(repo_manager.c3p0().clone(), repo_manager.schema_repo()));
 

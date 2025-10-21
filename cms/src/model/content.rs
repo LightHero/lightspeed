@@ -1,5 +1,5 @@
 use crate::model::schema::{LocalizableOptions, Schema, SchemaField, SchemaFieldArity, SchemaFieldType};
-use c3p0::Model;
+use c3p0::{Codec, DataType, Record};
 use lightspeed_core::error::ErrorDetails;
 use lightspeed_core::service::validator::order::{validate_ge, validate_le};
 use lightspeed_core::service::validator::{ERR_UNKNOWN_FIELD, ERR_VALUE_REQUIRED};
@@ -23,12 +23,35 @@ pub fn slug_regex() -> &'static Regex {
     REGEX.get_or_init(|| Regex::new(SLUG_VALIDATION_REGEX).expect("slug validation regex should be valid"))
 }
 
-pub type ContentModel = Model<u64, ContentData>;
+pub type ContentModel = Record<ContentData>;
 
 #[derive(Clone, Serialize, Deserialize)]
 pub struct ContentData {
     pub schema_id: u64,
     pub content: Content,
+}
+
+impl DataType for ContentData {
+    const TABLE_NAME: &'static str = "LS_CMS_CONTENT";
+    type CODEC = ContentDataCodec;
+}
+
+#[derive(Clone, Serialize, Deserialize)]
+#[serde(tag = "_codec_tag")]
+pub enum ContentDataCodec {
+    V1(ContentData),
+}
+
+impl Codec<ContentData> for ContentDataCodec {
+    fn encode(data: ContentData) -> Self {
+        ContentDataCodec::V1(data)
+    }
+
+    fn decode(data: Self) -> ContentData {
+        match data {
+            ContentDataCodec::V1(data) => data,
+        }
+    }
 }
 
 #[derive(Clone, Serialize, Deserialize)]

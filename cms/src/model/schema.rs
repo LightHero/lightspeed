@@ -1,13 +1,13 @@
 use std::sync::OnceLock;
 
-use c3p0::Model;
+use c3p0::{Codec, DataType, Record};
 use lightspeed_core::error::{ErrorDetails, LsError};
 use lightspeed_core::service::validator::order::{validate_ge, validate_le};
 use lightspeed_core::service::validator::{ERR_NOT_UNIQUE, Validable};
 use regex::Regex;
 use serde::{Deserialize, Serialize};
 
-pub type SchemaModel = Model<u64, SchemaData>;
+pub type SchemaModel = Record<SchemaData>;
 pub const SCHEMA_FIELD_NAME_MAX_LENGHT: usize = 32;
 pub const SCHAME_FIELD_NAME_VALIDATION_REGEX: &str = r#"^[a-z0-9_]+$"#;
 
@@ -25,6 +25,29 @@ pub struct SchemaData {
     pub name: String,
     pub project_id: u64,
     pub schema: Schema,
+}
+
+impl DataType for SchemaData {
+    const TABLE_NAME: &'static str = "LS_CMS_SCHEMA";
+    type CODEC = SchemaDataCodec;
+}
+
+#[derive(Clone, Serialize, Deserialize)]
+#[serde(tag = "_codec_tag")]
+pub enum SchemaDataCodec {
+    V1(SchemaData),
+}
+
+impl Codec<SchemaData> for SchemaDataCodec {
+    fn encode(data: SchemaData) -> Self {
+        SchemaDataCodec::V1(data)
+    }
+
+    fn decode(data: Self) -> SchemaData {
+        match data {
+            SchemaDataCodec::V1(data) => data,
+        }
+    }
 }
 
 impl Validable for SchemaData {
