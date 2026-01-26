@@ -1,5 +1,8 @@
+use std::str::FromStr;
+
 use lightspeed_logger::config::{FileOutputConfig, LoggerConfig, Rotation, StandardOutputConfig};
 use lightspeed_logger::setup_logger;
+use tracing_subscriber::filter::Targets;
 
 mod inner1 {
     pub async fn log_smt() {
@@ -12,6 +15,7 @@ mod inner1 {
         log::warn!("inner1 - this is warn. Yaks {yaks}");
     }
 }
+
 
 mod inner2 {
     use super::*;
@@ -44,13 +48,18 @@ async fn should_setup_logger_with_env_filter() -> Result<(), std::io::Error> {
             file_output_rotation: Rotation::Daily,
         },
     };
-    let _guard = setup_logger(&config).unwrap();
+    let (reload_handle, _guard) = setup_logger(&config).unwrap();
 
     log::debug!("main - this is debug");
     tracing::info!("main - this is info");
     log::warn!("main - this is warn");
     inner1::log_smt().await;
     inner2::log_smt(3, Data { id: 789 }).await;
+
+    log::info!("main - this is info and should be logged");
+    reload_handle.reload(Targets::from_str("error").unwrap()).unwrap();
+    log::info!("main - this is info and should NOT be logged");
+    log::error!("main - this is error and should be logged");
 
     Ok(())
 }
