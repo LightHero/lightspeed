@@ -9,6 +9,7 @@ members = [
     "file_store",
     "hash",
     "logger",
+    "outbox",
     "scheduler",
     "lightspeed", 
     "test_utils",
@@ -27,6 +28,7 @@ lightspeed_email = { version = "0.64.3", path = "./email" }
 lightspeed_file_store = { version = "0.64.3", path = "./file_store" }
 lightspeed_hash = { version = "0.64.3", path = "./hash" }
 lightspeed_logger = { version = "0.64.3", path = "./logger" }
+lightspeed_outbox = { version = "0.64.3", path = "./outbox" }
 lightspeed_persistence = { version = "0.64.3", path = "./persistence" }
 lightspeed_scheduler = { version = "0.64.3", path = "./scheduler" }
 lightspeed_test_utils = { version = "0.64.3", path = "./test_utils" }
