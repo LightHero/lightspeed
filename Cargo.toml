@@ -15,43 +15,44 @@ members = [
 ]
 
 [workspace.package]
-version = "0.64.3"
+version = "0.65.0"
 edition = "2024"
 
 [workspace.dependencies]
-lightspeed_auth = { version = "0.64.3", path = "./auth" }
-lightspeed_cache = { version = "0.64.3", path = "./cache" }
-lightspeed_cms = { version = "0.64.3", path = "./cms" }
-lightspeed_core = { version = "0.64.3", path = "./core" }
-lightspeed_email = { version = "0.64.3", path = "./email" }
-lightspeed_file_store = { version = "0.64.3", path = "./file_store" }
-lightspeed_hash = { version = "0.64.3", path = "./hash" }
-lightspeed_logger = { version = "0.64.3", path = "./logger" }
-lightspeed_persistence = { version = "0.64.3", path = "./persistence" }
-lightspeed_scheduler = { version = "0.64.3", path = "./scheduler" }
-lightspeed_test_utils = { version = "0.64.3", path = "./test_utils" }
+lightspeed_auth = { version = "0.65.0", path = "./auth" }
+lightspeed_cache = { version = "0.65.0", path = "./cache" }
+lightspeed_cms = { version = "0.65.0", path = "./cms" }
+lightspeed_core = { version = "0.65.0", path = "./core" }
+lightspeed_email = { version = "0.65.0", path = "./email" }
+lightspeed_file_store = { version = "0.65.0", path = "./file_store" }
+lightspeed_hash = { version = "0.65.0", path = "./hash" }
+lightspeed_logger = { version = "0.65.0", path = "./logger" }
+lightspeed_persistence = { version = "0.65.0", path = "./persistence" }
+lightspeed_scheduler = { version = "0.65.0", path = "./scheduler" }
+lightspeed_test_utils = { version = "0.65.0", path = "./test_utils" }
 
 arc-swap = "1.6"
 axum = { version = "0.8" }
 base64 = "0.22"
-bcrypt = "0.17"
+bcrypt = "0.18"
 c3p0 = { version = "0.80.7" }
 #c3p0 = { git = "https://github.com/ufoscout/c3p0", branch = "master", features = ["postgres"] }
 chrono = { version = "0.4", default-features = false, features = ["clock"] }
 chrono-tz = "0.10"
 config = "0.15"
-cron = "0.15.0"
+cron = "0.15"
 http = { version = "1" }
 http-body-util = "0.1"
 futures = { version = "0.3", default-features = false }
-jsonwebtoken = "9.0"
+# Should use aws_lc_rs instead of rust_crypto in jsonwebtoken?
+jsonwebtoken = { version = "10.0", default-features = false, features = ["rust_crypto"] }
 lettre = { version = "0.11", default-features = false }
 log = "0.4"
 maybe-once = { version = "0.17", features =["tokio"] }
 mime = { version = "0.3" }
 mime_guess = { version = "2.0" }
 moka = { version = "0.12", default-features = false, features = ["future"] }
-opendal = { version = "0.54", default-features = false }
+opendal = { version = "0.55", default-features = false }
 parking_lot = "0.12"
 rand = "0.9"
 regex = "1"
@@ -61,7 +62,7 @@ sha2 = "0.10"
 sqlx = "0.9.0-alpha.1"
 strum = { version = "0.27", features = ["derive"] }
 tempfile = "3"
-testcontainers = { package = "testcontainers-modules", version = "0.13", features = ["mysql", "postgres"] }
+testcontainers = { package = "testcontainers-modules", version = "0.14", features = ["mysql", "postgres"] }
 thiserror = { version = "2" }
 tokio = { version = "1", default-features = false }
 tower = { version = "0.5", default-features = false }
