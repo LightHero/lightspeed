@@ -1,13 +1,13 @@
-use std::{fmt::format, time::Duration};
+use std::time::Duration;
 
 use c3p0::C3p0Pool;
 use lightspeed_core::{
     error::LsError,
-    service::random::{self, LsRandomService},
+    service::random::LsRandomService,
 };
 use lightspeed_outbox::{
     model::{OutboxMessageData, OutboxMessageStatus},
-    repository::{OutboxRepository, OutboxRepositoryManager, postgres::pg_outbox::PgOutboxRepository},
+    repository::{OutboxRepository, OutboxRepositoryManager},
 };
 use lightspeed_test_utils::tokio_test;
 use tokio::{task::JoinSet, time::sleep};
@@ -217,77 +217,3 @@ fn test_fetch_by_type_concurrently() -> Result<(), LsError> {
         Ok(())
     })
 }
-
-//     // Act
-
-//     let mut set = JoinSet::new();
-
-//     // Warn: this should not be bigger than the number of max connections otherwise the test is not concurrent and it will fail
-//     for _ in 0..db_entries*3 {
-//         let repo = repo.clone();
-//         let pool = pool.clone();
-//         set.spawn(async move {
-//             let mut tx = pool.begin().await.unwrap();
-//             let loaded = repo.fetch_all_by_type_and_status_for_update::<String>(&mut tx, "test_type", OutboxMessageStatus::Pending,3).await.unwrap();
-//             sleep(Duration::from_secs(1)).await;
-//             tx.commit().await.unwrap();
-//             loaded
-//         });
-//     }
-
-//     let mut seen = Vec::new();
-//     while let Some(res) = set.join_next().await {
-//         let mut entries= res.unwrap();
-//         seen.append(&mut entries);
-//     }
-
-//     // Assert
-//     assert_eq!(10, seen.len());
-
-// }
-
-// /// Tests that a entries can be fetched by type concurrently.
-// /// Only one reader should be able to fetch entries at a time.
-// #[tokio::test]
-// async fn test_fetch_by_type_concurrently() {
-//         // Arrange
-//     let (pool, _node) = new_db().await;
-//     let repo = PgOutboxRepository::new(&pool).await.unwrap();
-
-//     let mut tx = pool.begin().await.unwrap();
-
-//     let db_entries = 10;
-
-//     for i in 0..db_entries {
-//         repo.save(&mut tx, OutboxMessageData::new(
-//             "test_type", format!("test_payload_{i}"))).await.unwrap();
-//     };
-//     tx.commit().await.unwrap();
-
-//     // Act
-
-//     let mut set = JoinSet::new();
-
-//     // Warn: this should not be bigger than the number of max connections otherwise the test is not concurrent and it will fail
-//     for _ in 0..db_entries*3 {
-//         let repo = repo.clone();
-//         let pool = pool.clone();
-//         set.spawn(async move {
-//             let mut tx = pool.begin().await.unwrap();
-//             let loaded = repo.fetch_all_by_type_and_status_for_update::<String>(&mut tx, "test_type", OutboxMessageStatus::Pending,3).await.unwrap();
-//             sleep(Duration::from_secs(1)).await;
-//             tx.commit().await.unwrap();
-//             loaded
-//         });
-//     }
-
-//     let mut seen = Vec::new();
-//     while let Some(res) = set.join_next().await {
-//         let mut entries= res.unwrap();
-//         seen.append(&mut entries);
-//     }
-
-//     // Assert
-//     assert_eq!(10, seen.len());
-
-// }

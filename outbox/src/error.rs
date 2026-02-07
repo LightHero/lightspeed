@@ -27,3 +27,9 @@ pub enum OutboxError {
         source: serde_json::Error,
     },
 }
+
+impl From<OutboxError> for lightspeed_core::error::LsError {
+    fn from(value: OutboxError) -> Self {
+        lightspeed_core::error::LsError::ExecutionError{ message: format!("OutboxError: {value:?}")}
+    }
+}

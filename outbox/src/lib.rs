@@ -25,7 +25,7 @@ impl<RepoManager: OutboxRepositoryManager> LsOutboxModule<RepoManager> {
         info!("Creating LsOutboxModule");
 
         let task_service =
-            Arc::new(service::outbox::LsOutboxService::new(outbox_config.clone(), repo_manager.outbox_repo()));
+            Arc::new(service::outbox::LsOutboxService::new(outbox_config.clone(), &repo_manager));
 
         LsOutboxModule { outbox_config, repo_manager, task_service }
     }

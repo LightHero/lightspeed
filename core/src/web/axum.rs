@@ -22,6 +22,7 @@ impl IntoResponse for LsError {
             }
             LsError::C3p0Error { .. } => response_with_message(StatusCode::BAD_REQUEST, None),
             LsError::SqlxError { .. } => response_with_message(StatusCode::BAD_REQUEST, None),
+            LsError::ExecutionError { .. } => response_with_message(StatusCode::BAD_REQUEST, None),
             LsError::RequestConflict { code, .. } | LsError::ServiceUnavailable { code, .. } => {
                 response_with_message(StatusCode::CONFLICT, Some((code).to_string()))
             }
