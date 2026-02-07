@@ -1,21 +1,17 @@
-#![cfg(feature = "mysql_unsupported")]
-
-///
-/// DISABLED because mysql is not supported
-/// see: https://github.com/LightHero/lightspeed/issues/22
-///  
+#![cfg(feature = "mysql")]
 
 use std::sync::OnceLock;
 
 use lightspeed_file_store::LsFileStoreModule;
-use lightspeed_file_store::config::FileStoreConfig;
 use lightspeed_file_store::repository::db::mysql::MySqlFileStoreRepositoryManager;
+use lightspeed_test_utils::mysql::new_mysql_db;
 use maybe_once::tokio::*;
 
 use lightspeed_core::module::LsModule;
-use test_utils::mysql::new_mysql_db;
 use testcontainers::mysql::Mysql;
 use testcontainers::testcontainers::ContainerAsync;
+
+use crate::tests::get_config;
 
 mod tests;
 
@@ -28,9 +24,7 @@ async fn init() -> MaybeType {
 
     let repo_manager = RepoManager::new(c3p0.clone());
 
-    let mut file_store_config = FileStoreConfig::default();
-    file_store_config.fs_repo_base_folders.push(("REPO_ONE".to_owned(), "../target/repo_one".to_owned()));
-    file_store_config.fs_repo_base_folders.push(("REPO_TWO".to_owned(), "../target/repo_two".to_owned()));
+    let file_store_config = get_config();
 
     let mut file_store_module = LsFileStoreModule::new(repo_manager, file_store_config).unwrap();
     {

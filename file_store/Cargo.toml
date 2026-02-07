@@ -41,6 +41,6 @@ tower = { workspace = true }
 default = []
 
 axum = ["dep:axum", "lightspeed_core/axum", "mime", "mime_guess"]
-mysql_unsupported = ["c3p0/mysql", "c3p0/migrate", "sqlx"]
+mysql = ["c3p0/mysql", "c3p0/migrate", "sqlx"]
 postgres = ["c3p0/postgres", "c3p0/migrate", "sqlx"]
 sqlite = ["c3p0/sqlite", "c3p0/migrate", "sqlx"]
