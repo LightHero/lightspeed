@@ -42,19 +42,29 @@ impl OutboxRepository for MySqlOutboxRepository {
         status: OutboxMessageStatus,
         limit: usize,
     ) -> Result<Vec<OutboxMessageModel<D>>, OutboxError> {
-        Ok(OutboxMessageModel::query_with(
+        // Not using FOR UPDATE SKIP LOCKED because it randomly hangs in MySQL!!
+        // In fact MySQL does not lock only the selected rows, but the whole table or a subset of it causing a deadlock
+        // https://dev.mysql.com/doc/refman/8.0/en/innodb-locking-reads.html
+        //
+        // Due do this the outbox will still work correctly, but in case of concurrent access, 
+        // instead of silently completing the request, one of the process will return a C3p0 optimistic lock error
+        //        
+        let result = OutboxMessageModel::query_with(
             r#"
-            where data ->> 'type' = $1 AND data ->> 'status' = $2
+            where data -> '$.type' = ? AND data -> '$.status' = ?
             ORDER BY id ASC
-            FOR UPDATE SKIP LOCKED
-            limit $3
+            LIMIT ?
         "#,
         )
         .bind(r#type)
         .bind(status.as_ref())
         .bind(limit as i64)
         .fetch_all(tx)
-        .await?)
+        .await?;
+
+        
+
+        Ok(result)
     }
 
     /// Updates an outbox message

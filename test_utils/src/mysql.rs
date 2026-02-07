@@ -2,7 +2,7 @@ use c3p0::sqlx::MySqlPool;
 use c3p0::sqlx::mysql::{MySqlConnectOptions, MySqlSslMode};
 use c3p0::*;
 use testcontainers::mysql::Mysql;
-use testcontainers::testcontainers::ContainerAsync;
+use testcontainers::testcontainers::{ContainerAsync, ImageExt};
 use testcontainers::testcontainers::runners::AsyncRunner;
 
 /// Starts a new Mysql database in a container and creates a new Sqlx pool connected to it.
@@ -15,7 +15,7 @@ use testcontainers::testcontainers::runners::AsyncRunner;
 /// The returned Sqlx pool is configured to connect to the database with the same defaults as the
 /// container.
 pub async fn new_mysql_db() -> (MySqlC3p0Pool, ContainerAsync<Mysql>) {
-    let node = Mysql::default().start().await.unwrap();
+    let node = Mysql::default().with_tag("9.6.0").start().await.unwrap();
 
     let options = MySqlConnectOptions::new()
         // .username("mysql")
