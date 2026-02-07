@@ -14,6 +14,8 @@ use testcontainers::testcontainers::ContainerAsync;
 
 mod tests;
 
+pub const DB_TYPE: &str = "mysql";
+
 pub type RepoManager = MySqlOutboxRepositoryManager;
 
 pub type MaybeType = (LsOutboxModule<RepoManager>, ContainerAsync<Mysql>);

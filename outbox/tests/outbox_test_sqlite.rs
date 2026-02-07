@@ -10,6 +10,8 @@ use lightspeed_test_utils::sqlite::new_sqlite_db;
 
 mod tests;
 
+pub const DB_TYPE: &str = "sqlite";
+
 pub type RepoManager = SqliteOutboxRepositoryManager;
 
 pub type MaybeType = (LsOutboxModule<RepoManager>, ());

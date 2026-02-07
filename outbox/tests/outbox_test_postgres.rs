@@ -14,6 +14,8 @@ use testcontainers::testcontainers::ContainerAsync;
 
 mod tests;
 
+pub const DB_TYPE: &str = "postgres";
+
 pub type RepoManager = PgOutboxRepositoryManager;
 
 pub type MaybeType = (LsOutboxModule<RepoManager>, ContainerAsync<Postgres>);

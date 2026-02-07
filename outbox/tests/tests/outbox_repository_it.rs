@@ -9,7 +9,7 @@ use lightspeed_outbox::{
 use lightspeed_test_utils::tokio_test;
 use tokio::{task::JoinSet, time::sleep};
 
-use crate::data;
+use crate::{DB_TYPE, data};
 
 #[test]
 fn test_repository() -> Result<(), LsError> {
@@ -133,6 +133,12 @@ fn test_fetch_by_type_with_multiple() -> Result<(), LsError> {
 /// Only one reader should be able to fetch entries at a time.
 #[test]
 fn test_fetch_by_type_concurrently() -> Result<(), LsError> {
+
+    // These DBs do not support FOR UPDATE LOCK as required for this test
+    if DB_TYPE == "sqlite" || DB_TYPE == "mysql" {
+        return Ok(());
+    }
+
     tokio_test(async {
         let data = data(false).await;
         let outbox_module = &data.0;

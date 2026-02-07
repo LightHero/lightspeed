@@ -42,12 +42,12 @@ impl OutboxRepository for SqliteOutboxRepository {
         status: OutboxMessageStatus,
         limit: usize,
     ) -> Result<Vec<OutboxMessageModel<D>>, OutboxError> {
+        // No need to use FOR UPDATE in sqlite because each update locks the entire DB by default
         Ok(OutboxMessageModel::query_with(
             r#"
-            where data ->> 'type' = $1 AND data ->> 'status' = $2
+            where data ->> '$.type' = ? AND data ->> '$.status' = ?
             ORDER BY id ASC
-            FOR UPDATE SKIP LOCKED
-            limit $3
+            limit ?
         "#,
         )
         .bind(r#type)
