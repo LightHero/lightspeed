@@ -2,7 +2,6 @@ use thiserror::Error;
 
 #[derive(Error, Debug)]
 pub enum OutboxError {
-
     #[error("DbError: {source:?}")]
     DbError {
         #[from]
@@ -27,6 +26,4 @@ pub enum OutboxError {
         #[from]
         source: serde_json::Error,
     },
-
 }
-

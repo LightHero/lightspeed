@@ -26,35 +26,21 @@ pub struct OutboxMessage<D> {
     pub payload: D,
 }
 
-impl <D> OutboxMessage<D> {
-
-        /// Creates a new outbox message
+impl<D> OutboxMessage<D> {
+    /// Creates a new outbox message
     pub fn new(payload: D, retries: u32) -> Self {
-        OutboxMessage {
-            retries,
-            payload,
-        }
+        OutboxMessage { retries, payload }
     }
 
     pub fn to_data(self, r#type: String) -> OutboxMessageData<D> {
-        OutboxMessageData {
-            retries: self.retries,
-            payload: self.payload,
-            status: OutboxMessageStatus::Pending,
-            r#type,
-        }
+        OutboxMessageData { retries: self.retries, payload: self.payload, status: OutboxMessageStatus::Pending, r#type }
     }
 }
 
-impl <D: Send + Sync + Unpin + DeserializeOwned + Serialize> OutboxMessageData<D> {
+impl<D: Send + Sync + Unpin + DeserializeOwned + Serialize> OutboxMessageData<D> {
     /// Creates a new outbox message
     pub fn new<S: Into<String>>(r#type: S, payload: D) -> Self {
-        OutboxMessageData {
-            status: OutboxMessageStatus::Pending,
-            r#type: r#type.into(),
-            retries: 0,
-            payload,
-        }
+        OutboxMessageData { status: OutboxMessageStatus::Pending, r#type: r#type.into(), retries: 0, payload }
     }
 
     /// Set the retries
@@ -69,7 +55,7 @@ impl <D: Send + Sync + Unpin + DeserializeOwned + Serialize> OutboxMessageData<D
     }
 }
 
-impl <D: Sized + Send + Sync + Unpin + DeserializeOwned + Serialize> DataType for OutboxMessageData<D> {
+impl<D: Sized + Send + Sync + Unpin + DeserializeOwned + Serialize> DataType for OutboxMessageData<D> {
     const TABLE_NAME: &'static str = "LS_OUTBOX_MESSAGE";
     type CODEC = OutboxMessageDataCodec<D>;
 }
@@ -80,7 +66,7 @@ pub enum OutboxMessageStatus {
     Pending,
     Processing,
     Processed,
-    Failed,    
+    Failed,
 }
 
 /// Outbox message codec for data versioning
@@ -90,7 +76,7 @@ pub enum OutboxMessageDataCodec<D> {
     V1(OutboxMessageData<D>),
 }
 
-impl <D: Send + Sync + DeserializeOwned + Serialize> Codec<OutboxMessageData<D>> for OutboxMessageDataCodec<D> {
+impl<D: Send + Sync + DeserializeOwned + Serialize> Codec<OutboxMessageData<D>> for OutboxMessageDataCodec<D> {
     fn encode(data: OutboxMessageData<D>) -> Self {
         OutboxMessageDataCodec::V1(data)
     }

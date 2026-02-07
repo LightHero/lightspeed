@@ -30,15 +30,33 @@ pub trait OutboxRepositoryManager: Clone + Send + Sync {
 pub trait OutboxRepository: Clone + Send + Sync {
     type DB: Database;
 
-    fn fetch_by_id<D: Send + Sync + Unpin + Serialize + DeserializeOwned>(&self, tx: &mut <Self::DB as Database>::Connection, id: u64) -> impl Future<Output = Result<OutboxMessageModel<D>, OutboxError>> + Send;
+    fn fetch_by_id<D: Send + Sync + Unpin + Serialize + DeserializeOwned>(
+        &self,
+        tx: &mut <Self::DB as Database>::Connection,
+        id: u64,
+    ) -> impl Future<Output = Result<OutboxMessageModel<D>, OutboxError>> + Send;
 
     /// Fetches all outbox messages and locks them for update.
     /// If the outbox message is already locked by another process, it will be skipped.
-    fn fetch_all_by_type_and_status_for_update<D: Send + Sync + Unpin + Serialize + DeserializeOwned>(&self, tx: &mut <Self::DB as Database>::Connection, r#type: &str, status: OutboxMessageStatus, limit: usize) -> impl Future<Output = Result<Vec<OutboxMessageModel<D>>, OutboxError>> + Send;
+    fn fetch_all_by_type_and_status_for_update<D: Send + Sync + Unpin + Serialize + DeserializeOwned>(
+        &self,
+        tx: &mut <Self::DB as Database>::Connection,
+        r#type: &str,
+        status: OutboxMessageStatus,
+        limit: usize,
+    ) -> impl Future<Output = Result<Vec<OutboxMessageModel<D>>, OutboxError>> + Send;
 
     /// Updates an outbox message
-    fn update<D: Send + Sync + Unpin + Serialize + DeserializeOwned>(&self, tx: &mut <Self::DB as Database>::Connection, data: OutboxMessageModel<D>) -> impl Future<Output = Result<OutboxMessageModel<D>, OutboxError>> + Send;
+    fn update<D: Send + Sync + Unpin + Serialize + DeserializeOwned>(
+        &self,
+        tx: &mut <Self::DB as Database>::Connection,
+        data: OutboxMessageModel<D>,
+    ) -> impl Future<Output = Result<OutboxMessageModel<D>, OutboxError>> + Send;
 
     /// Saves a new outbox message
-    fn save<D: Send + Sync + Unpin + Serialize + DeserializeOwned>(&self, tx: &mut <Self::DB as Database>::Connection, data: OutboxMessageData<D>) -> impl Future<Output = Result<OutboxMessageModel<D>, OutboxError>> + Send;
+    fn save<D: Send + Sync + Unpin + Serialize + DeserializeOwned>(
+        &self,
+        tx: &mut <Self::DB as Database>::Connection,
+        data: OutboxMessageData<D>,
+    ) -> impl Future<Output = Result<OutboxMessageModel<D>, OutboxError>> + Send;
 }

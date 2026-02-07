@@ -2,14 +2,11 @@ use serde::Deserialize;
 
 #[derive(Debug, Clone, Deserialize)]
 #[serde(default)]
-pub struct OutboxConfig {
-
-}
+pub struct OutboxConfig {}
 
 impl Default for OutboxConfig {
     fn default() -> Self {
-        Self {
-        }
+        Self {}
     }
 }
 

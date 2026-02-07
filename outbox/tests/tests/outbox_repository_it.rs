@@ -14,11 +14,13 @@ fn should_delete_token() -> Result<(), LsError> {
         let data = data(false).await;
         let outbox_module = &data.0;
 
-        // Arrange
         let repo = outbox_module.repo_manager.outbox_repo();
         let c3p0 = outbox_module.repo_manager.c3p0();
-
+        
         c3p0.transaction(async |conn| {
+            // Arrange
+
+
 
             Ok(())
         }).await
@@ -135,6 +137,93 @@ fn test_fetch_by_type_with_multiple() -> Result<(), LsError> {
         }).await
     })
 }
+
+
+/// Tests that a entries can be fetched by type concurrently.
+/// Only one reader should be able to fetch entries at a time.
+#[test]
+fn test_fetch_by_type_concurrently() -> Result<(), LsError> {
+    tokio_test(async {
+        let data = data(false).await;
+        let outbox_module = &data.0;
+
+        let repo = outbox_module.repo_manager.outbox_repo();
+        let c3p0 = outbox_module.repo_manager.c3p0();
+        
+        // Arrange
+        let db_entries = 10;
+        let type_1 = format!("test_type_{}", LsRandomService::random_string(10));
+        c3p0.transaction::<_, LsError, _>(async |tx| {
+
+            for i in 0..db_entries {
+                repo.save(tx, OutboxMessageData::new(
+                    &type_1, format!("test_payload_{i}"))).await.unwrap();
+            };
+            Ok(())
+        }).await.unwrap();
+
+    // Act
+
+    let mut set = JoinSet::new();
+
+    // Warn: this should not be bigger than the number of max connections otherwise the test is not concurrent and it will fail
+    for _ in 0..db_entries {
+        let repo = repo.clone();
+        let c3p0 = c3p0.clone();
+        let type_1 = type_1.clone();
+
+        set.spawn(async move {
+            
+            let loaded =c3p0.transaction::<_, LsError, _>(async |tx| {
+                let loaded = repo.fetch_all_by_type_and_status_for_update::<String>(tx, &type_1, OutboxMessageStatus::Pending,3).await.unwrap();
+                sleep(Duration::from_secs(1)).await;
+                Ok(loaded)
+            }).await.unwrap();
+            
+            loaded
+        });
+    }
+
+    let mut seen = Vec::new();
+    while let Some(res) = set.join_next().await {
+        let mut entries= res.unwrap();
+        seen.append(&mut entries);
+    }
+
+    // Assert
+    assert_eq!(10, seen.len());
+
+            Ok(())
+    })
+}
+
+    //     // Act
+
+//     let mut set = JoinSet::new();
+
+//     // Warn: this should not be bigger than the number of max connections otherwise the test is not concurrent and it will fail
+//     for _ in 0..db_entries*3 {
+//         let repo = repo.clone();
+//         let pool = pool.clone();
+//         set.spawn(async move {
+//             let mut tx = pool.begin().await.unwrap();
+//             let loaded = repo.fetch_all_by_type_and_status_for_update::<String>(&mut tx, "test_type", OutboxMessageStatus::Pending,3).await.unwrap();
+//             sleep(Duration::from_secs(1)).await;
+//             tx.commit().await.unwrap();
+//             loaded
+//         });
+//     }
+
+//     let mut seen = Vec::new();
+//     while let Some(res) = set.join_next().await {
+//         let mut entries= res.unwrap();
+//         seen.append(&mut entries);
+//     }
+
+//     // Assert
+//     assert_eq!(10, seen.len());
+
+// }
 
 
 
