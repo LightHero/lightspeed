@@ -68,8 +68,8 @@ fn test_fetch_by_type() -> Result<(), LsError> {
             // Assert
             assert_eq!(3, loaded.len());
 
-            for i in 0..3 {
-                assert_eq!(format!("test_payload_{i}"), loaded[i].data.payload);
+            for (i, item) in loaded.iter().enumerate() {
+                assert_eq!(format!("test_payload_{i}"), item.data.payload);
             }
 
             Ok(())
@@ -168,24 +168,16 @@ fn test_fetch_by_type_concurrently() -> Result<(), LsError> {
             let type_1 = type_1.clone();
 
             set.spawn(async move {
-                let loaded = c3p0
-                    .transaction::<_, LsError, _>(async |tx| {
-                        let loaded = repo
-                            .fetch_all_by_type_and_status_for_update::<String>(
-                                tx,
-                                &type_1,
-                                OutboxMessageStatus::Pending,
-                                3,
-                            )
-                            .await
-                            .unwrap();
-                        sleep(Duration::from_secs(1)).await;
-                        Ok(loaded)
-                    })
-                    .await
-                    .unwrap();
-
-                loaded
+                c3p0.transaction::<_, LsError, _>(async |tx| {
+                    let loaded = repo
+                        .fetch_all_by_type_and_status_for_update::<String>(tx, &type_1, OutboxMessageStatus::Pending, 3)
+                        .await
+                        .unwrap();
+                    sleep(Duration::from_secs(1)).await;
+                    Ok(loaded)
+                })
+                .await
+                .unwrap()
             });
         }
 

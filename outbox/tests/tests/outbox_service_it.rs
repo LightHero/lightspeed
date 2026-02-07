@@ -49,7 +49,7 @@ fn test_outbox_callback_success() -> Result<(), LsError> {
             .unwrap();
 
         // Before the callback is called the status should be pending
-        assert_message_status(&repo_manager, message.id, OutboxMessageStatus::Pending).await;
+        assert_message_status(repo_manager, message.id, OutboxMessageStatus::Pending).await;
 
         outbox_receiver.poll(1).await.unwrap();
 
@@ -58,7 +58,7 @@ fn test_outbox_callback_success() -> Result<(), LsError> {
         assert_eq!(data, "test_payload".to_string());
 
         // After the callback is called the status should be failed
-        assert_message_status(&repo_manager, message.id, OutboxMessageStatus::Processed).await;
+        assert_message_status(repo_manager, message.id, OutboxMessageStatus::Processed).await;
 
         Ok(())
     })
@@ -103,7 +103,7 @@ fn test_outbox_callback_failure() -> Result<(), LsError> {
             .unwrap();
 
         // Before the callback is called the status should be pending
-        assert_message_status(&repo_manager, message.id, OutboxMessageStatus::Pending).await;
+        assert_message_status(repo_manager, message.id, OutboxMessageStatus::Pending).await;
 
         outbox_receiver.poll(1).await.unwrap();
 
@@ -112,7 +112,7 @@ fn test_outbox_callback_failure() -> Result<(), LsError> {
         assert_eq!(data, "test_payload".to_string());
 
         // After the callback is called the status should be failed
-        assert_message_status(&repo_manager, message.id, OutboxMessageStatus::Failed).await;
+        assert_message_status(repo_manager, message.id, OutboxMessageStatus::Failed).await;
 
         Ok(())
     })

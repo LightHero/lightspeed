@@ -2,13 +2,8 @@ use serde::Deserialize;
 
 #[derive(Debug, Clone, Deserialize)]
 #[serde(default)]
+#[derive(Default)]
 pub struct OutboxConfig {}
-
-impl Default for OutboxConfig {
-    fn default() -> Self {
-        Self {}
-    }
-}
 
 #[cfg(test)]
 mod test {
@@ -17,7 +12,7 @@ mod test {
 
     #[test]
     fn should_build_config() {
-        let config: OutboxConfig = config::Config::builder().build().unwrap().try_deserialize().unwrap();
+        let _config: OutboxConfig = config::Config::builder().build().unwrap().try_deserialize().unwrap();
         // assert!(config.default_roles_on_account_creation.is_empty());
     }
 }

@@ -25,7 +25,7 @@ async fn init() -> MaybeType {
 
     let repo_manager = RepoManager::new(c3p0.clone());
 
-    let auth_config = OutboxConfig { ..Default::default() };
+    let auth_config = OutboxConfig::default();
 
     let mut auth_module = LsOutboxModule::new(repo_manager, auth_config);
     {
