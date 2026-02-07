@@ -1,10 +1,10 @@
 -- Your SQL goes here
 
 -- ---------------------------
--- Begin - LS_OUTBOX_TASK -
+-- Begin - LS_OUTBOX_MESSAGE -
 -- ---------------------------
 
-create table LS_OUTBOX_TASK (
+create table LS_OUTBOX_MESSAGE (
     ID integer primary key autoincrement,
     VERSION integer not null,
     create_epoch_millis integer not null,
@@ -12,4 +12,4 @@ create table LS_OUTBOX_TASK (
     DATA JSON
 );
 
--- End - LS_OUTBOX_TASK -
+-- End - LS_OUTBOX_MESSAGE -

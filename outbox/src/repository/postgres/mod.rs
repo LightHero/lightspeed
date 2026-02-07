@@ -1,10 +1,10 @@
 use crate::repository::OutboxRepositoryManager;
-use crate::repository::postgres::pg_task::PgTaskRepository;
+use crate::repository::postgres::pg_outbox::PgOutboxRepository;
 use c3p0::sqlx::{migrate::Migrator, *};
 use c3p0::*;
 use lightspeed_core::error::LsError;
 
-pub mod pg_task;
+pub mod pg_outbox;
 
 static MIGRATOR: Migrator = c3p0::sqlx::migrate!("src_resources/db/postgres/migrations");
 
@@ -22,7 +22,7 @@ impl PgOutboxRepositoryManager {
 impl OutboxRepositoryManager for PgOutboxRepositoryManager {
     type DB = Postgres;
     type C3P0 = PgC3p0Pool;
-    type TaskRepo = PgTaskRepository;
+    type OutboxRepo = PgOutboxRepository;
 
     fn c3p0(&self) -> &Self::C3P0 {
         &self.c3p0
@@ -34,7 +34,7 @@ impl OutboxRepositoryManager for PgOutboxRepositoryManager {
         })
     }
 
-    fn task_repo(&self) -> Self::TaskRepo {
-        PgTaskRepository::new()
+    fn outbox_repo(&self) -> Self::OutboxRepo {
+        PgOutboxRepository::new()
     }
 }

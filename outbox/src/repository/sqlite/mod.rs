@@ -4,9 +4,9 @@ use c3p0::{
     sqlx::{migrate::Migrator, *},
 };
 use lightspeed_core::error::LsError;
-use sqlite_task::SqliteTaskRepository;
+use sqlite_outbox::SqliteOutboxRepository;
 
-pub mod sqlite_task;
+pub mod sqlite_outbox;
 
 static MIGRATOR: Migrator = ::sqlx::migrate!("src_resources/db/sqlite/migrations");
 
@@ -24,7 +24,7 @@ impl SqliteOutboxRepositoryManager {
 impl OutboxRepositoryManager for SqliteOutboxRepositoryManager {
     type DB = Sqlite;
     type C3P0 = SqliteC3p0Pool;
-    type TaskRepo = SqliteTaskRepository;
+    type OutboxRepo = SqliteOutboxRepository;
 
     fn c3p0(&self) -> &Self::C3P0 {
         &self.c3p0
@@ -36,7 +36,7 @@ impl OutboxRepositoryManager for SqliteOutboxRepositoryManager {
         })
     }
 
-    fn task_repo(&self) -> Self::TaskRepo {
-        SqliteTaskRepository::new()
+    fn outbox_repo(&self) -> Self::OutboxRepo {
+        SqliteOutboxRepository::new()
     }
 }

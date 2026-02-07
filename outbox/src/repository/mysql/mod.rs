@@ -2,9 +2,9 @@ use crate::repository::OutboxRepositoryManager;
 use c3p0::sqlx::{migrate::Migrator, *};
 use c3p0::*;
 use lightspeed_core::error::LsError;
-use mysql_task::MySqlTaskRepository;
+use mysql_outbox::MySqlOutboxRepository;
 
-pub mod mysql_task;
+pub mod mysql_outbox;
 
 static MIGRATOR: Migrator = c3p0::sqlx::migrate!("src_resources/db/mysql/migrations");
 
@@ -22,7 +22,7 @@ impl MySqlOutboxRepositoryManager {
 impl OutboxRepositoryManager for MySqlOutboxRepositoryManager {
     type DB = MySql;
     type C3P0 = MySqlC3p0Pool;
-    type TaskRepo = MySqlTaskRepository;
+    type OutboxRepo = MySqlOutboxRepository;
 
     fn c3p0(&self) -> &Self::C3P0 {
         &self.c3p0
@@ -34,7 +34,7 @@ impl OutboxRepositoryManager for MySqlOutboxRepositoryManager {
         })
     }
 
-    fn task_repo(&self) -> Self::TaskRepo {
-        MySqlTaskRepository::new()
+    fn outbox_repo(&self) -> Self::OutboxRepo {
+        MySqlOutboxRepository::new()
     }
 }

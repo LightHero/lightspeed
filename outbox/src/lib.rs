@@ -5,7 +5,7 @@ use log::*;
 use std::sync::Arc;
 
 pub mod config;
-pub mod dto;
+pub mod error;
 pub mod model;
 pub mod repository;
 pub mod service;
@@ -16,7 +16,7 @@ pub struct LsOutboxModule<RepoManager: OutboxRepositoryManager> {
 
     pub repo_manager: RepoManager,
 
-    pub task_service: Arc<service::task::LsTaskService<RepoManager>>,
+    pub task_service: Arc<service::outbox::LsOutboxService<RepoManager>>,
 }
 
 impl<RepoManager: OutboxRepositoryManager> LsOutboxModule<RepoManager> {
@@ -25,7 +25,7 @@ impl<RepoManager: OutboxRepositoryManager> LsOutboxModule<RepoManager> {
         info!("Creating LsOutboxModule");
 
         let task_service =
-            Arc::new(service::task::LsTaskService::new(outbox_config.clone(), repo_manager.task_repo()));
+            Arc::new(service::outbox::LsOutboxService::new(outbox_config.clone(), repo_manager.outbox_repo()));
 
         LsOutboxModule { outbox_config, repo_manager, task_service }
     }
