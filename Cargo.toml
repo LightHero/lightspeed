@@ -16,22 +16,22 @@ members = [
 ]
 
 [workspace.package]
-version = "0.64.3"
+version = "0.65.0"
 edition = "2024"
 
 [workspace.dependencies]
-lightspeed_auth = { version = "0.64.3", path = "./auth" }
-lightspeed_cache = { version = "0.64.3", path = "./cache" }
-lightspeed_cms = { version = "0.64.3", path = "./cms" }
-lightspeed_core = { version = "0.64.3", path = "./core" }
-lightspeed_email = { version = "0.64.3", path = "./email" }
-lightspeed_file_store = { version = "0.64.3", path = "./file_store" }
-lightspeed_hash = { version = "0.64.3", path = "./hash" }
-lightspeed_logger = { version = "0.64.3", path = "./logger" }
-lightspeed_outbox = { version = "0.64.3", path = "./outbox" }
-lightspeed_persistence = { version = "0.64.3", path = "./persistence" }
-lightspeed_scheduler = { version = "0.64.3", path = "./scheduler" }
-lightspeed_test_utils = { version = "0.64.3", path = "./test_utils" }
+lightspeed_auth = { version = "0.65.0", path = "./auth" }
+lightspeed_cache = { version = "0.65.0", path = "./cache" }
+lightspeed_cms = { version = "0.65.0", path = "./cms" }
+lightspeed_core = { version = "0.65.0", path = "./core" }
+lightspeed_email = { version = "0.65.0", path = "./email" }
+lightspeed_file_store = { version = "0.65.0", path = "./file_store" }
+lightspeed_hash = { version = "0.65.0", path = "./hash" }
+lightspeed_logger = { version = "0.65.0", path = "./logger" }
+lightspeed_outbox = { version = "0.65.0", path = "./outbox" }
+lightspeed_persistence = { version = "0.65.0", path = "./persistence" }
+lightspeed_scheduler = { version = "0.65.0", path = "./scheduler" }
+lightspeed_test_utils = { version = "0.65.0", path = "./test_utils" }
 
 arc-swap = "1.6"
 axum = { version = "0.8" }
@@ -42,7 +42,7 @@ c3p0 = { version = "0.80.7" }
 chrono = { version = "0.4", default-features = false, features = ["clock"] }
 chrono-tz = "0.10"
 config = "0.15"
-cron = "0.15.0"
+cron = "0.15"
 http = { version = "1" }
 http-body-util = "0.1"
 futures = { version = "0.3", default-features = false }
