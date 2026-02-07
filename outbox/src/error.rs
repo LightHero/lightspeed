@@ -30,6 +30,6 @@ pub enum OutboxError {
 
 impl From<OutboxError> for lightspeed_core::error::LsError {
     fn from(value: OutboxError) -> Self {
-        lightspeed_core::error::LsError::ExecutionError{ message: format!("OutboxError: {value:?}")}
+        lightspeed_core::error::LsError::ExecutionError { message: format!("OutboxError: {value:?}") }
     }
 }

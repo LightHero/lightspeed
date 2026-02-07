@@ -1,10 +1,7 @@
 use std::time::Duration;
 
 use c3p0::C3p0Pool;
-use lightspeed_core::{
-    error::LsError,
-    service::random::LsRandomService,
-};
+use lightspeed_core::{error::LsError, service::random::LsRandomService};
 use lightspeed_outbox::{
     model::{OutboxMessageData, OutboxMessageStatus},
     repository::{OutboxRepository, OutboxRepositoryManager},
