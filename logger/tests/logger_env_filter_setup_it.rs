@@ -16,7 +16,6 @@ mod inner1 {
     }
 }
 
-
 mod inner2 {
     use super::*;
 

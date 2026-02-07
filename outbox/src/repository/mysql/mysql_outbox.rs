@@ -46,9 +46,9 @@ impl OutboxRepository for MySqlOutboxRepository {
         // In fact MySQL does not lock only the selected rows, but the whole table or a subset of it causing a deadlock
         // https://dev.mysql.com/doc/refman/8.0/en/innodb-locking-reads.html
         //
-        // Due do this the outbox will still work correctly, but in case of concurrent access, 
+        // Due do this the outbox will still work correctly, but in case of concurrent access,
         // instead of silently completing the request, one of the process will return a C3p0 optimistic lock error
-        //        
+        //
         let result = OutboxMessageModel::query_with(
             r#"
             where data -> '$.type' = ? AND data -> '$.status' = ?
@@ -61,8 +61,6 @@ impl OutboxRepository for MySqlOutboxRepository {
         .bind(limit as i64)
         .fetch_all(tx)
         .await?;
-
-        
 
         Ok(result)
     }
