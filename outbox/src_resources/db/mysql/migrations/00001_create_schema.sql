@@ -9,19 +9,9 @@ create table LS_OUTBOX_MESSAGE (
     VERSION int not null,
     create_epoch_millis bigint not null,
     update_epoch_millis bigint not null,
-    DATA JSON
+    DATA JSON,
+    INDEX LS_OUTBOX_MESSAGE_INDEX_STATUS ( (JSON_VALUE(DATA, '$.status' RETURNING CHAR(255))) ),
+    INDEX LS_OUTBOX_MESSAGE_INDEX_TYPE ( (JSON_VALUE(DATA, '$.type' RETURNING CHAR(255))) )
 );
-
-ALTER TABLE LS_OUTBOX_MESSAGE
-    ADD INDEX LS_OUTBOX_MESSAGE_INDEX_STATUS((
-        CAST(DATA->>"$.status" as CHAR(255))
-    COLLATE utf8mb4_bin
-    ));
-    
-ALTER TABLE LS_OUTBOX_MESSAGE
-    ADD INDEX LS_OUTBOX_MESSAGE_INDEX_TYPE((
-        CAST(DATA->>"$.type" as CHAR(255))
-    COLLATE utf8mb4_bin
-    ));
 
 -- End - LS_OUTBOX_MESSAGE -
