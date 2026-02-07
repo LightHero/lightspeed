@@ -70,7 +70,7 @@ impl <D: Send + Sync + Unpin + DeserializeOwned + Serialize> OutboxMessageData<D
 }
 
 impl <D: Sized + Send + Sync + Unpin + DeserializeOwned + Serialize> DataType for OutboxMessageData<D> {
-    const TABLE_NAME: &'static str = "OUTBOX_MESSAGE";
+    const TABLE_NAME: &'static str = "LS_OUTBOX_MESSAGE";
     type CODEC = OutboxMessageDataCodec<D>;
 }
 

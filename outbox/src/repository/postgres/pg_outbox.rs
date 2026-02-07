@@ -26,7 +26,7 @@ impl OutboxRepository for PgOutboxRepository {
 
         /// Fetches an outbox message by id
     async fn fetch_by_id<D: Send + Sync + Unpin + Serialize + DeserializeOwned>(&self, tx: &mut PgConnection, id: u64) -> Result<OutboxMessageModel<D>, OutboxError> {
-        Ok(OutboxMessageModel::fetch_one_by_id(tx, id).await?)
+        Ok(tx.fetch_one_by_id(id).await?)
     }
 
     /// Fetches all outbox messages and locks them for update.

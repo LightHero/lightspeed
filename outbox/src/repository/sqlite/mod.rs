@@ -32,7 +32,7 @@ impl OutboxRepositoryManager for SqliteOutboxRepositoryManager {
 
     async fn start(&self) -> Result<(), LsError> {
         MIGRATOR.run(self.c3p0.pool()).await.map_err(|err| LsError::ModuleStartError {
-            message: format!("SqliteAuthRepositoryManager - db migration failed: {err:?}"),
+            message: format!("SqliteOutboxRepositoryManager - db migration failed: {err:?}"),
         })
     }
 

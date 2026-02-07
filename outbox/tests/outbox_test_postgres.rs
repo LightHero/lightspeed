@@ -2,11 +2,11 @@
 
 use std::sync::OnceLock;
 
+use lightspeed_outbox::LsOutboxModule;
+use lightspeed_outbox::config::OutboxConfig;
+use lightspeed_outbox::repository::postgres::PgOutboxRepositoryManager;
 use maybe_once::tokio::*;
 
-use lightspeed_auth::LsAuthModule;
-use lightspeed_auth::config::AuthConfig;
-use lightspeed_auth::repository::postgres::PgAuthRepositoryManager;
 use lightspeed_core::module::LsModule;
 use lightspeed_test_utils::pg::new_pg_db;
 use testcontainers::postgres::Postgres;
@@ -14,18 +14,18 @@ use testcontainers::testcontainers::ContainerAsync;
 
 mod tests;
 
-pub type RepoManager = PgAuthRepositoryManager;
+pub type RepoManager = PgOutboxRepositoryManager;
 
-pub type MaybeType = (LsAuthModule<RepoManager>, ContainerAsync<Postgres>);
+pub type MaybeType = (LsOutboxModule<RepoManager>, ContainerAsync<Postgres>);
 
 async fn init() -> MaybeType {
     let (c3p0, node) = new_pg_db().await;
 
     let repo_manager = RepoManager::new(c3p0.clone());
 
-    let auth_config = AuthConfig { bcrypt_password_hash_cost: 4, ..Default::default() };
+    let auth_config = OutboxConfig { ..Default::default() };
 
-    let mut auth_module = LsAuthModule::new(repo_manager, auth_config);
+    let mut auth_module = LsOutboxModule::new(repo_manager, auth_config);
     {
         auth_module.start().await.unwrap();
     }

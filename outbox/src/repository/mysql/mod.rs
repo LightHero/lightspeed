@@ -30,7 +30,7 @@ impl OutboxRepositoryManager for MySqlOutboxRepositoryManager {
 
     async fn start(&self) -> Result<(), LsError> {
         MIGRATOR.run(self.c3p0.pool()).await.map_err(|err| LsError::ModuleStartError {
-            message: format!("MySqlAuthRepositoryManager - db migration failed: {err:?}"),
+            message: format!("MySqlOutboxRepositoryManager - db migration failed: {err:?}"),
         })
     }
 

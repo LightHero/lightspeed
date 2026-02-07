@@ -30,7 +30,7 @@ impl OutboxRepositoryManager for PgOutboxRepositoryManager {
 
     async fn start(&self) -> Result<(), LsError> {
         MIGRATOR.run(self.c3p0.pool()).await.map_err(|err| LsError::ModuleStartError {
-            message: format!("PgAuthRepositoryManager - db migration failed: {err:?}"),
+            message: format!("PgOutboxRepositoryManager - db migration failed: {err:?}"),
         })
     }
 
