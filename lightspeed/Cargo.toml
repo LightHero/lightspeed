@@ -45,11 +45,13 @@ axum = ["lightspeed_core?/axum", "lightspeed_file_store?/axum"]
 
 postgres = [
     "lightspeed_auth?/postgres", 
-    "lightspeed_cms?/postgres"
+    "lightspeed_cms?/postgres", 
+    "lightspeed_file_store?/postgres"
 ]
 mysql = [
     "lightspeed_auth?/mysql", 
-    "lightspeed_cms?/mysql"
+    "lightspeed_cms?/mysql", 
+    "lightspeed_file_store?/mysql"
 ]
 sqlite = [
     "lightspeed_auth?/sqlite", 
