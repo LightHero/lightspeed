@@ -54,6 +54,7 @@ postgres = [
 mysql = [
     "lightspeed_auth?/mysql", 
     "lightspeed_cms?/mysql",
+    "lightspeed_file_store?/mysql",
     "lightspeed_outbox?/mysql",
 ]
 sqlite = [

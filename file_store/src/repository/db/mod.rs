@@ -3,7 +3,7 @@ use c3p0::sqlx::Database;
 use c3p0::{sql::OrderBy, *};
 use lightspeed_core::error::LsError;
 
-#[cfg(feature = "mysql_unsupported")]
+#[cfg(feature = "mysql")]
 pub mod mysql;
 
 #[cfg(feature = "postgres")]
