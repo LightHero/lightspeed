@@ -16,7 +16,7 @@ pub struct LsOutboxModule<RepoManager: OutboxRepositoryManager> {
 
     pub repo_manager: RepoManager,
 
-    pub task_service: Arc<service::outbox::LsOutboxService<RepoManager>>,
+    pub outbox_service: Arc<service::outbox::LsOutboxService<RepoManager>>,
 }
 
 impl<RepoManager: OutboxRepositoryManager> LsOutboxModule<RepoManager> {
@@ -27,7 +27,7 @@ impl<RepoManager: OutboxRepositoryManager> LsOutboxModule<RepoManager> {
         let task_service =
             Arc::new(service::outbox::LsOutboxService::new(outbox_config.clone(), &repo_manager));
 
-        LsOutboxModule { outbox_config, repo_manager, task_service }
+        LsOutboxModule { outbox_config, repo_manager, outbox_service: task_service }
     }
 }
 
