@@ -49,6 +49,9 @@ pub enum LsError {
     #[error("InvalidTokenError: {message}")]
     InternalServerError { message: String },
 
+    #[error("ExecutionError: {message}")]
+    ExecutionError { message: String },
+
     #[error("C3p0Error: {source:?}")]
     C3p0Error {
         #[from]
