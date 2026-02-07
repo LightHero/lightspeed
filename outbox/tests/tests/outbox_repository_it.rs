@@ -1,7 +1,7 @@
-use std::time::Duration;
+use std::{fmt::format, time::Duration};
 
 use c3p0::C3p0Pool;
-use lightspeed_core::error::LsError;
+use lightspeed_core::{error::LsError, service::random::{self, LsRandomService}};
 use lightspeed_test_utils::tokio_test;
 use lightspeed_outbox::{model::{OutboxMessageData, OutboxMessageStatus}, repository::{OutboxRepository, OutboxRepositoryManager, postgres::pg_outbox::PgOutboxRepository}};
 use tokio::{task::JoinSet, time::sleep};
@@ -31,15 +31,16 @@ fn test_repository() -> Result<(), LsError> {
         let data = data(false).await;
         let outbox_module = &data.0;
 
-        // Arrange
         let repo = outbox_module.repo_manager.outbox_repo();
         let c3p0 = outbox_module.repo_manager.c3p0();
-
+        
         c3p0.transaction(async |tx| {
+            // Arrange
+            let type_1 = format!("test_type_{}", LsRandomService::random_string(10));
 
                 // Act
     let saved = repo.save(tx, OutboxMessageData::new(
-        "test_type", "test_payload".to_string())).await.unwrap();
+        &type_1, "test_payload".to_string())).await.unwrap();
 
     let loaded = repo.fetch_by_id::<String>(tx, saved.id).await.unwrap();
 
@@ -53,99 +54,89 @@ fn test_repository() -> Result<(), LsError> {
     })
 }
 
-// /// Tests that a repository can interact with the database
-// #[tokio::test]
-// async fn test_repository() {
-//     // Arrange
-//     let (pool, _node) = new_db().await;
-//     let repo = PgOutboxRepository::new(&pool).await.unwrap();
+/// Tests that entries can be fetched by type
+#[test]
+fn test_fetch_by_type() -> Result<(), LsError> {
+    tokio_test(async {
+        let data = data(false).await;
+        let outbox_module = &data.0;
 
-//     let mut tx = pool.begin().await.unwrap();
+        let repo = outbox_module.repo_manager.outbox_repo();
+        let c3p0 = outbox_module.repo_manager.c3p0();
+        
+        c3p0.transaction(async |tx| {
+            
+            // Arrange
+                let db_entries = 5;
+                let type_1 = format!("test_type_{}", LsRandomService::random_string(10));
 
-//     // Act
-//     let saved = repo.save(&mut tx, OutboxMessageData::new(
-//         "test_type", "test_payload".to_string())).await.unwrap();
+    for i in 0..db_entries {
+        repo.save(tx, OutboxMessageData::new(
+            &type_1, format!("test_payload_{i}"))).await.unwrap();
+    };
 
-//     let loaded = repo.fetch_by_id::<String>(&mut tx, saved.id).await.unwrap();
+    // Act
+    let loaded = repo.fetch_all_by_type_and_status_for_update::<String>(tx, &type_1, OutboxMessageStatus::Pending, 3).await.unwrap();
 
-//     // Assert
-//     assert_eq!(saved.id, loaded.id);
-//     assert_eq!(saved.data, loaded.data);
-//     assert_eq!(&OutboxMessageStatus::Pending, loaded.data.status());
-    
-//     tx.commit().await.unwrap();
+    // Assert
+    assert_eq!(3, loaded.len());
 
-// }
+    for i in 0..3 {
+        assert_eq!(format!("test_payload_{i}"), loaded[i].data.payload);
+    }
 
-// /// Tests that a entries can be fetched by type.
-// #[tokio::test]
-// async fn test_fetch_by_type() {
-//         // Arrange
-//     let (pool, _node) = new_db().await;
-//     let repo = PgOutboxRepository::new(&pool).await.unwrap();
+            Ok(())
+        }).await
+    })
+}
 
-//     let mut tx = pool.begin().await.unwrap();
+/// Tests that a entries can be fetched by type when multiple types are present.
+#[test]
+fn test_fetch_by_type_with_multiple() -> Result<(), LsError> {
+    tokio_test(async {
+        let data = data(false).await;
+        let outbox_module = &data.0;
 
-//     let db_entries = 5;
+        let repo = outbox_module.repo_manager.outbox_repo();
+        let c3p0 = outbox_module.repo_manager.c3p0();
+        
+        c3p0.transaction(async |tx| {
+            // Arrange
+    let db_entries = 5;
+    let type_1 = format!("test_type_{}", LsRandomService::random_string(10));
+    let type_2 = format!("test_type_{}", LsRandomService::random_string(10));
 
-//     for i in 0..db_entries {
-//         repo.save(&mut tx, OutboxMessageData::new(
-//             "test_type", format!("test_payload_{i}"))).await.unwrap();
-//     };
+    for i in 0..db_entries {
+        repo.save(tx, OutboxMessageData::new(
+            &type_1, format!("test_payload_{i}"))).await.unwrap();
+    };
 
-//     // Act
-//     let loaded = repo.fetch_all_by_type_and_status_for_update::<String>(&mut tx, "test_type", OutboxMessageStatus::Pending, 3).await.unwrap();
+    for i in 0..db_entries {
+        repo.save(tx, OutboxMessageData::new(
+            &type_2, format!("test_payload_{i}"))).await.unwrap();
+    };
 
-//     // Assert
-//     assert_eq!(3, loaded.len());
+    // Act
+    let loaded_type_1 = repo.fetch_all_by_type_and_status_for_update::<String>(tx, &type_1, OutboxMessageStatus::Pending, 10).await.unwrap();
+    let loaded_type_2 = repo.fetch_all_by_type_and_status_for_update::<String>(tx, &type_2, OutboxMessageStatus::Pending, 10).await.unwrap();
 
-//     for i in 0..3 {
-//         assert_eq!(format!("test_payload_{i}"), loaded[i].data.payload);
-//     }
+    // Assert
+    assert_eq!(5, loaded_type_1.len());
+    for loaded in loaded_type_1 {
+        assert_eq!(type_1, loaded.data.r#type);
+    }
 
-//     tx.commit().await.unwrap();
+    assert_eq!(5, loaded_type_2.len());
+    for loaded in loaded_type_2 {
+        assert_eq!(type_2, loaded.data.r#type);
+    }
 
-// }
+            Ok(())
+        }).await
+    })
+}
 
-// /// Tests that a entries can be fetched by type when multiple types are present.
-// #[tokio::test]
-// async fn test_fetch_by_type_with_multiple() {
-//         // Arrange
-//     let (pool, _node) = new_db().await;
-//     let repo = PgOutboxRepository::new(&pool).await.unwrap();
 
-//     let mut tx = pool.begin().await.unwrap();
-
-//     let db_entries = 5;
-
-//     for i in 0..db_entries {
-//         repo.save(&mut tx, OutboxMessageData::new(
-//             "test_type_1", format!("test_payload_{i}"))).await.unwrap();
-//     };
-
-//     for i in 0..db_entries {
-//         repo.save(&mut tx, OutboxMessageData::new(
-//             "test_type_2", format!("test_payload_{i}"))).await.unwrap();
-//     };
-
-//     // Act
-//     let loaded_type_1 = repo.fetch_all_by_type_and_status_for_update::<String>(&mut tx, "test_type_1", OutboxMessageStatus::Pending, 10).await.unwrap();
-//     let loaded_type_2 = repo.fetch_all_by_type_and_status_for_update::<String>(&mut tx, "test_type_2", OutboxMessageStatus::Pending, 10).await.unwrap();
-
-//     // Assert
-//     assert_eq!(5, loaded_type_1.len());
-//     for loaded in loaded_type_1 {
-//         assert_eq!(format!("test_type_1"), loaded.data.r#type);
-//     }
-
-//     assert_eq!(5, loaded_type_2.len());
-//     for loaded in loaded_type_2 {
-//         assert_eq!(format!("test_type_2"), loaded.data.r#type);
-//     }
-
-//     tx.commit().await.unwrap();
-
-// }
 
 // /// Tests that a entries can be fetched by type concurrently.
 // /// Only one reader should be able to fetch entries at a time.
