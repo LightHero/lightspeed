@@ -34,13 +34,13 @@ lightspeed_test_utils = { version = "0.65.0", path = "./test_utils" }
 arc-swap = "1.6"
 axum = { version = "0.8" }
 base64 = "0.22"
-bcrypt = "0.18"
+bcrypt = "0.19"
 c3p0 = { version = "0.80.7" }
 #c3p0 = { git = "https://github.com/ufoscout/c3p0", branch = "master", features = ["postgres"] }
 chrono = { version = "0.4", default-features = false, features = ["clock"] }
 chrono-tz = "0.10"
 config = "0.15"
-cron = "0.15"
+cron = "0.16"
 http = { version = "1" }
 http-body-util = "0.1"
 futures = { version = "0.3", default-features = false }
@@ -58,11 +58,11 @@ rand = "0.9"
 regex = "1"
 serde = { version = "1.0", features = ["derive", "rc"] }
 serde_json = "1"
-sha2 = "0.10"
+sha2 = "0.11"
 sqlx = "0.9.0-alpha.1"
-strum = { version = "0.27", features = ["derive"] }
+strum = { version = "0.28", features = ["derive"] }
 tempfile = "3"
-testcontainers = { package = "testcontainers-modules", version = "0.14", features = ["mysql", "postgres"] }
+testcontainers = { package = "testcontainers-modules", version = "0.15", features = ["mysql", "postgres"] }
 thiserror = { version = "2" }
 tokio = { version = "1", default-features = false }
 tower = { version = "0.5", default-features = false }
