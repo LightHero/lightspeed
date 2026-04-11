@@ -80,7 +80,7 @@ fn should_return_not_unique_validation_error() -> Result<(), LsError> {
 #[test]
 fn should_delete_all_schemas_when_project_is_deleted() -> Result<(), LsError> {
     tokio_test(async {
-        let data = data(false).await;
+        let data = data(true).await;
         let cms_module = &data.0;
 
         // Arrange
