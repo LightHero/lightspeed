@@ -8,10 +8,9 @@ pub enum Scheduler {
     Cron(Box<cron::Schedule>),
 
     /// Set to execute exactly `duration` away from the previous execution.
-    /// If
     Interval { interval_duration: Duration, execute_at_startup: bool },
 
-    /// Multi shceduler: the execution is trigger where at least one of the schedulers in matched
+    /// Multi scheduler: the execution is triggered where at least one of the schedulers is matched
     Multi(Vec<Scheduler>),
 
     /// Set to execute to never

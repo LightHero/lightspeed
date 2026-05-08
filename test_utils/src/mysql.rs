@@ -15,7 +15,11 @@ use testcontainers::testcontainers::runners::AsyncRunner;
 /// The returned Sqlx pool is configured to connect to the database with the same defaults as the
 /// container.
 pub async fn new_mysql_db() -> (MySqlC3p0Pool, ContainerAsync<Mysql>) {
-    let node = Mysql::default().start().await.unwrap();
+    let node = Mysql::default()
+        //.with_tag("9.6.0")
+        .start()
+        .await
+        .unwrap();
 
     let options = MySqlConnectOptions::new()
         // .username("mysql")
