@@ -16,7 +16,7 @@ impl FileStoreDataRepository for MySqlFileStoreDataRepository {
         repository: &str,
         file_path: &str,
     ) -> Result<bool, LsError> {
-        let sql = "SELECT EXISTS (SELECT 1 FROM LS_FILE_STORE_DATA WHERE (data -> '$.repository') = ? AND (data -> '$.file_path') = ?)";
+        let sql = "SELECT EXISTS (SELECT 1 FROM LS_FILE_STORE_DATA WHERE JSON_VALUE(data, '$.repository' RETURNING CHAR(255)) = ? AND JSON_VALUE(data, '$.file_path' RETURNING CHAR(255)) = ?)";
 
         let res = query(sql).bind(repository).bind(file_path).fetch_one(tx).await.and_then(|row| row.try_get(0))?;
         Ok(res)
@@ -34,7 +34,7 @@ impl FileStoreDataRepository for MySqlFileStoreDataRepository {
     ) -> Result<FileStoreDataModel, LsError> {
         Ok(FileStoreDataModel::query_with_tail(
             r#"
-            WHERE (data -> '$.repository') = ? AND (data -> '$.file_path') = ?
+            WHERE JSON_VALUE(data, '$.repository' RETURNING CHAR(255)) = ? AND JSON_VALUE(data, '$.file_path' RETURNING CHAR(255)) = ?
         "#,
         )
         .bind(repository)
@@ -53,7 +53,7 @@ impl FileStoreDataRepository for MySqlFileStoreDataRepository {
     ) -> Result<Vec<FileStoreDataModel>, LsError> {
         Ok(FileStoreDataModel::query_with_tail(&format!(
             r#"
-               WHERE (data -> '$.repository') = ?
+               WHERE JSON_VALUE(data, '$.repository' RETURNING CHAR(255)) = ?
                 order by id {}
                 limit {}
                 offset {}

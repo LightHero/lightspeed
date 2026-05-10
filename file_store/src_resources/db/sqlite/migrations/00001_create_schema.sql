@@ -9,7 +9,7 @@ create table LS_FILE_STORE_DATA (
     version INTEGER NOT NULL,
     create_time TEXT NOT NULL,
     update_time TEXT NOT NULL,
-    data JSON NOT NULL CHECK (json_valid(data))
+    data JSON NOT NULL
 );
 
 CREATE UNIQUE INDEX LS_FILE_STORE_DATA_UNIQUE_REPOSITORY_FILEPATH ON LS_FILE_STORE_DATA( (DATA->>'$.repository'), (DATA->>'$.file_path') );
