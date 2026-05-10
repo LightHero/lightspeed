@@ -29,7 +29,7 @@ impl<RepoManager: AuthRepositoryManager> LsTokenService<RepoManager> {
         info!("Generate and save token of type [{token_type:?}] for username [{username}]");
 
         let issued_at = current_epoch_seconds();
-        let expire_at_epoch = issued_at + (self.auth_config.activation_token_validity_minutes * 60);
+        let expire_at_epoch = issued_at + (self.auth_config.activation_token_validity_minutes as i64 * 60);
         let token = NewRecord::new(TokenData {
             token: new_hyphenated_uuid(),
             token_type,

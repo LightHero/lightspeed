@@ -71,7 +71,18 @@ impl<RepoManager: AuthRepositoryManager> LsAuthAccountService<RepoManager> {
             };
 
             let creation_ts_seconds = current_epoch_seconds();
-            let expiration_ts_seconds = creation_ts_seconds + (self.auth_config.auth_session_max_validity_minutes * 60);
+
+            if let Some(expiration_secs) = self.auth_config.password_expiration_seconds {
+                let password_set_at = user.data.password_updated_date_epoch_seconds;
+                if creation_ts_seconds.saturating_sub(password_set_at) >= expiration_secs as i64 {
+                    return Err(LsError::BadRequest {
+                        message: format!("Password for user [{username}] has expired and must be changed"),
+                        code: ErrorCodes::EXPIRED_PASSWORD,
+                    });
+                }
+            }
+
+            let expiration_ts_seconds = creation_ts_seconds + (self.auth_config.auth_session_max_validity_minutes as i64 * 60);
 
             return Ok(Auth::new(
                 user.id,
@@ -133,6 +144,7 @@ impl<RepoManager: AuthRepositoryManager> LsAuthAccountService<RepoManager> {
             Ok(())
         }))?;
 
+        let now = current_epoch_seconds();
         let auth_account_model = self
             .auth_repo
             .save(
@@ -142,7 +154,8 @@ impl<RepoManager: AuthRepositoryManager> LsAuthAccountService<RepoManager> {
                     email: create_login_dto.email,
                     password: hashed_password,
                     roles: self.auth_config.default_roles_on_account_creation.clone(),
-                    created_date_epoch_seconds: current_epoch_seconds(),
+                    created_date_epoch_seconds: now,
+                    password_updated_date_epoch_seconds: now,
                     status: AuthAccountStatus::PendingActivation,
                 }),
             )
@@ -376,6 +389,7 @@ impl<RepoManager: AuthRepositoryManager> LsAuthAccountService<RepoManager> {
         self.token_service.delete_with_conn(conn, token).await?;
 
         user.data.password = self.password_service.hash_password(&reset_password_dto.password).await?;
+        user.data.password_updated_date_epoch_seconds = current_epoch_seconds();
         user = self.auth_repo.update(conn, user).await?;
         Ok(user)
     }
@@ -418,6 +432,7 @@ impl<RepoManager: AuthRepositoryManager> LsAuthAccountService<RepoManager> {
         }
 
         user.data.password = self.password_service.hash_password(&dto.new_password).await?;
+        user.data.password_updated_date_epoch_seconds = current_epoch_seconds();
 
         user = self.auth_repo.update(conn, user).await?;
         Ok(user)

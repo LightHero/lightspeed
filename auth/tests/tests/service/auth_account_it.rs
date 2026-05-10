@@ -7,8 +7,9 @@ use lightspeed_auth::dto::create_login_dto::CreateLoginDto;
 use lightspeed_auth::dto::reset_password_dto::ResetPasswordDto;
 use lightspeed_auth::model::auth_account::AuthAccountStatus;
 use lightspeed_auth::model::token::TokenType;
-use lightspeed_auth::repository::AuthRepositoryManager;
+use lightspeed_auth::repository::{AuthAccountRepository, AuthRepositoryManager};
 use lightspeed_auth::service::auth_account::LsAuthAccountService;
+use lightspeed_auth::config::AuthConfig;
 use lightspeed_core::error::{ErrorCodes, ErrorDetail, LsError};
 use lightspeed_core::model::language::Language;
 use lightspeed_core::utils::{current_epoch_seconds, new_hyphenated_uuid};
@@ -442,8 +443,8 @@ fn should_login_active_user() -> Result<(), LsError> {
         assert!(auth.creation_ts_seconds >= before_login_ts_seconds);
         assert!(auth.creation_ts_seconds <= after_login_ts_seconds);
 
-        assert!(auth.expiration_ts_seconds >= before_login_ts_seconds + auth_validity_seconds);
-        assert!(auth.expiration_ts_seconds <= after_login_ts_seconds + auth_validity_seconds);
+        assert!(auth.expiration_ts_seconds >= before_login_ts_seconds + auth_validity_seconds as i64);
+        assert!(auth.expiration_ts_seconds <= after_login_ts_seconds + auth_validity_seconds as i64);
 
         Ok(())
     })
@@ -1558,6 +1559,46 @@ fn should_return_users_by_status_with_offset_and_limit() -> Result<(), LsError> 
     })
 }
 
+/// Build an `LsAuthAccountService` that shares state with `auth_module` but
+/// uses a customized `AuthConfig`. Used by tests that need to flip
+/// `password_expiration_seconds` without rebuilding the whole module.
+fn auth_account_service_with_config<RepoManager: AuthRepositoryManager>(
+    auth_module: &lightspeed_auth::LsAuthModule<RepoManager>,
+    auth_config: AuthConfig,
+) -> LsAuthAccountService<RepoManager> {
+    LsAuthAccountService::new(
+        auth_module.repo_manager.c3p0().clone(),
+        auth_config,
+        auth_module.token_service.clone(),
+        auth_module.password_codec.clone(),
+        auth_module.repo_manager.auth_account_repo(),
+    )
+}
+
+/// Overwrite a user's stored timestamps by going through the repo. Tests use
+/// this to simulate an aged password without actually waiting.
+async fn set_user_timestamps<RepoManager: AuthRepositoryManager>(
+    auth_module: &lightspeed_auth::LsAuthModule<RepoManager>,
+    user_id: u64,
+    password_updated: i64,
+    created: Option<i64>,
+) -> Result<(), LsError> {
+    let repo = auth_module.repo_manager.auth_account_repo();
+    auth_module
+        .repo_manager
+        .c3p0()
+        .transaction(async |conn| {
+            let mut row = repo.fetch_by_id(conn, user_id).await?;
+            row.data.password_updated_date_epoch_seconds = password_updated;
+            if let Some(created) = created {
+                row.data.created_date_epoch_seconds = created;
+            }
+            repo.update(conn, row).await?;
+            Ok::<_, LsError>(())
+        })
+        .await
+}
+
 #[test]
 fn should_honor_configured_min_password_len() -> Result<(), LsError> {
     tokio_test(async {
@@ -1617,6 +1658,146 @@ fn should_honor_configured_min_password_len() -> Result<(), LsError> {
             })
             .await?;
         assert_eq!(username, user.data.username);
+
+        Ok(())
+    })
+}
+
+#[test]
+fn should_fail_login_when_password_expired() -> Result<(), LsError> {
+    tokio_test(async {
+        let data = data(false).await;
+        let auth_module = &data.0;
+
+        let password = new_hyphenated_uuid();
+        let (user, _) = create_user_with_password(auth_module, &password, true).await?;
+
+        // Backdate the password timestamp by 1 hour.
+        let backdated_to = current_epoch_seconds() - 3600;
+        set_user_timestamps(auth_module, user.id, backdated_to, None).await?;
+
+        // Service that considers passwords older than 60s expired.
+        let mut auth_config = auth_module.auth_config.clone();
+        auth_config.password_expiration_seconds = Some(60);
+        let service = auth_account_service_with_config(auth_module, auth_config);
+
+        let result = service.login(&user.data.username, &password).await;
+
+        match result {
+            Err(LsError::BadRequest { code, .. }) => {
+                assert_eq!(ErrorCodes::EXPIRED_PASSWORD, code);
+            }
+            _ => panic!("expected BadRequest with EXPIRED_PASSWORD"),
+        }
+
+        // The default service (expiration disabled) still accepts the login.
+        assert!(auth_module.auth_account_service.login(&user.data.username, &password).await.is_ok());
+
+        Ok(())
+    })
+}
+
+#[test]
+fn should_login_when_password_within_expiration_window() -> Result<(), LsError> {
+    tokio_test(async {
+        let data = data(false).await;
+        let auth_module = &data.0;
+
+        let password = new_hyphenated_uuid();
+        let (user, _) = create_user_with_password(auth_module, &password, true).await?;
+
+        // 1 hour expiration; the user was just created, so well within window.
+        let mut auth_config = auth_module.auth_config.clone();
+        auth_config.password_expiration_seconds = Some(3600);
+        let service = auth_account_service_with_config(auth_module, auth_config);
+
+        assert!(service.login(&user.data.username, &password).await.is_ok());
+
+        Ok(())
+    })
+}
+
+#[test]
+fn change_password_should_reset_password_age() -> Result<(), LsError> {
+    tokio_test(async {
+        let data = data(false).await;
+        let auth_module = &data.0;
+
+        let password = new_hyphenated_uuid();
+        let (user, _) = create_user_with_password(auth_module, &password, true).await?;
+
+        // Make the password "old".
+        let backdated_to = current_epoch_seconds() - 3600;
+        set_user_timestamps(auth_module, user.id, backdated_to, None).await?;
+
+        // Sanity-check: with a 60s expiration the login is rejected before changing.
+        let mut auth_config = auth_module.auth_config.clone();
+        auth_config.password_expiration_seconds = Some(60);
+        let strict_service = auth_account_service_with_config(auth_module, auth_config.clone());
+        match strict_service.login(&user.data.username, &password).await {
+            Err(LsError::BadRequest { code, .. }) => assert_eq!(ErrorCodes::EXPIRED_PASSWORD, code),
+            _ => panic!("expected EXPIRED_PASSWORD before change_password"),
+        }
+
+        // Change the password through the default service.
+        let new_password = new_hyphenated_uuid();
+        auth_module
+            .auth_account_service
+            .change_password(ChangePasswordDto {
+                user_id: user.id,
+                old_password: password.clone(),
+                new_password: new_password.clone(),
+                new_password_confirm: new_password.clone(),
+            })
+            .await?;
+
+        // Login with the new password against the strict service must now succeed.
+        assert!(strict_service.login(&user.data.username, &new_password).await.is_ok());
+
+        Ok(())
+    })
+}
+
+#[test]
+fn reset_password_should_reset_password_age() -> Result<(), LsError> {
+    tokio_test(async {
+        let data = data(false).await;
+        let auth_module = &data.0;
+
+        let password = new_hyphenated_uuid();
+        let (user, _) = create_user_with_password(auth_module, &password, true).await?;
+
+        // Make the password "old".
+        let backdated_to = current_epoch_seconds() - 3600;
+        set_user_timestamps(auth_module, user.id, backdated_to, None).await?;
+
+        // Issue a reset-password token and use it to set a new password.
+        let token = auth_module
+            .repo_manager
+            .c3p0()
+            .transaction(async |conn| {
+                auth_module
+                    .token_service
+                    .generate_and_save_token_with_conn(conn, &user.data.username, TokenType::ResetPassword)
+                    .await
+            })
+            .await?;
+
+        let new_password = new_hyphenated_uuid();
+        auth_module
+            .auth_account_service
+            .reset_password_by_token(ResetPasswordDto {
+                token: token.data.token,
+                password: new_password.clone(),
+                password_confirm: new_password.clone(),
+            })
+            .await?;
+
+        let mut auth_config = auth_module.auth_config.clone();
+        auth_config.password_expiration_seconds = Some(60);
+        let strict_service = auth_account_service_with_config(auth_module, auth_config);
+
+        assert!(strict_service.login(&user.data.username, &new_password).await.is_ok());
 
         Ok(())
     })

@@ -11,6 +11,8 @@ pub struct AuthAccountData {
     pub password: String,
     pub roles: Vec<String>,
     pub created_date_epoch_seconds: i64,
+    /// Epoch seconds at which `password` was last set
+    pub password_updated_date_epoch_seconds: i64,
     pub status: AuthAccountStatus,
 }
 

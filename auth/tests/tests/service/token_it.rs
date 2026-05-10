@@ -62,8 +62,8 @@ fn should_generate_token() -> Result<(), LsError> {
                 TokenType::AccountActivation => {}
                 _ => panic!(),
             }
-            assert!((before + expiration_seconds) <= token.data.expire_at_epoch_seconds);
-            assert!((after + expiration_seconds) >= token.data.expire_at_epoch_seconds);
+            assert!((before + expiration_seconds as i64) <= token.data.expire_at_epoch_seconds);
+            assert!((after + expiration_seconds as i64) >= token.data.expire_at_epoch_seconds);
 
             assert!(auth_module.token_service.fetch_by_token_with_conn(conn, &token.data.token, true).await.is_ok());
             assert!(auth_module.token_service.delete_with_conn(conn, token.clone()).await.is_ok());
