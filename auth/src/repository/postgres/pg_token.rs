@@ -23,7 +23,7 @@ impl TokenRepository for PgTokenRepository {
     type DB = Postgres;
 
     async fn fetch_by_token(&self, tx: &mut PgConnection, token_string: &str) -> Result<TokenModel, LsError> {
-        Ok(TokenModel::query_with(
+        Ok(TokenModel::query_with_tail(
             r#"
             where data ->> 'token' = $1
             limit 1
@@ -35,7 +35,7 @@ impl TokenRepository for PgTokenRepository {
     }
 
     async fn fetch_by_username(&self, tx: &mut PgConnection, username: &str) -> Result<Vec<TokenModel>, LsError> {
-        Ok(TokenModel::query_with(
+        Ok(TokenModel::query_with_tail(
             r#"
             where data ->> 'username' = $1
         "#,

@@ -6,10 +6,10 @@
 
 create table LS_AUTH_ACCOUNT (
     ID bigserial primary key,
-    VERSION int not null,
-    create_epoch_millis bigint not null,
-    update_epoch_millis bigint not null,
-    DATA JSONB
+    version bigint NOT NULL,
+    create_time TIMESTAMPTZ NOT NULL,
+    update_time TIMESTAMPTZ NOT NULL,
+    data JSONB NOT NULL
 );
 
 CREATE UNIQUE INDEX LS_AUTH_ACCOUNT_UNIQUE_USERNAME ON LS_AUTH_ACCOUNT( (DATA->>'username') );
@@ -24,10 +24,10 @@ CREATE UNIQUE INDEX LS_AUTH_ACCOUNT_UNIQUE_EMAIL ON LS_AUTH_ACCOUNT( (DATA->>'em
 
 create table LS_AUTH_TOKEN (
     ID bigserial primary key,
-    VERSION int not null,
-    create_epoch_millis bigint not null,
-    update_epoch_millis bigint not null,
-    DATA JSONB
+    version bigint NOT NULL,
+    create_time TIMESTAMPTZ NOT NULL,
+    update_time TIMESTAMPTZ NOT NULL,
+    data JSONB NOT NULL
 );
 
 CREATE UNIQUE INDEX LS_AUTH_TOKEN_UNIQUE_TOKEN ON LS_AUTH_TOKEN( (DATA->>'token') );

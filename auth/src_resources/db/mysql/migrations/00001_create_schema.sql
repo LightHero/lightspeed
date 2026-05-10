@@ -5,11 +5,11 @@
 -- ---------------------------
 
 create table LS_AUTH_ACCOUNT (
-    ID BIGINT primary key NOT NULL AUTO_INCREMENT,
-    VERSION int not null,
-    create_epoch_millis bigint not null,
-    update_epoch_millis bigint not null,
-    DATA JSON
+    id BIGINT UNSIGNED PRIMARY KEY NOT NULL AUTO_INCREMENT,
+    version INT UNSIGNED NOT NULL,
+    create_time TIMESTAMP(3) NOT NULL,
+    update_time TIMESTAMP(3) NOT NULL,
+    data JSON NOT NULL
 );
 
 CREATE INDEX LS_AUTH_ACCOUNT_UNIQUE_USERNAME
@@ -26,11 +26,11 @@ CREATE INDEX LS_AUTH_ACCOUNT_UNIQUE_EMAIL
 -- -------------------------
 
 create table LS_AUTH_TOKEN (
-    ID BIGINT primary key NOT NULL AUTO_INCREMENT,
-    VERSION int not null,
-    create_epoch_millis bigint not null,
-    update_epoch_millis bigint not null,
-    DATA JSON
+    id BIGINT UNSIGNED PRIMARY KEY NOT NULL AUTO_INCREMENT,
+    version INT UNSIGNED NOT NULL,
+    create_time TIMESTAMP(3) NOT NULL,
+    update_time TIMESTAMP(3) NOT NULL,
+    data JSON NOT NULL
 );
 
 CREATE INDEX LS_AUTH_TOKEN_UNIQUE_TOKEN

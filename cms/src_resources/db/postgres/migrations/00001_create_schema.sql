@@ -6,10 +6,10 @@
 
 create table LS_CMS_PROJECT (
     ID bigserial primary key,
-    VERSION int not null,
-    create_epoch_millis bigint not null,
-    update_epoch_millis bigint not null,
-    DATA JSONB
+    version bigint NOT NULL,
+    create_time TIMESTAMPTZ NOT NULL,
+    update_time TIMESTAMPTZ NOT NULL,
+    data JSONB NOT NULL
 );
 
 CREATE UNIQUE INDEX LS_CMS_PROJECT_UNIQUE_NAME ON LS_CMS_PROJECT( (DATA->>'name') );
@@ -22,10 +22,10 @@ CREATE UNIQUE INDEX LS_CMS_PROJECT_UNIQUE_NAME ON LS_CMS_PROJECT( (DATA->>'name'
 
 create table LS_CMS_SCHEMA (
     ID bigserial primary key,
-    VERSION int not null,
-    create_epoch_millis bigint not null,
-    update_epoch_millis bigint not null,
-    DATA JSONB
+    version bigint NOT NULL,
+    create_time TIMESTAMPTZ NOT NULL,
+    update_time TIMESTAMPTZ NOT NULL,
+    data JSONB NOT NULL
 );
 
 CREATE UNIQUE INDEX LS_CMS_SCHEMA_UNIQUE_NAME_PROJECT_ID ON LS_CMS_SCHEMA( (DATA->>'name'), (DATA->>'project_id') );
@@ -39,10 +39,10 @@ CREATE UNIQUE INDEX LS_CMS_SCHEMA_UNIQUE_NAME_PROJECT_ID ON LS_CMS_SCHEMA( (DATA
 
 create table LS_CMS_CONTENT (
     ID bigserial primary key,
-    VERSION int not null,
-    create_epoch_millis bigint not null,
-    update_epoch_millis bigint not null,
-    DATA JSONB
+    version bigint NOT NULL,
+    create_time TIMESTAMPTZ NOT NULL,
+    update_time TIMESTAMPTZ NOT NULL,
+    data JSONB NOT NULL
 );
 
 -- End - LS_CMS_CONTENT -

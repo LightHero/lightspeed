@@ -6,10 +6,10 @@
 
 create table LS_FILE_STORE_DATA (
     ID bigserial primary key,
-    VERSION int not null,
-    create_epoch_millis bigint not null,
-    update_epoch_millis bigint not null,
-    DATA JSONB
+    version bigint NOT NULL,
+    create_time TIMESTAMPTZ NOT NULL,
+    update_time TIMESTAMPTZ NOT NULL,
+    data JSONB NOT NULL
 );
 
 CREATE UNIQUE INDEX LS_FILE_STORE_DATA_UNIQUE_REPOSITORY_FILEPATH ON LS_FILE_STORE_DATA( (data ->> 'repository'), (data ->> 'file_path') );

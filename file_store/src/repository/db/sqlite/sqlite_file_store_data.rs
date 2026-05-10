@@ -33,7 +33,7 @@ impl FileStoreDataRepository for SqliteFileStoreDataRepository {
         repository: &str,
         file_path: &str,
     ) -> Result<FileStoreDataModel, LsError> {
-        Ok(FileStoreDataModel::query_with(
+        Ok(FileStoreDataModel::query_with_tail(
             r#"
             WHERE (data ->> '$.repository') = ? AND (data ->> '$.file_path') = ?
         "#,
@@ -52,7 +52,7 @@ impl FileStoreDataRepository for SqliteFileStoreDataRepository {
         max: usize,
         sort: OrderBy,
     ) -> Result<Vec<FileStoreDataModel>, LsError> {
-        Ok(FileStoreDataModel::query_with(&format!(
+        Ok(FileStoreDataModel::query_with_tail(&format!(
             r#"
                WHERE (data ->> '$.repository') = ?
                 order by id {}

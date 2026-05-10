@@ -23,7 +23,7 @@ impl TokenRepository for SqliteTokenRepository {
     type DB = Sqlite;
 
     async fn fetch_by_token(&self, tx: &mut SqliteConnection, token_string: &str) -> Result<TokenModel, LsError> {
-        Ok(TokenModel::query_with(
+        Ok(TokenModel::query_with_tail(
             r#"
             where data ->> '$.token' = ?
             limit 1
@@ -35,7 +35,7 @@ impl TokenRepository for SqliteTokenRepository {
     }
 
     async fn fetch_by_username(&self, tx: &mut SqliteConnection, username: &str) -> Result<Vec<TokenModel>, LsError> {
-        Ok(TokenModel::query_with(
+        Ok(TokenModel::query_with_tail(
             r#"
             where data ->> '$.username' = ?
         "#,

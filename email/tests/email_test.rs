@@ -1,4 +1,3 @@
-use lettre::message::SinglePart;
 use lightspeed_email::config::EmailClientConfig;
 use lightspeed_email::model::email::{EmailAttachment, EmailMessage};
 use lightspeed_email::repository::email::{EmailClientType, new};
@@ -7,25 +6,26 @@ use testcontainers::testcontainers::core::WaitFor;
 use testcontainers::testcontainers::runners::AsyncRunner;
 use testcontainers::testcontainers::{ContainerAsync, GenericImage};
 
-pub async fn new_mail_server() -> (u16, ContainerAsync<GenericImage>) {
-    let node = GenericImage::new("mailhog/mailhog", "v1.0.0")
-        .with_wait_for(WaitFor::message_on_stdout("Creating API v2 with WebPath:"))
+pub async fn new_mail_server() -> (u16, u16, ContainerAsync<GenericImage>) {
+    let node = GenericImage::new("axllent/mailpit", "latest")
+        .with_wait_for(WaitFor::message_on_stdout("[http] accessible via"))
         .start()
         .await
         .unwrap();
 
-    (node.get_host_port_ipv4(1025).await.unwrap(), node)
+    let smtp_port = node.get_host_port_ipv4(1025).await.unwrap();
+    let api_port = node.get_host_port_ipv4(8025).await.unwrap();
+    (smtp_port, api_port, node)
 }
 
 #[tokio::test]
 async fn should_start_the_mailserver() {
     // Arrange
-    let server = new_mail_server().await;
-    let server_port = server.0;
-    println!("using port: {server_port}");
+    let (smtp_port, api_port, _container) = new_mail_server().await;
+    println!("using SMTP port: {smtp_port}, API port: {api_port}");
 
     let config = EmailClientConfig {
-        email_server_port: server_port,
+        email_server_port: smtp_port,
         email_server_address: "127.0.0.1".to_owned(),
         email_client_type: EmailClientType::Full,
         email_client_timeout_seconds: 60,
@@ -42,6 +42,7 @@ async fn should_start_the_mailserver() {
     message.to.push("ufoscout@gmail.com".to_owned());
     message.to.push("NAME <test@gmail.com>".to_owned());
     message.subject = Some("subject".to_owned());
+    message.text = Some("hello from lightspeed test".to_owned());
     message.attachments.push(EmailAttachment::FromFile {
         mime_type: "plain/text".to_owned(),
         path: "./Cargo.toml".to_owned(),
@@ -50,61 +51,30 @@ async fn should_start_the_mailserver() {
 
     // Act
     email_service.send(message.clone()).await.unwrap();
-    assert!(email_service.send(message.clone()).await.is_ok());
-    // should reuse the client
-    assert!(email_service.send(message.clone()).await.is_ok());
-    assert!(email_service.send(message.clone()).await.is_ok());
-}
 
-#[ignore]
-#[tokio::test]
-async fn full_client_should_use_gmail2() {
-    use lettre::transport::smtp::authentication::Credentials;
-    use lettre::{Message, SmtpTransport, Transport};
+    // Assert: query Mailpit's REST API and verify the email was received
+    let messages_url = format!("http://127.0.0.1:{api_port}/api/v1/messages");
+    let response: serde_json::Value =
+        reqwest::get(&messages_url).await.unwrap().json().await.unwrap();
 
-    let email = Message::builder()
-        .from("NoBody <ufoscout@gmail.com>".parse().unwrap())
-        .reply_to("Yuin <ufoscout@gmail.com>".parse().unwrap())
-        .to("Hei <ufoscout@gmail.com>".parse().unwrap())
-        .subject("Happy new year")
-        .singlepart(SinglePart::plain("hello".to_owned()))
-        .unwrap();
+    let messages = response["messages"].as_array().expect("messages array");
+    assert_eq!(1, messages.len(), "expected exactly one message in Mailpit");
 
-    let creds = Credentials::new("ufoscout@gmail.com".to_string(), "".to_string());
+    let received = &messages[0];
+    assert_eq!("subject", received["Subject"].as_str().unwrap());
+    assert_eq!("ufoscout@gmail.com", received["From"]["Address"].as_str().unwrap());
 
-    // Open a remote connection to gmail
-    let mailer = SmtpTransport::starttls_relay("smtp.gmail.com").unwrap().credentials(creds).build();
+    let to_addresses: Vec<&str> =
+        received["To"].as_array().unwrap().iter().map(|v| v["Address"].as_str().unwrap()).collect();
+    assert!(to_addresses.contains(&"ufoscout@gmail.com"), "missing recipient ufoscout@gmail.com");
+    assert!(to_addresses.contains(&"test@gmail.com"), "missing recipient test@gmail.com");
 
-    // Send the email
-    match mailer.send(&email) {
-        Ok(_) => println!("Email sent successfully!"),
-        Err(e) => panic!("Could not send email: {e:?}"),
-    }
-}
+    assert_eq!(1, received["Attachments"].as_i64().unwrap(), "expected one attachment");
 
-#[ignore]
-#[tokio::test]
-async fn full_client_should_use_gmail() {
-    // Arrange
-    let config = EmailClientConfig {
-        email_client_type: EmailClientType::Full,
-        email_client_timeout_seconds: 60,
-        email_server_port: 587,
-        email_server_address: "smtp.gmail.com".to_string(),
-        email_server_username: "ufoscout@gmail.com".to_string(),
-        email_server_password: "".to_string(),
-        forward_all_emails_to_fixed_recipients: None,
-        email_server_use_tls: true,
-    };
-
-    let email_service = new(config).unwrap();
-
-    let mut message = EmailMessage::new();
-    message.from = Some("UFOSCOUT <ufoscout@gmail.com>".to_owned());
-    message.to.push("FRANCESCO <ufoscout@gmail.com>".to_owned());
-    message.subject = Some("EMAIL FROM RUST!!".to_owned());
-    message.html = Some("HTML body".to_owned());
-
-    // Act
-    email_service.send(message.clone()).await.unwrap();
+    // Fetch the full message to verify the text body
+    let message_id = received["ID"].as_str().unwrap();
+    let message_url = format!("http://127.0.0.1:{api_port}/api/v1/message/{message_id}");
+    let full_message: serde_json::Value =
+        reqwest::get(&message_url).await.unwrap().json().await.unwrap();
+    assert_eq!("hello from lightspeed test", full_message["Text"].as_str().unwrap().trim());
 }

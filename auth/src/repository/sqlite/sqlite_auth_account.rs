@@ -29,7 +29,7 @@ impl AuthAccountRepository for SqliteAuthAccountRepository {
         start_user_id: u64,
         limit: u32,
     ) -> Result<Vec<AuthAccountModel>, LsError> {
-        Ok(AuthAccountModel::query_with(
+        Ok(AuthAccountModel::query_with_tail(
             r#"
             where id >= ? and DATA ->> '$.status' = ?
             order by id asc
@@ -59,7 +59,7 @@ impl AuthAccountRepository for SqliteAuthAccountRepository {
         tx: &mut SqliteConnection,
         username: &str,
     ) -> Result<Option<AuthAccountModel>, LsError> {
-        Ok(AuthAccountModel::query_with(
+        Ok(AuthAccountModel::query_with_tail(
             r#"
             where DATA ->> '$.username' = ?
             limit 1
@@ -75,7 +75,7 @@ impl AuthAccountRepository for SqliteAuthAccountRepository {
         tx: &mut SqliteConnection,
         email: &str,
     ) -> Result<Option<AuthAccountModel>, LsError> {
-        Ok(AuthAccountModel::query_with(
+        Ok(AuthAccountModel::query_with_tail(
             r#"
             where DATA ->> '$.email' = ?
             limit 1

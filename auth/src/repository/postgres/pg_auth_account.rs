@@ -29,7 +29,7 @@ impl AuthAccountRepository for PgAuthAccountRepository {
         start_user_id: u64,
         limit: u32,
     ) -> Result<Vec<AuthAccountModel>, LsError> {
-        Ok(AuthAccountModel::query_with(
+        Ok(AuthAccountModel::query_with_tail(
             r#"
             where id >= $1 and DATA ->> 'status' = $2
             order by id asc
@@ -59,7 +59,7 @@ impl AuthAccountRepository for PgAuthAccountRepository {
         tx: &mut PgConnection,
         username: &str,
     ) -> Result<Option<AuthAccountModel>, LsError> {
-        Ok(AuthAccountModel::query_with(
+        Ok(AuthAccountModel::query_with_tail(
             r#"
             where DATA ->> 'username' = $1
             limit 1
@@ -75,7 +75,7 @@ impl AuthAccountRepository for PgAuthAccountRepository {
         tx: &mut PgConnection,
         email: &str,
     ) -> Result<Option<AuthAccountModel>, LsError> {
-        Ok(AuthAccountModel::query_with(
+        Ok(AuthAccountModel::query_with_tail(
             r#"
             where DATA ->> 'email' = $1
             limit 1
