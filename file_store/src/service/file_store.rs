@@ -136,6 +136,7 @@ impl<RepoManager: DBFileStoreRepositoryManager> LsFileStoreService<RepoManager> 
         file_path: &str,
     ) -> Result<BinaryContent<'static>, LsError> {
         debug!("LsFileStoreService - Read repository [{repository}] file [{file_path}]");
+        validate_safe_relative_path("file_path", file_path)?;
         match self.get_repository(repository)? {
             RepositoryStoreType::DB => self.db_binary_repo.read_file_streamed(repository, file_path).await,
             RepositoryStoreType::Opendal(opendal_file_store_binary_repository) => {
@@ -151,6 +152,7 @@ impl<RepoManager: DBFileStoreRepositoryManager> LsFileStoreService<RepoManager> 
         file_path: &str,
     ) -> Result<BinaryContent<'_>, LsError> {
         debug!("LsFileStoreService - Read repository [{repository}] file [{file_path}]");
+        validate_safe_relative_path("file_path", file_path)?;
         match self.get_repository(repository)? {
             RepositoryStoreType::DB => self.db_binary_repo.read_file(conn, repository, file_path).await,
             RepositoryStoreType::Opendal(opendal_file_store_binary_repository) => {
@@ -171,6 +173,10 @@ impl<RepoManager: DBFileStoreRepositoryManager> LsFileStoreService<RepoManager> 
         info!(
             "LsFileStoreService - Repository [{repository}] - Save file [{file_path}], content type [{content_type}]"
         );
+
+        // Reject path-traversal patterns before they reach any backend.
+        validate_safe_relative_path("file_path", &file_path)?;
+        validate_safe_relative_path("filename", &filename)?;
 
         if let Some(max) = self.save_max_size_bytes {
             self.enforce_save_max_size(content, max).await?;
@@ -282,5 +288,104 @@ impl<RepoManager: DBFileStoreRepositoryManager> LsFileStoreService<RepoManager> 
             });
         }
         Ok(())
+    }
+}
+
+/// Reject obvious path-traversal / escape patterns in user-supplied file
+/// names and paths. We treat the value as a relative path inside the
+/// configured repository root and refuse:
+///
+/// * empty strings (no legitimate use),
+/// * strings containing a NUL byte (filesystem boundary attack — many
+///   OS path APIs treat NUL as terminator and ignore everything after it),
+/// * leading `/` or `\\` (would escape the FS-backed Opendal root),
+/// * any segment that is exactly `..` when split on either path separator
+///   (catches `../etc/passwd`, `foo/../bar`, `foo\\..\\bar`, etc.).
+fn validate_safe_relative_path(field: &'static str, value: &str) -> Result<(), LsError> {
+    if value.is_empty() {
+        return Err(LsError::BadRequest {
+            message: format!("LsFileStoreService - {field} cannot be empty"),
+            code: ErrorCodes::PARSE_ERROR,
+        });
+    }
+    if value.contains('\0') {
+        return Err(LsError::BadRequest {
+            message: format!("LsFileStoreService - {field} contains NUL byte"),
+            code: ErrorCodes::PARSE_ERROR,
+        });
+    }
+    if value.starts_with('/') || value.starts_with('\\') {
+        return Err(LsError::BadRequest {
+            message: format!("LsFileStoreService - {field} must be a relative path, got [{value}]"),
+            code: ErrorCodes::PARSE_ERROR,
+        });
+    }
+    for segment in value.split(|c: char| c == '/' || c == '\\') {
+        if segment == ".." {
+            return Err(LsError::BadRequest {
+                message: format!(
+                    "LsFileStoreService - {field} contains parent-directory traversal segment, got [{value}]"
+                ),
+                code: ErrorCodes::PARSE_ERROR,
+            });
+        }
+    }
+    Ok(())
+}
+
+#[cfg(test)]
+mod path_validation_tests {
+    use super::validate_safe_relative_path;
+    use lightspeed_core::error::{ErrorCodes, LsError};
+
+    fn assert_rejected(value: &str) {
+        match validate_safe_relative_path("file_path", value) {
+            Err(LsError::BadRequest { code, .. }) => {
+                assert_eq!(ErrorCodes::PARSE_ERROR, code, "value [{value}] rejected with wrong code");
+            }
+            other => panic!("expected BadRequest(PARSE_ERROR) for [{value}], got {other:?}"),
+        }
+    }
+
+    #[test]
+    fn rejects_empty() {
+        assert_rejected("");
+    }
+
+    #[test]
+    fn rejects_nul_byte() {
+        assert_rejected("foo\0bar.txt");
+    }
+
+    #[test]
+    fn rejects_absolute_path() {
+        assert_rejected("/etc/passwd");
+        assert_rejected("\\Windows\\system32");
+    }
+
+    #[test]
+    fn rejects_parent_segments() {
+        assert_rejected("..");
+        assert_rejected("../etc/passwd");
+        assert_rejected("foo/../bar");
+        assert_rejected("foo/bar/..");
+        // Backslash separator (Windows-style) must also be caught.
+        assert_rejected("foo\\..\\bar");
+    }
+
+    #[test]
+    fn allows_clean_relative_paths() {
+        for ok in &[
+            "file.txt",
+            "folder/file.txt",
+            "deeply/nested/sub/folder/file.txt",
+            // `..` only as a *substring* of a segment is fine — we split on
+            // separators and require the whole segment to be `..`.
+            "..hidden",
+            "weird..name.txt",
+            "folder/..hidden/file",
+        ] {
+            assert!(validate_safe_relative_path("file_path", ok).is_ok(), "rejected legit path [{ok}]");
+        }
     }
 }
