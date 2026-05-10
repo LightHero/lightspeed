@@ -21,7 +21,17 @@ pub struct FullEmailClient {
 
 impl FullEmailClient {
     pub fn new(email_config: EmailClientConfig) -> Result<Self, LsError> {
-        let mut smtp_transport_builder = if email_config.email_server_use_tls {
+        let mut smtp_transport_builder = if email_config.dangerous_no_tls {
+            // `builder_dangerous` skips TLS entirely — credentials and message
+            // bodies travel in plaintext. Acceptable only against a local
+            // dev relay; logged loudly so it can't be missed in operations.
+            warn!(
+                "FullEmailClient - dangerous_no_tls=true: SMTP traffic to [{}] will be plaintext with no TLS \
+                 and no certificate verification. Use only for local development.",
+                email_config.email_server_address
+            );
+            AsyncSmtpTransport::<Tokio1Executor>::builder_dangerous(&email_config.email_server_address)
+        } else {
             AsyncSmtpTransport::<Tokio1Executor>::relay(&email_config.email_server_address).map_err(|err| {
                 LsError::InternalServerError {
                     message: format!(
@@ -30,8 +40,6 @@ impl FullEmailClient {
                     ),
                 }
             })?
-        } else {
-            AsyncSmtpTransport::<Tokio1Executor>::builder_dangerous(&email_config.email_server_address)
         };
 
         smtp_transport_builder = smtp_transport_builder

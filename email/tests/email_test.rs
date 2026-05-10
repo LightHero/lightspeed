@@ -31,7 +31,8 @@ async fn should_start_the_mailserver() {
         email_client_timeout_seconds: 60,
         email_server_username: "".to_owned(),
         email_server_password: "".to_owned(),
-        email_server_use_tls: false,
+        // Local Mailcrab container — no TLS. Production must keep this false.
+        dangerous_no_tls: true,
         forward_all_emails_to_fixed_recipients: None,
     };
 
