@@ -8,16 +8,16 @@ pub const WRONG_ID: &str = "WRONG_ID";
 pub const WRONG_VERSION: &str = "WRONG_VERSION";
 
 pub trait WithIdAndVersion {
-    fn get_id(&self) -> u64;
-    fn get_version(&self) -> u32;
+    fn get_id(&self) -> i64;
+    fn get_version(&self) -> i64;
 }
 
 impl<Data: DataType> WithIdAndVersion for c3p0::Record<Data> {
-    fn get_id(&self) -> u64 {
+    fn get_id(&self) -> i64 {
         self.id
     }
 
-    fn get_version(&self) -> u32 {
+    fn get_version(&self) -> i64 {
         self.version
     }
 }
@@ -59,7 +59,7 @@ mod tests {
     use crate::error::{ErrorDetail, ErrorDetails};
 
     #[derive(Serialize, Deserialize)]
-    struct Data(u64);
+    struct Data(i64);
 
     impl DataType for Data {
         const TABLE_NAME: &'static str = "";
@@ -67,7 +67,7 @@ mod tests {
     }
 
     impl Owned for Data {
-        fn get_owner_id(&self) -> u64 {
+        fn get_owner_id(&self) -> i64 {
             self.0
         }
     }

@@ -51,14 +51,14 @@ impl<RepoManager: DBFileStoreRepositoryManager> LsFileStoreService<RepoManager> 
         }
     }
 
-    pub async fn read_file_data_by_id(&self, id: u64) -> Result<FileStoreDataModel, LsError> {
+    pub async fn read_file_data_by_id(&self, id: i64) -> Result<FileStoreDataModel, LsError> {
         self.c3p0.transaction(async |conn| self.read_file_data_by_id_with_conn(conn, id).await).await
     }
 
     pub async fn read_file_data_by_id_with_conn(
         &self,
         conn: &mut <RepoManager::DB as Database>::Connection,
-        id: u64,
+        id: i64,
     ) -> Result<FileStoreDataModel, LsError> {
         debug!("LsFileStoreService - Read file by id [{id}]");
         self.db_data_repo.fetch_one_by_id(conn, id).await
@@ -220,14 +220,14 @@ impl<RepoManager: DBFileStoreRepositoryManager> LsFileStoreService<RepoManager> 
             .await
     }
 
-    pub async fn delete_file_by_id(&self, id: u64) -> Result<(), LsError> {
+    pub async fn delete_file_by_id(&self, id: i64) -> Result<(), LsError> {
         self.c3p0.transaction(async |conn| self.delete_file_by_id_with_conn(conn, id).await).await
     }
 
     pub async fn delete_file_by_id_with_conn(
         &self,
         conn: &mut <RepoManager::DB as Database>::Connection,
-        id: u64,
+        id: i64,
     ) -> Result<(), LsError> {
         info!("LsFileStoreService - Delete file by id [{id}]");
 

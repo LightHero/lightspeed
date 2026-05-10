@@ -26,7 +26,7 @@ impl AuthAccountRepository for MySqlAuthAccountRepository {
         &self,
         tx: &mut MySqlConnection,
         status: AuthAccountStatus,
-        start_user_id: u64,
+        start_user_id: i64,
         limit: u32,
     ) -> Result<Vec<AuthAccountModel>, LsError> {
         Ok(AuthAccountModel::query_with_tail(
@@ -36,15 +36,15 @@ impl AuthAccountRepository for MySqlAuthAccountRepository {
             limit ?
         "#,
         )
-        .bind(start_user_id as i64)
+        .bind(start_user_id)
         .bind(status.as_ref())
         .bind(limit as i64)
         .fetch_all(tx)
         .await?)
     }
 
-    async fn fetch_by_id(&self, tx: &mut MySqlConnection, user_id: u64) -> Result<AuthAccountModel, LsError> {
-        Ok(tx.fetch_one_by_id(user_id).await?)
+    async fn fetch_by_id(&self, tx: &mut MySqlConnection, user_id: i64) -> Result<AuthAccountModel, LsError> {
+        Ok(tx.fetch_one_by_id::<AuthAccountData>(user_id).await?)
     }
 
     async fn fetch_by_username(&self, tx: &mut MySqlConnection, username: &str) -> Result<AuthAccountModel, LsError> {
@@ -102,7 +102,7 @@ impl AuthAccountRepository for MySqlAuthAccountRepository {
         Ok(tx.delete(model).await?)
     }
 
-    async fn delete_by_id(&self, tx: &mut MySqlConnection, user_id: u64) -> Result<u64, LsError> {
+    async fn delete_by_id(&self, tx: &mut MySqlConnection, user_id: i64) -> Result<u64, LsError> {
         Ok(tx.delete_by_id::<AuthAccountData>(user_id).await?)
     }
 }

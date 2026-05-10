@@ -1654,7 +1654,7 @@ fn auth_account_service_with_config<RepoManager: AuthRepositoryManager>(
 /// this to simulate an aged password without actually waiting.
 async fn set_user_timestamps<RepoManager: AuthRepositoryManager>(
     auth_module: &lightspeed_auth::LsAuthModule<RepoManager>,
-    user_id: u64,
+    user_id: i64,
     password_updated: i64,
     created: Option<i64>,
 ) -> Result<(), LsError> {

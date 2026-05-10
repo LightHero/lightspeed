@@ -5,8 +5,8 @@
 -- ---------------------------
 
 create table LS_FILE_STORE_DATA (
-    id BIGINT UNSIGNED PRIMARY KEY NOT NULL AUTO_INCREMENT,
-    version INT UNSIGNED NOT NULL,
+    id BIGINT PRIMARY KEY NOT NULL AUTO_INCREMENT,
+    version INT NOT NULL,
     create_time TIMESTAMP(3) NOT NULL,
     update_time TIMESTAMP(3) NOT NULL,
     data JSON NOT NULL,

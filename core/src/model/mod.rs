@@ -9,24 +9,24 @@ pub mod model_dto;
 #[derive(Clone, Debug, PartialEq, Deserialize, Serialize)]
 
 pub struct ModelWithOwner<Data> {
-    pub id: u64,
-    pub version: u32,
-    pub user_id: u64,
+    pub id: i64,
+    pub version: i64,
+    pub user_id: i64,
     pub data: Data,
 }
 
 impl<Data: DataType> Owned for ModelWithOwner<Data> {
-    fn get_owner_id(&self) -> u64 {
+    fn get_owner_id(&self) -> i64 {
         self.user_id
     }
 }
 
 impl<Data: DataType> WithIdAndVersion for ModelWithOwner<Data> {
-    fn get_id(&self) -> u64 {
+    fn get_id(&self) -> i64 {
         self.id
     }
 
-    fn get_version(&self) -> u32 {
+    fn get_version(&self) -> i64 {
         self.version
     }
 }

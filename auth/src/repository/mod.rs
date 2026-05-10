@@ -34,14 +34,14 @@ pub trait AuthAccountRepository: Clone + Send + Sync {
         &self,
         tx: &mut <Self::DB as Database>::Connection,
         status: AuthAccountStatus,
-        start_user_id: u64,
+        start_user_id: i64,
         limit: u32,
     ) -> impl Future<Output = Result<Vec<AuthAccountModel>, LsError>> + Send;
 
     fn fetch_by_id(
         &self,
         tx: &mut <Self::DB as Database>::Connection,
-        user_id: u64,
+        user_id: i64,
     ) -> impl Future<Output = Result<AuthAccountModel, LsError>> + Send;
 
     fn fetch_by_username(
@@ -83,7 +83,7 @@ pub trait AuthAccountRepository: Clone + Send + Sync {
     fn delete_by_id(
         &self,
         tx: &mut <Self::DB as Database>::Connection,
-        user_id: u64,
+        user_id: i64,
     ) -> impl Future<Output = Result<u64, LsError>> + Send;
 }
 

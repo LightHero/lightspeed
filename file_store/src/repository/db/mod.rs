@@ -75,7 +75,7 @@ pub trait FileStoreDataRepository: Clone + Send + Sync {
     fn fetch_one_by_id(
         &self,
         tx: &mut <Self::DB as Database>::Connection,
-        id: u64,
+        id: i64,
     ) -> impl Future<Output = Result<FileStoreDataModel, LsError>> + Send;
 
     fn fetch_one_by_repository(
@@ -103,6 +103,6 @@ pub trait FileStoreDataRepository: Clone + Send + Sync {
     fn delete_by_id(
         &self,
         tx: &mut <Self::DB as Database>::Connection,
-        id: u64,
+        id: i64,
     ) -> impl Future<Output = Result<u64, LsError>> + Send;
 }

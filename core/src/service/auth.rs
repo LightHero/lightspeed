@@ -8,7 +8,7 @@ use std::sync::Arc;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Auth {
-    pub id: u64,
+    pub id: i64,
     pub username: String,
     pub session_id: String,
     pub roles: Vec<String>,
@@ -18,7 +18,7 @@ pub struct Auth {
 
 impl Auth {
     pub fn new<S: Into<String>>(
-        id: u64,
+        id: i64,
         username: S,
         roles: Vec<String>,
         creation_ts_seconds: i64,
@@ -36,17 +36,17 @@ pub struct Role {
 }
 
 pub trait Owned {
-    fn get_owner_id(&self) -> u64;
+    fn get_owner_id(&self) -> i64;
 }
 
 impl<DATA: Owned + DataType> Owned for c3p0::Record<DATA> {
-    fn get_owner_id(&self) -> u64 {
+    fn get_owner_id(&self) -> i64 {
         self.data.get_owner_id()
     }
 }
 
-impl Owned for u64 {
-    fn get_owner_id(&self) -> u64 {
+impl Owned for i64 {
+    fn get_owner_id(&self) -> i64 {
         *self
     }
 }
@@ -835,8 +835,8 @@ mod test {
     }
 
     impl Owned for Ownable {
-        fn get_owner_id(&self) -> u64 {
-            self.owner_id as u64
+        fn get_owner_id(&self) -> i64 {
+            self.owner_id
         }
     }
 }

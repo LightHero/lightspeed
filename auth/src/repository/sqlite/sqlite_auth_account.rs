@@ -26,7 +26,7 @@ impl AuthAccountRepository for SqliteAuthAccountRepository {
         &self,
         tx: &mut SqliteConnection,
         status: AuthAccountStatus,
-        start_user_id: u64,
+        start_user_id: i64,
         limit: u32,
     ) -> Result<Vec<AuthAccountModel>, LsError> {
         Ok(AuthAccountModel::query_with_tail(
@@ -43,8 +43,8 @@ impl AuthAccountRepository for SqliteAuthAccountRepository {
         .await?)
     }
 
-    async fn fetch_by_id(&self, tx: &mut SqliteConnection, user_id: u64) -> Result<AuthAccountModel, LsError> {
-        Ok(tx.fetch_one_by_id(user_id).await?)
+    async fn fetch_by_id(&self, tx: &mut SqliteConnection, user_id: i64) -> Result<AuthAccountModel, LsError> {
+        Ok(tx.fetch_one_by_id::<AuthAccountData>(user_id).await?)
     }
 
     async fn fetch_by_username(&self, tx: &mut SqliteConnection, username: &str) -> Result<AuthAccountModel, LsError> {
@@ -102,7 +102,7 @@ impl AuthAccountRepository for SqliteAuthAccountRepository {
         Ok(tx.delete(model).await?)
     }
 
-    async fn delete_by_id(&self, tx: &mut SqliteConnection, user_id: u64) -> Result<u64, LsError> {
+    async fn delete_by_id(&self, tx: &mut SqliteConnection, user_id: i64) -> Result<u64, LsError> {
         Ok(tx.delete_by_id::<AuthAccountData>(user_id).await?)
     }
 }

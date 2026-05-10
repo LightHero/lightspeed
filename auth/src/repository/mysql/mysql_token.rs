@@ -71,7 +71,7 @@ impl TokenRepository for MySqlTokenRepository {
             <TokenData as DataType>::TABLE_NAME
         );
         let rows = query(AssertSqlSafe(select_sql)).bind(threshold_epoch_seconds).fetch_all(&mut *tx).await?;
-        let ids: Vec<u64> = rows.iter().map(|row| row.try_get::<u64, _>(0)).collect::<Result<Vec<_>, _>>()?;
+        let ids: Vec<i64> = rows.iter().map(|row| row.try_get::<i64, _>(0)).collect::<Result<Vec<_>, _>>()?;
 
         if ids.is_empty() {
             return Ok(0);

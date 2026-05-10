@@ -5,8 +5,8 @@ use crate::web::types::MaybeWeb;
 
 #[derive(Clone, Serialize, Deserialize)]
 pub struct RecordDto<Data: MaybeWeb> {
-    pub id: u64,
-    pub version: u32,
+    pub id: i64,
+    pub version: i64,
     pub data: Data,
 }
 

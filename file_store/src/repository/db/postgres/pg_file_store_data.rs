@@ -24,8 +24,8 @@ impl FileStoreDataRepository for PgFileStoreDataRepository {
         Ok(res)
     }
 
-    async fn fetch_one_by_id(&self, tx: &mut PgConnection, id: u64) -> Result<FileStoreDataModel, LsError> {
-        Ok(tx.fetch_one_by_id(id).await?)
+    async fn fetch_one_by_id(&self, tx: &mut PgConnection, id: i64) -> Result<FileStoreDataModel, LsError> {
+        Ok(tx.fetch_one_by_id::<FileStoreDataData>(id).await?)
     }
 
     async fn fetch_one_by_repository(
@@ -75,7 +75,7 @@ impl FileStoreDataRepository for PgFileStoreDataRepository {
         Ok(tx.save(model).await?)
     }
 
-    async fn delete_by_id(&self, tx: &mut PgConnection, id: u64) -> Result<u64, LsError> {
+    async fn delete_by_id(&self, tx: &mut PgConnection, id: i64) -> Result<u64, LsError> {
         Ok(tx.delete_by_id::<FileStoreDataData>(id).await?)
     }
 }

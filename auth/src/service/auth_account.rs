@@ -409,14 +409,14 @@ impl<RepoManager: AuthRepositoryManager> LsAuthAccountService<RepoManager> {
         Ok(user)
     }
 
-    pub async fn fetch_by_user_id(&self, user_id: u64) -> Result<AuthAccountModel, LsError> {
+    pub async fn fetch_by_user_id(&self, user_id: i64) -> Result<AuthAccountModel, LsError> {
         self.c3p0.transaction(async |conn| self.fetch_by_user_id_with_conn(conn, user_id).await).await
     }
 
     pub async fn fetch_by_user_id_with_conn(
         &self,
         conn: &mut <RepoManager::DB as Database>::Connection,
-        user_id: u64,
+        user_id: i64,
     ) -> Result<AuthAccountModel, LsError> {
         debug!("Fetch user with user_id [{user_id:?}]");
         self.auth_repo.fetch_by_id(conn, user_id).await
@@ -438,7 +438,7 @@ impl<RepoManager: AuthRepositoryManager> LsAuthAccountService<RepoManager> {
     pub async fn fetch_all_by_status(
         &self,
         status: AuthAccountStatus,
-        start_user_id: u64,
+        start_user_id: i64,
         limit: u32,
     ) -> Result<Vec<AuthAccountModel>, LsError> {
         self.c3p0
@@ -450,21 +450,21 @@ impl<RepoManager: AuthRepositoryManager> LsAuthAccountService<RepoManager> {
         &self,
         conn: &mut <RepoManager::DB as Database>::Connection,
         status: AuthAccountStatus,
-        start_user_id: u64,
+        start_user_id: i64,
         limit: u32,
     ) -> Result<Vec<AuthAccountModel>, LsError> {
         debug!("Fetch all with status [{status}], start_user_id {start_user_id:?}, limit {limit}");
         self.auth_repo.fetch_all_by_status(conn, status, start_user_id, limit).await
     }
 
-    pub async fn add_roles(&self, user_id: u64, roles: &[String]) -> Result<AuthAccountModel, LsError> {
+    pub async fn add_roles(&self, user_id: i64, roles: &[String]) -> Result<AuthAccountModel, LsError> {
         self.c3p0.transaction(async |conn| self.add_roles_with_conn(conn, user_id, roles).await).await
     }
 
     pub async fn add_roles_with_conn(
         &self,
         conn: &mut <RepoManager::DB as Database>::Connection,
-        user_id: u64,
+        user_id: i64,
         roles: &[String],
     ) -> Result<AuthAccountModel, LsError> {
         info!("Add roles [{roles:?}] to user_id [{user_id:?}]");
@@ -478,14 +478,14 @@ impl<RepoManager: AuthRepositoryManager> LsAuthAccountService<RepoManager> {
         self.auth_repo.update(conn, account).await
     }
 
-    pub async fn delete_roles(&self, user_id: u64, roles: &[String]) -> Result<AuthAccountModel, LsError> {
+    pub async fn delete_roles(&self, user_id: i64, roles: &[String]) -> Result<AuthAccountModel, LsError> {
         self.c3p0.transaction(async |conn| self.delete_roles_with_conn(conn, user_id, roles).await).await
     }
 
     pub async fn delete_roles_with_conn(
         &self,
         conn: &mut <RepoManager::DB as Database>::Connection,
-        user_id: u64,
+        user_id: i64,
         roles: &[String],
     ) -> Result<AuthAccountModel, LsError> {
         info!("delete roles [{roles:?}] to user_id [{user_id:?}]");
@@ -499,7 +499,7 @@ impl<RepoManager: AuthRepositoryManager> LsAuthAccountService<RepoManager> {
 
     pub async fn change_user_data(
         &self,
-        user_id: u64,
+        user_id: i64,
         new_username: Option<String>,
         new_email: Option<String>,
     ) -> Result<AuthAccountModel, LsError> {
@@ -511,7 +511,7 @@ impl<RepoManager: AuthRepositoryManager> LsAuthAccountService<RepoManager> {
     pub async fn change_user_data_with_conn(
         &self,
         conn: &mut <RepoManager::DB as Database>::Connection,
-        user_id: u64,
+        user_id: i64,
         new_username: Option<String>,
         new_email: Option<String>,
     ) -> Result<AuthAccountModel, LsError> {
@@ -540,14 +540,14 @@ impl<RepoManager: AuthRepositoryManager> LsAuthAccountService<RepoManager> {
         self.auth_repo.update(conn, user).await
     }
 
-    pub async fn disable_by_user_id(&self, user_id: u64) -> Result<AuthAccountModel, LsError> {
+    pub async fn disable_by_user_id(&self, user_id: i64) -> Result<AuthAccountModel, LsError> {
         self.c3p0.transaction(async |conn| self.disable_by_user_id_with_conn(conn, user_id).await).await
     }
 
     pub async fn disable_by_user_id_with_conn(
         &self,
         conn: &mut <RepoManager::DB as Database>::Connection,
-        user_id: u64,
+        user_id: i64,
     ) -> Result<AuthAccountModel, LsError> {
         debug!("Disable user with user_id [{user_id:?}]");
         let mut user = self.auth_repo.fetch_by_id(conn, user_id).await?;
@@ -566,7 +566,7 @@ impl<RepoManager: AuthRepositoryManager> LsAuthAccountService<RepoManager> {
         self.auth_repo.update(conn, user).await
     }
 
-    pub async fn reactivate_disabled_user_by_user_id(&self, user_id: u64) -> Result<AuthAccountModel, LsError> {
+    pub async fn reactivate_disabled_user_by_user_id(&self, user_id: i64) -> Result<AuthAccountModel, LsError> {
         self.c3p0
             .transaction(async |conn| self.reactivate_disabled_user_by_user_id_with_conn(conn, user_id).await)
             .await
@@ -575,7 +575,7 @@ impl<RepoManager: AuthRepositoryManager> LsAuthAccountService<RepoManager> {
     pub async fn reactivate_disabled_user_by_user_id_with_conn(
         &self,
         conn: &mut <RepoManager::DB as Database>::Connection,
-        user_id: u64,
+        user_id: i64,
     ) -> Result<AuthAccountModel, LsError> {
         debug!("Reactivate disabled user with user_id [{user_id:?}]");
         let mut user = self.auth_repo.fetch_by_id(conn, user_id).await?;
@@ -594,14 +594,14 @@ impl<RepoManager: AuthRepositoryManager> LsAuthAccountService<RepoManager> {
         self.auth_repo.update(conn, user).await
     }
 
-    pub async fn delete_by_user_id(&self, user_id: u64) -> Result<u64, LsError> {
+    pub async fn delete_by_user_id(&self, user_id: i64) -> Result<u64, LsError> {
         self.c3p0.transaction(async |conn| self.delete_by_user_id_with_conn(conn, user_id).await).await
     }
 
     pub async fn delete_by_user_id_with_conn(
         &self,
         conn: &mut <RepoManager::DB as Database>::Connection,
-        user_id: u64,
+        user_id: i64,
     ) -> Result<u64, LsError> {
         debug!("Delete user with user_id [{user_id:?}]");
         self.auth_repo.delete_by_id(conn, user_id).await

@@ -6,14 +6,14 @@ use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize)]
 pub struct ChangePasswordDto {
-    pub user_id: u64,
+    pub user_id: i64,
     pub old_password: String,
     pub new_password: String,
     pub new_password_confirm: String,
 }
 
 impl Owned for ChangePasswordDto {
-    fn get_owner_id(&self) -> u64 {
+    fn get_owner_id(&self) -> i64 {
         self.user_id
     }
 }
