@@ -16,6 +16,7 @@ members = [
 [workspace.package]
 version = "0.66.0"
 edition = "2024"
+rust-version = "1.88"
 
 [workspace.dependencies]
 lightspeed_auth = { version = "0.66.0", path = "./auth" }

@@ -26,8 +26,11 @@ jobs:
         with:
           components: clippy, rustfmt, llvm-tools-preview
 
+      - name: Cache cargo build artifacts
+        uses: Swatinem/rust-cache@v2
+
       - name: Install Just command runner
-        uses: extractions/setup-just@v1
+        uses: extractions/setup-just@v3
 
       - name: check rust code style
         run: |
@@ -53,3 +56,12 @@ jobs:
           token: ${{ secrets.CODECOV_TOKEN }}
           files: lcov.info
           fail_ci_if_error: true
+
+  cargo-deny:
+    name: cargo-deny
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: EmbarkStudios/cargo-deny-action@v2
+        with:
+          command: check advisories bans licenses sources

@@ -1,0 +1,54 @@
+# cargo-deny configuration. See https://embarkstudios.github.io/cargo-deny/.
+#
+# Run locally with:    cargo deny check
+# CI runs the same command via EmbarkStudios/cargo-deny-action@v2.
+
+[graph]
+# Default to the host target so we don't pull in cross-platform crates that
+# the project doesn't actually build for.
+all-features = true
+
+[advisories]
+# Use the bundled Rustsec advisory DB.
+db-path = "~/.cargo/advisory-db"
+db-urls = ["https://github.com/rustsec/advisory-db"]
+# Fail on every published vulnerability and unmaintained crate. Yanked
+# crates are also rejected because they're a strong signal something is
+# wrong with the published artifact.
+yanked = "deny"
+ignore = []
+
+[licenses]
+# Allowlist of OSI-approved permissive licenses we ship under. Anything
+# else needs explicit review before being added here.
+allow = [
+    "MIT",
+    "Apache-2.0",
+    "Apache-2.0 WITH LLVM-exception",
+    "BSD-2-Clause",
+    "BSD-3-Clause",
+    "ISC",
+    "Unicode-3.0",
+    "Unicode-DFS-2016",
+    "Zlib",
+    "MPL-2.0",
+    "CC0-1.0",
+    "OpenSSL",
+]
+confidence-threshold = 0.93
+
+[bans]
+# Reject duplicate crate versions when avoidable (catches accidental
+# dependency-tree bloat). Set to "deny" once the tree is cleaned up; for
+# now we warn so the build doesn't break on a transient duplicate.
+multiple-versions = "warn"
+wildcards = "deny"
+deny = []
+
+[sources]
+# Only crates.io and the rust-lang org's public registries are accepted.
+# Any git dependency must be explicitly listed under `allow-git`.
+unknown-registry = "deny"
+unknown-git = "deny"
+allow-registry = ["https://github.com/rust-lang/crates.io-index"]
+allow-git = []
