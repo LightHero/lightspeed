@@ -112,9 +112,8 @@ impl JobExecutorInternal {
                 let seconds = duration_secs % 60;
                 let minutes = (duration_secs / 60) % 60;
                 let hours = (duration_secs / 60) / 60;
-                let duration_fmt = format!(
-                    "{hours:02} hour(s), {minutes:02} minute(s), {seconds:02} second(s) and {mills:03} millis"
-                );
+                let duration_fmt =
+                    format!("{hours:02} hour(s), {minutes:02} minute(s), {seconds:02} second(s) and {mills:03} millis");
 
                 match result {
                     Ok(()) => {

@@ -55,8 +55,7 @@ async fn should_start_the_mailserver() {
 
     // Assert: query Mailpit's REST API and verify the email was received
     let messages_url = format!("http://127.0.0.1:{api_port}/api/v1/messages");
-    let response: serde_json::Value =
-        reqwest::get(&messages_url).await.unwrap().json().await.unwrap();
+    let response: serde_json::Value = reqwest::get(&messages_url).await.unwrap().json().await.unwrap();
 
     let messages = response["messages"].as_array().expect("messages array");
     assert_eq!(1, messages.len(), "expected exactly one message in Mailpit");
@@ -75,7 +74,6 @@ async fn should_start_the_mailserver() {
     // Fetch the full message to verify the text body
     let message_id = received["ID"].as_str().unwrap();
     let message_url = format!("http://127.0.0.1:{api_port}/api/v1/message/{message_id}");
-    let full_message: serde_json::Value =
-        reqwest::get(&message_url).await.unwrap().json().await.unwrap();
+    let full_message: serde_json::Value = reqwest::get(&message_url).await.unwrap().json().await.unwrap();
     assert_eq!("hello from lightspeed test", full_message["Text"].as_str().unwrap().trim());
 }

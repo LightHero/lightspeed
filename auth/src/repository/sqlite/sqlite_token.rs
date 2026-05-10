@@ -1,9 +1,9 @@
 use crate::model::token::{TokenData, TokenModel};
 use crate::repository::TokenRepository;
+use ::sqlx::AssertSqlSafe;
 use c3p0::sqlx::*;
 use c3p0::*;
 use lightspeed_core::error::LsError;
-use ::sqlx::AssertSqlSafe;
 
 #[derive(Clone)]
 pub struct SqliteTokenRepository {}

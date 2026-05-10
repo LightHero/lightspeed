@@ -1,9 +1,9 @@
 use crate::model::token::{TokenData, TokenModel};
 use crate::repository::TokenRepository;
+use ::sqlx::AssertSqlSafe;
 use c3p0::sqlx::*;
 use c3p0::*;
 use lightspeed_core::error::LsError;
-use ::sqlx::AssertSqlSafe;
 
 #[derive(Clone)]
 pub struct MySqlTokenRepository {}
@@ -78,8 +78,7 @@ impl TokenRepository for MySqlTokenRepository {
         }
 
         let placeholders = vec!["?"; ids.len()].join(",");
-        let delete_sql =
-            format!("DELETE FROM {} WHERE id IN ({})", <TokenData as DataType>::TABLE_NAME, placeholders);
+        let delete_sql = format!("DELETE FROM {} WHERE id IN ({})", <TokenData as DataType>::TABLE_NAME, placeholders);
         let mut q = query(AssertSqlSafe(delete_sql));
         for id in &ids {
             q = q.bind(id);

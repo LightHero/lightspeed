@@ -77,7 +77,8 @@ impl<RepoManager: AuthRepositoryManager> LsAuthAccountService<RepoManager> {
                 }
             }
 
-            let expiration_ts_seconds = creation_ts_seconds + (self.auth_config.auth_session_max_validity_minutes as i64 * 60);
+            let expiration_ts_seconds =
+                creation_ts_seconds + (self.auth_config.auth_session_max_validity_minutes as i64 * 60);
 
             return Ok(Auth::new(
                 user.id,

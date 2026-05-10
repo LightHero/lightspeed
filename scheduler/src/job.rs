@@ -146,9 +146,7 @@ impl Job {
     /// The owner must release the slot via [`Job::run_with_guard`] (which
     /// installs a Drop guard) so the flag is cleared even on panic.
     pub(crate) fn try_claim_running(&self) -> bool {
-        self.is_running
-            .compare_exchange(false, true, Ordering::SeqCst, Ordering::SeqCst)
-            .is_ok()
+        self.is_running.compare_exchange(false, true, Ordering::SeqCst, Ordering::SeqCst).is_ok()
     }
 
     pub fn name(&self) -> &str {
@@ -165,10 +163,7 @@ impl Job {
     pub async fn run(&self) -> Result<(), SchedulerError> {
         if !self.try_claim_running() {
             return Err(SchedulerError::JobLockError {
-                message: format!(
-                    "Wrong Job status found for job [{}/{}]. Expected: false",
-                    self.group, self.name
-                ),
+                message: format!("Wrong Job status found for job [{}/{}]. Expected: false", self.group, self.name),
             });
         }
         self.run_with_guard().await

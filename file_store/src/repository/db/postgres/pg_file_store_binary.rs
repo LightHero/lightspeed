@@ -39,7 +39,7 @@ impl PgFileStoreBinaryRepository {
 impl DBFileStoreBinaryRepository for PgFileStoreBinaryRepository {
     type DB = Postgres;
 
-    /// Reads the LO referenced by the (repository, filepath) 
+    /// Reads the LO referenced by the (repository, filepath)
     /// into a single in-memory buffer. For true
     /// streaming reads see [`Self::read_file_streamed`].
     async fn read_file(
@@ -121,13 +121,11 @@ impl DBFileStoreBinaryRepository for PgFileStoreBinaryRepository {
         });
 
         let stream: BoxStream<'static, Result<Vec<u8>, LsError>> =
-            Box::pin(futures::stream::unfold(receiver, |mut rx| async move {
-                rx.recv().await.map(|item| (item, rx))
-            }));
+            Box::pin(futures::stream::unfold(receiver, |mut rx| async move { rx.recv().await.map(|item| (item, rx)) }));
         Ok(BinaryContent::Stream { stream: Mutex::new(stream) })
     }
 
-    /// Streams the source into a freshly created Large Object. 
+    /// Streams the source into a freshly created Large Object.
     async fn save_file<'a>(
         &self,
         tx: &mut PgConnection,
@@ -174,14 +172,9 @@ impl DBFileStoreBinaryRepository for PgFileStoreBinaryRepository {
 
         Self::lo_close(&mut *tx, fd).await?;
 
-        let insert_sql =
-            format!("INSERT INTO {} (repository, filepath, data) VALUES ($1, $2, $3)", self.table_name);
-        let res = query(AssertSqlSafe(insert_sql))
-            .bind(repository_name)
-            .bind(file_path)
-            .bind(oid)
-            .execute(&mut *tx)
-            .await?;
+        let insert_sql = format!("INSERT INTO {} (repository, filepath, data) VALUES ($1, $2, $3)", self.table_name);
+        let res =
+            query(AssertSqlSafe(insert_sql)).bind(repository_name).bind(file_path).bind(oid).execute(&mut *tx).await?;
         Ok(res.rows_affected())
     }
 
@@ -189,11 +182,8 @@ impl DBFileStoreBinaryRepository for PgFileStoreBinaryRepository {
     async fn delete_file(&self, tx: &mut PgConnection, repository_name: &str, file_path: &str) -> Result<u64, LsError> {
         let delete_sql =
             format!("DELETE FROM {} WHERE repository = $1 AND filepath = $2 RETURNING data", self.table_name);
-        let row = query(AssertSqlSafe(delete_sql))
-            .bind(repository_name)
-            .bind(file_path)
-            .fetch_optional(&mut *tx)
-            .await?;
+        let row =
+            query(AssertSqlSafe(delete_sql)).bind(repository_name).bind(file_path).fetch_optional(&mut *tx).await?;
 
         let Some(row) = row else { return Ok(0) };
         let oid: Oid = row.try_get(0)?;

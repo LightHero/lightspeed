@@ -26,7 +26,6 @@ struct ValidationCodeData<'a, Data: Serialize> {
 }
 
 impl LsValidationCodeService {
-
     /// Create a new validation code service
     pub fn new(hash_service: Arc<LsHashService>, jwt_service: Arc<LsJwtService>) -> Self {
         Self { jwt_service, hash_service }
@@ -81,10 +80,7 @@ impl LsValidationCodeService {
         } else {
             calculated_token_hash == request.data.token_hash
         };
-        Ok(VerifyValidationCodeResponseDto {
-            to_be_validated: request.data.to_be_validated,
-            code_valid,
-        })
+        Ok(VerifyValidationCodeResponseDto { to_be_validated: request.data.to_be_validated, code_valid })
     }
 
     fn hash<Data: Serialize>(&self, data: ValidationCodeData<Data>) -> Result<String, LsError> {

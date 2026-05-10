@@ -4,7 +4,6 @@ use rand::distr::Alphanumeric;
 pub struct LsRandomService {}
 
 impl LsRandomService {
-
     /// Returns a string of exactly `length` alphanumeric characters
     #[inline]
     pub fn random_string(length: usize) -> String {

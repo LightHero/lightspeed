@@ -69,8 +69,7 @@ fn should_save_file_to_fs() -> Result<(), LsError> {
 
         println!("Data: [{:#?}]", loaded.data);
 
-        let content =
-            file_store.read_file_content(&loaded.data.repository, &loaded.data.file_path).await.unwrap();
+        let content = file_store.read_file_content(&loaded.data.repository, &loaded.data.file_path).await.unwrap();
         let read_content = crate::tests::collect_bytes(content).await.unwrap();
         assert_eq!(read_content.as_slice(), &std::fs::read(SOURCE_FILE).unwrap());
 
@@ -114,13 +113,11 @@ fn should_save_file_to_db_with_specific_repo() -> Result<(), LsError> {
             )
             .await?;
 
-        let content_1 =
-            file_store.read_file_content(&saved_1.data.repository, &saved_1.data.file_path).await.unwrap();
+        let content_1 = file_store.read_file_content(&saved_1.data.repository, &saved_1.data.file_path).await.unwrap();
         let read_1 = crate::tests::collect_bytes(content_1).await.unwrap();
         assert_eq!(&std::fs::read_to_string(SOURCE_FILE).unwrap(), std::str::from_utf8(&read_1).unwrap());
 
-        let content_2 =
-            file_store.read_file_content(&saved_2.data.repository, &saved_2.data.file_path).await.unwrap();
+        let content_2 = file_store.read_file_content(&saved_2.data.repository, &saved_2.data.file_path).await.unwrap();
         let read_2 = crate::tests::collect_bytes(content_2).await.unwrap();
         assert_eq!(&std::fs::read_to_string(SOURCE_FILE).unwrap(), std::str::from_utf8(&read_2).unwrap());
 
@@ -253,8 +250,7 @@ fn should_save_file_to_db_with_relative_folder() -> Result<(), LsError> {
         assert_eq!("DB_ONE", &saved.data.repository);
         assert_eq!(&file_name, &saved.data.file_path);
 
-        let content =
-            file_store.read_file_content(&saved.data.repository, &saved.data.file_path).await.unwrap();
+        let content = file_store.read_file_content(&saved.data.repository, &saved.data.file_path).await.unwrap();
         let read_content = crate::tests::collect_bytes(content).await.unwrap();
         assert_eq!(&std::fs::read_to_string(SOURCE_FILE).unwrap(), std::str::from_utf8(&read_content).unwrap());
 
@@ -319,8 +315,7 @@ fn should_save_file_to_db_with_relative_folder_in_repository() -> Result<(), LsE
         assert_eq!("DB_ONE", loaded.data.repository);
         assert_eq!(file_path, loaded.data.file_path);
 
-        let content =
-            file_store.read_file_content(&saved.data.repository, &loaded.data.file_path).await.unwrap();
+        let content = file_store.read_file_content(&saved.data.repository, &loaded.data.file_path).await.unwrap();
         let read_content = crate::tests::collect_bytes(content).await.unwrap();
         assert_eq!(&std::fs::read_to_string(SOURCE_FILE).unwrap(), std::str::from_utf8(&read_content).unwrap());
 
@@ -791,13 +786,7 @@ fn save_file_should_reject_payload_above_save_max_size_bytes() -> Result<(), LsE
             let random: u32 = rand::random();
             let path = format!("{label}_{random}");
             let result = capped_service
-                .save_file(
-                    (*repo).to_owned(),
-                    path.clone(),
-                    path,
-                    "application/octet-stream".to_owned(),
-                    content,
-                )
+                .save_file((*repo).to_owned(), path.clone(), path, "application/octet-stream".to_owned(), content)
                 .await;
             match result {
                 Err(LsError::BadRequest { code, .. }) => {

@@ -7,7 +7,6 @@ use subtle::ConstantTimeEq;
 pub struct LsHashService {}
 
 impl LsHashService {
-
     /// Create a new hash service
     pub fn new() -> Self {
         Self::default()
@@ -31,11 +30,7 @@ impl LsHashService {
     ///   probe (validation codes, MACs, password-reset tokens, etc.).
     pub fn verify_hash(&self, text: &str, expected_hash: &str, constant_time: bool) -> bool {
         let actual = self.hash(text);
-        if constant_time {
-            actual.as_bytes().ct_eq(expected_hash.as_bytes()).into()
-        } else {
-            actual == expected_hash
-        }
+        if constant_time { actual.as_bytes().ct_eq(expected_hash.as_bytes()).into() } else { actual == expected_hash }
     }
 }
 

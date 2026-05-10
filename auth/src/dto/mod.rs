@@ -19,9 +19,6 @@ pub(crate) fn validate_min_password_len<S: Into<String>>(
     min: usize,
 ) {
     if password.len() < min {
-        error_details.add_detail(
-            field_name.into(),
-            ErrorDetail::new(ERR_PASSWORD_TOO_SHORT, vec![min.to_string()]),
-        );
+        error_details.add_detail(field_name.into(), ErrorDetail::new(ERR_PASSWORD_TOO_SHORT, vec![min.to_string()]));
     }
 }

@@ -1,6 +1,7 @@
 use crate::data;
 use crate::tests::util::{create_user, create_user_with_password};
 use c3p0::*;
+use lightspeed_auth::config::AuthConfig;
 use lightspeed_auth::dto::ERR_PASSWORD_TOO_SHORT;
 use lightspeed_auth::dto::change_password_dto::ChangePasswordDto;
 use lightspeed_auth::dto::create_login_dto::CreateLoginDto;
@@ -9,7 +10,6 @@ use lightspeed_auth::model::auth_account::AuthAccountStatus;
 use lightspeed_auth::model::token::TokenType;
 use lightspeed_auth::repository::{AuthAccountRepository, AuthRepositoryManager};
 use lightspeed_auth::service::auth_account::LsAuthAccountService;
-use lightspeed_auth::config::AuthConfig;
 use lightspeed_core::error::{ErrorCodes, ErrorDetail, LsError};
 use lightspeed_core::model::language::Language;
 use lightspeed_core::utils::{current_epoch_seconds, new_hyphenated_uuid};
@@ -347,6 +347,7 @@ fn should_regenerate_activation_token_by_email_and_username() -> Result<(), LsEr
 ///   * `LsError::NotFound` — username unknown,
 ///   * `LsError::ValidationError` carrying `WRONG_EMAIL` — email mismatch,
 ///   * `LsError::BadRequest(NOT_PENDING_USER)` — user already active.
+///
 /// Each told an attacker something different. After the fix, every
 /// "request not eligible" branch returns the SAME error variant and code.
 /// This test pins that contract.
@@ -378,11 +379,14 @@ fn generate_new_activation_token_should_use_uniform_error_for_all_failure_modes(
             .generate_new_activation_token_by_username_and_email(&active_user.data.username, &active_user.data.email)
             .await;
 
-        for (label, result) in [("unknown_username", unknown), ("wrong_email", wrong_email), ("wrong_status", wrong_status)] {
+        for (label, result) in
+            [("unknown_username", unknown), ("wrong_email", wrong_email), ("wrong_status", wrong_status)]
+        {
             match result {
                 Err(LsError::BadRequest { code, .. }) => {
                     assert_eq!(
-                        ErrorCodes::WRONG_CREDENTIALS, code,
+                        ErrorCodes::WRONG_CREDENTIALS,
+                        code,
                         "case [{label}] returned a distinguishable error code [{code}]; that's an enumeration oracle"
                     );
                 }
@@ -817,8 +821,7 @@ fn should_fail_resetting_password_if_token_expired() -> Result<(), LsError> {
             .await?;
 
         token.data.expire_at_epoch_seconds = 0;
-        let token =
-            auth_module.repo_manager.c3p0().transaction(async |conn| conn.update(token.clone()).await).await?;
+        let token = auth_module.repo_manager.c3p0().transaction(async |conn| conn.update(token.clone()).await).await?;
 
         let password_new = new_hyphenated_uuid();
 
@@ -1709,8 +1712,7 @@ fn should_honor_configured_min_password_len() -> Result<(), LsError> {
         match result {
             Err(LsError::ValidationError { details }) => {
                 let errors = details.details.get("password").expect("expected password error");
-                let expected =
-                    ErrorDetail::new(ERR_PASSWORD_TOO_SHORT, vec![auth_config.min_password_len.to_string()]);
+                let expected = ErrorDetail::new(ERR_PASSWORD_TOO_SHORT, vec![auth_config.min_password_len.to_string()]);
                 assert!(errors.contains(&expected));
             }
             _ => panic!("expected ValidationError"),

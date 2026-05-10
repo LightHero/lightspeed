@@ -267,12 +267,14 @@ impl<RepoManager: DBFileStoreRepositoryManager> LsFileStoreService<RepoManager> 
     async fn enforce_save_max_size(&self, content: &BinaryContent<'_>, max: usize) -> Result<(), LsError> {
         let actual: u64 = match content {
             BinaryContent::InMemory { content } => content.len() as u64,
-            BinaryContent::OpenDal { operator, path } => {
-                operator.stat(path).await.map_err(|err| LsError::BadRequest {
+            BinaryContent::OpenDal { operator, path } => operator
+                .stat(path)
+                .await
+                .map_err(|err| LsError::BadRequest {
                     message: format!("LsFileStoreService - Cannot stat file [{path}]: {err:?}"),
                     code: ErrorCodes::IO_ERROR,
-                })?.content_length()
-            }
+                })?
+                .content_length(),
             BinaryContent::Stream { .. } => {
                 // No advance size; let the save proceed and any future
                 // backpressure / hard limits at the storage layer apply.
@@ -281,9 +283,7 @@ impl<RepoManager: DBFileStoreRepositoryManager> LsFileStoreService<RepoManager> 
         };
         if actual > max as u64 {
             return Err(LsError::BadRequest {
-                message: format!(
-                    "LsFileStoreService - File size [{actual}] exceeds save_max_size_bytes [{max}]"
-                ),
+                message: format!("LsFileStoreService - File size [{actual}] exceeds save_max_size_bytes [{max}]"),
                 code: ErrorCodes::PAYLOAD_TOO_LARGE,
             });
         }
@@ -320,7 +320,7 @@ fn validate_safe_relative_path(field: &'static str, value: &str) -> Result<(), L
             code: ErrorCodes::PARSE_ERROR,
         });
     }
-    for segment in value.split(|c: char| c == '/' || c == '\\') {
+    for segment in value.split(['/', '\\']) {
         if segment == ".." {
             return Err(LsError::BadRequest {
                 message: format!(

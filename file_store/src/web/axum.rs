@@ -16,9 +16,26 @@ use std::borrow::Cow;
 /// CONTROLS and adding every other byte that isn't permitted.
 const RFC5987_ATTR_CHAR_DISALLOWED: &AsciiSet = &CONTROLS
     // Whitespace and quote-style characters.
-    .add(b' ').add(b'"').add(b'\'').add(b'(').add(b')').add(b',').add(b'/')
-    .add(b':').add(b';').add(b'<').add(b'=').add(b'>').add(b'?').add(b'@')
-    .add(b'[').add(b'\\').add(b']').add(b'{').add(b'}').add(b'%')
+    .add(b' ')
+    .add(b'"')
+    .add(b'\'')
+    .add(b'(')
+    .add(b')')
+    .add(b',')
+    .add(b'/')
+    .add(b':')
+    .add(b';')
+    .add(b'<')
+    .add(b'=')
+    .add(b'>')
+    .add(b'?')
+    .add(b'@')
+    .add(b'[')
+    .add(b'\\')
+    .add(b']')
+    .add(b'{')
+    .add(b'}')
+    .add(b'%')
     // High-bit bytes (UTF-8 continuation/leading bytes).
     .add(0x7F);
 
@@ -71,9 +88,8 @@ pub async fn into_response(
 
             // Adapt our `Result<Vec<u8>, LsError>` stream into the byte
             // stream shape `Body::from_stream` expects.
-            let bytes_stream = stream
-                .into_inner()
-                .map(|chunk| chunk.map_err(|err| std::io::Error::other(err.to_string())));
+            let bytes_stream =
+                stream.into_inner().map(|chunk| chunk.map_err(|err| std::io::Error::other(err.to_string())));
             (file_name, ct, Body::from_stream(bytes_stream))
         }
     };
@@ -320,7 +336,10 @@ mod test {
         assert!(header.contains("filename=\"evil__Set-Cookie: x=y____.txt\""), "fallback wrong: {header}");
 
         // The exact original value is preserved by filename* via percent-encoding.
-        assert!(header.contains("filename*=UTF-8''evil%0D%0ASet-Cookie%3A%20x%3Dy%0D%0A%22%5C.txt"), "encoded wrong: {header}");
+        assert!(
+            header.contains("filename*=UTF-8''evil%0D%0ASet-Cookie%3A%20x%3Dy%0D%0A%22%5C.txt"),
+            "encoded wrong: {header}"
+        );
 
         // And the result is a valid HTTP header value (no control bytes).
         http::header::HeaderValue::from_str(&header).expect("valid header value");

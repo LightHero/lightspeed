@@ -16,8 +16,9 @@ impl LsPasswordCodecService {
     /// Panics if the Argon2 parameters are invalid (per RFC 9106:
     /// `memory_kib >= 8 * parallelism`, `iterations >= 1`, `parallelism >= 1`).
     pub fn new(memory_kib: u32, iterations: u32, parallelism: u32) -> Self {
-        let params = Params::new(memory_kib, iterations, parallelism, None)
-            .expect("invalid argon2 parameters: require memory_kib >= 8 * parallelism, iterations >= 1, parallelism >= 1");
+        let params = Params::new(memory_kib, iterations, parallelism, None).expect(
+            "invalid argon2 parameters: require memory_kib >= 8 * parallelism, iterations >= 1, parallelism >= 1",
+        );
         let argon2 = Argon2::new(Algorithm::Argon2id, Version::V0x13, params);
 
         let salt = SaltString::generate(&mut OsRng);

@@ -92,10 +92,20 @@ mod tests {
         // Arrange
         let mut error_details = ErrorDetails::default();
 
-        let first =
-            c3p0::Record { id: 13, version: 1, data: Data(1000), update_time: Default::default(), create_time: Default::default() };
-        let second =
-            c3p0::Record { id: 12, version: 0, data: Data(1000), update_time: Default::default(), create_time: Default::default() };
+        let first = c3p0::Record {
+            id: 13,
+            version: 1,
+            data: Data(1000),
+            update_time: Default::default(),
+            create_time: Default::default(),
+        };
+        let second = c3p0::Record {
+            id: 12,
+            version: 0,
+            data: Data(1000),
+            update_time: Default::default(),
+            create_time: Default::default(),
+        };
 
         // Act
         validate_ownership(&mut error_details, &first, &second);
@@ -109,10 +119,20 @@ mod tests {
         // Arrange
         let mut error_details = ErrorDetails::default();
 
-        let first =
-            c3p0::Record { id: 13, version: 1, data: Data(1001), update_time: Default::default(), create_time: Default::default() };
-        let second =
-            c3p0::Record { id: 12, version: 0, data: Data(1000), update_time: Default::default(), create_time: Default::default() };
+        let first = c3p0::Record {
+            id: 13,
+            version: 1,
+            data: Data(1001),
+            update_time: Default::default(),
+            create_time: Default::default(),
+        };
+        let second = c3p0::Record {
+            id: 12,
+            version: 0,
+            data: Data(1000),
+            update_time: Default::default(),
+            create_time: Default::default(),
+        };
 
         // Act
         validate_ownership(&mut error_details, &first, &second);
@@ -127,10 +147,20 @@ mod tests {
         // Arrange
         let mut error_details = ErrorDetails::default();
 
-        let first =
-            c3p0::Record { id: 12, version: 0, data: Data(1001), update_time: Default::default(), create_time: Default::default() };
-        let second =
-            c3p0::Record { id: 12, version: 0, data: Data(1000), update_time: Default::default(), create_time: Default::default() };
+        let first = c3p0::Record {
+            id: 12,
+            version: 0,
+            data: Data(1001),
+            update_time: Default::default(),
+            create_time: Default::default(),
+        };
+        let second = c3p0::Record {
+            id: 12,
+            version: 0,
+            data: Data(1000),
+            update_time: Default::default(),
+            create_time: Default::default(),
+        };
 
         // Act
         validate_id_and_version(&mut error_details, &first, &second);
@@ -144,10 +174,20 @@ mod tests {
         // Arrange
         let mut error_details = ErrorDetails::default();
 
-        let first =
-            c3p0::Record { id: 13, version: 1, data: Data(1001), update_time: Default::default(), create_time: Default::default() };
-        let second =
-            c3p0::Record { id: 12, version: 0, data: Data(1000), update_time: Default::default(), create_time: Default::default() };
+        let first = c3p0::Record {
+            id: 13,
+            version: 1,
+            data: Data(1001),
+            update_time: Default::default(),
+            create_time: Default::default(),
+        };
+        let second = c3p0::Record {
+            id: 12,
+            version: 0,
+            data: Data(1000),
+            update_time: Default::default(),
+            create_time: Default::default(),
+        };
 
         // Act
         validate_id_and_version(&mut error_details, &first, &second);
@@ -163,10 +203,20 @@ mod tests {
         // Arrange
         let mut error_details = ErrorDetails::default();
 
-        let first =
-            c3p0::Record { id: 12, version: 0, data: Data(1000), update_time: Default::default(), create_time: Default::default() };
-        let second =
-            c3p0::Record { id: 12, version: 0, data: Data(1000), update_time: Default::default(), create_time: Default::default() };
+        let first = c3p0::Record {
+            id: 12,
+            version: 0,
+            data: Data(1000),
+            update_time: Default::default(),
+            create_time: Default::default(),
+        };
+        let second = c3p0::Record {
+            id: 12,
+            version: 0,
+            data: Data(1000),
+            update_time: Default::default(),
+            create_time: Default::default(),
+        };
 
         // Act
         validate_ownership_id_and_version(&mut error_details, &first, &second);
@@ -180,10 +230,20 @@ mod tests {
         // Arrange
         let mut error_details = ErrorDetails::default();
 
-        let first =
-            c3p0::Record { id: 13, version: 0, data: Data(1000), update_time: Default::default(), create_time: Default::default() };
-        let second =
-            c3p0::Record { id: 12, version: 0, data: Data(1000), update_time: Default::default(), create_time: Default::default() };
+        let first = c3p0::Record {
+            id: 13,
+            version: 0,
+            data: Data(1000),
+            update_time: Default::default(),
+            create_time: Default::default(),
+        };
+        let second = c3p0::Record {
+            id: 12,
+            version: 0,
+            data: Data(1000),
+            update_time: Default::default(),
+            create_time: Default::default(),
+        };
 
         // Act
         validate_ownership_id_and_version(&mut error_details, &first, &second);
@@ -198,10 +258,20 @@ mod tests {
         // Arrange
         let mut error_details = ErrorDetails::default();
 
-        let first =
-            c3p0::Record { id: 12, version: 1, data: Data(1000), update_time: Default::default(), create_time: Default::default() };
-        let second =
-            c3p0::Record { id: 12, version: 0, data: Data(1000), update_time: Default::default(), create_time: Default::default() };
+        let first = c3p0::Record {
+            id: 12,
+            version: 1,
+            data: Data(1000),
+            update_time: Default::default(),
+            create_time: Default::default(),
+        };
+        let second = c3p0::Record {
+            id: 12,
+            version: 0,
+            data: Data(1000),
+            update_time: Default::default(),
+            create_time: Default::default(),
+        };
 
         // Act
         validate_ownership_id_and_version(&mut error_details, &first, &second);
@@ -216,10 +286,20 @@ mod tests {
         // Arrange
         let mut error_details = ErrorDetails::default();
 
-        let first =
-            c3p0::Record { id: 12, version: 0, data: Data(1001), update_time: Default::default(), create_time: Default::default() };
-        let second =
-            c3p0::Record { id: 12, version: 0, data: Data(1000), update_time: Default::default(), create_time: Default::default() };
+        let first = c3p0::Record {
+            id: 12,
+            version: 0,
+            data: Data(1001),
+            update_time: Default::default(),
+            create_time: Default::default(),
+        };
+        let second = c3p0::Record {
+            id: 12,
+            version: 0,
+            data: Data(1000),
+            update_time: Default::default(),
+            create_time: Default::default(),
+        };
 
         // Act
         validate_ownership_id_and_version(&mut error_details, &first, &second);

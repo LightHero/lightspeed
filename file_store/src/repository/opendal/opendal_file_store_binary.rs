@@ -38,13 +38,12 @@ impl OpendalFileStoreBinaryRepository {
                 Ok(())
             }
             BinaryContent::Stream { stream } => {
-                let mut writer =
-                    self.operator.writer(file_path).await.map_err(|err| LsError::BadRequest {
-                        message: format!(
-                            "OpendalFileStoreDataRepository - Cannot create writer to [{file_path}]. Err: {err:?}"
-                        ),
-                        code: ErrorCodes::IO_ERROR,
-                    })?;
+                let mut writer = self.operator.writer(file_path).await.map_err(|err| LsError::BadRequest {
+                    message: format!(
+                        "OpendalFileStoreDataRepository - Cannot create writer to [{file_path}]. Err: {err:?}"
+                    ),
+                    code: ErrorCodes::IO_ERROR,
+                })?;
                 let mut guard = stream.lock().await;
                 while let Some(chunk) = guard.next().await {
                     let chunk = chunk?;

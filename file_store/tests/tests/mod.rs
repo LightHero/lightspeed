@@ -14,11 +14,13 @@ pub mod service;
 pub async fn collect_bytes(content: BinaryContent<'_>) -> Result<Vec<u8>, LsError> {
     match content {
         BinaryContent::InMemory { content } => Ok(content.into_owned()),
-        BinaryContent::OpenDal { operator, path } => {
-            Ok(operator.read(&path).await.map_err(|err| LsError::InternalServerError {
+        BinaryContent::OpenDal { operator, path } => Ok(operator
+            .read(&path)
+            .await
+            .map_err(|err| LsError::InternalServerError {
                 message: format!("collect_bytes - opendal read [{path}]: {err:?}"),
-            })?.to_vec())
-        }
+            })?
+            .to_vec()),
         BinaryContent::Stream { stream } => {
             let mut s = stream.into_inner();
             let mut buf: Vec<u8> = Vec::new();
