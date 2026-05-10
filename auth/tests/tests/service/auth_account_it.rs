@@ -340,6 +340,61 @@ fn should_regenerate_activation_token_by_email_and_username() -> Result<(), LsEr
     })
 }
 
+/// Account-enumeration oracle regression test.
+///
+/// `generate_new_activation_token_by_username_and_email` previously
+/// surfaced three distinguishable errors:
+///   * `LsError::NotFound` — username unknown,
+///   * `LsError::ValidationError` carrying `WRONG_EMAIL` — email mismatch,
+///   * `LsError::BadRequest(NOT_PENDING_USER)` — user already active.
+/// Each told an attacker something different. After the fix, every
+/// "request not eligible" branch returns the SAME error variant and code.
+/// This test pins that contract.
+#[test]
+fn generate_new_activation_token_should_use_uniform_error_for_all_failure_modes() -> Result<(), LsError> {
+    tokio_test(async {
+        let data = data(false).await;
+        let auth_module = &data.0;
+
+        // 1. Unknown username.
+        let unknown_username = format!("nope_{}", new_hyphenated_uuid());
+        let unknown = auth_module
+            .auth_account_service
+            .generate_new_activation_token_by_username_and_email(&unknown_username, "irrelevant@example.com")
+            .await;
+
+        // 2. Existing user, wrong email.
+        let (pending_user, _) = create_user(auth_module, false).await?;
+        let wrong_email = auth_module
+            .auth_account_service
+            .generate_new_activation_token_by_username_and_email(&pending_user.data.username, "wrong@example.com")
+            .await;
+
+        // 3. Existing user with the correct email but wrong status (Active,
+        //    not PendingActivation).
+        let (active_user, _) = create_user(auth_module, true).await?;
+        let wrong_status = auth_module
+            .auth_account_service
+            .generate_new_activation_token_by_username_and_email(&active_user.data.username, &active_user.data.email)
+            .await;
+
+        for (label, result) in [("unknown_username", unknown), ("wrong_email", wrong_email), ("wrong_status", wrong_status)] {
+            match result {
+                Err(LsError::BadRequest { code, .. }) => {
+                    assert_eq!(
+                        ErrorCodes::WRONG_CREDENTIALS, code,
+                        "case [{label}] returned a distinguishable error code [{code}]; that's an enumeration oracle"
+                    );
+                }
+                Err(other) => panic!("case [{label}] expected BadRequest(WRONG_CREDENTIALS), got {other:?}"),
+                Ok(_) => panic!("case [{label}] expected BadRequest(WRONG_CREDENTIALS), got Ok"),
+            }
+        }
+
+        Ok(())
+    })
+}
+
 #[test]
 fn should_regenerate_activation_token_by_email_and_username_even_if_token_expired() -> Result<(), LsError> {
     tokio_test(async {

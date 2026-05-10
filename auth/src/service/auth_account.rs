@@ -188,24 +188,41 @@ impl<RepoManager: AuthRepositoryManager> LsAuthAccountService<RepoManager> {
         email: &str,
     ) -> Result<(AuthAccountModel, TokenModel), LsError> {
         debug!("Generate new activation token for username [{username}] and email [{email}]");
-        let user = self.fetch_by_username_with_conn(conn, username).await?;
 
-        Validator::validate(&|error_details: &mut ErrorDetails| {
-            if user.data.email != email {
-                error_details.add_detail("email", "WRONG_EMAIL");
-            };
-            Ok(())
-        })?;
+        // All "this request is not eligible" branches — username unknown,
+        // email mismatch, account not in PendingActivation — collapse into
+        // a single error with one shared code and message. The previous
+        // implementation returned three distinguishable responses:
+        // `LsError::NotFound` (unknown user), `ValidationError` with
+        // `WRONG_EMAIL` (email mismatch), and `BadRequest(NOT_PENDING_USER)`
+        // (status mismatch). That difference made the endpoint a textbook
+        // account-enumeration oracle: an attacker probing username/email
+        // pairs could distinguish "this user exists" from "this email is
+        // theirs" from "their account is already active". We now log the
+        // precise reason at debug level for ops/forensics and surface a
+        // single opaque error to the caller.
+        let generic_failure = || LsError::BadRequest {
+            message: "Cannot generate a new activation token for the provided username and email".to_owned(),
+            code: ErrorCodes::WRONG_CREDENTIALS,
+        };
 
-        match &user.data.status {
-            AuthAccountStatus::PendingActivation => {}
-            _ => {
-                return Err(LsError::BadRequest {
-                    message: format!("User [{username}] not in status PendingActivation"),
-                    code: ErrorCodes::NOT_PENDING_USER,
-                });
+        let user = match self.auth_repo.fetch_by_username_optional(conn, username).await? {
+            Some(u) => u,
+            None => {
+                debug!("generate_new_activation_token: username [{username}] not found");
+                return Err(generic_failure());
             }
         };
+
+        if user.data.email != email {
+            debug!("generate_new_activation_token: email mismatch for username [{username}]");
+            return Err(generic_failure());
+        }
+
+        if !matches!(user.data.status, AuthAccountStatus::PendingActivation) {
+            debug!("generate_new_activation_token: username [{username}] not in PendingActivation");
+            return Err(generic_failure());
+        }
 
         // Invalidate every previous activation token so an attacker cannot
         // re-use one that leaked. Reset-password tokens belong to a different
