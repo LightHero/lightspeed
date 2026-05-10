@@ -44,14 +44,14 @@ impl DBFileStoreBinaryRepository for PgFileStoreBinaryRepository {
         file_path: &str,
         content: &'a BinaryContent<'a>,
     ) -> Result<u64, LsError> {
-        let binary_content = match content {
-            BinaryContent::InMemory { content } => Cow::Borrowed(content),
+        let binary_content: Cow<'_, [u8]> = match content {
+            BinaryContent::InMemory { content } => Cow::Borrowed(content.as_ref()),
             BinaryContent::OpenDal { operator, path } => {
                 let buffer = operator.read(path).await.map_err(|err| LsError::BadRequest {
                     message: format!("PgFileStoreBinaryRepository - Cannot read file [{path}]. Err: {err:?}"),
                     code: ErrorCodes::IO_ERROR,
                 })?;
-                Cow::Owned(Cow::Owned(buffer.to_vec()))
+                Cow::Owned(buffer.to_vec())
             }
         };
 
@@ -60,7 +60,7 @@ impl DBFileStoreBinaryRepository for PgFileStoreBinaryRepository {
         let res = query(AssertSqlSafe(sql))
             .bind(repository_name)
             .bind(file_path)
-            .bind(binary_content.as_ref().as_ref())
+            .bind(binary_content.as_ref())
             .execute(tx.as_mut())
             .await?;
         Ok(res.rows_affected())

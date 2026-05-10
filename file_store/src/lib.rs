@@ -22,7 +22,8 @@ impl<RepoManager: DBFileStoreRepositoryManager> LsFileStoreModule<RepoManager> {
     pub fn new(repo_manager: RepoManager, config: FileStoreConfig) -> Result<Self, LsError> {
         println!("Creating LsFileStoreModule");
         info!("Creating LsFileStoreModule");
-        let file_store_service = Arc::new(LsFileStoreService::new(&repo_manager, config.repositories));
+        let file_store_service =
+            Arc::new(LsFileStoreService::new(&repo_manager, config.repositories, config.save_max_size_bytes));
 
         Ok(LsFileStoreModule { repo_manager, file_store_service })
     }

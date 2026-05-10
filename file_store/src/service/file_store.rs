@@ -16,6 +16,7 @@ pub struct LsFileStoreService<RepoManager: DBFileStoreRepositoryManager> {
     db_binary_repo: RepoManager::FileStoreBinaryRepo,
     db_data_repo: RepoManager::FileStoreDataRepo,
     repositories: HashMap<String, RepositoryStoreType>,
+    save_max_size_bytes: Option<usize>,
 }
 
 #[derive(Clone)]
@@ -25,7 +26,11 @@ enum RepositoryStoreType {
 }
 
 impl<RepoManager: DBFileStoreRepositoryManager> LsFileStoreService<RepoManager> {
-    pub fn new(repo_manager: &RepoManager, repositories: HashMap<String, RepositoryType>) -> Self {
+    pub fn new(
+        repo_manager: &RepoManager,
+        repositories: HashMap<String, RepositoryType>,
+        save_max_size_bytes: Option<usize>,
+    ) -> Self {
         LsFileStoreService {
             c3p0: repo_manager.c3p0().clone(),
             db_binary_repo: repo_manager.file_store_binary_repo(),
@@ -42,6 +47,7 @@ impl<RepoManager: DBFileStoreRepositoryManager> LsFileStoreService<RepoManager> 
                     (name, repo)
                 })
                 .collect(),
+            save_max_size_bytes,
         }
     }
 
@@ -160,6 +166,10 @@ impl<RepoManager: DBFileStoreRepositoryManager> LsFileStoreService<RepoManager> 
             "LsFileStoreService - Repository [{repository}] - Save file [{file_path}], content type [{content_type}]"
         );
 
+        if let Some(max) = self.save_max_size_bytes {
+            self.enforce_save_max_size(content, max).await?;
+        }
+
         match self.get_repository(&repository)? {
             RepositoryStoreType::DB => {
                 self.db_binary_repo.save_file(conn, &repository, &file_path, content).await?;
@@ -231,5 +241,30 @@ impl<RepoManager: DBFileStoreRepositoryManager> LsFileStoreService<RepoManager> 
             message: format!("LsFileStoreService - Cannot find FS repository with name [{repository_name}]"),
             code: ErrorCodes::NOT_FOUND,
         })
+    }
+
+    /// Reject a save that would exceed `max` bytes before any read
+    /// materializes the content. For `OpenDal` sources the size comes from
+    /// `Operator::stat`, so the bytes are never pulled into memory at all.
+    /// Applies regardless of destination — DB column or OpenDal repository.
+    async fn enforce_save_max_size(&self, content: &BinaryContent<'_>, max: usize) -> Result<(), LsError> {
+        let actual: u64 = match content {
+            BinaryContent::InMemory { content } => content.len() as u64,
+            BinaryContent::OpenDal { operator, path } => {
+                operator.stat(path).await.map_err(|err| LsError::BadRequest {
+                    message: format!("LsFileStoreService - Cannot stat file [{path}]: {err:?}"),
+                    code: ErrorCodes::IO_ERROR,
+                })?.content_length()
+            }
+        };
+        if actual > max as u64 {
+            return Err(LsError::BadRequest {
+                message: format!(
+                    "LsFileStoreService - File size [{actual}] exceeds save_max_size_bytes [{max}]"
+                ),
+                code: ErrorCodes::PAYLOAD_TOO_LARGE,
+            });
+        }
+        Ok(())
     }
 }

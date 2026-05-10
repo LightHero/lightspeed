@@ -1,12 +1,14 @@
 use crate::data;
 use c3p0::sql::OrderBy;
 use c3p0::*;
-use lightspeed_core::error::LsError;
+use lightspeed_core::error::{ErrorCodes, LsError};
 use lightspeed_file_store::model::BinaryContent;
 use lightspeed_file_store::repository::db::{DBFileStoreBinaryRepository, DBFileStoreRepositoryManager};
+use lightspeed_file_store::service::file_store::LsFileStoreService;
 use lightspeed_test_utils::tokio_test;
 use opendal::Operator;
 use opendal::services::Fs;
+use std::borrow::Cow;
 use std::path::{Path, PathBuf};
 
 const SOURCE_FILE: &str = "./Cargo.toml";
@@ -774,6 +776,72 @@ fn should_return_if_file_exists_by_repository() -> Result<(), LsError> {
 
         file_store.delete_file_by_id(saved.id).await?;
         assert!(!file_store.exists_by_repository(&saved.data.repository, &saved.data.file_path).await.unwrap());
+
+        Ok(())
+    })
+}
+
+#[test]
+fn save_file_should_reject_payload_above_save_max_size_bytes() -> Result<(), LsError> {
+    tokio_test(async {
+        let data = data(false).await;
+        let module = &data.0;
+
+        // Build a fresh service that reuses the integration-test repo manager
+        // but applies a tiny save cap. The cap must apply uniformly: oversize
+        // payloads must be rejected whether the destination is a DB-backed
+        // repository or an OpenDal-backed one.
+        let config = crate::tests::get_config();
+        let capped_service = LsFileStoreService::new(&module.repo_manager, config.repositories, Some(8));
+
+        let oversize_payload = vec![b'x'; 32];
+        let oversize_inmem = BinaryContent::InMemory { content: Cow::Owned(oversize_payload) };
+        let oversize_operator = Operator::new(Fs::default().root("./")).unwrap().finish().into();
+        let oversize_opendal = BinaryContent::OpenDal { operator: oversize_operator, path: SOURCE_FILE.to_owned() };
+
+        // 4 cases: {InMemory, OpenDal} × {DB destination, FS destination}.
+        let cases: &[(&str, &str, &BinaryContent<'_>)] = &[
+            ("oversize_inmem_db", "DB_ONE", &oversize_inmem),
+            ("oversize_inmem_fs", "FS_ONE", &oversize_inmem),
+            ("oversize_opendal_db", "DB_ONE", &oversize_opendal),
+            ("oversize_opendal_fs", "FS_ONE", &oversize_opendal),
+        ];
+        for (label, repo, content) in cases {
+            let random: u32 = rand::random();
+            let path = format!("{label}_{random}");
+            let result = capped_service
+                .save_file(
+                    (*repo).to_owned(),
+                    path.clone(),
+                    path,
+                    "application/octet-stream".to_owned(),
+                    content,
+                )
+                .await;
+            match result {
+                Err(LsError::BadRequest { code, .. }) => {
+                    assert_eq!(ErrorCodes::PAYLOAD_TOO_LARGE, code, "case {label}");
+                }
+                other => panic!("expected PAYLOAD_TOO_LARGE for {label}, got {other:?}"),
+            }
+        }
+
+        // Sanity: a small payload under the cap goes through, on both backends.
+        for repo in &["DB_ONE", "FS_ONE"] {
+            let random: u32 = rand::random();
+            let path = format!("under_cap_{repo}_{random}");
+            let small_content = BinaryContent::InMemory { content: Cow::Owned(b"abc".to_vec()) };
+            let saved = capped_service
+                .save_file(
+                    (*repo).to_owned(),
+                    path.clone(),
+                    path,
+                    "application/octet-stream".to_owned(),
+                    &small_content,
+                )
+                .await?;
+            assert_eq!(*repo, saved.data.repository);
+        }
 
         Ok(())
     })

@@ -15,6 +15,7 @@ impl ErrorCodes {
     pub const NOT_FOUND: &'static str = "NOT_FOUND";
     pub const NOT_PENDING_USER: &'static str = "NOT_PENDING_USER";
     pub const PARSE_ERROR: &'static str = "PARSE_ERROR";
+    pub const PAYLOAD_TOO_LARGE: &'static str = "PAYLOAD_TOO_LARGE";
     pub const WRONG_CREDENTIALS: &'static str = "WRONG_CREDENTIALS";
 }
 
