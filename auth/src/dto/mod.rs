@@ -10,8 +10,6 @@ pub mod token_dto;
 
 use lightspeed_core::error::{ErrorDetail, ErrorDetails};
 
-/// Minimum length, in bytes, accepted for any user-supplied password.
-pub const MIN_PASSWORD_LEN: usize = 8;
 pub const ERR_PASSWORD_TOO_SHORT: &str = "PASSWORD_TOO_SHORT";
 
 pub(crate) fn validate_min_password_len<S: Into<String>>(

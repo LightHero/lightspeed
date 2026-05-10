@@ -1,6 +1,7 @@
 use crate::data;
 use crate::tests::util::{create_user, create_user_with_password};
 use c3p0::*;
+use lightspeed_auth::dto::ERR_PASSWORD_TOO_SHORT;
 use lightspeed_auth::dto::change_password_dto::ChangePasswordDto;
 use lightspeed_auth::dto::create_login_dto::CreateLoginDto;
 use lightspeed_auth::dto::reset_password_dto::ResetPasswordDto;
@@ -8,7 +9,7 @@ use lightspeed_auth::model::auth_account::AuthAccountStatus;
 use lightspeed_auth::model::token::TokenType;
 use lightspeed_auth::repository::AuthRepositoryManager;
 use lightspeed_auth::service::auth_account::LsAuthAccountService;
-use lightspeed_core::error::{ErrorCodes, LsError};
+use lightspeed_core::error::{ErrorCodes, ErrorDetail, LsError};
 use lightspeed_core::model::language::Language;
 use lightspeed_core::utils::{current_epoch_seconds, new_hyphenated_uuid};
 use lightspeed_test_utils::tokio_test;
@@ -555,6 +556,42 @@ fn create_user_should_fail_if_passwords_do_not_match() -> Result<(), LsError> {
 }
 
 #[test]
+fn create_user_should_fail_if_password_too_short() -> Result<(), LsError> {
+    tokio_test(async {
+        let data = data(false).await;
+        let auth_module = &data.0;
+        let username = new_hyphenated_uuid();
+        let email = format!("{username}@email.fake");
+        let min_len = auth_module.auth_config.min_password_len;
+        let password = "a".repeat(min_len - 1);
+
+        let result = auth_module
+            .auth_account_service
+            .create_user(CreateLoginDto {
+                username: Some(username.clone()),
+                email: email.clone(),
+                data: HashMap::new(),
+                accept_privacy_policy: true,
+                language: Language::En,
+                password: password.clone(),
+                password_confirm: password.clone(),
+            })
+            .await;
+
+        match result {
+            Err(LsError::ValidationError { details }) => {
+                let errors = details.details.get("password").expect("expected password error");
+                let expected = ErrorDetail::new(ERR_PASSWORD_TOO_SHORT, vec![min_len.to_string()]);
+                assert!(errors.contains(&expected));
+            }
+            _ => panic!("expected ValidationError"),
+        }
+
+        Ok(())
+    })
+}
+
+#[test]
 fn create_user_should_fail_if_not_valid_email() -> Result<(), LsError> {
     tokio_test(async {
         let data = data(false).await;
@@ -854,6 +891,54 @@ fn should_reset_password_only_if_passwords_match() -> Result<(), LsError> {
 }
 
 #[test]
+fn should_fail_resetting_password_if_password_too_short() -> Result<(), LsError> {
+    tokio_test(async {
+        let data = data(false).await;
+        let auth_module = &data.0;
+
+        let password = new_hyphenated_uuid();
+        let (user, _) = create_user_with_password(auth_module, &password, true).await?;
+
+        let token = auth_module
+            .repo_manager
+            .c3p0()
+            .transaction(async |conn| {
+                auth_module
+                    .token_service
+                    .generate_and_save_token_with_conn(conn, &user.data.username, TokenType::ResetPassword)
+                    .await
+            })
+            .await?;
+
+        let min_len = auth_module.auth_config.min_password_len;
+        let short_password = "a".repeat(min_len - 1);
+
+        let result = auth_module
+            .auth_account_service
+            .reset_password_by_token(ResetPasswordDto {
+                password: short_password.clone(),
+                token: token.data.token,
+                password_confirm: short_password.clone(),
+            })
+            .await;
+
+        match result {
+            Err(LsError::ValidationError { details }) => {
+                let errors = details.details.get("password").expect("expected password error");
+                let expected = ErrorDetail::new(ERR_PASSWORD_TOO_SHORT, vec![min_len.to_string()]);
+                assert!(errors.contains(&expected));
+            }
+            _ => panic!("expected ValidationError"),
+        }
+
+        // Original password must still work.
+        assert!(auth_module.auth_account_service.login(&user.data.username, &password).await.is_ok());
+
+        Ok(())
+    })
+}
+
+#[test]
 fn should_generate_reset_password_token() -> Result<(), LsError> {
     tokio_test(async {
         let data = data(false).await;
@@ -1001,6 +1086,44 @@ fn should_not_change_user_password_if_new_passwords_do_not_match() -> Result<(),
             }
             _ => panic!(),
         }
+
+        Ok(())
+    })
+}
+
+#[test]
+fn should_not_change_user_password_if_new_password_too_short() -> Result<(), LsError> {
+    tokio_test(async {
+        let data = data(false).await;
+        let auth_module = &data.0;
+
+        let password = new_hyphenated_uuid();
+        let (user, _) = create_user_with_password(auth_module, &password, true).await?;
+
+        let min_len = auth_module.auth_config.min_password_len;
+        let short_password = "a".repeat(min_len - 1);
+
+        let result = auth_module
+            .auth_account_service
+            .change_password(ChangePasswordDto {
+                user_id: user.id,
+                old_password: password.clone(),
+                new_password: short_password.clone(),
+                new_password_confirm: short_password.clone(),
+            })
+            .await;
+
+        match result {
+            Err(LsError::ValidationError { details }) => {
+                let errors = details.details.get("new_password").expect("expected new_password error");
+                let expected = ErrorDetail::new(ERR_PASSWORD_TOO_SHORT, vec![min_len.to_string()]);
+                assert!(errors.contains(&expected));
+            }
+            _ => panic!("expected ValidationError"),
+        }
+
+        // Original password must still work.
+        assert!(auth_module.auth_account_service.login(&user.data.username, &password).await.is_ok());
 
         Ok(())
     })
@@ -1430,6 +1553,70 @@ fn should_return_users_by_status_with_offset_and_limit() -> Result<(), LsError> 
         assert_eq!(all_users.len() - 1, offset_one_users.len());
         assert_eq!(all_users[1].id, limit_two_users[0].id);
         assert_eq!(2, limit_two_users.len());
+
+        Ok(())
+    })
+}
+
+#[test]
+fn should_honor_configured_min_password_len() -> Result<(), LsError> {
+    tokio_test(async {
+        let data = data(false).await;
+        let auth_module = &data.0;
+
+        // Build a service that requires a longer minimum password length than the default.
+        let mut auth_config = auth_module.auth_config.clone();
+        auth_config.min_password_len = 16;
+
+        let auth_account_service = LsAuthAccountService::new(
+            auth_module.repo_manager.c3p0().clone(),
+            auth_config.clone(),
+            auth_module.token_service.clone(),
+            auth_module.password_codec.clone(),
+            auth_module.repo_manager.auth_account_repo(),
+        );
+
+        let username = new_hyphenated_uuid();
+        let email = format!("{username}@email.fake");
+
+        // 15-byte password is rejected because the configured limit is 16.
+        let short_password = "a".repeat(auth_config.min_password_len - 1);
+        let result = auth_account_service
+            .create_user(CreateLoginDto {
+                username: Some(username.clone()),
+                email: email.clone(),
+                data: HashMap::new(),
+                accept_privacy_policy: true,
+                language: Language::En,
+                password: short_password.clone(),
+                password_confirm: short_password.clone(),
+            })
+            .await;
+
+        match result {
+            Err(LsError::ValidationError { details }) => {
+                let errors = details.details.get("password").expect("expected password error");
+                let expected =
+                    ErrorDetail::new(ERR_PASSWORD_TOO_SHORT, vec![auth_config.min_password_len.to_string()]);
+                assert!(errors.contains(&expected));
+            }
+            _ => panic!("expected ValidationError"),
+        }
+
+        // A password that meets the configured limit succeeds.
+        let ok_password = "a".repeat(auth_config.min_password_len);
+        let (user, _) = auth_account_service
+            .create_user(CreateLoginDto {
+                username: Some(username.clone()),
+                email: email.clone(),
+                data: HashMap::new(),
+                accept_privacy_policy: true,
+                language: Language::En,
+                password: ok_password.clone(),
+                password_confirm: ok_password.clone(),
+            })
+            .await?;
+        assert_eq!(username, user.data.username);
 
         Ok(())
     })

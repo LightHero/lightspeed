@@ -12,6 +12,9 @@ pub struct AuthConfig {
     pub auth_session_max_validity_minutes: i64,
     pub bcrypt_password_hash_cost: u32,
     pub default_roles_on_account_creation: Vec<String>,
+
+    /// Minimum length, in bytes, accepted for any user-supplied password.
+    pub min_password_len: usize,
 }
 
 impl Default for AuthConfig {
@@ -21,6 +24,7 @@ impl Default for AuthConfig {
             auth_session_max_validity_minutes: 240,
             bcrypt_password_hash_cost: 10,
             default_roles_on_account_creation: vec![],
+            min_password_len: 8,
         }
     }
 }

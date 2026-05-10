@@ -2,6 +2,7 @@ use crate::config::AuthConfig;
 use crate::dto::change_password_dto::ChangePasswordDto;
 use crate::dto::create_login_dto::CreateLoginDto;
 use crate::dto::reset_password_dto::ResetPasswordDto;
+use crate::dto::validate_min_password_len;
 use crate::model::auth_account::{AuthAccountData, AuthAccountModel, AuthAccountStatus};
 use crate::model::token::{TokenModel, TokenType};
 use crate::repository::{AuthAccountRepository, AuthRepositoryManager};
@@ -20,10 +21,7 @@ pub const WRONG_TYPE: &str = "WRONG_TYPE";
 
 /// A syntactically valid bcrypt hash used to perform a constant-time
 /// "verify" when the requested user does not exist, so that the login
-/// response time does not leak the existence of the account. The plaintext
-/// for this hash is irrelevant — the verify will simply return `Ok(false)`
-/// for any user-supplied password (other than the unknown plaintext that
-/// generated it).
+/// response time does not leak the existence of the account.
 const DUMMY_BCRYPT_HASH: &str = "$2a$10$TkWSZIawgD9tjkmAV2GjGOt30FQktiTlpZTIHbxatakOHf4G0.aA.";
 
 #[derive(Clone)]
@@ -84,8 +82,7 @@ impl<RepoManager: AuthRepositoryManager> LsAuthAccountService<RepoManager> {
             ));
         } else {
             // Even out timing between "no such user" and "wrong password" to
-            // prevent username enumeration via response time. Verifying against
-            // a fixed dummy bcrypt hash burns the same CPU as a real check.
+            // prevent username enumeration via response time.
             let _ = self.password_service.verify_match(password, DUMMY_BCRYPT_HASH).await;
         };
 
@@ -124,7 +121,9 @@ impl<RepoManager: AuthRepositoryManager> LsAuthAccountService<RepoManager> {
 
         let existing_user = self.auth_repo.fetch_by_username_optional(conn, &username).await?;
         let existing_email = self.auth_repo.fetch_by_email_optional(conn, &create_login_dto.email).await?;
+        let min_password_len = self.auth_config.min_password_len;
         Validator::validate(&(&create_login_dto, &|error_details: &mut ErrorDetails| {
+            validate_min_password_len(error_details, "password", &create_login_dto.password, min_password_len);
             if existing_user.is_some() {
                 error_details.add_detail("username", ERR_NOT_UNIQUE);
             }
@@ -224,10 +223,7 @@ impl<RepoManager: AuthRepositoryManager> LsAuthAccountService<RepoManager> {
         previous_activation_token: &str,
     ) -> Result<(AuthAccountModel, TokenModel), LsError> {
         debug!("Generate new activation token from previous token [{previous_activation_token}]");
-        // The previous activation token is intentionally accepted even when
-        // expired: it acts as a user identifier for the "resend activation"
-        // flow, and the freshly-minted token is delivered out-of-band to the
-        // registered email.
+
         let token = self.token_service.fetch_by_token_with_conn(conn, previous_activation_token, false).await?;
 
         Validator::validate(&|error_details: &mut ErrorDetails| {
@@ -345,10 +341,14 @@ impl<RepoManager: AuthRepositoryManager> LsAuthAccountService<RepoManager> {
         reset_password_dto: ResetPasswordDto,
     ) -> Result<AuthAccountModel, LsError> {
         debug!("Reset password called with token [{}]", reset_password_dto.token);
-        Validator::validate(&reset_password_dto)?;
+        let min_password_len = self.auth_config.min_password_len;
+        Validator::validate(&(&reset_password_dto, &|error_details: &mut ErrorDetails| {
+            validate_min_password_len(error_details, "password", &reset_password_dto.password, min_password_len);
+            Ok(())
+        }))?;
 
         // Validate expiry: an expired reset-password token must not be usable
-        // to reset the password. Reset tokens are credentials, not identifiers.
+        // to reset the password.
         let token = self.token_service.fetch_by_token_with_conn(conn, &reset_password_dto.token, true).await?;
 
         info!("Reset password of user [{}]", token.data.username);
@@ -391,7 +391,11 @@ impl<RepoManager: AuthRepositoryManager> LsAuthAccountService<RepoManager> {
     ) -> Result<AuthAccountModel, LsError> {
         info!("Reset password of user_id [{:?}]", dto.user_id);
 
-        Validator::validate(&dto)?;
+        let min_password_len = self.auth_config.min_password_len;
+        Validator::validate(&(&dto, &|error_details: &mut ErrorDetails| {
+            validate_min_password_len(error_details, "new_password", &dto.new_password, min_password_len);
+            Ok(())
+        }))?;
 
         let mut user = self.auth_repo.fetch_by_id(conn, dto.user_id).await?;
         info!("Change password of user [{}]", user.data.username);
