@@ -188,76 +188,34 @@ impl<RepoManager: AuthRepositoryManager> LsAuthAccountService<RepoManager> {
         email: &str,
     ) -> Result<(AuthAccountModel, TokenModel), LsError> {
         debug!("Generate new activation token for username [{username}] and email [{email}]");
-        let auth_account = self.fetch_by_username_with_conn(conn, username).await?;
+        let user = self.fetch_by_username_with_conn(conn, username).await?;
 
         Validator::validate(&|error_details: &mut ErrorDetails| {
-            if auth_account.data.email != email {
+            if user.data.email != email {
                 error_details.add_detail("email", "WRONG_EMAIL");
             };
             Ok(())
         })?;
 
-        let previous_activation_token = self
-            .token_service
-            .fetch_all_by_username_with_conn(conn, username)
-            .await?
-            .into_iter()
-            .filter(|token| token.data.token_type == TokenType::AccountActivation)
-            .map(|token| token.data.token)
-            .collect::<Vec<String>>()
-            .first()
-            .cloned()
-            .ok_or_else(|| LsError::BadRequest {
-                message: format!("Previous activation token not found for user [{username}]"),
-                code: ErrorCodes::NOT_PENDING_USER,
-            })?;
-        self.generate_new_activation_token_by_token_with_conn(conn, &previous_activation_token).await
-    }
-
-    pub async fn generate_new_activation_token_by_token(
-        &self,
-        previous_activation_token: &str,
-    ) -> Result<(AuthAccountModel, TokenModel), LsError> {
-        self.c3p0
-            .transaction(async |conn| {
-                self.generate_new_activation_token_by_token_with_conn(conn, previous_activation_token).await
-            })
-            .await
-    }
-
-    pub async fn generate_new_activation_token_by_token_with_conn(
-        &self,
-        conn: &mut <RepoManager::DB as Database>::Connection,
-        previous_activation_token: &str,
-    ) -> Result<(AuthAccountModel, TokenModel), LsError> {
-        debug!("Generate new activation token from previous token [{previous_activation_token}]");
-
-        let token = self.token_service.fetch_by_token_with_conn(conn, previous_activation_token, false).await?;
-
-        Validator::validate(&|error_details: &mut ErrorDetails| {
-            match &token.data.token_type {
-                TokenType::AccountActivation => {}
-                _ => error_details.add_detail("token_type", WRONG_TYPE),
-            };
-            Ok(())
-        })?;
-
-        info!("Send new activation token to user [{}]", token.data.username);
-
-        let user = self.auth_repo.fetch_by_username(conn, &token.data.username).await?;
-
         match &user.data.status {
             AuthAccountStatus::PendingActivation => {}
             _ => {
                 return Err(LsError::BadRequest {
-                    message: format!("User [{}] not in status PendingActivation", token.data.username),
+                    message: format!("User [{username}] not in status PendingActivation"),
                     code: ErrorCodes::NOT_PENDING_USER,
                 });
             }
         };
 
-        self.token_service.delete_with_conn(conn, token).await?;
+        // Invalidate every previous activation token so an attacker cannot
+        // re-use one that leaked. Reset-password tokens belong to a different
+        // lifecycle and are left untouched.
+        let existing_tokens = self.token_service.fetch_all_by_username_with_conn(conn, username).await?;
+        for token in existing_tokens.into_iter().filter(|t| t.data.token_type == TokenType::AccountActivation) {
+            self.token_service.delete_with_conn(conn, token).await?;
+        }
 
+        info!("Send new activation token to user [{username}]");
         let token = self.generate_activation_token_with_conn(conn, &user.data.username).await?;
         Ok((user, token))
     }

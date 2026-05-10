@@ -96,7 +96,6 @@ mod test {
     use tower::ServiceExt; // for `app.oneshot()`
 
     async fn download(Extension(data): Extension<Arc<AppData>>) -> Result<Response<Body>, LsError> {
-        println!("Download called");
         into_response(data.content.clone(), data.file_name, data.set_content_disposition).await
     }
 

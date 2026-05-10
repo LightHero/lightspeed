@@ -296,30 +296,6 @@ fn should_activate_user_only_if_pending_activation() -> Result<(), LsError> {
 }
 
 #[test]
-fn should_regenerate_activation_token() -> Result<(), LsError> {
-    tokio_test(async {
-        let data = data(false).await;
-        let auth_module = &data.0;
-        let (user, token) = create_user(auth_module, false).await?;
-
-        let (new_user, new_token) =
-            auth_module.auth_account_service.generate_new_activation_token_by_token(&token.data.token).await?;
-        assert_eq!(user.id, new_user.id);
-        assert!(token.id != new_token.id);
-        assert!(token.data.token != new_token.data.token);
-
-        assert!(auth_module.auth_account_service.activate_user(&token.data.token).await.is_err());
-
-        let activated_user = auth_module.auth_account_service.activate_user(&new_token.data.token).await?;
-
-        assert_eq!(AuthAccountStatus::Active, activated_user.data.status);
-        assert_eq!(user.id, activated_user.id);
-
-        Ok(())
-    })
-}
-
-#[test]
 fn should_regenerate_activation_token_by_email_and_username() -> Result<(), LsError> {
     tokio_test(async {
         let data = data(false).await;
@@ -365,16 +341,17 @@ fn should_regenerate_activation_token_by_email_and_username() -> Result<(), LsEr
 }
 
 #[test]
-fn should_regenerate_activation_token_even_if_token_expired() -> Result<(), LsError> {
+fn should_regenerate_activation_token_by_email_and_username_even_if_token_expired() -> Result<(), LsError> {
     tokio_test(async {
         let data = data(false).await;
         let auth_module = &data.0;
-        let (_, mut token) = create_user(auth_module, false).await?;
+        let (user, mut token) = create_user(auth_module, false).await?;
         token.data.expire_at_epoch_seconds = 0;
 
         let token_model =
-            &auth_module.repo_manager.c3p0().transaction(async |conn| conn.update(token.clone()).await).await?;
+            auth_module.repo_manager.c3p0().transaction(async |conn| conn.update(token.clone()).await).await?;
 
+        // The expired token cannot be used to activate or to fetch with validation.
         assert!(
             auth_module
                 .repo_manager
@@ -385,39 +362,21 @@ fn should_regenerate_activation_token_even_if_token_expired() -> Result<(), LsEr
                 .await
                 .is_err()
         );
-
         assert!(auth_module.auth_account_service.activate_user(&token_model.data.token).await.is_err());
 
-        let (_, new_token) =
-            auth_module.auth_account_service.generate_new_activation_token_by_token(&token_model.data.token).await?;
-
-        assert!(auth_module.auth_account_service.activate_user(&new_token.data.token).await.is_ok());
-
-        Ok(())
-    })
-}
-
-#[test]
-fn should_resend_activation_token_only_if_correct_token_type() -> Result<(), LsError> {
-    tokio_test(async {
-        let data = data(false).await;
-        let auth_module = &data.0;
-        let (user, _) = create_user(auth_module, false).await?;
-
-        let token = auth_module
-            .repo_manager
-            .c3p0()
-            .transaction(async |conn| {
-                auth_module
-                    .token_service
-                    .generate_and_save_token_with_conn(conn, &user.data.username, TokenType::ResetPassword)
-                    .await
-            })
+        // The username+email recovery path must still succeed: knowledge of the
+        // matching email is the authentication factor here, and the user must
+        // not be locked out just because their previous activation token aged out.
+        let (new_user, new_token) = auth_module
+            .auth_account_service
+            .generate_new_activation_token_by_username_and_email(&user.data.username, &user.data.email)
             .await?;
 
-        assert!(
-            auth_module.auth_account_service.generate_new_activation_token_by_token(&token.data.token).await.is_err()
-        );
+        assert_eq!(user.id, new_user.id);
+        assert!(token_model.data.token != new_token.data.token);
+
+        // The new token activates the user.
+        assert!(auth_module.auth_account_service.activate_user(&new_token.data.token).await.is_ok());
 
         Ok(())
     })
@@ -769,6 +728,55 @@ fn should_reset_password_by_token() -> Result<(), LsError> {
         assert!(auth_module.auth_account_service.login(&user.data.username, &password).await.is_err());
 
         assert!(auth_module.auth_account_service.login(&user.data.username, &password_new).await.is_ok());
+
+        Ok(())
+    })
+}
+
+#[test]
+fn should_fail_resetting_password_if_token_expired() -> Result<(), LsError> {
+    tokio_test(async {
+        let data = data(false).await;
+        let auth_module = &data.0;
+
+        let password = new_hyphenated_uuid();
+        let (user, _) = create_user_with_password(auth_module, &password, true).await?;
+
+        let mut token = auth_module
+            .repo_manager
+            .c3p0()
+            .transaction(async |conn| {
+                auth_module
+                    .token_service
+                    .generate_and_save_token_with_conn(conn, &user.data.username, TokenType::ResetPassword)
+                    .await
+            })
+            .await?;
+
+        token.data.expire_at_epoch_seconds = 0;
+        let token =
+            auth_module.repo_manager.c3p0().transaction(async |conn| conn.update(token.clone()).await).await?;
+
+        let password_new = new_hyphenated_uuid();
+
+        let result = auth_module
+            .auth_account_service
+            .reset_password_by_token(ResetPasswordDto {
+                password: password_new.clone(),
+                token: token.data.token,
+                password_confirm: password_new.clone(),
+            })
+            .await;
+
+        match result {
+            Err(LsError::ValidationError { details }) => {
+                assert_eq!("expired", details.details["expire_at_epoch"][0]);
+            }
+            _ => panic!("expected ValidationError for expired reset token"),
+        }
+
+        // Original password must still work — the reset must not have taken effect.
+        assert!(auth_module.auth_account_service.login(&user.data.username, &password).await.is_ok());
 
         Ok(())
     })
