@@ -2,14 +2,18 @@ use base64::{Engine as _, engine::general_purpose};
 use sha2::Digest;
 use subtle::ConstantTimeEq;
 
+/// Hashing service
 #[derive(Clone, Default)]
 pub struct LsHashService {}
 
 impl LsHashService {
+
+    /// Create a new hash service
     pub fn new() -> Self {
         Self::default()
     }
 
+    /// Hash `text`
     pub fn hash(&self, text: &str) -> String {
         let mut hasher = sha2::Sha256::default();
         hasher.update(text);
@@ -17,9 +21,21 @@ impl LsHashService {
         general_purpose::STANDARD_NO_PAD.encode(result)
     }
 
-    pub fn verify_hash(&self, text: &str, expected_hash: &str) -> bool {
+    /// Verify that hashing `text` produces `expected_hash`.
+    ///
+    /// `constant_time` selects the comparison strategy:
+    /// - `false` — Faster, but may leak
+    ///   information through timing side-channels.
+    /// - `true` — constant-time comparison. Use
+    ///   this whenever the hash is a secret-derived value an attacker could
+    ///   probe (validation codes, MACs, password-reset tokens, etc.).
+    pub fn verify_hash(&self, text: &str, expected_hash: &str, constant_time: bool) -> bool {
         let actual = self.hash(text);
-        actual.as_bytes().ct_eq(expected_hash.as_bytes()).into()
+        if constant_time {
+            actual.as_bytes().ct_eq(expected_hash.as_bytes()).into()
+        } else {
+            actual == expected_hash
+        }
     }
 }
 
@@ -42,8 +58,10 @@ mod test {
         assert_ne!(template, second_hash);
         assert_eq!(first_hash, second_hash);
 
-        assert!(hash_service.verify_hash(&template, &first_hash));
-        assert!(!hash_service.verify_hash(&template, &format!("{first_hash}1")));
-        assert!(!hash_service.verify_hash(&template, &template));
+        for constant_time in [false, true] {
+            assert!(hash_service.verify_hash(&template, &first_hash, constant_time));
+            assert!(!hash_service.verify_hash(&template, &format!("{first_hash}1"), constant_time));
+            assert!(!hash_service.verify_hash(&template, &template, constant_time));
+        }
     }
 }

@@ -10,6 +10,7 @@ use serde::Serialize;
 use std::sync::Arc;
 use subtle::ConstantTimeEq;
 
+/// Validation code service
 #[derive(Clone)]
 pub struct LsValidationCodeService {
     jwt_service: Arc<LsJwtService>,
@@ -25,10 +26,13 @@ struct ValidationCodeData<'a, Data: Serialize> {
 }
 
 impl LsValidationCodeService {
+
+    /// Create a new validation code service
     pub fn new(hash_service: Arc<LsHashService>, jwt_service: Arc<LsJwtService>) -> Self {
         Self { jwt_service, hash_service }
     }
 
+    /// Generate a validation code.
     pub fn generate_validation_code<Data: Serialize>(
         &self,
         request: ValidationCodeRequestDto<Data>,
@@ -53,9 +57,17 @@ impl LsValidationCodeService {
         })
     }
 
+    /// Verify that `request.code` is the code originally bound to
+    /// `request.data`.
+    ///
+    /// `constant_time` selects how the recomputed token hash is compared
+    /// against the stored one — see [`LsHashService::verify_hash`] for the
+    /// trade-off. Callers that treat the validation code as a secret (e.g.
+    /// email-verification or password-reset flows) should pass `true`.
     pub fn verify_validation_code<Data: Serialize>(
         &self,
         request: VerifyValidationCodeRequestDto<Data>,
+        constant_time: bool,
     ) -> Result<VerifyValidationCodeResponseDto<Data>, LsError> {
         debug!("Verify code {}", request.code);
         let calculated_token_hash = self.hash(ValidationCodeData {
@@ -64,10 +76,11 @@ impl LsValidationCodeService {
             code: &request.code,
             to_be_validated: &request.data.to_be_validated,
         })?;
-        let code_valid: bool = calculated_token_hash
-            .as_bytes()
-            .ct_eq(request.data.token_hash.as_bytes())
-            .into();
+        let code_valid = if constant_time {
+            calculated_token_hash.as_bytes().ct_eq(request.data.token_hash.as_bytes()).into()
+        } else {
+            calculated_token_hash == request.data.token_hash
+        };
         Ok(VerifyValidationCodeResponseDto {
             to_be_validated: request.data.to_be_validated,
             code_valid,
