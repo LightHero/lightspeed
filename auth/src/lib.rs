@@ -28,7 +28,11 @@ impl<RepoManager: AuthRepositoryManager> LsAuthModule<RepoManager> {
         println!("Creating LsAuthModule");
         info!("Creating LsAuthModule");
 
-        let password_codec = Arc::new(LsPasswordCodecService::new(auth_config.bcrypt_password_hash_cost));
+        let password_codec = Arc::new(LsPasswordCodecService::new(
+            auth_config.argon2_memory_kib,
+            auth_config.argon2_iterations,
+            auth_config.argon2_parallelism,
+        ));
 
         let token_service =
             Arc::new(service::token::LsTokenService::new(auth_config.clone(), repo_manager.token_repo()));

@@ -19,11 +19,6 @@ use std::sync::Arc;
 
 pub const WRONG_TYPE: &str = "WRONG_TYPE";
 
-/// A syntactically valid bcrypt hash used to perform a constant-time
-/// "verify" when the requested user does not exist, so that the login
-/// response time does not leak the existence of the account.
-const DUMMY_BCRYPT_HASH: &str = "$2a$10$TkWSZIawgD9tjkmAV2GjGOt30FQktiTlpZTIHbxatakOHf4G0.aA.";
-
 #[derive(Clone)]
 pub struct LsAuthAccountService<RepoManager: AuthRepositoryManager> {
     c3p0: RepoManager::C3P0,
@@ -94,7 +89,7 @@ impl<RepoManager: AuthRepositoryManager> LsAuthAccountService<RepoManager> {
         } else {
             // Even out timing between "no such user" and "wrong password" to
             // prevent username enumeration via response time.
-            let _ = self.password_service.verify_match(password, DUMMY_BCRYPT_HASH).await;
+            let _ = self.password_service.verify_match(password, self.password_service.dummy_hash()).await;
         };
 
         Err(LsError::BadRequest { message: "Wrong credentials".to_string(), code: ErrorCodes::WRONG_CREDENTIALS })

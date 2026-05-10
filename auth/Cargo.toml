@@ -13,7 +13,7 @@ keywords = []
 
 [dependencies]
 lightspeed_core = { workspace = true }
-bcrypt = { workspace = true }
+argon2 = { workspace = true }
 c3p0 = { workspace = true }
 log = { workspace = true }
 serde = { workspace = true }

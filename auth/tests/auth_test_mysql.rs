@@ -23,7 +23,13 @@ async fn init() -> MaybeType {
 
     let repo_manager = RepoManager::new(c3p0.clone());
 
-    let auth_config = AuthConfig { bcrypt_password_hash_cost: 4, ..Default::default() };
+    // Argon2 spec minimum (memory=8 KiB, t=1, p=1) — fast for tests.
+    let auth_config = AuthConfig {
+        argon2_memory_kib: 8,
+        argon2_iterations: 1,
+        argon2_parallelism: 1,
+        ..Default::default()
+    };
 
     let mut auth_module = LsAuthModule::new(repo_manager, auth_config);
     {

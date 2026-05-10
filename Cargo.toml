@@ -29,9 +29,9 @@ lightspeed_scheduler = { version = "0.66.0", path = "./scheduler" }
 lightspeed_test_utils = { version = "0.66.0", path = "./test_utils" }
 
 arc-swap = "1.6"
+argon2 = "0.5"
 axum = { version = "0.8" }
 base64 = "0.22"
-bcrypt = "0.19"
 c3p0 = { version = "0.81" }
 #c3p0 = { git = "https://github.com/ufoscout/c3p0", branch = "master", features = ["postgres"] }
 chrono = { version = "0.4", default-features = false, features = ["clock"] }
