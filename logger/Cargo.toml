@@ -17,7 +17,7 @@ serde = { workspace = true }
 tracing = { workspace = true }
 tracing-appender = { workspace = true }
 tracing-futures = { workspace = true }
-tracing-subscriber = { workspace = true, default-features = false, features = ["tracing-log", "ansi", "fmt"] }
+tracing-subscriber = { workspace = true, default-features = false, features = ["tracing-log", "ansi", "fmt", "env-filter"] }
 
 
 [dev-dependencies]

@@ -13,7 +13,7 @@ fmt_nightly:
 # Runs clippy on the code
 [group('code_check')]
 clippy args="":
-  cargo clippy --all-features --all-targets {{args}}
+  cargo clippy --workspace --all-features --all-targets {{args}}
 
 
 # Runs fmt and clippy on the code. It fails if any of the checks fail

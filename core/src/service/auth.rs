@@ -1,5 +1,5 @@
 use crate::error::LsError;
-use crate::utils::current_epoch_seconds;
+use crate::utils::{current_epoch_seconds, new_hyphenated_uuid};
 use c3p0::DataType;
 use serde::{Deserialize, Serialize};
 use std::borrow::Cow;
@@ -24,7 +24,7 @@ impl Auth {
         creation_ts_seconds: i64,
         expiration_ts_seconds: i64,
     ) -> Self {
-        let session_id = format!("{id:?}_{creation_ts_seconds}");
+        let session_id = new_hyphenated_uuid();
         Self { id, username: username.into(), session_id, roles, creation_ts_seconds, expiration_ts_seconds }
     }
 }
@@ -261,10 +261,20 @@ mod test {
     fn call_me_with_send_and_sync<T: Send + Sync>(_: T) {}
 
     #[test]
-    fn new_auth_should_generate_session_id() {
-        let auth = Auth::new(321, "name".to_string(), vec![], 124560, current_epoch_seconds() + 100);
+    fn new_auth_should_generate_random_session_id() {
+        let creation = 124560;
+        let a = Auth::new(321, "name".to_string(), vec![], creation, current_epoch_seconds() + 100);
+        let b = Auth::new(321, "name".to_string(), vec![], creation, current_epoch_seconds() + 100);
 
-        assert_eq!("321_124560", &auth.session_id);
+        // Non-empty — we get an identifier.
+        assert!(!a.session_id.is_empty());
+        // Looks like a hyphenated v4 UUID (8-4-4-4-12 hex chars).
+        let parts: Vec<&str> = a.session_id.split('-').collect();
+        assert_eq!(parts.len(), 5, "expected hyphenated UUID, got [{}]", a.session_id);
+        assert_eq!(parts.iter().map(|p| p.len()).collect::<Vec<_>>(), [8, 4, 4, 4, 12]);
+        // Two `Auth::new` calls with identical (id, creation_ts) inputs must
+        // NOT collide — that's the whole point of the fix.
+        assert_ne!(a.session_id, b.session_id);
     }
 
     #[test]

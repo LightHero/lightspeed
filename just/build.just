@@ -59,6 +59,7 @@ for_each_feature command:
 
   declare -a features=(
     "axum"
+    "c3p0"
     "postgres"
     "mysql"
     "sqlite"

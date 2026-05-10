@@ -8,6 +8,23 @@ use std::sync::atomic::{AtomicBool, Ordering};
 use std::{future::Future, sync::Arc};
 use tokio::sync::Mutex;
 
+/// Wraps a [`Scheduler`] with the bookkeeping needed to fire a [`Job`].
+///
+/// **Missed-slot semantics.** When a job's run takes longer than its interval
+/// (or spans a cron tick), the missed slots are *skipped* rather than queued
+/// for catch-up. After every run, `next_run_at` is recomputed from the
+/// current time via `Scheduler::next(now, …)`, so:
+///
+/// * `Scheduler::Interval { duration, .. }` — the next fire is `now +
+///   duration`, where `now` is the moment the run completed. A 5-minute
+///   interval that takes 12 minutes to run fires once after the run
+///   finishes, not three times back-to-back.
+/// * `Scheduler::Cron(_)` — the next fire is the first cron occurrence
+///   strictly after the run completed; intermediate occurrences are dropped.
+///
+/// Callers that need at-least-once / catch-up semantics should layer their
+/// own queue on top — this scheduler intentionally trades replay for
+/// bounded resource use under load.
 pub struct JobScheduler {
     pub job: Job,
     schedule: Mutex<Scheduler>,
@@ -36,9 +53,12 @@ impl JobScheduler {
             return false;
         }
 
-        // Check if NOW is on or after next_run_at
+        // Check if NOW is on or after next_run_at. Use `<=` so a tick that
+        // lands exactly on `next_run_at` is treated as pending — at sub-
+        // second poll rates, strict `<` would jitter and skip slots whose
+        // scheduled time happens to coincide with the tick instant.
         match self.next_run_at.lock().await.as_ref() {
-            Some(next_run_at) => *next_run_at < Utc::now(),
+            Some(next_run_at) => *next_run_at <= Utc::now(),
             _ => false,
         }
     }

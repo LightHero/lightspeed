@@ -11,7 +11,13 @@ repository = "https://github.com/LightHero/lightspeed"
 keywords = []
 
 [dependencies]
-c3p0 = { workspace = true, features = ["mysql", "postgres", "sqlite"] }
+c3p0 = { workspace = true }
 maybe-once = { workspace = true }
-testcontainers = { workspace = true }
+testcontainers = { workspace = true, optional = true }
 tokio = { workspace = true, features = ["rt-multi-thread"] }
+
+[features]
+default = []
+mysql = ["c3p0/mysql", "dep:testcontainers"]
+postgres = ["c3p0/postgres", "dep:testcontainers"]
+sqlite = ["c3p0/sqlite"]
