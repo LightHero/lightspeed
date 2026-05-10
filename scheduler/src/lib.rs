@@ -79,53 +79,56 @@ impl JobExecutorInternal {
         trace!("Check pending jobs");
         let jobs = self.jobs.read().await;
         for job_scheduler in jobs.iter() {
-            //println!("check JOB IS PENDING: {}", job.is_pending());
-            if job_scheduler.is_pending().await {
-                //println!("JOB IS RUNNING? {}", is_running);
-                if !job_scheduler.job.is_running().await {
-                    let job_clone = job_scheduler.clone();
-
-                    let timestamp = Utc::now().timestamp();
-                    let group = job_clone.job.group().to_owned();
-                    let name = job_clone.job.name().to_owned();
-
-                    let fut = instrument(timestamp, group.clone(), name.clone(), async move {
-                        info!("Start execution of Job [{group}/{name}]");
-                        let start = std::time::Instant::now();
-                        let result = job_clone.run().await;
-
-                        let duration = start.elapsed();
-
-                        let mills = duration.subsec_millis();
-                        let duration_secs = duration.as_secs();
-                        let seconds = duration_secs % 60;
-                        let minutes = (duration_secs / 60) % 60;
-                        let hours = (duration_secs / 60) / 60;
-                        let duration_fmt = format!(
-                            "{hours:02} hour(s), {minutes:02} minute(s), {seconds:02} second(s) and {mills:03} millis"
-                        );
-
-                        match result {
-                            Ok(()) => {
-                                info!("Execution of Job [{group}/{name}] completed successfully in {duration_fmt}");
-                            }
-                            Err(err) => {
-                                error!(
-                                    "Execution of Job [{group}/{name}] completed with errors in {duration_fmt}. Err: {err:?}"
-                                );
-                            }
-                        }
-                    });
-
-                    tokio::spawn(fut);
-                } else {
-                    debug!(
-                        "Job [{}/{}] is pending but already running. It will not be executed.",
-                        job_scheduler.job.group(),
-                        job_scheduler.job.name()
-                    )
-                }
+            if !job_scheduler.is_pending().await {
+                continue;
             }
+            // Atomically claim the running slot BEFORE spawning so a second
+            // executor tick can't race in and double-spawn the same job
+            // before the spawned task observes itself as running.
+            if !job_scheduler.job.try_claim_running() {
+                debug!(
+                    "Job [{}/{}] is pending but already running. It will not be executed.",
+                    job_scheduler.job.group(),
+                    job_scheduler.job.name()
+                );
+                continue;
+            }
+
+            let job_clone = job_scheduler.clone();
+
+            let timestamp = Utc::now().timestamp();
+            let group = job_clone.job.group().to_owned();
+            let name = job_clone.job.name().to_owned();
+
+            let fut = instrument(timestamp, group.clone(), name.clone(), async move {
+                info!("Start execution of Job [{group}/{name}]");
+                let start = std::time::Instant::now();
+                let result = job_clone.run_after_claim().await;
+
+                let duration = start.elapsed();
+
+                let mills = duration.subsec_millis();
+                let duration_secs = duration.as_secs();
+                let seconds = duration_secs % 60;
+                let minutes = (duration_secs / 60) % 60;
+                let hours = (duration_secs / 60) / 60;
+                let duration_fmt = format!(
+                    "{hours:02} hour(s), {minutes:02} minute(s), {seconds:02} second(s) and {mills:03} millis"
+                );
+
+                match result {
+                    Ok(()) => {
+                        info!("Execution of Job [{group}/{name}] completed successfully in {duration_fmt}");
+                    }
+                    Err(err) => {
+                        error!(
+                            "Execution of Job [{group}/{name}] completed with errors in {duration_fmt}. Err: {err:?}"
+                        );
+                    }
+                }
+            });
+
+            tokio::spawn(fut);
         }
     }
 

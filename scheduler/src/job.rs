@@ -4,8 +4,9 @@ use chrono::{DateTime, Utc};
 use chrono_tz::Tz;
 use log::*;
 use std::pin::Pin;
+use std::sync::atomic::{AtomicBool, Ordering};
 use std::{future::Future, sync::Arc};
-use tokio::sync::{Mutex, RwLock};
+use tokio::sync::Mutex;
 
 pub struct JobScheduler {
     pub job: Job,
@@ -44,8 +45,22 @@ impl JobScheduler {
 
     /// Run the job immediately and re-schedule it.
     pub async fn run(&self) -> Result<(), SchedulerError> {
-        // Execute the job function
-        let run_result = self.job.run().await;
+        if !self.job.try_claim_running() {
+            return Err(SchedulerError::JobLockError {
+                message: format!(
+                    "Wrong Job status found for job [{}/{}]. Expected: false",
+                    self.job.group, self.job.name
+                ),
+            });
+        }
+        self.run_after_claim().await
+    }
+
+    /// Run the job assuming the running slot has already been atomically
+    /// claimed by the caller via [`Job::try_claim_running`]. The slot is
+    /// released on completion (or panic) by the internal Drop guard.
+    pub(crate) async fn run_after_claim(&self) -> Result<(), SchedulerError> {
+        let run_result = self.job.run_with_guard().await;
 
         let now = Utc::now();
 
@@ -73,7 +88,7 @@ pub struct Job {
     group: String,
     name: String,
     is_active: bool,
-    is_running: RwLock<bool>,
+    is_running: AtomicBool,
     retries_after_failure: Option<u64>,
 }
 
@@ -96,15 +111,24 @@ impl Job {
             name: name.into(),
             group: group.into(),
             retries_after_failure,
-            is_running: RwLock::new(false),
+            is_running: AtomicBool::new(false),
             is_active: true,
         }
     }
 
     /// Returns true if this job is currently running.
     pub async fn is_running(&self) -> bool {
-        let read = self.is_running.read().await;
-        *read
+        self.is_running.load(Ordering::SeqCst)
+    }
+
+    /// Atomically tries to claim the running slot. Returns true if the
+    /// caller now owns the slot; false if another caller already holds it.
+    /// The owner must release the slot via [`Job::run_with_guard`] (which
+    /// installs a Drop guard) so the flag is cleared even on panic.
+    pub(crate) fn try_claim_running(&self) -> bool {
+        self.is_running
+            .compare_exchange(false, true, Ordering::SeqCst, Ordering::SeqCst)
+            .is_ok()
     }
 
     pub fn name(&self) -> &str {
@@ -115,9 +139,26 @@ impl Job {
         &self.group
     }
 
-    /// Run the job immediately and re-schedule it.
+    /// Run the job immediately. Claims the running slot atomically; returns
+    /// `JobLockError` if it is already claimed. The slot is released on
+    /// completion (or panic) via an internal Drop guard.
     pub async fn run(&self) -> Result<(), SchedulerError> {
-        self.set_running(true).await?;
+        if !self.try_claim_running() {
+            return Err(SchedulerError::JobLockError {
+                message: format!(
+                    "Wrong Job status found for job [{}/{}]. Expected: false",
+                    self.group, self.name
+                ),
+            });
+        }
+        self.run_with_guard().await
+    }
+
+    /// Run the job. The caller MUST have already claimed the running slot
+    /// via [`Job::try_claim_running`]. The slot is released by the Drop
+    /// guard, so it is cleared even if the user-supplied future panics.
+    async fn run_with_guard(&self) -> Result<(), SchedulerError> {
+        let _guard = RunningGuard { flag: &self.is_running };
 
         // Execute the job function
         let mut run_result = self.exec().await;
@@ -139,8 +180,6 @@ impl Job {
             }
         }
 
-        self.set_running(false).await?;
-
         run_result.map_err(|err| SchedulerError::JobExecutionError { source: err })
     }
 
@@ -148,21 +187,15 @@ impl Job {
         let function = self.function.clone();
         (function)().await
     }
+}
 
-    async fn set_running(&self, is_running: bool) -> Result<(), SchedulerError> {
-        let mut write = self.is_running.write().await;
+struct RunningGuard<'a> {
+    flag: &'a AtomicBool,
+}
 
-        if is_running.eq(&*write) {
-            return Err(SchedulerError::JobLockError {
-                message: format!(
-                    "Wrong Job status found for job [{}/{}]. Expected: {}",
-                    self.group, self.name, !is_running
-                ),
-            });
-        }
-
-        *write = is_running;
-        Ok(())
+impl Drop for RunningGuard<'_> {
+    fn drop(&mut self) {
+        self.flag.store(false, Ordering::SeqCst);
     }
 }
 
