@@ -249,7 +249,7 @@ mod test {
             ))),
             Arc::new(
                 LsJwtService::new(&JwtConfig {
-                    secret: "secret".to_owned(),
+                    secret: "secret".into(),
                     signature_algorithm: Algorithm::HS256,
                     token_validity_minutes: 10,
                 })

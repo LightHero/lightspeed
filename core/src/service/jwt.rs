@@ -1,7 +1,8 @@
 use crate::config::JwtConfig;
 use crate::error::LsError;
 use crate::utils::current_epoch_seconds;
-use jsonwebtoken::{DecodingKey, EncodingKey};
+use jsonwebtoken::{Algorithm, DecodingKey, EncodingKey};
+use secrecy::ExposeSecret;
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -17,10 +18,11 @@ pub struct JWT<T> {
     //jti: String,
 }
 
+/// JWT signing/verification service.
 #[derive(Clone)]
 pub struct LsJwtService {
     encoding_key: EncodingKey,
-    secret: String,
+    decoding_key: DecodingKey,
     token_validity_seconds: i64,
     header_default: jsonwebtoken::Header,
     validation_default: jsonwebtoken::Validation,
@@ -28,17 +30,36 @@ pub struct LsJwtService {
 
 impl LsJwtService {
     pub fn new(jwt_config: &JwtConfig) -> Result<LsJwtService, LsError> {
-        if jwt_config.secret.is_empty() {
+        let alg = jwt_config.signature_algorithm;
+
+        // Only HMAC-family algorithms produce keys via `from_secret`.
+        if !matches!(alg, Algorithm::HS256 | Algorithm::HS384 | Algorithm::HS512) {
+            return Err(LsError::ConfigurationError {
+                message: format!(
+                    "JWT signature_algorithm [{alg:?}] is not HMAC-family. \
+                     LsJwtService only supports HS256/HS384/HS512 (symmetric \
+                     secrets). For RS*/ES*/PS*/EdDSA, build EncodingKey and \
+                     DecodingKey directly from PEM/DER and use jsonwebtoken \
+                     primitives instead of this service."
+                ),
+            });
+        }
+
+        let secret_bytes = jwt_config.secret.expose_secret().as_bytes();
+        if secret_bytes.is_empty() {
             return Err(LsError::ConfigurationError { message: "JWT secret key cannot be empty".to_owned() });
         }
 
-        let alg = jwt_config.signature_algorithm;
+        // Once these are built the original `SecretString` can be dropped.
+        let encoding_key = EncodingKey::from_secret(secret_bytes);
+        let decoding_key = DecodingKey::from_secret(secret_bytes);
+
         let mut validation_default = jsonwebtoken::Validation::new(alg);
         validation_default.leeway = 0;
 
         Ok(LsJwtService {
-            encoding_key: EncodingKey::from_secret(jwt_config.secret.as_ref()),
-            secret: jwt_config.secret.clone(),
+            encoding_key,
+            decoding_key,
             token_validity_seconds: i64::from(jwt_config.token_validity_minutes) * 60,
             header_default: jsonwebtoken::Header { alg, ..jsonwebtoken::Header::default() },
             validation_default,
@@ -75,7 +96,7 @@ impl LsJwtService {
 
     pub fn parse_token<T: serde::de::DeserializeOwned>(&self, jwt_string: &str) -> Result<JWT<T>, LsError> {
         let result: Result<jsonwebtoken::TokenData<JWT<T>>, jsonwebtoken::errors::Error> =
-            jsonwebtoken::decode(jwt_string, &DecodingKey::from_secret(self.secret.as_ref()), &self.validation_default);
+            jsonwebtoken::decode(jwt_string, &self.decoding_key, &self.validation_default);
         match result {
             Ok(t) => Ok(t.claims),
             Err(e) => match *e.kind() {
@@ -224,7 +245,7 @@ mod test {
     fn should_not_build_if_secret_key_empty() {
         assert!(
             super::LsJwtService::new(&JwtConfig {
-                secret: "".to_string(),
+                secret: "".into(),
                 signature_algorithm: jsonwebtoken::Algorithm::HS512,
                 token_validity_minutes: 60,
             })
@@ -232,9 +253,36 @@ mod test {
         );
     }
 
+    #[test]
+    fn should_reject_non_hmac_algorithm() {
+        // `EncodingKey::from_secret` is only valid for HS256/HS384/HS512.
+        // Any other algorithm must be rejected at construction so a
+        // misconfiguration can't ship.
+        for alg in [
+            jsonwebtoken::Algorithm::RS256,
+            jsonwebtoken::Algorithm::RS384,
+            jsonwebtoken::Algorithm::RS512,
+            jsonwebtoken::Algorithm::ES256,
+            jsonwebtoken::Algorithm::ES384,
+            jsonwebtoken::Algorithm::PS256,
+            jsonwebtoken::Algorithm::EdDSA,
+        ] {
+            let result = super::LsJwtService::new(&JwtConfig {
+                secret: "mySecret".into(),
+                signature_algorithm: alg,
+                token_validity_minutes: 60,
+            });
+            match result {
+                Err(super::LsError::ConfigurationError { .. }) => {}
+                Err(other) => panic!("expected ConfigurationError for {alg:?}, got {other:?}"),
+                Ok(_) => panic!("expected ConfigurationError for {alg:?}, got Ok"),
+            }
+        }
+    }
+
     fn new() -> super::LsJwtService {
         super::LsJwtService::new(&JwtConfig {
-            secret: "mySecret".to_string(),
+            secret: "mySecret".into(),
             signature_algorithm: jsonwebtoken::Algorithm::HS512,
             token_validity_minutes: 60,
         })
