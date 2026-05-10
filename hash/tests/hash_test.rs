@@ -15,7 +15,7 @@ async fn init() -> LsHashModule {
     };
 
     let mut core_config = CoreConfig::default();
-    "secret".clone_into(&mut core_config.jwt.secret);
+    core_config.jwt.secret = "secret".into();
 
     let mut core_module = LsCoreModule::new(core_config).unwrap();
     core_module.start().await.unwrap();

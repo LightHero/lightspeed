@@ -24,6 +24,7 @@ sqlx = { workspace = true, optional = true }
 axum = { workspace = true, optional = true }
 mime = { workspace = true, optional = true }
 mime_guess = { workspace = true, optional = true }
+percent-encoding = { workspace = true, optional = true }
 
 [dev-dependencies]
 config = { workspace = true }
@@ -41,7 +42,7 @@ tower = { workspace = true }
 [features]
 default = []
 
-axum = ["dep:axum", "lightspeed_core/axum", "mime", "mime_guess"]
+axum = ["dep:axum", "lightspeed_core/axum", "mime", "mime_guess", "dep:percent-encoding"]
 mysql = ["c3p0/mysql", "c3p0/migrate", "sqlx", "lightspeed_test_utils/mysql"]
 postgres = ["c3p0/postgres", "c3p0/migrate", "sqlx", "lightspeed_test_utils/postgres"]
 sqlite = ["c3p0/sqlite", "c3p0/migrate", "sqlx", "lightspeed_test_utils/sqlite"]
