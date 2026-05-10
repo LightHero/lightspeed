@@ -106,7 +106,7 @@ impl EmailClient for FullEmailClient {
                             Path::new(&path).file_name().and_then(|os_str| os_str.to_str()).unwrap_or("")
                         });
 
-                        let body = std::fs::read(&path).map_err(|err| LsError::BadRequest {
+                        let body = tokio::fs::read(&path).await.map_err(|err| LsError::BadRequest {
                             message: format!("Cannot attach the requested attachment from file [{path}]. Err: {err:?}"),
                             code: "",
                         })?;
