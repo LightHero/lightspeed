@@ -35,13 +35,10 @@ fn should_save_file_to_db() -> Result<(), LsError> {
         assert_eq!("DB_ONE", loaded.data.repository);
         assert_eq!(&file_name, &loaded.data.file_path);
 
-        match file_store.read_file_content(&loaded.data.repository, &loaded.data.file_path).await {
-            Ok(BinaryContent::InMemory { content }) => {
-                let file_content = std::str::from_utf8(&content).unwrap();
-                assert_eq!(&std::fs::read_to_string(SOURCE_FILE).unwrap(), file_content);
-            }
-            _ => panic!(),
-        }
+        let content = file_store.read_file_content(&loaded.data.repository, &loaded.data.file_path).await.unwrap();
+        let read_content = crate::tests::collect_bytes(content).await.unwrap();
+        let file_content = std::str::from_utf8(&read_content).unwrap();
+        assert_eq!(&std::fs::read_to_string(SOURCE_FILE).unwrap(), file_content);
 
         Ok(())
     })
@@ -72,14 +69,10 @@ fn should_save_file_to_fs() -> Result<(), LsError> {
 
         println!("Data: [{:#?}]", loaded.data);
 
-        let read_content = file_store
-            .read_file_content(&loaded.data.repository, &loaded.data.file_path)
-            .await
-            .unwrap()
-            .read()
-            .await
-            .unwrap();
-        assert_eq!(read_content.as_ref(), &std::fs::read(SOURCE_FILE).unwrap());
+        let content =
+            file_store.read_file_content(&loaded.data.repository, &loaded.data.file_path).await.unwrap();
+        let read_content = crate::tests::collect_bytes(content).await.unwrap();
+        assert_eq!(read_content.as_slice(), &std::fs::read(SOURCE_FILE).unwrap());
 
         Ok(())
     })
@@ -121,21 +114,15 @@ fn should_save_file_to_db_with_specific_repo() -> Result<(), LsError> {
             )
             .await?;
 
-        match file_store.read_file_content(&saved_1.data.repository, &saved_1.data.file_path).await {
-            Ok(BinaryContent::InMemory { content }) => {
-                let file_content = std::str::from_utf8(&content).unwrap();
-                assert_eq!(&std::fs::read_to_string(SOURCE_FILE).unwrap(), file_content);
-            }
-            _ => panic!(),
-        }
+        let content_1 =
+            file_store.read_file_content(&saved_1.data.repository, &saved_1.data.file_path).await.unwrap();
+        let read_1 = crate::tests::collect_bytes(content_1).await.unwrap();
+        assert_eq!(&std::fs::read_to_string(SOURCE_FILE).unwrap(), std::str::from_utf8(&read_1).unwrap());
 
-        match file_store.read_file_content(&saved_2.data.repository, &saved_2.data.file_path).await {
-            Ok(BinaryContent::InMemory { content }) => {
-                let file_content = std::str::from_utf8(&content).unwrap();
-                assert_eq!(&std::fs::read_to_string(SOURCE_FILE).unwrap(), file_content);
-            }
-            _ => panic!(),
-        }
+        let content_2 =
+            file_store.read_file_content(&saved_2.data.repository, &saved_2.data.file_path).await.unwrap();
+        let read_2 = crate::tests::collect_bytes(content_2).await.unwrap();
+        assert_eq!(&std::fs::read_to_string(SOURCE_FILE).unwrap(), std::str::from_utf8(&read_2).unwrap());
 
         println!("{:#?}", serde_json::to_string(&saved_1).unwrap());
 
@@ -266,13 +253,10 @@ fn should_save_file_to_db_with_relative_folder() -> Result<(), LsError> {
         assert_eq!("DB_ONE", &saved.data.repository);
         assert_eq!(&file_name, &saved.data.file_path);
 
-        match file_store.read_file_content(&saved.data.repository, &saved.data.file_path).await {
-            Ok(BinaryContent::InMemory { content }) => {
-                let file_content = std::str::from_utf8(&content).unwrap();
-                assert_eq!(&std::fs::read_to_string(SOURCE_FILE).unwrap(), file_content);
-            }
-            _ => panic!(),
-        }
+        let content =
+            file_store.read_file_content(&saved.data.repository, &saved.data.file_path).await.unwrap();
+        let read_content = crate::tests::collect_bytes(content).await.unwrap();
+        assert_eq!(&std::fs::read_to_string(SOURCE_FILE).unwrap(), std::str::from_utf8(&read_content).unwrap());
 
         Ok(())
     })
@@ -335,13 +319,10 @@ fn should_save_file_to_db_with_relative_folder_in_repository() -> Result<(), LsE
         assert_eq!("DB_ONE", loaded.data.repository);
         assert_eq!(file_path, loaded.data.file_path);
 
-        match file_store.read_file_content(&saved.data.repository, &loaded.data.file_path).await {
-            Ok(BinaryContent::InMemory { content }) => {
-                let file_content = std::str::from_utf8(&content).unwrap();
-                assert_eq!(&std::fs::read_to_string(SOURCE_FILE).unwrap(), file_content);
-            }
-            _ => panic!(),
-        }
+        let content =
+            file_store.read_file_content(&saved.data.repository, &loaded.data.file_path).await.unwrap();
+        let read_content = crate::tests::collect_bytes(content).await.unwrap();
+        assert_eq!(&std::fs::read_to_string(SOURCE_FILE).unwrap(), std::str::from_utf8(&read_content).unwrap());
 
         Ok(())
     })
@@ -554,7 +535,7 @@ fn should_fail_if_file_already_exists_in_db() -> Result<(), LsError> {
                     same_file_path.clone(),
                     same_file_name.clone(),
                     content_type.clone(),
-                    &binary_content.clone(),
+                    &binary_content,
                 )
                 .await
                 .is_ok()
@@ -568,7 +549,7 @@ fn should_fail_if_file_already_exists_in_db() -> Result<(), LsError> {
                     same_file_path.clone(),
                     same_file_name.clone(),
                     content_type.clone(),
-                    &binary_content.clone(),
+                    &binary_content,
                 )
                 .await
                 .is_err()
@@ -582,7 +563,7 @@ fn should_fail_if_file_already_exists_in_db() -> Result<(), LsError> {
                     format!("{same_file_name}-1"),
                     same_file_name.clone(),
                     content_type.clone(),
-                    &binary_content.clone(),
+                    &binary_content,
                 )
                 .await
                 .is_ok()
@@ -596,7 +577,7 @@ fn should_fail_if_file_already_exists_in_db() -> Result<(), LsError> {
                     same_file_path.clone(),
                     same_file_name.clone(),
                     content_type.clone(),
-                    &binary_content.clone(),
+                    &binary_content,
                 )
                 .await
                 .is_ok()
@@ -631,7 +612,7 @@ fn should_fail_if_file_already_exists_in_fs() -> Result<(), LsError> {
                     same_file_path.clone(),
                     same_file_name.clone(),
                     content_type.clone(),
-                    &binary_content.clone(),
+                    &binary_content,
                 )
                 .await
                 .is_ok()
@@ -645,7 +626,7 @@ fn should_fail_if_file_already_exists_in_fs() -> Result<(), LsError> {
                     same_file_path.clone(),
                     same_file_name.clone(),
                     content_type.clone(),
-                    &binary_content.clone(),
+                    &binary_content,
                 )
                 .await
                 .is_err()
@@ -659,7 +640,7 @@ fn should_fail_if_file_already_exists_in_fs() -> Result<(), LsError> {
                     format!("{same_file_name}-1"),
                     same_file_name.clone(),
                     content_type.clone(),
-                    &binary_content.clone(),
+                    &binary_content,
                 )
                 .await
                 .is_ok()
@@ -673,7 +654,7 @@ fn should_fail_if_file_already_exists_in_fs() -> Result<(), LsError> {
                     same_file_path.clone(),
                     same_file_name.clone(),
                     content_type.clone(),
-                    &binary_content.clone(),
+                    &binary_content,
                 )
                 .await
                 .is_ok()

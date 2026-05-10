@@ -35,6 +35,17 @@ pub trait DBFileStoreBinaryRepository: Clone + Send + Sync {
         file_path: &str,
     ) -> impl Future<Output = Result<BinaryContent<'_>, LsError>> + Send;
 
+    /// Read the file's bytes through a long-lived connection owned by the
+    /// returned `BinaryContent`. Implementations that support true backend
+    /// streaming (Postgres Large Objects) pipe bytes through this without
+    /// materializing the full payload; backends that don't (MySQL, SQLite)
+    /// fall back to a buffered read inside their own transaction.
+    fn read_file_streamed(
+        &self,
+        repository_name: &str,
+        file_path: &str,
+    ) -> impl Future<Output = Result<BinaryContent<'static>, LsError>> + Send;
+
     fn save_file<'a>(
         &self,
         tx: &mut <Self::DB as Database>::Connection,

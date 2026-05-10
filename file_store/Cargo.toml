@@ -18,6 +18,7 @@ log = { workspace = true }
 opendal = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }
+tokio = { workspace = true, features = ["rt"] }
 
 sqlx = { workspace = true, optional = true }
 axum = { workspace = true, optional = true }

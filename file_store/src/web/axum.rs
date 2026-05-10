@@ -3,6 +3,7 @@ use axum::{
     body::Body,
     http::{Response, header, response::Builder},
 };
+use futures::StreamExt;
 use lightspeed_core::error::LsError;
 use log::*;
 use std::borrow::Cow;
@@ -43,6 +44,19 @@ pub async fn into_response(
             let stream = reader.into_bytes_stream(..).await.unwrap();
 
             (file_name, ct, Body::from_stream(stream))
+        }
+        BinaryContent::Stream { stream } => {
+            // The caller-provided file_name is authoritative for streamed
+            // content (the stream itself has no path metadata).
+            let file_name = Cow::Borrowed(file_name.unwrap_or(""));
+            let ct = mime_guess::from_path(std::path::Path::new(file_name.as_ref())).first_or_octet_stream();
+
+            // Adapt our `Result<Vec<u8>, LsError>` stream into the byte
+            // stream shape `Body::from_stream` expects.
+            let bytes_stream = stream
+                .into_inner()
+                .map(|chunk| chunk.map_err(|err| std::io::Error::other(err.to_string())));
+            (file_name, ct, Body::from_stream(bytes_stream))
         }
     };
 
@@ -96,11 +110,26 @@ mod test {
     use tower::ServiceExt; // for `app.oneshot()`
 
     async fn download(Extension(data): Extension<Arc<AppData>>) -> Result<Response<Body>, LsError> {
-        into_response(data.content.clone(), data.file_name, data.set_content_disposition).await
+        // Build a fresh `BinaryContent` per request from the underlying
+        // source. `BinaryContent` is intentionally not `Clone` (its `Stream`
+        // variant carries a one-shot stream), so the shared `Arc<AppData>`
+        // owns the source data and each request constructs its own content.
+        let content = match &data.source {
+            ContentSource::InMemory(bytes) => BinaryContent::InMemory { content: Cow::Borrowed(bytes) },
+            ContentSource::OpenDal { operator, path } => {
+                BinaryContent::OpenDal { operator: operator.clone(), path: path.clone() }
+            }
+        };
+        into_response(content, data.file_name, data.set_content_disposition).await
+    }
+
+    pub enum ContentSource {
+        InMemory(Vec<u8>),
+        OpenDal { operator: Arc<opendal::Operator>, path: String },
     }
 
     pub struct AppData {
-        content: BinaryContent<'static>,
+        source: ContentSource,
         file_name: Option<&'static str>,
         set_content_disposition: bool,
     }
@@ -110,7 +139,7 @@ mod test {
         // Arrange
         let content = std::fs::read("./Cargo.toml").unwrap();
         let data = Arc::new(AppData {
-            content: BinaryContent::InMemory { content: content.clone().into() },
+            source: ContentSource::InMemory(content.clone()),
             file_name: Some("Cargo.toml"),
             set_content_disposition: false,
         });
@@ -136,7 +165,7 @@ mod test {
         // Arrange
         let content = std::fs::read("./Cargo.toml").unwrap();
         let data = Arc::new(AppData {
-            content: BinaryContent::InMemory { content: content.clone().into() },
+            source: ContentSource::InMemory(content.clone()),
             file_name: Some("Cargo.toml"),
             set_content_disposition: true,
         });
@@ -171,7 +200,7 @@ mod test {
         let operator = Operator::new(services::Fs::default().root("./")).unwrap().finish().into();
 
         let data = Arc::new(AppData {
-            content: BinaryContent::OpenDal { operator, path: file_path.to_owned() },
+            source: ContentSource::OpenDal { operator, path: file_path.to_owned() },
             file_name: Some("Cargo.toml"),
             set_content_disposition: false,
         });
@@ -201,7 +230,7 @@ mod test {
         let operator = Operator::new(services::Fs::default().root("./")).unwrap().finish().into();
 
         let data = Arc::new(AppData {
-            content: BinaryContent::OpenDal { operator, path: file_path.to_owned() },
+            source: ContentSource::OpenDal { operator, path: file_path.to_owned() },
             file_name: None,
             set_content_disposition: true,
         });

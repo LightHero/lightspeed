@@ -15,7 +15,7 @@ impl OpendalFileStoreBinaryRepository {
         Self { operator }
     }
 
-    pub async fn read_file(&self, file_path: &str) -> Result<BinaryContent<'_>, LsError> {
+    pub async fn read_file(&self, file_path: &str) -> Result<BinaryContent<'static>, LsError> {
         Ok(BinaryContent::OpenDal { operator: self.operator.clone(), path: file_path.to_owned() })
     }
 
@@ -32,6 +32,32 @@ impl OpendalFileStoreBinaryRepository {
                 self.operator.write(file_path, content.to_vec()).await.map_err(|err| LsError::BadRequest {
                     message: format!(
                         "OpendalFileStoreDataRepository - Cannot write data to [{file_path}]. Err: {err:?}"
+                    ),
+                    code: ErrorCodes::IO_ERROR,
+                })?;
+                Ok(())
+            }
+            BinaryContent::Stream { stream } => {
+                let mut writer =
+                    self.operator.writer(file_path).await.map_err(|err| LsError::BadRequest {
+                        message: format!(
+                            "OpendalFileStoreDataRepository - Cannot create writer to [{file_path}]. Err: {err:?}"
+                        ),
+                        code: ErrorCodes::IO_ERROR,
+                    })?;
+                let mut guard = stream.lock().await;
+                while let Some(chunk) = guard.next().await {
+                    let chunk = chunk?;
+                    writer.write(chunk).await.map_err(|err| LsError::BadRequest {
+                        message: format!(
+                            "OpendalFileStoreDataRepository - Cannot write chunk to [{file_path}]. Err: {err:?}"
+                        ),
+                        code: ErrorCodes::IO_ERROR,
+                    })?;
+                }
+                writer.close().await.map_err(|err| LsError::BadRequest {
+                    message: format!(
+                        "OpendalFileStoreDataRepository - Cannot finalize writer to [{file_path}]. Err: {err:?}"
                     ),
                     code: ErrorCodes::IO_ERROR,
                 })?;

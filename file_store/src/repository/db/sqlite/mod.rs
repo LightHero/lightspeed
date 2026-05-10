@@ -38,7 +38,7 @@ impl DBFileStoreRepositoryManager for SqliteFileStoreRepositoryManager {
     }
 
     fn file_store_binary_repo(&self) -> Self::FileStoreBinaryRepo {
-        SqliteFileStoreBinaryRepository::default()
+        SqliteFileStoreBinaryRepository::new(self.c3p0.clone())
     }
 
     fn file_store_data_repo(&self) -> Self::FileStoreDataRepo {

@@ -1,6 +1,9 @@
 use crate::model::BinaryContent;
 use crate::repository::db::DBFileStoreBinaryRepository;
+use c3p0::C3p0Pool;
+use c3p0::SqliteC3p0Pool;
 use c3p0::sqlx::{Row, Sqlite, query};
+use futures::StreamExt;
 use lightspeed_core::error::{ErrorCodes, LsError};
 use sqlx::{AssertSqlSafe, SqliteConnection};
 use std::borrow::Cow;
@@ -8,11 +11,12 @@ use std::borrow::Cow;
 #[derive(Clone)]
 pub struct SqliteFileStoreBinaryRepository {
     table_name: &'static str,
+    pool: SqliteC3p0Pool,
 }
 
-impl Default for SqliteFileStoreBinaryRepository {
-    fn default() -> Self {
-        SqliteFileStoreBinaryRepository { table_name: "LS_FILE_STORE_BINARY" }
+impl SqliteFileStoreBinaryRepository {
+    pub fn new(pool: SqliteC3p0Pool) -> Self {
+        SqliteFileStoreBinaryRepository { table_name: "LS_FILE_STORE_BINARY", pool }
     }
 }
 
@@ -37,6 +41,26 @@ impl DBFileStoreBinaryRepository for SqliteFileStoreBinaryRepository {
         Ok(res)
     }
 
+    /// SQLite has no stream support, so falls back to a buffered read inside
+    /// our own transaction, returning an `InMemory` variant.
+    async fn read_file_streamed(
+        &self,
+        repository_name: &str,
+        file_path: &str,
+    ) -> Result<BinaryContent<'static>, LsError> {
+        let table_name = self.table_name;
+        let repository = repository_name.to_owned();
+        let path = file_path.to_owned();
+        self.pool
+            .transaction(async move |conn| {
+                let sql = format!("SELECT DATA FROM {table_name} WHERE repository = ? AND filepath = ?");
+                let row = query(AssertSqlSafe(sql)).bind(&repository).bind(&path).fetch_one(&mut *conn).await?;
+                let bytes: Vec<u8> = row.try_get(0)?;
+                Ok::<_, LsError>(BinaryContent::InMemory { content: Cow::Owned(bytes) })
+            })
+            .await
+    }
+
     async fn save_file<'a>(
         &self,
         tx: &mut SqliteConnection,
@@ -52,6 +76,14 @@ impl DBFileStoreBinaryRepository for SqliteFileStoreBinaryRepository {
                     code: ErrorCodes::IO_ERROR,
                 })?;
                 Cow::Owned(buffer.to_vec())
+            }
+            BinaryContent::Stream { stream } => {
+                let mut guard = stream.lock().await;
+                let mut buf: Vec<u8> = Vec::new();
+                while let Some(chunk) = guard.next().await {
+                    buf.extend_from_slice(&chunk?);
+                }
+                Cow::Owned(buf)
             }
         };
 

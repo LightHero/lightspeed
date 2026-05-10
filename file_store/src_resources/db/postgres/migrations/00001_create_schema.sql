@@ -20,10 +20,16 @@ CREATE UNIQUE INDEX LS_FILE_STORE_DATA_UNIQUE_REPOSITORY_FILEPATH ON LS_FILE_STO
 -- Begin - LS_FILE_STORE_BINARY -
 -----------------------------------
 
+-- `data` references a Postgres Large Object (pg_largeobject_metadata.oid).
+-- Using LOs lets us stream content in / out via lo_open + lowrite/loread
+-- instead of materializing the full payload as a single bytea bind, which
+-- both avoids OOM on large uploads and bypasses the 1 GiB bytea limit.
+-- Cleanup of the underlying LO on row delete is handled in
+-- PgFileStoreBinaryRepository::delete_file via lo_unlink.
 create table LS_FILE_STORE_BINARY (
     repository    TEXT NOT NULL,
     filepath      TEXT NOT NULL,
-    data          BYTEA
+    data          OID  NOT NULL
 );
 
 CREATE UNIQUE INDEX LS_FILE_STORE_BINARY_UNIQUE_REPOSITORY_FILEPATH ON LS_FILE_STORE_BINARY( repository, filepath );

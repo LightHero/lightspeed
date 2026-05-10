@@ -1,31 +1,17 @@
 use c3p0::*;
-use lightspeed_core::error::{ErrorCodes, LsError};
+use futures::stream::BoxStream;
+use lightspeed_core::error::LsError;
 use serde::{Deserialize, Serialize};
 use std::{borrow::Cow, sync::Arc};
+use tokio::sync::Mutex;
 
 pub type FileStoreDataModel = Record<FileStoreDataData>;
 
-#[derive(Clone)]
+/// `BinaryContent` is a wrapper around the source of a file's binary content.
 pub enum BinaryContent<'a> {
     InMemory { content: Cow<'a, [u8]> },
     OpenDal { operator: Arc<opendal::Operator>, path: String },
-}
-
-impl<'a> BinaryContent<'a> {
-    pub async fn read(&self) -> Result<Cow<'a, [u8]>, LsError> {
-        match self {
-            BinaryContent::InMemory { content } => Ok(content.clone()),
-            BinaryContent::OpenDal { operator, path } => Ok(operator
-                .read(path)
-                .await
-                .map_err(|err| LsError::BadRequest {
-                    message: format!("Failed to read file from store: {err}"),
-                    code: ErrorCodes::IO_ERROR,
-                })?
-                .to_vec()
-                .into()),
-        }
-    }
+    Stream { stream: Mutex<BoxStream<'static, Result<Vec<u8>, LsError>>> },
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]

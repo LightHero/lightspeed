@@ -38,7 +38,7 @@ impl DBFileStoreRepositoryManager for PgFileStoreRepositoryManager {
     }
 
     fn file_store_binary_repo(&self) -> Self::FileStoreBinaryRepo {
-        PgFileStoreBinaryRepository::default()
+        PgFileStoreBinaryRepository::new(self.c3p0.clone())
     }
 
     fn file_store_data_repo(&self) -> Self::FileStoreDataRepo {
