@@ -29,6 +29,14 @@ impl<RepoManager: AuthRepositoryManager> LsTokenService<RepoManager> {
         info!("Generate and save token of type [{token_type:?}] for username [{username}]");
 
         let issued_at = current_epoch_seconds();
+
+        // Lazy sweep: every new token write opportunistically removes every
+        // already-expired token in the table. This bounds growth without
+        // requiring an external scheduler. The sweep runs in the same tx as
+        // the insert; touched rows are disjoint, so it does not race against
+        // concurrent fetches/deletes of still-valid tokens.
+        self.delete_expired_with_conn(conn, issued_at).await?;
+
         let expire_at_epoch = issued_at + (self.auth_config.activation_token_validity_minutes as i64 * 60);
         let token = NewRecord::new(TokenData {
             token: new_hyphenated_uuid(),
@@ -37,6 +45,18 @@ impl<RepoManager: AuthRepositoryManager> LsTokenService<RepoManager> {
             expire_at_epoch_seconds: expire_at_epoch,
         });
         self.token_repo.save(conn, token).await
+    }
+
+    pub async fn delete_expired_with_conn(
+        &self,
+        conn: &mut <RepoManager::DB as Database>::Connection,
+        threshold_epoch_seconds: i64,
+    ) -> Result<u64, LsError> {
+        let deleted = self.token_repo.delete_expired(conn, threshold_epoch_seconds).await?;
+        if deleted > 0 {
+            debug!("Lazy sweep removed [{deleted}] expired token(s)");
+        }
+        Ok(deleted)
     }
 
     pub async fn fetch_by_token_with_conn(

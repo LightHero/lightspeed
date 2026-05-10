@@ -3,6 +3,7 @@ use crate::repository::TokenRepository;
 use c3p0::sqlx::*;
 use c3p0::*;
 use lightspeed_core::error::LsError;
+use ::sqlx::AssertSqlSafe;
 
 #[derive(Clone)]
 pub struct MySqlTokenRepository {}
@@ -51,5 +52,39 @@ impl TokenRepository for MySqlTokenRepository {
 
     async fn delete(&self, tx: &mut MySqlConnection, model: TokenModel) -> Result<TokenModel, LsError> {
         Ok(tx.delete(model).await?)
+    }
+
+    async fn delete_expired(&self, tx: &mut MySqlConnection, threshold_epoch_seconds: i64) -> Result<u64, LsError> {
+        // Two-phase to avoid InnoDB deadlocks. A direct DELETE on the JSON
+        // predicate — even backed by the LS_AUTH_TOKEN_EXPIRE_AT functional
+        // index — takes next-key locks during the index range scan; rows
+        // sharing an expire_at_epoch_seconds value have no tiebreaker so
+        // concurrent sweeps lock them in non-deterministic order and
+        // deadlock with error 1213. Selecting candidate ids (snapshot read,
+        // no locks) and then DELETE WHERE id IN (...) bounds locking to
+        // specific PK rows in a deterministic, sorted order. The functional
+        // index keeps phase 1 fast.
+        let select_sql = format!(
+            "SELECT id FROM {} \
+             WHERE JSON_VALUE(data, '$.expire_at_epoch_seconds' RETURNING SIGNED) < ? \
+             ORDER BY id",
+            <TokenData as DataType>::TABLE_NAME
+        );
+        let rows = query(AssertSqlSafe(select_sql)).bind(threshold_epoch_seconds).fetch_all(&mut *tx).await?;
+        let ids: Vec<u64> = rows.iter().map(|row| row.try_get::<u64, _>(0)).collect::<Result<Vec<_>, _>>()?;
+
+        if ids.is_empty() {
+            return Ok(0);
+        }
+
+        let placeholders = vec!["?"; ids.len()].join(",");
+        let delete_sql =
+            format!("DELETE FROM {} WHERE id IN ({})", <TokenData as DataType>::TABLE_NAME, placeholders);
+        let mut q = query(AssertSqlSafe(delete_sql));
+        for id in &ids {
+            q = q.bind(id);
+        }
+        let res = q.execute(tx).await?;
+        Ok(res.rows_affected())
     }
 }

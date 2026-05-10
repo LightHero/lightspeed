@@ -343,7 +343,11 @@ fn should_regenerate_activation_token_by_email_and_username() -> Result<(), LsEr
 #[test]
 fn should_regenerate_activation_token_by_email_and_username_even_if_token_expired() -> Result<(), LsError> {
     tokio_test(async {
-        let data = data(false).await;
+        // Run serially: this test installs an expired token row and then
+        // observes its effect across multiple transactions. A concurrent
+        // test minting a new token would trigger the lazy sweep and could
+        // delete this row mid-test.
+        let data = data(true).await;
         let auth_module = &data.0;
         let (user, mut token) = create_user(auth_module, false).await?;
         token.data.expire_at_epoch_seconds = 0;
@@ -736,7 +740,11 @@ fn should_reset_password_by_token() -> Result<(), LsError> {
 #[test]
 fn should_fail_resetting_password_if_token_expired() -> Result<(), LsError> {
     tokio_test(async {
-        let data = data(false).await;
+        // Run serially: a concurrent test minting a new token would trigger
+        // the lazy sweep and delete this test's expired row before the reset
+        // path's fetch_by_token reads it, turning the expected expiry
+        // ValidationError into a NotFound.
+        let data = data(true).await;
         let auth_module = &data.0;
 
         let password = new_hyphenated_uuid();
@@ -777,6 +785,7 @@ fn should_fail_resetting_password_if_token_expired() -> Result<(), LsError> {
 
         // Original password must still work — the reset must not have taken effect.
         assert!(auth_module.auth_account_service.login(&user.data.username, &password).await.is_ok());
+        assert!(auth_module.auth_account_service.login(&user.data.username, &password_new).await.is_err());
 
         Ok(())
     })

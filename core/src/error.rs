@@ -47,7 +47,7 @@ pub enum LsError {
     #[error("PasswordEncryptionError: {message}")]
     PasswordEncryptionError { message: String },
 
-    #[error("InvalidTokenError: {message}")]
+    #[error("InternalServerError: {message}")]
     InternalServerError { message: String },
 
     #[error("C3p0Error: {source:?}")]

@@ -105,6 +105,122 @@ fn should_validate_token_on_fetch() -> Result<(), LsError> {
 }
 
 #[test]
+fn generate_and_save_token_should_lazily_delete_all_expired_tokens() -> Result<(), LsError> {
+    tokio_test(async {
+        let data = data(false).await;
+        let auth_module = &data.0;
+        let token_service = &auth_module.token_service;
+        let c3p0 = auth_module.repo_manager.c3p0();
+
+        c3p0.transaction::<_, LsError, _>(async |conn| {
+            // Two stale tokens belonging to two different usernames — the sweep
+            // must hit both, not just rows for the user we are minting next.
+            let stale_a = conn
+                .save(NewRecord {
+                    data: TokenData {
+                        token: new_hyphenated_uuid(),
+                        expire_at_epoch_seconds: 0,
+                        token_type: TokenType::ResetPassword,
+                        username: new_hyphenated_uuid(),
+                    },
+                })
+                .await?;
+            let stale_b = conn
+                .save(NewRecord {
+                    data: TokenData {
+                        token: new_hyphenated_uuid(),
+                        expire_at_epoch_seconds: 0,
+                        token_type: TokenType::AccountActivation,
+                        username: new_hyphenated_uuid(),
+                    },
+                })
+                .await?;
+
+            // A non-expired token must survive the sweep.
+            let live = conn
+                .save(NewRecord {
+                    data: TokenData {
+                        token: new_hyphenated_uuid(),
+                        expire_at_epoch_seconds: current_epoch_seconds() + 3600,
+                        token_type: TokenType::AccountActivation,
+                        username: new_hyphenated_uuid(),
+                    },
+                })
+                .await?;
+
+            // Minting a new token for an unrelated user triggers the sweep.
+            let fresh = token_service
+                .generate_and_save_token_with_conn(conn, new_hyphenated_uuid(), TokenType::AccountActivation)
+                .await?;
+
+            assert!(!conn.exists_by_id::<TokenData>(stale_a.id).await?);
+            assert!(!conn.exists_by_id::<TokenData>(stale_b.id).await?);
+            assert!(conn.exists_by_id::<TokenData>(live.id).await?);
+            assert!(conn.exists_by_id::<TokenData>(fresh.id).await?);
+
+            Ok(())
+        })
+        .await
+    })
+}
+
+#[test]
+fn delete_expired_with_conn_should_remove_only_rows_below_threshold() -> Result<(), LsError> {
+    tokio_test(async {
+        let data = data(false).await;
+        let auth_module = &data.0;
+        let token_service = &auth_module.token_service;
+        let c3p0 = auth_module.repo_manager.c3p0();
+
+        c3p0.transaction::<_, LsError, _>(async |conn| {
+            let now = current_epoch_seconds();
+
+            let below = conn
+                .save(NewRecord {
+                    data: TokenData {
+                        token: new_hyphenated_uuid(),
+                        expire_at_epoch_seconds: now - 100,
+                        token_type: TokenType::AccountActivation,
+                        username: new_hyphenated_uuid(),
+                    },
+                })
+                .await?;
+            let at_threshold = conn
+                .save(NewRecord {
+                    data: TokenData {
+                        token: new_hyphenated_uuid(),
+                        expire_at_epoch_seconds: now,
+                        token_type: TokenType::AccountActivation,
+                        username: new_hyphenated_uuid(),
+                    },
+                })
+                .await?;
+            let above = conn
+                .save(NewRecord {
+                    data: TokenData {
+                        token: new_hyphenated_uuid(),
+                        expire_at_epoch_seconds: now + 100,
+                        token_type: TokenType::ResetPassword,
+                        username: new_hyphenated_uuid(),
+                    },
+                })
+                .await?;
+
+            let deleted = token_service.delete_expired_with_conn(conn, now).await?;
+            assert!(deleted >= 1);
+
+            // Strictly less-than threshold: row at exactly `now` survives.
+            assert!(!conn.exists_by_id::<TokenData>(below.id).await?);
+            assert!(conn.exists_by_id::<TokenData>(at_threshold.id).await?);
+            assert!(conn.exists_by_id::<TokenData>(above.id).await?);
+
+            Ok(())
+        })
+        .await
+    })
+}
+
+#[test]
 fn should_return_all_tokens_by_username() -> Result<(), LsError> {
     tokio_test(async {
         let data = data(false).await;

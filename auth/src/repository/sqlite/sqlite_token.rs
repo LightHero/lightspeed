@@ -3,6 +3,7 @@ use crate::repository::TokenRepository;
 use c3p0::sqlx::*;
 use c3p0::*;
 use lightspeed_core::error::LsError;
+use ::sqlx::AssertSqlSafe;
 
 #[derive(Clone)]
 pub struct SqliteTokenRepository {}
@@ -51,5 +52,14 @@ impl TokenRepository for SqliteTokenRepository {
 
     async fn delete(&self, tx: &mut SqliteConnection, model: TokenModel) -> Result<TokenModel, LsError> {
         Ok(tx.delete(model).await?)
+    }
+
+    async fn delete_expired(&self, tx: &mut SqliteConnection, threshold_epoch_seconds: i64) -> Result<u64, LsError> {
+        let sql = format!(
+            "DELETE FROM {} WHERE CAST(data ->> '$.expire_at_epoch_seconds' AS INTEGER) < ?",
+            <TokenData as DataType>::TABLE_NAME
+        );
+        let res = query(AssertSqlSafe(sql)).bind(threshold_epoch_seconds).execute(tx).await?;
+        Ok(res.rows_affected())
     }
 }

@@ -32,4 +32,6 @@ create table LS_AUTH_TOKEN (
 
 CREATE UNIQUE INDEX LS_AUTH_TOKEN_UNIQUE_TOKEN ON LS_AUTH_TOKEN( (DATA->>'token') );
 
+CREATE INDEX LS_AUTH_TOKEN_EXPIRE_AT ON LS_AUTH_TOKEN( ((DATA->>'expire_at_epoch_seconds')::bigint) );
+
 -- End - LS_AUTH_TOKEN -

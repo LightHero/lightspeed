@@ -3,6 +3,7 @@ use crate::repository::TokenRepository;
 use c3p0::sqlx::*;
 use c3p0::*;
 use lightspeed_core::error::LsError;
+use ::sqlx::AssertSqlSafe;
 
 #[derive(Clone)]
 pub struct PgTokenRepository;
@@ -51,5 +52,14 @@ impl TokenRepository for PgTokenRepository {
 
     async fn delete(&self, tx: &mut PgConnection, model: TokenModel) -> Result<TokenModel, LsError> {
         Ok(tx.delete(model).await?)
+    }
+
+    async fn delete_expired(&self, tx: &mut PgConnection, threshold_epoch_seconds: i64) -> Result<u64, LsError> {
+        let sql = format!(
+            "DELETE FROM {} WHERE (data->>'expire_at_epoch_seconds')::bigint < $1",
+            <TokenData as DataType>::TABLE_NAME
+        );
+        let res = query(AssertSqlSafe(sql)).bind(threshold_epoch_seconds).execute(tx).await?;
+        Ok(res.rows_affected())
     }
 }

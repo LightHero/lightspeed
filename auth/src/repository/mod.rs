@@ -113,4 +113,10 @@ pub trait TokenRepository: Clone + Send + Sync {
         tx: &mut <Self::DB as Database>::Connection,
         model: TokenModel,
     ) -> impl Future<Output = Result<TokenModel, LsError>> + Send;
+
+    fn delete_expired(
+        &self,
+        tx: &mut <Self::DB as Database>::Connection,
+        threshold_epoch_seconds: i64,
+    ) -> impl Future<Output = Result<u64, LsError>> + Send;
 }
