@@ -21,7 +21,6 @@ publish:
       "cache"
       "core"
       "auth"
-      "cms"
       "email"
       "file_store"
       "hash"

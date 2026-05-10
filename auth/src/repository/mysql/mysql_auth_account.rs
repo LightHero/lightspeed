@@ -31,7 +31,7 @@ impl AuthAccountRepository for MySqlAuthAccountRepository {
     ) -> Result<Vec<AuthAccountModel>, LsError> {
         Ok(AuthAccountModel::query_with_tail(
             r#"
-            where id >= ? and DATA -> '$.status' = ?
+            where id >= ? and JSON_VALUE(DATA, '$.status' RETURNING CHAR(255)) = ?
             order by id asc
             limit ?
         "#,
@@ -61,7 +61,7 @@ impl AuthAccountRepository for MySqlAuthAccountRepository {
     ) -> Result<Option<AuthAccountModel>, LsError> {
         Ok(AuthAccountModel::query_with_tail(
             r#"
-            where DATA -> '$.username' = ?
+            where JSON_VALUE(DATA, '$.username' RETURNING CHAR(255)) = ?
             limit 1
         "#,
         )
@@ -77,7 +77,7 @@ impl AuthAccountRepository for MySqlAuthAccountRepository {
     ) -> Result<Option<AuthAccountModel>, LsError> {
         Ok(AuthAccountModel::query_with_tail(
             r#"
-            where DATA -> '$.email' = ?
+            where JSON_VALUE(DATA, '$.email' RETURNING CHAR(255)) = ?
             limit 1
         "#,
         )

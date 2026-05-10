@@ -39,7 +39,7 @@ fn should_create_pending_user() -> Result<(), LsError> {
 
         assert_eq!(username, user.data.username);
 
-        assert!(auth_module.password_codec.verify_match(&password, &user.data.password)?);
+        assert!(auth_module.password_codec.verify_match(&password, &user.data.password).await?);
 
         assert!(user.data.roles.is_empty());
 

@@ -9,7 +9,7 @@ create table LS_AUTH_ACCOUNT (
     version INTEGER NOT NULL,
     create_time TEXT NOT NULL,
     update_time TEXT NOT NULL,
-    data JSON NOT NULL CHECK (json_valid(data))
+    data JSON NOT NULL
 );
 
 CREATE UNIQUE INDEX LS_AUTH_ACCOUNT_UNIQUE_USERNAME ON LS_AUTH_ACCOUNT( (DATA->>'$.username') );
@@ -27,7 +27,7 @@ create table LS_AUTH_TOKEN (
     version INTEGER NOT NULL,
     create_time TEXT NOT NULL,
     update_time TEXT NOT NULL,
-    data JSON NOT NULL CHECK (json_valid(data))
+    data JSON NOT NULL
 );
 
 CREATE UNIQUE INDEX LS_AUTH_TOKEN_UNIQUE_TOKEN ON LS_AUTH_TOKEN( (DATA->>'$.token') );

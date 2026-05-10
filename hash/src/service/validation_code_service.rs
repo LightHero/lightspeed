@@ -8,6 +8,7 @@ use lightspeed_core::utils::current_epoch_seconds;
 use log::*;
 use serde::Serialize;
 use std::sync::Arc;
+use subtle::ConstantTimeEq;
 
 #[derive(Clone)]
 pub struct LsValidationCodeService {
@@ -63,9 +64,13 @@ impl LsValidationCodeService {
             code: &request.code,
             to_be_validated: &request.data.to_be_validated,
         })?;
+        let code_valid: bool = calculated_token_hash
+            .as_bytes()
+            .ct_eq(request.data.token_hash.as_bytes())
+            .into();
         Ok(VerifyValidationCodeResponseDto {
             to_be_validated: request.data.to_be_validated,
-            code_valid: calculated_token_hash.eq(&request.data.token_hash),
+            code_valid,
         })
     }
 

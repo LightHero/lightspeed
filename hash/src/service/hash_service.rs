@@ -1,5 +1,6 @@
 use base64::{Engine as _, engine::general_purpose};
 use sha2::Digest;
+use subtle::ConstantTimeEq;
 
 #[derive(Clone, Default)]
 pub struct LsHashService {}
@@ -17,7 +18,8 @@ impl LsHashService {
     }
 
     pub fn verify_hash(&self, text: &str, expected_hash: &str) -> bool {
-        self.hash(text).eq(expected_hash)
+        let actual = self.hash(text);
+        actual.as_bytes().ct_eq(expected_hash.as_bytes()).into()
     }
 }
 

@@ -18,6 +18,14 @@ use std::sync::Arc;
 
 pub const WRONG_TYPE: &str = "WRONG_TYPE";
 
+/// A syntactically valid bcrypt hash used to perform a constant-time
+/// "verify" when the requested user does not exist, so that the login
+/// response time does not leak the existence of the account. The plaintext
+/// for this hash is irrelevant — the verify will simply return `Ok(false)`
+/// for any user-supplied password (other than the unknown plaintext that
+/// generated it).
+const DUMMY_BCRYPT_HASH: &str = "$2a$10$TkWSZIawgD9tjkmAV2GjGOt30FQktiTlpZTIHbxatakOHf4G0.aA.";
+
 #[derive(Clone)]
 pub struct LsAuthAccountService<RepoManager: AuthRepositoryManager> {
     c3p0: RepoManager::C3P0,
@@ -52,7 +60,7 @@ impl<RepoManager: AuthRepositoryManager> LsAuthAccountService<RepoManager> {
         let model = self.auth_repo.fetch_by_username_optional(conn, username).await?;
 
         if let Some(user) = model
-            && self.password_service.verify_match(password, &user.data.password)?
+            && self.password_service.verify_match(password, &user.data.password).await?
         {
             match &user.data.status {
                 AuthAccountStatus::Active => {}
@@ -74,6 +82,11 @@ impl<RepoManager: AuthRepositoryManager> LsAuthAccountService<RepoManager> {
                 creation_ts_seconds,
                 expiration_ts_seconds,
             ));
+        } else {
+            // Even out timing between "no such user" and "wrong password" to
+            // prevent username enumeration via response time. Verifying against
+            // a fixed dummy bcrypt hash burns the same CPU as a real check.
+            let _ = self.password_service.verify_match(password, DUMMY_BCRYPT_HASH).await;
         };
 
         Err(LsError::BadRequest { message: "Wrong credentials".to_string(), code: ErrorCodes::WRONG_CREDENTIALS })
@@ -95,7 +108,7 @@ impl<RepoManager: AuthRepositoryManager> LsAuthAccountService<RepoManager> {
             "Create login attempt with username [{:?}] and email [{}]",
             create_login_dto.username, create_login_dto.email
         );
-        let hashed_password = self.password_service.hash_password(&create_login_dto.password)?;
+        let hashed_password = self.password_service.hash_password(&create_login_dto.password).await?;
 
         let username = match &create_login_dto.username {
             Some(username) => {
@@ -211,6 +224,10 @@ impl<RepoManager: AuthRepositoryManager> LsAuthAccountService<RepoManager> {
         previous_activation_token: &str,
     ) -> Result<(AuthAccountModel, TokenModel), LsError> {
         debug!("Generate new activation token from previous token [{previous_activation_token}]");
+        // The previous activation token is intentionally accepted even when
+        // expired: it acts as a user identifier for the "resend activation"
+        // flow, and the freshly-minted token is delivered out-of-band to the
+        // registered email.
         let token = self.token_service.fetch_by_token_with_conn(conn, previous_activation_token, false).await?;
 
         Validator::validate(&|error_details: &mut ErrorDetails| {
@@ -330,7 +347,9 @@ impl<RepoManager: AuthRepositoryManager> LsAuthAccountService<RepoManager> {
         debug!("Reset password called with token [{}]", reset_password_dto.token);
         Validator::validate(&reset_password_dto)?;
 
-        let token = self.token_service.fetch_by_token_with_conn(conn, &reset_password_dto.token, false).await?;
+        // Validate expiry: an expired reset-password token must not be usable
+        // to reset the password. Reset tokens are credentials, not identifiers.
+        let token = self.token_service.fetch_by_token_with_conn(conn, &reset_password_dto.token, true).await?;
 
         info!("Reset password of user [{}]", token.data.username);
 
@@ -356,7 +375,7 @@ impl<RepoManager: AuthRepositoryManager> LsAuthAccountService<RepoManager> {
 
         self.token_service.delete_with_conn(conn, token).await?;
 
-        user.data.password = self.password_service.hash_password(&reset_password_dto.password)?;
+        user.data.password = self.password_service.hash_password(&reset_password_dto.password).await?;
         user = self.auth_repo.update(conn, user).await?;
         Ok(user)
     }
@@ -387,14 +406,14 @@ impl<RepoManager: AuthRepositoryManager> LsAuthAccountService<RepoManager> {
             }
         };
 
-        if !self.password_service.verify_match(&dto.old_password, &user.data.password)? {
+        if !self.password_service.verify_match(&dto.old_password, &user.data.password).await? {
             return Err(LsError::BadRequest {
                 message: "Wrong credentials".to_owned(),
                 code: ErrorCodes::WRONG_CREDENTIALS,
             });
         }
 
-        user.data.password = self.password_service.hash_password(&dto.new_password)?;
+        user.data.password = self.password_service.hash_password(&dto.new_password).await?;
 
         user = self.auth_repo.update(conn, user).await?;
         Ok(user)

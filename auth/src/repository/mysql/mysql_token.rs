@@ -25,7 +25,7 @@ impl TokenRepository for MySqlTokenRepository {
     async fn fetch_by_token(&self, tx: &mut MySqlConnection, token_string: &str) -> Result<TokenModel, LsError> {
         Ok(TokenModel::query_with_tail(
             r#"
-            where data -> '$.token' = ?
+            where JSON_VALUE(data, '$.token' RETURNING CHAR(255)) = ?
             limit 1
         "#,
         )
@@ -37,7 +37,7 @@ impl TokenRepository for MySqlTokenRepository {
     async fn fetch_by_username(&self, tx: &mut MySqlConnection, username: &str) -> Result<Vec<TokenModel>, LsError> {
         Ok(TokenModel::query_with_tail(
             r#"
-            where data -> '$.username' = ?
+            where JSON_VALUE(data, '$.username' RETURNING CHAR(255)) = ?
         "#,
         )
         .bind(username)
