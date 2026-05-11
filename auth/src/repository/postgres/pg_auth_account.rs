@@ -36,7 +36,7 @@ impl AuthAccountRepository for PgAuthAccountRepository {
             limit $3
         "#,
         )
-        .bind(start_user_id as i64)
+        .bind(start_user_id)
         .bind(status.as_ref())
         .bind(limit as i64)
         .fetch_all(tx)
