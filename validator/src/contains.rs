@@ -1,6 +1,6 @@
 use validator::ValidateContains;
 
-use crate::error::{ErrorDetail, ErrorDetails};
+use lightspeed_core::error::{ErrorDetail, ErrorDetails};
 
 pub const MUST_CONTAIN: &str = "MUST_CONTAIN";
 
@@ -23,7 +23,7 @@ pub fn validate_contains<S: Into<String>, T: ValidateContains>(
 mod tests {
 
     use super::*;
-    use crate::error::ErrorDetails;
+    use lightspeed_core::error::ErrorDetails;
 
     #[test]
     fn should_validate_and_return_no_errors() {

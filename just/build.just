@@ -18,6 +18,7 @@ publish:
       "logger"
       "test_utils"
       "scheduler"
+      "validator"
       "cache"
       "core"
       "auth"

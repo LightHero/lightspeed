@@ -22,6 +22,7 @@ lightspeed_file_store = { workspace = true, optional = true }
 lightspeed_hash = { workspace = true, optional = true }
 lightspeed_logger = { workspace = true, optional = true }
 lightspeed_scheduler = { workspace = true, optional = true }
+lightspeed_validator = { workspace = true, optional = true }
 
 [features]
 default = ["core"]
@@ -36,6 +37,7 @@ file_store = ["dep:lightspeed_file_store", "c3p0"]
 hash = ["dep:lightspeed_hash"]
 logger = ["dep:lightspeed_logger"]
 scheduler = ["dep:lightspeed_scheduler"]
+validator = ["dep:lightspeed_validator"]
 
 axum = ["lightspeed_core?/axum", "lightspeed_file_store?/axum"]
 

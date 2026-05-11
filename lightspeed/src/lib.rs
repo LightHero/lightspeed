@@ -24,3 +24,6 @@ pub use lightspeed_logger as logger;
 
 #[cfg(feature = "scheduler")]
 pub use lightspeed_scheduler as scheduler;
+
+#[cfg(feature = "validator")]
+pub use lightspeed_validator as validator;

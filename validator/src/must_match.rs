@@ -1,4 +1,4 @@
-use crate::error::{ErrorDetail, ErrorDetails};
+use lightspeed_core::error::{ErrorDetail, ErrorDetails};
 
 pub const NOT_EQUALS: &str = "NOT_EQUALS";
 
@@ -22,7 +22,7 @@ pub fn validate_must_be_equals<A: Into<String>, B: Into<String>, T: Eq>(
 mod tests {
 
     use super::*;
-    use crate::error::ErrorDetails;
+    use lightspeed_core::error::ErrorDetails;
 
     #[test]
     fn should_validate_and_return_no_errors() {

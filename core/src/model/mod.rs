@@ -1,7 +1,21 @@
 use crate::service::auth::Owned;
-use crate::service::validator::ownership::WithIdAndVersion;
 use c3p0::DataType;
 use serde::{Deserialize, Serialize};
+
+pub trait WithIdAndVersion {
+    fn get_id(&self) -> i64;
+    fn get_version(&self) -> i64;
+}
+
+impl<Data: DataType> WithIdAndVersion for c3p0::Record<Data> {
+    fn get_id(&self) -> i64 {
+        self.id
+    }
+
+    fn get_version(&self) -> i64 {
+        self.version
+    }
+}
 
 pub mod language;
 pub mod model_dto;

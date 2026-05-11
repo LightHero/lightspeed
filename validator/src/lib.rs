@@ -1,4 +1,4 @@
-use crate::error::{ErrorDetails, LsError};
+use lightspeed_core::error::{ErrorDetails, LsError};
 
 pub mod boolean;
 pub mod contains;
@@ -220,6 +220,7 @@ impl<'a> Validator<'a> {
 pub mod test {
 
     use super::*;
+    use lightspeed_core::error::ErrorDetails;
 
     #[test]
     pub fn validator_should_accept_closures() {

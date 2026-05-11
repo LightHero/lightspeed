@@ -1,4 +1,4 @@
-use crate::error::{ErrorDetail, ErrorDetails};
+use lightspeed_core::error::{ErrorDetail, ErrorDetails};
 use std::fmt::Display;
 
 pub const MUST_BE_LESS_OR_EQUAL: &str = "MUST_BE_LESS_OR_EQUAL";
@@ -62,7 +62,7 @@ pub fn validate_gt<N: PartialOrd + Display, S: Into<String>>(
 mod tests {
 
     use super::*;
-    use crate::error::ErrorDetails;
+    use lightspeed_core::error::ErrorDetails;
 
     #[test]
     fn le_should_validate_number_less() {

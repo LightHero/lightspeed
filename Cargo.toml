@@ -9,8 +9,9 @@ members = [
     "hash",
     "logger",
     "scheduler",
-    "lightspeed", 
+    "lightspeed",
     "test_utils",
+    "validator",
 ]
 
 [workspace.package]
@@ -28,6 +29,7 @@ lightspeed_hash = { version = "0.66.0", path = "./hash" }
 lightspeed_logger = { version = "0.66.0", path = "./logger" }
 lightspeed_scheduler = { version = "0.66.0", path = "./scheduler" }
 lightspeed_test_utils = { version = "0.66.0", path = "./test_utils" }
+lightspeed_validator = { version = "0.66.0", path = "./validator" }
 
 arc-swap = "1.6"
 argon2 = "0.5"
@@ -82,7 +84,7 @@ debug = "line-tables-only"
 # This includes build dependencies.
 # Level range is from 0 (default for dev) to 3 (default for release)
 [profile.dev.package."*"]
-opt-level = 1
+opt-level = 2
 
 # Set the settings for build scripts and proc-macros.
 [profile.dev.build-override]

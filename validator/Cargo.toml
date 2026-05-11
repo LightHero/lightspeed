@@ -1,0 +1,19 @@
+[package]
+name = "lightspeed_validator"
+license = "MIT"
+version.workspace = true
+edition.workspace = true
+authors = ["Francesco Cina <ufoscout@gmail.com>"]
+description = "LightSpeed Validator"
+readme = "README.md"
+homepage = "https://github.com/LightHero/lightspeed"
+repository = "https://github.com/LightHero/lightspeed"
+keywords = []
+
+[dependencies]
+lightspeed_core = { workspace = true }
+validator = { workspace = true }
+
+[dev-dependencies]
+c3p0 = { workspace = true }
+serde = { workspace = true }

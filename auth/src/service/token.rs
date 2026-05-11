@@ -4,7 +4,7 @@ use crate::repository::{AuthRepositoryManager, TokenRepository};
 use c3p0::sqlx::Database;
 use c3p0::*;
 use lightspeed_core::error::LsError;
-use lightspeed_core::service::validator::Validator;
+use lightspeed_validator::Validator;
 use lightspeed_core::utils::*;
 use log::*;
 

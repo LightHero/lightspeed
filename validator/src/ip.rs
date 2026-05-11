@@ -1,4 +1,4 @@
-use crate::error::{ErrorDetail, ErrorDetails};
+use lightspeed_core::error::{ErrorDetail, ErrorDetails};
 use validator::ValidateIp;
 
 pub const NOT_VALID_IP: &str = "NOT_VALID_IP";
@@ -30,7 +30,7 @@ pub fn validate_ip<S: Into<String>, T: ValidateIp>(error_details: &mut ErrorDeta
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::error::ErrorDetails;
+    use lightspeed_core::error::ErrorDetails;
 
     #[test]
     fn should_validate_generic_ip_v6_and_return_no_errors() {

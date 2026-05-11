@@ -1,6 +1,6 @@
 use validator::ValidateUrl;
 
-use crate::error::{ErrorDetail, ErrorDetails};
+use lightspeed_core::error::{ErrorDetail, ErrorDetails};
 
 pub const NOT_VALID_URL: &str = "NOT_VALID_URL";
 
@@ -14,7 +14,7 @@ pub fn validate_url<S: Into<String>, T: ValidateUrl>(error_details: &mut ErrorDe
 mod tests {
 
     use super::*;
-    use crate::error::ErrorDetails;
+    use lightspeed_core::error::ErrorDetails;
 
     #[test]
     fn should_validate_and_return_no_errors() {

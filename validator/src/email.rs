@@ -1,6 +1,6 @@
 use validator::ValidateEmail;
 
-use crate::error::{ErrorDetail, ErrorDetails};
+use lightspeed_core::error::{ErrorDetail, ErrorDetails};
 
 pub const NOT_VALID_EMAIL: &str = "NOT_VALID_EMAIL";
 
@@ -16,7 +16,7 @@ pub fn validate_email<S: Into<String>, T: ValidateEmail>(error_details: &mut Err
 mod tests {
 
     use super::*;
-    use crate::error::ErrorDetails;
+    use lightspeed_core::error::ErrorDetails;
 
     #[test]
     fn should_validate_and_return_no_errors() {

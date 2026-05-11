@@ -1,26 +1,10 @@
-use c3p0::DataType;
-
-use crate::error::ErrorDetails;
-use crate::service::auth::Owned;
+use lightspeed_core::error::ErrorDetails;
+use lightspeed_core::model::WithIdAndVersion;
+use lightspeed_core::service::auth::Owned;
 
 pub const WRONG_OWNER: &str = "WRONG_OWNER";
 pub const WRONG_ID: &str = "WRONG_ID";
 pub const WRONG_VERSION: &str = "WRONG_VERSION";
-
-pub trait WithIdAndVersion {
-    fn get_id(&self) -> i64;
-    fn get_version(&self) -> i64;
-}
-
-impl<Data: DataType> WithIdAndVersion for c3p0::Record<Data> {
-    fn get_id(&self) -> i64 {
-        self.id
-    }
-
-    fn get_version(&self) -> i64 {
-        self.version
-    }
-}
 
 pub fn validate_ownership<F: Owned, S: Owned>(error_details: &mut ErrorDetails, owner: &F, owned: &S) {
     if owner.get_owner_id() != owned.get_owner_id() {
@@ -53,10 +37,11 @@ pub fn validate_ownership_id_and_version<F: Owned + WithIdAndVersion, S: Owned +
 #[cfg(test)]
 mod tests {
 
+    use c3p0::DataType;
     use serde::{Deserialize, Serialize};
 
     use super::*;
-    use crate::error::{ErrorDetail, ErrorDetails};
+    use lightspeed_core::error::{ErrorDetail, ErrorDetails};
 
     #[derive(Serialize, Deserialize)]
     struct Data(i64);

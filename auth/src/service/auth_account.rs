@@ -12,7 +12,7 @@ use c3p0::sqlx::Database;
 use c3p0::*;
 use lightspeed_core::error::*;
 use lightspeed_core::service::auth::Auth;
-use lightspeed_core::service::validator::{ERR_NOT_UNIQUE, Validator};
+use lightspeed_validator::{ERR_NOT_UNIQUE, Validator};
 use lightspeed_core::utils::current_epoch_seconds;
 use log::*;
 use std::sync::Arc;

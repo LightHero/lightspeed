@@ -1,4 +1,4 @@
-use crate::error::{ErrorDetail, ErrorDetails};
+use lightspeed_core::error::{ErrorDetail, ErrorDetails};
 
 pub const MUST_BE_TRUE: &str = "MUST_BE_TRUE";
 pub const MUST_BE_FALSE: &str = "MUST_BE_FALSE";
@@ -23,7 +23,7 @@ pub fn validate_is_false<S: Into<String>>(error_details: &mut ErrorDetails, fiel
 mod tests {
 
     use super::*;
-    use crate::error::ErrorDetails;
+    use lightspeed_core::error::ErrorDetails;
 
     #[test]
     fn should_validate_is_true_and_return_no_errors() {

@@ -1,6 +1,6 @@
 use c3p0::*;
 use lightspeed_core::error::{ErrorDetails, LsError};
-use lightspeed_core::service::validator::Validable;
+use lightspeed_validator::Validable;
 use lightspeed_core::utils::current_epoch_seconds;
 use serde::{Deserialize, Serialize};
 
@@ -56,7 +56,7 @@ impl Validable for TokenData {
 pub mod test {
 
     use super::*;
-    use lightspeed_core::service::validator::Validator;
+    use lightspeed_validator::Validator;
 
     #[test]
     pub fn token_not_expired_should_be_valid() {
