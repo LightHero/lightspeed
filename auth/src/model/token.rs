@@ -1,10 +1,12 @@
 use c3p0::*;
-use lightspeed_core::error::{ErrorDetails, LsError};
-use lightspeed_validator::Validable;
 use lightspeed_core::utils::current_epoch_seconds;
+use lightspeed_validator::error::{ErrorDetails, ValidationError};
+use lightspeed_validator::Validable;
 use serde::{Deserialize, Serialize};
 
 pub type TokenModel = Record<TokenData>;
+
+pub const ERR_TOKEN_EXPIRED: &str = "expired";
 
 #[derive(Clone, Serialize, Deserialize)]
 pub struct TokenData {
@@ -44,9 +46,10 @@ impl Codec<TokenData> for TokenDataCodec {
 }
 
 impl Validable for TokenData {
-    fn validate(&self, error_details: &mut ErrorDetails) -> Result<(), LsError> {
+    fn validate(&self, error_details: &mut ErrorDetails) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
         if current_epoch_seconds() > self.expire_at_epoch_seconds {
-            error_details.add_detail("expire_at_epoch", "expired");
+            error_details
+                .add_detail("expire_at_epoch", ValidationError::Custom { code: ERR_TOKEN_EXPIRED.into(), params: vec![] });
         }
         Ok(())
     }
@@ -56,6 +59,7 @@ impl Validable for TokenData {
 pub mod test {
 
     use super::*;
+    use lightspeed_validator::error::ValidatorError;
     use lightspeed_validator::Validator;
 
     #[test]
@@ -83,8 +87,11 @@ pub mod test {
 
         assert!(result.is_err());
         match result {
-            Err(LsError::ValidationError { details }) => {
-                assert_eq!("expired", details.details["expire_at_epoch"][0])
+            Err(ValidatorError::ValidationFailed { details }) => {
+                assert_eq!(
+                    ValidationError::Custom { code: ERR_TOKEN_EXPIRED.into(), params: vec![] },
+                    details.details["expire_at_epoch"][0]
+                )
             }
             _ => panic!(),
         }

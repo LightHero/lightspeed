@@ -1,7 +1,6 @@
-use lightspeed_core::error::{ErrorDetails, LsError};
 use lightspeed_core::service::auth::Owned;
-use lightspeed_validator::Validable;
 use lightspeed_validator::must_match::validate_must_be_equals;
+use lightspeed_validator::{ErrorDetails, Validable};
 use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize)]
@@ -19,7 +18,7 @@ impl Owned for ChangePasswordDto {
 }
 
 impl Validable for ChangePasswordDto {
-    fn validate(&self, error_details: &mut ErrorDetails) -> Result<(), LsError> {
+    fn validate(&self, error_details: &mut ErrorDetails) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
         validate_must_be_equals(
             error_details,
             "new_password",

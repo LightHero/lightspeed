@@ -1,10 +1,5 @@
-use lightspeed_core::error::{ErrorDetail, ErrorDetails};
+use crate::error::{ErrorDetails, ValidationError};
 use std::fmt::Display;
-
-pub const MUST_BE_LESS_OR_EQUAL: &str = "MUST_BE_LESS_OR_EQUAL";
-pub const MUST_BE_LESS: &str = "MUST_BE_LESS";
-pub const MUST_BE_GREATER_OR_EQUAL: &str = "MUST_BE_GREATER_OR_EQUAL";
-pub const MUST_BE_GREATER: &str = "MUST_BE_GREATER";
 
 /// Validates whether the value is less than or equal to max
 #[inline]
@@ -15,7 +10,7 @@ pub fn validate_le<N: PartialOrd + Display, S: Into<String>>(
     val: N,
 ) {
     if val > max {
-        error_details.add_detail(field_name.into(), ErrorDetail::new(MUST_BE_LESS_OR_EQUAL, vec![format!("{max}")]))
+        error_details.add_detail(field_name.into(), ValidationError::MustBeLessOrEqual { max: format!("{max}") })
     }
 }
 
@@ -28,7 +23,7 @@ pub fn validate_lt<N: PartialOrd + Display, S: Into<String>>(
     val: N,
 ) {
     if val >= max {
-        error_details.add_detail(field_name.into(), ErrorDetail::new(MUST_BE_LESS, vec![format!("{max}")]))
+        error_details.add_detail(field_name.into(), ValidationError::MustBeLess { max: format!("{max}") })
     }
 }
 
@@ -41,7 +36,7 @@ pub fn validate_ge<N: PartialOrd + Display, S: Into<String>>(
     val: N,
 ) {
     if val < min {
-        error_details.add_detail(field_name.into(), ErrorDetail::new(MUST_BE_GREATER_OR_EQUAL, vec![format!("{min}")]))
+        error_details.add_detail(field_name.into(), ValidationError::MustBeGreaterOrEqual { min: format!("{min}") })
     }
 }
 
@@ -54,7 +49,7 @@ pub fn validate_gt<N: PartialOrd + Display, S: Into<String>>(
     val: N,
 ) {
     if val <= min {
-        error_details.add_detail(field_name.into(), ErrorDetail::new(MUST_BE_GREATER, vec![format!("{min}")]))
+        error_details.add_detail(field_name.into(), ValidationError::MustBeGreater { min: format!("{min}") })
     }
 }
 
@@ -62,7 +57,6 @@ pub fn validate_gt<N: PartialOrd + Display, S: Into<String>>(
 mod tests {
 
     use super::*;
-    use lightspeed_core::error::ErrorDetails;
 
     #[test]
     fn le_should_validate_number_less() {
@@ -83,7 +77,10 @@ mod tests {
         let mut error_details = ErrorDetails::default();
         validate_le(&mut error_details, "name", 12, 122);
         assert_eq!(1, error_details.details().len());
-        assert_eq!(ErrorDetail::new(MUST_BE_LESS_OR_EQUAL, vec!["12".to_owned()]), error_details.details()["name"][0])
+        assert_eq!(
+            ValidationError::MustBeLessOrEqual { max: "12".to_owned() },
+            error_details.details()["name"][0]
+        )
     }
 
     #[test]
@@ -98,7 +95,7 @@ mod tests {
         let mut error_details = ErrorDetails::default();
         validate_lt(&mut error_details, "name", 12, 12);
         assert_eq!(1, error_details.details().len());
-        assert_eq!(ErrorDetail::new(MUST_BE_LESS, vec!["12".to_owned()]), error_details.details()["name"][0])
+        assert_eq!(ValidationError::MustBeLess { max: "12".to_owned() }, error_details.details()["name"][0])
     }
 
     #[test]
@@ -106,7 +103,7 @@ mod tests {
         let mut error_details = ErrorDetails::default();
         validate_lt(&mut error_details, "name", 14, 232);
         assert_eq!(1, error_details.details().len());
-        assert_eq!(ErrorDetail::new(MUST_BE_LESS, vec!["14".to_owned()]), error_details.details()["name"][0])
+        assert_eq!(ValidationError::MustBeLess { max: "14".to_owned() }, error_details.details()["name"][0])
     }
 
     #[test]
@@ -129,7 +126,7 @@ mod tests {
         validate_ge(&mut error_details, "name", 12, 2);
         assert_eq!(1, error_details.details().len());
         assert_eq!(
-            ErrorDetail::new(MUST_BE_GREATER_OR_EQUAL, vec!["12".to_owned()]),
+            ValidationError::MustBeGreaterOrEqual { min: "12".to_owned() },
             error_details.details()["name"][0]
         )
     }
@@ -146,7 +143,7 @@ mod tests {
         let mut error_details = ErrorDetails::default();
         validate_gt(&mut error_details, "name", 12, 12);
         assert_eq!(1, error_details.details().len());
-        assert_eq!(ErrorDetail::new(MUST_BE_GREATER, vec!["12".to_owned()]), error_details.details()["name"][0])
+        assert_eq!(ValidationError::MustBeGreater { min: "12".to_owned() }, error_details.details()["name"][0])
     }
 
     #[test]
@@ -154,6 +151,6 @@ mod tests {
         let mut error_details = ErrorDetails::default();
         validate_gt(&mut error_details, "name", 14, 2);
         assert_eq!(1, error_details.details().len());
-        assert_eq!(ErrorDetail::new(MUST_BE_GREATER, vec!["14".to_owned()]), error_details.details()["name"][0])
+        assert_eq!(ValidationError::MustBeGreater { min: "14".to_owned() }, error_details.details()["name"][0])
     }
 }

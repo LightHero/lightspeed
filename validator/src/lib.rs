@@ -1,35 +1,32 @@
-use lightspeed_core::error::{ErrorDetails, LsError};
-
 pub mod boolean;
 pub mod contains;
 pub mod email;
+pub mod error;
 pub mod ip;
 pub mod must_match;
 pub mod order;
 pub mod ownership;
 pub mod urls;
 
-pub const ERR_NOT_UNIQUE: &str = "NOT_UNIQUE";
-pub const ERR_VALUE_REQUIRED: &str = "VALUE_REQUIRED";
-pub const ERR_UNKNOWN_FIELD: &str = "UNKNOWN_FIELD";
+pub use error::{ErrorDetails, RootErrorDetails, ValidationError, ValidatorError};
 
 pub trait Validable: Send + Sync {
-    fn validate(&self, error_details: &mut ErrorDetails) -> Result<(), LsError>;
+    fn validate(&self, error_details: &mut ErrorDetails) -> Result<(), Box<dyn std::error::Error + Send + Sync>>;
 }
 
 impl<F> Validable for F
 where
-    F: Send + Sync + Fn(&mut ErrorDetails) -> Result<(), LsError>,
+    F: Send + Sync + Fn(&mut ErrorDetails) -> Result<(), Box<dyn std::error::Error + Send + Sync>>,
 {
     #[inline]
-    fn validate(&self, error_details: &mut ErrorDetails) -> Result<(), LsError> {
+    fn validate(&self, error_details: &mut ErrorDetails) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
         (self)(error_details)
     }
 }
 
 impl<V0: Validable, V1: Validable> Validable for (&V0, &V1) {
     #[inline]
-    fn validate(&self, error_details: &mut ErrorDetails) -> Result<(), LsError> {
+    fn validate(&self, error_details: &mut ErrorDetails) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
         self.0.validate(error_details)?;
         self.1.validate(error_details)
     }
@@ -37,7 +34,7 @@ impl<V0: Validable, V1: Validable> Validable for (&V0, &V1) {
 
 impl<V0: Validable, V1: Validable, V2: Validable> Validable for (&V0, &V1, &V2) {
     #[inline]
-    fn validate(&self, error_details: &mut ErrorDetails) -> Result<(), LsError> {
+    fn validate(&self, error_details: &mut ErrorDetails) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
         self.0.validate(error_details)?;
         self.1.validate(error_details)?;
         self.2.validate(error_details)
@@ -46,7 +43,7 @@ impl<V0: Validable, V1: Validable, V2: Validable> Validable for (&V0, &V1, &V2) 
 
 impl<V0: Validable, V1: Validable, V2: Validable, V3: Validable> Validable for (&V0, &V1, &V2, &V3) {
     #[inline]
-    fn validate(&self, error_details: &mut ErrorDetails) -> Result<(), LsError> {
+    fn validate(&self, error_details: &mut ErrorDetails) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
         self.0.validate(error_details)?;
         self.1.validate(error_details)?;
         self.2.validate(error_details)?;
@@ -58,7 +55,7 @@ impl<V0: Validable, V1: Validable, V2: Validable, V3: Validable, V4: Validable> 
     for (&V0, &V1, &V2, &V3, &V4)
 {
     #[inline]
-    fn validate(&self, error_details: &mut ErrorDetails) -> Result<(), LsError> {
+    fn validate(&self, error_details: &mut ErrorDetails) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
         self.0.validate(error_details)?;
         self.1.validate(error_details)?;
         self.2.validate(error_details)?;
@@ -71,7 +68,7 @@ impl<V0: Validable, V1: Validable, V2: Validable, V3: Validable, V4: Validable, 
     for (&V0, &V1, &V2, &V3, &V4, &V5)
 {
     #[inline]
-    fn validate(&self, error_details: &mut ErrorDetails) -> Result<(), LsError> {
+    fn validate(&self, error_details: &mut ErrorDetails) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
         self.0.validate(error_details)?;
         self.1.validate(error_details)?;
         self.2.validate(error_details)?;
@@ -81,11 +78,11 @@ impl<V0: Validable, V1: Validable, V2: Validable, V3: Validable, V4: Validable, 
     }
 }
 
-impl<V0: Validable, V1: Validable, V2: Validable, V3: Validable, V4: Validable, V5: Validable, V6: Validable> Validable
-    for (&V0, &V1, &V2, &V3, &V4, &V5, &V6)
+impl<V0: Validable, V1: Validable, V2: Validable, V3: Validable, V4: Validable, V5: Validable, V6: Validable>
+    Validable for (&V0, &V1, &V2, &V3, &V4, &V5, &V6)
 {
     #[inline]
-    fn validate(&self, error_details: &mut ErrorDetails) -> Result<(), LsError> {
+    fn validate(&self, error_details: &mut ErrorDetails) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
         self.0.validate(error_details)?;
         self.1.validate(error_details)?;
         self.2.validate(error_details)?;
@@ -108,7 +105,7 @@ impl<
 > Validable for (&V0, &V1, &V2, &V3, &V4, &V5, &V6, &V7)
 {
     #[inline]
-    fn validate(&self, error_details: &mut ErrorDetails) -> Result<(), LsError> {
+    fn validate(&self, error_details: &mut ErrorDetails) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
         self.0.validate(error_details)?;
         self.1.validate(error_details)?;
         self.2.validate(error_details)?;
@@ -133,7 +130,7 @@ impl<
 > Validable for (&V0, &V1, &V2, &V3, &V4, &V5, &V6, &V7, &V8)
 {
     #[inline]
-    fn validate(&self, error_details: &mut ErrorDetails) -> Result<(), LsError> {
+    fn validate(&self, error_details: &mut ErrorDetails) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
         self.0.validate(error_details)?;
         self.1.validate(error_details)?;
         self.2.validate(error_details)?;
@@ -160,7 +157,7 @@ impl<
 > Validable for (&V0, &V1, &V2, &V3, &V4, &V5, &V6, &V7, &V8, &V9)
 {
     #[inline]
-    fn validate(&self, error_details: &mut ErrorDetails) -> Result<(), LsError> {
+    fn validate(&self, error_details: &mut ErrorDetails) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
         self.0.validate(error_details)?;
         self.1.validate(error_details)?;
         self.2.validate(error_details)?;
@@ -185,7 +182,7 @@ impl<'a> Validator<'a> {
         Default::default()
     }
 
-    pub fn validate<V: Validable>(validable: &'a V) -> Result<(), LsError> {
+    pub fn validate<V: Validable>(validable: &'a V) -> Result<(), ValidatorError> {
         Validator::new().on(validable).do_validate()
     }
 
@@ -198,14 +195,14 @@ impl<'a> Validator<'a> {
         &mut self.error_details
     }
 
-    pub fn do_validate(mut self) -> Result<(), LsError> {
+    pub fn do_validate(mut self) -> Result<(), ValidatorError> {
         for validable in self.validables {
-            validable.validate(&mut self.error_details)?;
+            validable.validate(&mut self.error_details).map_err(ValidatorError::Error)?;
         }
 
         if !self.error_details.details().is_empty() {
             match self.error_details {
-                ErrorDetails::Root(node) => Err(LsError::ValidationError { details: node }),
+                ErrorDetails::Root(node) => Err(ValidatorError::ValidationFailed { details: node }),
                 ErrorDetails::Scoped(_) => {
                     panic!("ErrorDetails must be of type Root inside validator")
                 }
@@ -220,7 +217,6 @@ impl<'a> Validator<'a> {
 pub mod test {
 
     use super::*;
-    use lightspeed_core::error::ErrorDetails;
 
     #[test]
     pub fn validator_should_accept_closures() {
@@ -231,14 +227,14 @@ pub mod test {
     #[test]
     pub fn validator_should_return_error_from_closure_if_error_details() {
         let result = Validator::validate(&|error_details: &mut ErrorDetails| {
-            error_details.add_detail("username", "duplicated");
+            error_details.add_detail("username", ValidationError::NotUnique);
             Ok(())
         });
 
         assert!(result.is_err());
         match result {
-            Err(LsError::ValidationError { details }) => {
-                assert_eq!("duplicated", details.details["username"][0])
+            Err(ValidatorError::ValidationFailed { details }) => {
+                assert_eq!(ValidationError::NotUnique, details.details["username"][0])
             }
             _ => panic!(),
         }
@@ -246,11 +242,21 @@ pub mod test {
 
     #[test]
     pub fn validator_should_return_validable_internal_error() {
-        let result = Validator::validate(&|_error_details: &mut ErrorDetails| Err(LsError::UnauthenticatedError));
+        #[derive(Debug)]
+        struct TestError;
+        impl std::fmt::Display for TestError {
+            fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+                write!(f, "test error")
+            }
+        }
+        impl std::error::Error for TestError {}
+
+        let result =
+            Validator::validate(&|_error_details: &mut ErrorDetails| Err(Box::new(TestError) as _));
 
         assert!(result.is_err());
         match result {
-            Err(LsError::UnauthenticatedError) => (),
+            Err(ValidatorError::Error(_)) => (),
             _ => panic!(),
         }
     }
@@ -265,15 +271,15 @@ pub mod test {
     #[test]
     pub fn validator_should_accept_validable_with_errors() {
         let mut error_details = ErrorDetails::default();
-        error_details.add_detail("1", "2");
+        error_details.add_detail("1", ValidationError::NotUnique);
 
         let validable = Tester { error_details };
 
         let result = Validator::validate(&validable);
         assert!(result.is_err());
         match result {
-            Err(LsError::ValidationError { details }) => {
-                assert_eq!("2", details.details["1"][0])
+            Err(ValidatorError::ValidationFailed { details }) => {
+                assert_eq!(ValidationError::NotUnique, details.details["1"][0])
             }
             _ => panic!(),
         }
@@ -282,14 +288,14 @@ pub mod test {
     #[test]
     pub fn validator_should_accept_validables() {
         let mut validable_1 = Tester { error_details: ErrorDetails::default() };
-        validable_1.error_details.add_detail("1", "11");
+        validable_1.error_details.add_detail("1", ValidationError::NotUnique);
 
         let mut validable_2 = Tester { error_details: ErrorDetails::default() };
-        validable_2.error_details.add_detail("1", "111");
-        validable_2.error_details.add_detail("2", "22");
+        validable_2.error_details.add_detail("1", ValidationError::ValueRequired);
+        validable_2.error_details.add_detail("2", ValidationError::UnknownField);
 
         let validable_3 = |error_details: &mut ErrorDetails| {
-            error_details.add_detail("3", "33");
+            error_details.add_detail("3", ValidationError::MustBeTrue);
             Ok(())
         };
 
@@ -297,11 +303,11 @@ pub mod test {
 
         assert!(result.is_err());
         match result {
-            Err(LsError::ValidationError { details }) => {
-                assert_eq!("11", details.details["1"][0]);
-                assert_eq!("111", details.details["1"][1]);
-                assert_eq!("22", details.details["2"][0]);
-                assert_eq!("33", details.details["3"][0]);
+            Err(ValidatorError::ValidationFailed { details }) => {
+                assert_eq!(ValidationError::NotUnique, details.details["1"][0]);
+                assert_eq!(ValidationError::ValueRequired, details.details["1"][1]);
+                assert_eq!(ValidationError::UnknownField, details.details["2"][0]);
+                assert_eq!(ValidationError::MustBeTrue, details.details["3"][0]);
             }
             _ => panic!(),
         }
@@ -329,32 +335,32 @@ pub mod test {
     #[test]
     pub fn validator_should_aggregate_errors() {
         let mut error_details = ErrorDetails::default();
-        error_details.add_detail("1", "2");
+        error_details.add_detail("1", ValidationError::NotUnique);
         let validable1 = Tester { error_details };
 
         let mut error_details = ErrorDetails::default();
-        error_details.add_detail("1", "2");
+        error_details.add_detail("1", ValidationError::NotUnique);
         let validable2 = Tester { error_details };
 
         let mut error_details = ErrorDetails::default();
-        error_details.add_detail("1", "2");
+        error_details.add_detail("1", ValidationError::NotUnique);
         let validable3 = Tester { error_details };
 
         let mut error_details = ErrorDetails::default();
-        error_details.add_detail("1", "2");
-        error_details.add_detail("2", "2");
+        error_details.add_detail("1", ValidationError::NotUnique);
+        error_details.add_detail("2", ValidationError::NotUnique);
         let validable4 = Tester { error_details };
 
         let mut error_details = ErrorDetails::default();
-        error_details.add_detail("1", "2");
-        error_details.add_detail("2", "2");
+        error_details.add_detail("1", ValidationError::NotUnique);
+        error_details.add_detail("2", ValidationError::NotUnique);
         let validable5 = Tester { error_details };
 
         let result = Validator::validate(&(&validable1, &validable2, &validable3, &validable4, &validable5));
 
         assert!(result.is_err());
         match result {
-            Err(LsError::ValidationError { details }) => {
+            Err(ValidatorError::ValidationFailed { details }) => {
                 assert_eq!(5, details.details["1"].len());
                 assert_eq!(2, details.details["2"].len());
             }
@@ -373,7 +379,10 @@ pub mod test {
     }
 
     impl Validable for Tester<'_> {
-        fn validate(&self, error_details: &mut ErrorDetails) -> Result<(), LsError> {
+        fn validate(
+            &self,
+            error_details: &mut ErrorDetails,
+        ) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
             for (key, details) in self.error_details.details().iter() {
                 for detail in details {
                     error_details.add_detail(key.clone(), detail.clone())
@@ -381,5 +390,35 @@ pub mod test {
             }
             Ok(())
         }
+    }
+}
+
+#[cfg(test)]
+mod some {
+
+    #[test]
+    fn some() {
+
+        use serde::Deserialize;
+        // A trait that the Validate derive will impl
+        use validator::{Validate, ValidationError};
+        
+        #[derive(Validate, Deserialize)]
+        pub struct Val {
+            #[validate(email)]
+            pub email: String,
+            #[validate(url)]
+            pub url: String,
+        }
+
+        let val = Val {
+            email: "invalid".to_string(),
+            url: "invalid".to_string(),
+        };
+
+        let err = val.validate().unwrap_err();
+
+        println!("{:?}", err);
+
     }
 }

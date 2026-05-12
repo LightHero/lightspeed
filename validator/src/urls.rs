@@ -1,20 +1,17 @@
+use crate::error::{ErrorDetails, ValidationError};
 use validator::ValidateUrl;
 
-use lightspeed_core::error::{ErrorDetail, ErrorDetails};
-
-pub const NOT_VALID_URL: &str = "NOT_VALID_URL";
-
-/// Validates whether the string given is a url
+/// Validates whether the string given is a URL
 pub fn validate_url<S: Into<String>, T: ValidateUrl>(error_details: &mut ErrorDetails, field_name: S, val: T) {
     if !val.validate_url() {
-        error_details.add_detail(field_name.into(), ErrorDetail::new(NOT_VALID_URL, vec![]))
+        error_details.add_detail(field_name.into(), ValidationError::NotValidUrl)
     }
 }
+
 #[cfg(test)]
 mod tests {
 
     use super::*;
-    use lightspeed_core::error::ErrorDetails;
 
     #[test]
     fn should_validate_and_return_no_errors() {
@@ -28,6 +25,6 @@ mod tests {
         let mut error_details = ErrorDetails::default();
         validate_url(&mut error_details, "url", "gmail");
         assert_eq!(1, error_details.details().len());
-        assert_eq!(error_details.details()["url"][0], ErrorDetail::new(NOT_VALID_URL, vec![]),)
+        assert_eq!(ValidationError::NotValidUrl, error_details.details()["url"][0])
     }
 }

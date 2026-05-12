@@ -1,14 +1,11 @@
+use crate::error::{ErrorDetails, ValidationError};
 use validator::ValidateEmail;
-
-use lightspeed_core::error::{ErrorDetail, ErrorDetails};
-
-pub const NOT_VALID_EMAIL: &str = "NOT_VALID_EMAIL";
 
 /// Validates whether the given string is an email based on Django `EmailValidator` and HTML5 specs
 #[inline]
 pub fn validate_email<S: Into<String>, T: ValidateEmail>(error_details: &mut ErrorDetails, field_name: S, val: T) {
     if !val.validate_email() {
-        error_details.add_detail(field_name.into(), ErrorDetail::new(NOT_VALID_EMAIL, vec![]))
+        error_details.add_detail(field_name.into(), ValidationError::NotValidEmail)
     }
 }
 
@@ -16,7 +13,6 @@ pub fn validate_email<S: Into<String>, T: ValidateEmail>(error_details: &mut Err
 mod tests {
 
     use super::*;
-    use lightspeed_core::error::ErrorDetails;
 
     #[test]
     fn should_validate_and_return_no_errors() {
@@ -30,6 +26,6 @@ mod tests {
         let mut error_details = ErrorDetails::default();
         validate_email(&mut error_details, "email", "ufoscout_gmail.com");
         assert_eq!(1, error_details.details().len());
-        assert_eq!(ErrorDetail::new(NOT_VALID_EMAIL, vec![]), error_details.details()["email"][0])
+        assert_eq!(ValidationError::NotValidEmail, error_details.details()["email"][0])
     }
 }

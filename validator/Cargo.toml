@@ -11,8 +11,8 @@ repository = "https://github.com/LightHero/lightspeed"
 keywords = []
 
 [dependencies]
-lightspeed_core = { workspace = true }
-validator = { workspace = true }
+thiserror = { workspace = true }
+validator = { workspace = true, features = ["derive"] }
 
 [dev-dependencies]
 c3p0 = { workspace = true }

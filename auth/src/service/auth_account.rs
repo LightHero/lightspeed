@@ -10,10 +10,12 @@ use crate::service::password_codec::LsPasswordCodecService;
 use crate::service::token::LsTokenService;
 use c3p0::sqlx::Database;
 use c3p0::*;
+use crate::into_ls_error;
 use lightspeed_core::error::*;
 use lightspeed_core::service::auth::Auth;
-use lightspeed_validator::{ERR_NOT_UNIQUE, Validator};
 use lightspeed_core::utils::current_epoch_seconds;
+use lightspeed_validator::error::{ErrorDetails, ValidationError};
+use lightspeed_validator::Validator;
 use log::*;
 use std::sync::Arc;
 
@@ -132,13 +134,14 @@ impl<RepoManager: AuthRepositoryManager> LsAuthAccountService<RepoManager> {
         Validator::validate(&(&create_login_dto, &|error_details: &mut ErrorDetails| {
             validate_min_password_len(error_details, "password", &create_login_dto.password, min_password_len);
             if existing_user.is_some() {
-                error_details.add_detail("username", ERR_NOT_UNIQUE);
+                error_details.add_detail("username", ValidationError::NotUnique);
             }
             if existing_email.is_some() {
-                error_details.add_detail("email", ERR_NOT_UNIQUE);
+                error_details.add_detail("email", ValidationError::NotUnique);
             }
             Ok(())
-        }))?;
+        }))
+        .map_err(into_ls_error)?;
 
         let now = current_epoch_seconds();
         let auth_account_model = self
@@ -254,10 +257,14 @@ impl<RepoManager: AuthRepositoryManager> LsAuthAccountService<RepoManager> {
         Validator::validate(&|error_details: &mut ErrorDetails| {
             match &token.data.token_type {
                 TokenType::AccountActivation => {}
-                _ => error_details.add_detail("token_type", WRONG_TYPE),
+                _ => error_details.add_detail(
+                    "token_type",
+                    ValidationError::Custom { code: WRONG_TYPE.into(), params: vec![] },
+                ),
             };
             Ok(())
-        })?;
+        })
+        .map_err(into_ls_error)?;
 
         info!("Activate user [{}]", token.data.username);
 
@@ -329,7 +336,8 @@ impl<RepoManager: AuthRepositoryManager> LsAuthAccountService<RepoManager> {
         Validator::validate(&(&reset_password_dto, &|error_details: &mut ErrorDetails| {
             validate_min_password_len(error_details, "password", &reset_password_dto.password, min_password_len);
             Ok(())
-        }))?;
+        }))
+        .map_err(into_ls_error)?;
 
         // Validate expiry: an expired reset-password token must not be usable
         // to reset the password.
@@ -340,10 +348,14 @@ impl<RepoManager: AuthRepositoryManager> LsAuthAccountService<RepoManager> {
         Validator::validate(&|error_details: &mut ErrorDetails| {
             match &token.data.token_type {
                 TokenType::ResetPassword => {}
-                _ => error_details.add_detail("token_type", WRONG_TYPE),
+                _ => error_details.add_detail(
+                    "token_type",
+                    ValidationError::Custom { code: WRONG_TYPE.into(), params: vec![] },
+                ),
             };
             Ok(())
-        })?;
+        })
+        .map_err(into_ls_error)?;
 
         let mut user = self.auth_repo.fetch_by_username(conn, &token.data.username).await?;
 
@@ -380,7 +392,8 @@ impl<RepoManager: AuthRepositoryManager> LsAuthAccountService<RepoManager> {
         Validator::validate(&(&dto, &|error_details: &mut ErrorDetails| {
             validate_min_password_len(error_details, "new_password", &dto.new_password, min_password_len);
             Ok(())
-        }))?;
+        }))
+        .map_err(into_ls_error)?;
 
         let mut user = self.auth_repo.fetch_by_id(conn, dto.user_id).await?;
         info!("Change password of user [{}]", user.data.username);

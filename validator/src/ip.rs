@@ -1,36 +1,33 @@
-use lightspeed_core::error::{ErrorDetail, ErrorDetails};
+use crate::error::{ErrorDetails, ValidationError};
 use validator::ValidateIp;
 
-pub const NOT_VALID_IP: &str = "NOT_VALID_IP";
-
-/// Validates whether the given string is an IP V4
+/// Validates whether the given string is an IPv4 address
 #[inline]
 pub fn validate_ip_v4<S: Into<String>, T: ValidateIp>(error_details: &mut ErrorDetails, field_name: S, val: T) {
     if !val.validate_ipv4() {
-        error_details.add_detail(field_name.into(), ErrorDetail::new(NOT_VALID_IP, vec![]))
+        error_details.add_detail(field_name.into(), ValidationError::NotValidIp)
     }
 }
 
-/// Validates whether the given string is an IP V6
+/// Validates whether the given string is an IPv6 address
 #[inline]
 pub fn validate_ip_v6<S: Into<String>, T: ValidateIp>(error_details: &mut ErrorDetails, field_name: S, val: T) {
     if !val.validate_ipv6() {
-        error_details.add_detail(field_name.into(), ErrorDetail::new(NOT_VALID_IP, vec![]))
+        error_details.add_detail(field_name.into(), ValidationError::NotValidIp)
     }
 }
 
-/// Validates whether the given string is an IP
+/// Validates whether the given string is an IP address (v4 or v6)
 #[inline]
 pub fn validate_ip<S: Into<String>, T: ValidateIp>(error_details: &mut ErrorDetails, field_name: S, val: T) {
     if !val.validate_ip() {
-        error_details.add_detail(field_name.into(), ErrorDetail::new(NOT_VALID_IP, vec![]))
+        error_details.add_detail(field_name.into(), ValidationError::NotValidIp)
     }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use lightspeed_core::error::ErrorDetails;
 
     #[test]
     fn should_validate_generic_ip_v6_and_return_no_errors() {
@@ -51,7 +48,7 @@ mod tests {
         let mut error_details = ErrorDetails::default();
         validate_ip(&mut error_details, "ip", "127.0.0.1.1");
         assert_eq!(1, error_details.details().len());
-        assert_eq!(ErrorDetail::new(NOT_VALID_IP, vec![]), error_details.details()["ip"][0])
+        assert_eq!(ValidationError::NotValidIp, error_details.details()["ip"][0])
     }
 
     #[test]
@@ -66,7 +63,7 @@ mod tests {
         let mut error_details = ErrorDetails::default();
         validate_ip_v4(&mut error_details, "ip", "127.0.0.1.1");
         assert_eq!(1, error_details.details().len());
-        assert_eq!(ErrorDetail::new(NOT_VALID_IP, vec![]), error_details.details()["ip"][0])
+        assert_eq!(ValidationError::NotValidIp, error_details.details()["ip"][0])
     }
 
     #[test]
@@ -81,6 +78,6 @@ mod tests {
         let mut error_details = ErrorDetails::default();
         validate_ip_v6(&mut error_details, "ip", "2001:0db8:85a3:0000:0000:8a2e:0370:7334:abc");
         assert_eq!(1, error_details.details().len());
-        assert_eq!(ErrorDetail::new(NOT_VALID_IP, vec![]), error_details.details()["ip"][0])
+        assert_eq!(ValidationError::NotValidIp, error_details.details()["ip"][0])
     }
 }

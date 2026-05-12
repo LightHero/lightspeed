@@ -1,13 +1,10 @@
-use lightspeed_core::error::{ErrorDetail, ErrorDetails};
-
-pub const MUST_BE_TRUE: &str = "MUST_BE_TRUE";
-pub const MUST_BE_FALSE: &str = "MUST_BE_FALSE";
+use crate::error::{ErrorDetails, ValidationError};
 
 /// Validates whether the value is true
 #[inline]
 pub fn validate_is_true<S: Into<String>>(error_details: &mut ErrorDetails, field_name: S, val: bool) {
     if !val {
-        error_details.add_detail(field_name.into(), ErrorDetail::new("MUST_BE_TRUE", vec![]))
+        error_details.add_detail(field_name.into(), ValidationError::MustBeTrue)
     }
 }
 
@@ -15,7 +12,7 @@ pub fn validate_is_true<S: Into<String>>(error_details: &mut ErrorDetails, field
 #[inline]
 pub fn validate_is_false<S: Into<String>>(error_details: &mut ErrorDetails, field_name: S, val: bool) {
     if val {
-        error_details.add_detail(field_name.into(), ErrorDetail::new("MUST_BE_FALSE", vec![]))
+        error_details.add_detail(field_name.into(), ValidationError::MustBeFalse)
     }
 }
 
@@ -23,7 +20,6 @@ pub fn validate_is_false<S: Into<String>>(error_details: &mut ErrorDetails, fiel
 mod tests {
 
     use super::*;
-    use lightspeed_core::error::ErrorDetails;
 
     #[test]
     fn should_validate_is_true_and_return_no_errors() {
@@ -37,7 +33,7 @@ mod tests {
         let mut error_details = ErrorDetails::default();
         validate_is_true(&mut error_details, "name", false);
         assert_eq!(1, error_details.details().len());
-        assert_eq!(ErrorDetail::new(MUST_BE_TRUE, vec![]), error_details.details()["name"][0])
+        assert_eq!(ValidationError::MustBeTrue, error_details.details()["name"][0])
     }
 
     #[test]
@@ -52,6 +48,6 @@ mod tests {
         let mut error_details = ErrorDetails::default();
         validate_is_false(&mut error_details, "name", true);
         assert_eq!(1, error_details.details().len());
-        assert_eq!(ErrorDetail::new(MUST_BE_FALSE, vec![]), error_details.details()["name"][0])
+        assert_eq!(ValidationError::MustBeFalse, error_details.details()["name"][0])
     }
 }

@@ -1,11 +1,12 @@
 use crate::config::AuthConfig;
+use crate::into_ls_error;
 use crate::model::token::{TokenData, TokenModel, TokenType};
 use crate::repository::{AuthRepositoryManager, TokenRepository};
 use c3p0::sqlx::Database;
 use c3p0::*;
 use lightspeed_core::error::LsError;
-use lightspeed_validator::Validator;
 use lightspeed_core::utils::*;
+use lightspeed_validator::Validator;
 use log::*;
 
 #[derive(Clone)]
@@ -69,7 +70,7 @@ impl<RepoManager: AuthRepositoryManager> LsTokenService<RepoManager> {
         let token_model = self.token_repo.fetch_by_token(conn, token).await?;
 
         if validate {
-            Validator::validate(&token_model.data)?;
+            Validator::validate(&token_model.data).map_err(into_ls_error)?;
         };
 
         Ok(token_model)
