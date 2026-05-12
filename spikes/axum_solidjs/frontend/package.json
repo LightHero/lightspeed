@@ -11,14 +11,14 @@
     "gen:api": "openapi-typescript http://localhost:3000/api/openapi.json -o src/api/schema.ts"
   },
   "dependencies": {
-    "@picocss/pico": "^2.0.6",
-    "openapi-fetch": "^0.13.4",
-    "solid-js": "^1.9.3"
+    "@picocss/pico": "^2.1.1",
+    "openapi-fetch": "^0.17.0",
+    "solid-js": "^1.9.12"
   },
   "devDependencies": {
-    "openapi-typescript": "^7.4.4",
-    "typescript": "^5.6.3",
-    "vite": "^6.0.3",
-    "vite-plugin-solid": "^2.11.0"
+    "openapi-typescript": "^7.13.0",
+    "typescript": "^5.9.3",
+    "vite": "^8.0.12",
+    "vite-plugin-solid": "^2.11.12"
   }
 }
