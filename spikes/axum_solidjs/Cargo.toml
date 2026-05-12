@@ -1,0 +1,16 @@
+[package]
+name = "axum_solidjs_node_spike"
+version = "0.1.0"
+edition = "2024"
+publish = false
+
+[dependencies]
+aide = { version = "0.15", features = ["axum", "axum-json", "scalar", "macros"] }
+axum = { workspace = true }
+schemars = "0.9"
+serde = { workspace = true }
+serde_json = { workspace = true }
+tokio = { workspace = true, features = ["full"] }
+tower-http = { version = "0.6", features = ["fs", "trace", "cors"] }
+tracing = { workspace = true }
+tracing-subscriber = { workspace = true, features = ["env-filter"] }

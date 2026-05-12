@@ -12,6 +12,7 @@ members = [
     "lightspeed",
     "test_utils",
     "validator",
+    "spikes/*"
 ]
 
 [workspace.package]

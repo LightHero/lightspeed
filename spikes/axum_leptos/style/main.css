@@ -1,0 +1,15 @@
+/*
+ * Local stylesheet bundled by cargo-leptos at `/pkg/axum_leptos_spike.css`.
+ * The bulk of the styling comes from Pico CSS (loaded via CDN in `App`),
+ * so this file only carries spike-specific overrides.
+ */
+
+main.container {
+  padding-top: 2rem;
+  padding-bottom: 2rem;
+  max-width: 36rem;
+}
+
+code {
+  word-break: break-all;
+}

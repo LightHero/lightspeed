@@ -1,0 +1,72 @@
+[package]
+name = "axum_leptos_spike"
+version = "0.1.0"
+edition = "2024"
+publish = false
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+leptos = { version = "0.8" }
+leptos_meta = { version = "0.8" }
+leptos_router = { version = "0.8" }
+leptos_axum = { version = "0.8", optional = true }
+
+axum = { workspace = true, optional = true }
+tokio = { workspace = true, features = ["rt-multi-thread", "macros"], optional = true }
+tower = { version = "0.5", optional = true }
+tower-http = { version = "0.6", features = ["fs"], optional = true }
+
+console_error_panic_hook = { version = "0.1", optional = true }
+# this must match the version bundled with cargo-leptos
+wasm-bindgen = { version = "=0.2.108", optional = true }
+
+serde = { workspace = true }
+
+[features]
+hydrate = [
+    "leptos/hydrate",
+    "dep:console_error_panic_hook",
+    "dep:wasm-bindgen",
+]
+ssr = [
+    "dep:axum",
+    "dep:tokio",
+    "dep:tower",
+    "dep:tower-http",
+    "dep:leptos_axum",
+    "leptos/ssr",
+    "leptos_meta/ssr",
+    "leptos_router/ssr",
+]
+
+[[bin]]
+name = "axum_leptos_spike"
+path = "src/main.rs"
+required-features = ["ssr"]
+
+# Profile for cargo-leptos. The WASM artefact is built with size in mind;
+# the native server with normal dev defaults.
+[profile.wasm-release]
+inherits = "release"
+opt-level = "z"
+lto = true
+codegen-units = 1
+panic = "abort"
+
+[package.metadata.leptos]
+output-name = "axum_leptos_spike"
+site-root = "target/site"
+site-pkg-dir = "pkg"
+style-file = "style/main.css"
+assets-dir = "public"
+site-addr = "127.0.0.1:3000"
+reload-port = 3001
+browserquery = "defaults"
+env = "DEV"
+bin-features = ["ssr"]
+bin-default-features = false
+lib-features = ["hydrate"]
+lib-default-features = false
+lib-profile-release = "wasm-release"

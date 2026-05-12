@@ -1,0 +1,24 @@
+{
+  "name": "axum-solidjs-node-spike-frontend",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc --noEmit && vite build",
+    "preview": "vite preview",
+    "typecheck": "tsc --noEmit",
+    "gen:api": "openapi-typescript http://localhost:3000/api/openapi.json -o src/api/schema.ts"
+  },
+  "dependencies": {
+    "@picocss/pico": "^2.0.6",
+    "openapi-fetch": "^0.13.4",
+    "solid-js": "^1.9.3"
+  },
+  "devDependencies": {
+    "openapi-typescript": "^7.4.4",
+    "typescript": "^5.6.3",
+    "vite": "^6.0.3",
+    "vite-plugin-solid": "^2.11.0"
+  }
+}
