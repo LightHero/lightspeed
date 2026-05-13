@@ -32,9 +32,6 @@ pub enum ValidationError {
     #[error("{0}")]
     MustNotContain(MustNotContainError),
 
-    #[error("MustBeGreater than {min}")]
-    MustBeGreater { min: usize },
-
     #[error("{0}")]
     FieldsMustMatch(FieldsMustMatch),
 
@@ -70,9 +67,6 @@ mod test {
 
     #[test]
     fn test_error() {
-        let error = ValidationError::MustBeGreater { min: 5 };
-        assert_eq!(error.to_string(), "MustBeGreater than 5");
-
         let error = ValidationError::MustContain(MustContainError {
             pattern: "hello".to_string(),
             case_sensitive: true,

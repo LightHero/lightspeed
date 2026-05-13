@@ -79,6 +79,19 @@ impl<T, Ctx> ValidableType<T, Ctx> {
 #[cfg(test)]
 mod test {
     use super::*;
+    use crate::validation::range::RangeError;
+
+    /// Helper that builds the `Range` error these tests expect when a
+    /// `MustBeGreaterValidator { min: N }` rejects a value — its semantic is
+    /// `value > N`, which is `exclusive_min`.
+    fn must_be_greater_err(min: usize) -> ValidationError {
+        ValidationError::Range(RangeError {
+            min: None,
+            max: None,
+            exclusive_min: Some(min.to_string()),
+            exclusive_max: None,
+        })
+    }
 
     struct MustBeGreaterValidator {
         min: usize,
@@ -89,7 +102,7 @@ mod test {
             if *value > self.min {
                 Ok(())
             } else {
-                Err(ValidationError::MustBeGreater { min: self.min })
+                Err(must_be_greater_err(self.min))
             }
         }
     }
@@ -126,7 +139,7 @@ mod test {
         );
         validable.validate(&());
         assert_eq!(1, validable.errors().len());
-        assert_eq!(&ValidationError::MustBeGreater { min: 5 }, &validable.errors()[0]);
+        assert_eq!(&must_be_greater_err(5), &validable.errors()[0]);
     }
 
     #[test]
@@ -140,8 +153,8 @@ mod test {
         );
         validable.validate(&());
         assert_eq!(2, validable.errors().len());
-        assert_eq!(&ValidationError::MustBeGreater { min: 5 }, &validable.errors()[0]);
-        assert_eq!(&ValidationError::MustBeGreater { min: 10 }, &validable.errors()[1]);
+        assert_eq!(&must_be_greater_err(5), &validable.errors()[0]);
+        assert_eq!(&must_be_greater_err(10), &validable.errors()[1]);
     }
 
     #[test]
@@ -155,7 +168,7 @@ mod test {
         );
         validable.validate(&());
         assert_eq!(1, validable.errors().len());
-        assert_eq!(&ValidationError::MustBeGreater { min: 10 }, &validable.errors()[0]);
+        assert_eq!(&must_be_greater_err(10), &validable.errors()[0]);
     }
 
     #[test]
@@ -196,10 +209,16 @@ mod test {
 
     impl FieldValidator<usize, ValidationError, usize> for MinValidator {
         fn validate(&self, value: &usize, context: &usize) -> Result<(), ValidationError> {
-            if *value >= self.floor + *context {
+            let min = self.floor + *context;
+            if *value >= min {
                 Ok(())
             } else {
-                Err(ValidationError::MustBeGreater { min: self.floor + *context })
+                Err(ValidationError::Range(RangeError {
+                    min: Some(min.to_string()),
+                    max: None,
+                    exclusive_min: None,
+                    exclusive_max: None,
+                }))
             }
         }
     }
@@ -215,7 +234,12 @@ mod test {
         validable.validate(&5);
         assert_eq!(
             validable.errors(),
-            &[ValidationError::MustBeGreater { min: 10 }],
+            &[ValidationError::Range(RangeError {
+                min: Some("10".to_string()),
+                max: None,
+                exclusive_min: None,
+                exclusive_max: None,
+            })],
             "8 < 5 + 5 should fail",
         );
     }

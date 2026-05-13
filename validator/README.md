@@ -452,7 +452,6 @@ pub enum ValidationError {
     MustBeFalse(MustBeFalseError),
     MustContain(MustContainError),
     MustNotContain(MustNotContainError),
-    MustBeGreater { min: usize },
     FieldsMustMatch(FieldsMustMatch),
     MustMatchField(MustMatchField),
     Ip(IpError),
@@ -476,6 +475,7 @@ Anything implementing `FieldValidator<T, ValidationError, Ctx>` can be used
 manually, without the derive macro:
 
 ```rust,ignore
+use lightspeed_validator::range::RangeError;
 use lightspeed_validator::{FieldValidator, ValidableType, ValidationError};
 
 struct MustBeGreaterValidator { min: usize }
@@ -485,7 +485,14 @@ impl FieldValidator<usize, ValidationError, ()> for MustBeGreaterValidator {
         if *value > self.min {
             Ok(())
         } else {
-            Err(ValidationError::MustBeGreater { min: self.min })
+            // Re-use the shipped `Range` error variant — `exclusive_min`
+            // expresses "value must be strictly greater than this bound".
+            Err(ValidationError::Range(RangeError {
+                min: None,
+                max: None,
+                exclusive_min: Some(self.min.to_string()),
+                exclusive_max: None,
+            }))
         }
     }
 }

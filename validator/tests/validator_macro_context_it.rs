@@ -1,3 +1,4 @@
+use lightspeed_validator::range::RangeError;
 use lightspeed_validator::{FieldValidator, Validable, ValidableType, ValidationError};
 
 pub struct MinAgeContext {
@@ -11,7 +12,12 @@ impl FieldValidator<u32, ValidationError, MinAgeContext> for MinAgeValidator {
         if *value >= context.min_age {
             Ok(())
         } else {
-            Err(ValidationError::MustBeGreater { min: context.min_age as usize })
+            Err(ValidationError::Range(RangeError {
+                min: Some(context.min_age.to_string()),
+                max: None,
+                exclusive_min: None,
+                exclusive_max: None,
+            }))
         }
     }
 }
@@ -56,7 +62,12 @@ fn validate_fails_when_validator_rejects_value_for_the_context() {
     };
     assert_eq!(
         returned.age.errors(),
-        &[ValidationError::MustBeGreater { min: 18 }],
+        &[ValidationError::Range(RangeError {
+            min: Some("18".to_string()),
+            max: None,
+            exclusive_min: None,
+            exclusive_max: None,
+        })],
     );
     assert!(returned.name.errors().is_empty());
 }
