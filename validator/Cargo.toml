@@ -11,6 +11,7 @@ repository = "https://github.com/LightHero/lightspeed"
 keywords = []
 
 [dependencies]
+email_address = { workspace = true }
 lightspeed_validator_derive = { workspace = true }
 regex = { workspace = true }
 serde = { workspace = true }

@@ -45,6 +45,7 @@ chrono = { version = "0.4", default-features = false, features = ["clock"] }
 chrono-tz = "0.10"
 config = "0.15"
 cron = "0.16"
+email_address = "0.2"
 http = { version = "1" }
 http-body-util = "0.1"
 futures = { version = "0.3", default-features = false }

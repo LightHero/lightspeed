@@ -271,6 +271,22 @@ homepage: String,
 Error: `ValidationError::Url(UrlError)` (unit-struct payload — failure means
 the value did not parse as an absolute URL).
 
+### email
+
+Requires the field's value to parse as an email address via the
+[`email_address`](https://docs.rs/email_address) crate (RFC 5321 / 5322
+shape). The check is **syntactic only** — no DNS lookup, no
+mailbox-reachability ping, no accept-list. Works on the same
+string-compatible types as `contains`.
+
+```rust,ignore
+#[validate(email)]
+contact: String,
+```
+
+Error: `ValidationError::Email(EmailError)` (unit-struct payload — failure
+means the value did not parse as an email address).
+
 ### range
 
 Checks that a numeric value falls within the configured bounds. All four
@@ -556,6 +572,7 @@ pub enum ValidationError {
     Range(RangeError),
     Regex(RegexError),
     Length(LengthError),
+    Email(EmailError),
     // Only present when the `credit_card` feature is enabled:
     CreditCard(CreditCardError),
 }

@@ -4,6 +4,7 @@ use crate::{
     contains::{MustContainError, MustNotContainError},
     validation::{
         boolean::{MustBeFalseError, MustBeTrueError},
+        email::EmailError,
         fields_match::{FieldsMustMatch, MustMatchField},
         ip::IpError,
         length::LengthError,
@@ -59,6 +60,9 @@ pub enum ValidationError {
     #[error("{0}")]
     Length(LengthError),
 
+    #[error("{0}")]
+    Email(EmailError),
+
     #[cfg(feature = "credit_card")]
     #[error("{0}")]
     CreditCard(CreditCardError),
@@ -91,6 +95,7 @@ impl_from_for_validation_error!(Password, PasswordError);
 impl_from_for_validation_error!(Range, RangeError);
 impl_from_for_validation_error!(Regex, RegexError);
 impl_from_for_validation_error!(Length, LengthError);
+impl_from_for_validation_error!(Email, EmailError);
 #[cfg(feature = "credit_card")]
 impl_from_for_validation_error!(CreditCard, CreditCardError);
 

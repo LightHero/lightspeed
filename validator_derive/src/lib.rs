@@ -53,6 +53,10 @@ const FIELDS_MATCH_KEYWORD: &str = "fields_match";
 ///   must parse as an IP address of the corresponding kind (any / v4 / v6);
 /// - `url` — requires a string-compatible field; the value must parse as
 ///   an absolute URL via the [`url`](https://docs.rs/url) crate;
+/// - `email` — requires a string-compatible field; the value must parse as
+///   an email address via the
+///   [`email_address`](https://docs.rs/email_address) crate (syntactic
+///   check only — no DNS / mailbox lookup);
 /// - `range(min = <expr>, max = <expr>, exclusive_min = <expr>,
 ///   exclusive_max = <expr>)` — requires any field type that is
 ///   `PartialOrd + Display` (designed for the numeric primitives). All four

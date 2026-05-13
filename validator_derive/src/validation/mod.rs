@@ -10,6 +10,7 @@ pub mod boolean;
 pub mod contains;
 #[cfg(feature = "credit_card")]
 pub mod credit_card;
+pub mod email;
 pub mod ip;
 pub mod length;
 pub mod password;
@@ -39,6 +40,7 @@ pub enum FieldValidator {
     Ipv4,
     Ipv6,
     Url,
+    Email,
     Password(PasswordArgs),
     Range(RangeArgs),
     Regex(RegexSpec),
@@ -90,6 +92,10 @@ pub fn parse_field_validators(field: &Field) -> syn::Result<Vec<FieldValidator>>
                 "url" => {
                     url::ensure_string_field(field)?;
                     FieldValidator::Url
+                }
+                "email" => {
+                    email::ensure_string_field(field)?;
+                    FieldValidator::Email
                 }
                 "password" => {
                     password::ensure_string_field(field)?;
@@ -162,6 +168,9 @@ impl FieldValidator {
             FieldValidator::Url => {
                 ("Url", quote::quote! { ::lightspeed_validator::url::UrlError })
             }
+            FieldValidator::Email => {
+                ("Email", quote::quote! { ::lightspeed_validator::email::EmailError })
+            }
             FieldValidator::Password(_) => (
                 "Password",
                 quote::quote! { ::lightspeed_validator::password::PasswordError },
@@ -199,6 +208,7 @@ pub fn generate_validator_instance(validator: &FieldValidator, field_ty: &Type) 
         FieldValidator::Ipv4 => ip::ipv4_validator_instance(),
         FieldValidator::Ipv6 => ip::ipv6_validator_instance(),
         FieldValidator::Url => url::url_validator_instance(),
+        FieldValidator::Email => email::email_validator_instance(),
         FieldValidator::Password(args) => password::password_validator_instance(args),
         FieldValidator::Range(args) => range::range_validator_instance(field_ty, args),
         FieldValidator::Regex(spec) => regex::regex_validator_instance(spec),
