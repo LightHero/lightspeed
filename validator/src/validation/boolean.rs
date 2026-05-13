@@ -1,5 +1,7 @@
 use std::fmt::Display;
 
+use crate::{FieldValidator, ValidationError};
+
 /// Must be true
 #[derive(Debug, PartialEq, Eq)]
 pub struct MustBeTrueError;
@@ -21,22 +23,31 @@ impl Display for MustBeFalseError {
 }
 
 /// validate that a value is true
-pub fn must_be_true(value: bool) -> Result<(), MustBeTrueError> {
-    if value {
-        Err(MustBeTrueError)
-    } else {
-        Ok(())
+pub struct MustBeTrueValidator;
+
+impl FieldValidator<bool, ValidationError, ()> for MustBeTrueValidator {
+    fn validate(&self, value: &bool, _context: &()) -> Result<(), ValidationError> {
+        if *value {
+            Ok(())
+        } else {
+            Err(ValidationError::MustBeTrue(MustBeTrueError))
+        }
     }
 }
 
 /// validate that a value is false
-pub fn must_be_false(value: bool) -> Result<(), MustBeFalseError> {
-    if value {
-        Ok(())
-    } else {
-        Err(MustBeFalseError)
+pub struct MustBeFalseValidator;
+
+impl FieldValidator<bool, ValidationError, ()> for MustBeFalseValidator {
+    fn validate(&self, value: &bool, _context: &()) -> Result<(), ValidationError> {
+        if *value {
+            Err(ValidationError::MustBeFalse(MustBeFalseError))
+        } else {
+            Ok(())
+        }
     }
 }
+
 
 #[cfg(test)]
 mod test {
@@ -45,14 +56,14 @@ mod test {
 
     #[test]
     fn test_must_be_true() {
-        assert_eq!(must_be_true(true), Err(MustBeTrueError));
-        assert_eq!(must_be_true(false), Ok(()));
+        assert_eq!(MustBeTrueValidator.validate(&false, &()), Err(ValidationError::MustBeTrue(MustBeTrueError)));
+        assert_eq!(MustBeTrueValidator.validate(&true, &()), Ok(()));
     }
 
     #[test]
     fn test_must_be_false() {
-        assert_eq!(must_be_false(true), Ok(()));
-        assert_eq!(must_be_false(false), Err(MustBeFalseError));
+        assert_eq!(MustBeFalseValidator.validate(&true, &()), Err(ValidationError::MustBeFalse(MustBeFalseError)));
+        assert_eq!(MustBeFalseValidator.validate(&false, &()), Ok(()));
     }
 
 }
