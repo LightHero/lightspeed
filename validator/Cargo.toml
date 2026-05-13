@@ -11,10 +11,9 @@ repository = "https://github.com/LightHero/lightspeed"
 keywords = []
 
 [dependencies]
-lightspeed_validator_macro = { workspace = true }
+lightspeed_validator_derive = { workspace = true }
+serde = { workspace = true }
 thiserror = { workspace = true }
-validator = { workspace = true, features = ["derive"] }
 
 [dev-dependencies]
-c3p0 = { workspace = true }
-serde = { workspace = true }
+# c3p0 = { workspace = true }

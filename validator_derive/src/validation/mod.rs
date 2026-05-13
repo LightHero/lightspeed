@@ -6,11 +6,13 @@
 //!  3. declare its accepted field types in [`check_field_type`];
 //!  4. emit its runtime check in [`generate_check`].
 
+pub mod boolean;
+
 use proc_macro2::TokenStream as TokenStream2;
 use quote::quote;
 use syn::{Field, Ident, Type};
 
-pub const VALIDATE_ATTR: &str = "validate";
+const VALIDATE_ATTR: &str = "validate";
 
 /// A single validator configured on a field via `#[validate(<keyword>)]`.
 pub enum FieldValidator {

@@ -1,5 +1,5 @@
 [package]
-name = "lightspeed_validator_macro"
+name = "lightspeed_validator_derive"
 license = "MIT"
 version.workspace = true
 edition.workspace = true

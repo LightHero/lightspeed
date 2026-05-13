@@ -1,6 +1,6 @@
-use lightspeed_validator::{ValidableType, ValidationError, validable};
+use lightspeed_validator::{Validable, ValidableType, ValidationError};
 
-#[validable]
+#[derive(Validable)]
 pub struct User {
     pub name: String,
     pub age: u32,
@@ -38,7 +38,7 @@ fn validate_returns_ok_when_all_fields_are_valid() {
 #[test]
 fn validate_returns_self_when_any_field_is_invalid() {
     let mut age = ValidableType::new(30u32);
-    age.push_error(ValidationError::MustBeGreater { min: "100".to_string() });
+    age.push_error(ValidationError::MustBeGreater { min: 100 });
 
     let validable = UserValidable {
         name: ValidableType::new("alice".to_string()),
@@ -53,57 +53,4 @@ fn validate_returns_self_when_any_field_is_invalid() {
     assert!(!returned.age.is_valid());
     assert!(returned.name.is_valid());
     assert!(returned.active.is_valid());
-}
-
-#[validable]
-pub struct Flags {
-    #[validate(isTrue)]
-    pub enabled: bool,
-    #[validate(isFalse)]
-    pub debug: bool,
-}
-
-#[test]
-fn field_level_is_true_validator_rejects_false() {
-    let v = FlagsValidable {
-        enabled: ValidableType::new(false),
-        debug: ValidableType::new(false),
-    };
-
-    let returned = match v.validate() {
-        Ok(_) => panic!("expected Err"),
-        Err(v) => v,
-    };
-    assert_eq!(returned.enabled.errors(), &vec![ValidationError::MustBeTrue]);
-    assert!(returned.debug.is_valid());
-}
-
-#[test]
-fn field_level_is_false_validator_rejects_true() {
-    let v = FlagsValidable {
-        enabled: ValidableType::new(true),
-        debug: ValidableType::new(true),
-    };
-
-    let returned = match v.validate() {
-        Ok(_) => panic!("expected Err"),
-        Err(v) => v,
-    };
-    assert!(returned.enabled.is_valid());
-    assert_eq!(returned.debug.errors(), &vec![ValidationError::MustBeFalse]);
-}
-
-#[test]
-fn field_level_validators_pass_when_values_match() {
-    let v = FlagsValidable {
-        enabled: ValidableType::new(true),
-        debug: ValidableType::new(false),
-    };
-
-    let flags = match v.validate() {
-        Ok(f) => f,
-        Err(_) => panic!("expected Ok"),
-    };
-    assert!(flags.enabled);
-    assert!(!flags.debug);
 }

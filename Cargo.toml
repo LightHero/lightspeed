@@ -12,7 +12,7 @@ members = [
     "lightspeed",
     "test_utils",
     "validator",
-    "validator_macro",
+    "validator_derive",
     "spikes/*"
 ]
 
@@ -32,7 +32,7 @@ lightspeed_logger = { version = "0.66.0", path = "./logger" }
 lightspeed_scheduler = { version = "0.66.0", path = "./scheduler" }
 lightspeed_test_utils = { version = "0.66.0", path = "./test_utils" }
 lightspeed_validator = { version = "0.66.0", path = "./validator" }
-lightspeed_validator_macro = { version = "0.66.0", path = "./validator_macro" }
+lightspeed_validator_derive = { version = "0.66.0", path = "./validator_derive" }
 
 arc-swap = "1.6"
 argon2 = "0.5"
@@ -81,7 +81,6 @@ tracing-appender = { version = "0.2", default-features = false }
 tracing-futures = "0.2"
 tracing-subscriber = { version = "0.3", default-features = false }
 uuid = { version = "1", features = ["v4"] }
-validator = { version = "0.20", default-features = false }
 
 [profile.dev]
 debug = "line-tables-only"
