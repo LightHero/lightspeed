@@ -12,7 +12,7 @@ members = [
     "lightspeed",
     "test_utils",
     "validator",
-    "validator_macros",
+    "validator_macro",
     "spikes/*"
 ]
 
@@ -32,7 +32,7 @@ lightspeed_logger = { version = "0.66.0", path = "./logger" }
 lightspeed_scheduler = { version = "0.66.0", path = "./scheduler" }
 lightspeed_test_utils = { version = "0.66.0", path = "./test_utils" }
 lightspeed_validator = { version = "0.66.0", path = "./validator" }
-lightspeed_validator_macros = { version = "0.66.0", path = "./validator_macros" }
+lightspeed_validator_macro = { version = "0.66.0", path = "./validator_macro" }
 
 arc-swap = "1.6"
 argon2 = "0.5"

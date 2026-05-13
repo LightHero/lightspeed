@@ -11,7 +11,7 @@ pub mod ownership;
 pub mod urls;
 
 pub use error::{ErrorDetails, RootErrorDetails, ValidableType, ValidationError, ValidatorError};
-pub use lightspeed_validator_macros::validable;
+pub use lightspeed_validator_macro::validable;
 
 pub trait Validable: Send + Sync {
     fn validate(&self, error_details: &mut ErrorDetails) -> Result<(), Box<dyn std::error::Error + Send + Sync>>;
