@@ -8,6 +8,7 @@
 
 pub mod boolean;
 pub mod contains;
+pub mod struct_fields_match;
 
 use proc_macro2::TokenStream as TokenStream2;
 use syn::{Field, Ident};

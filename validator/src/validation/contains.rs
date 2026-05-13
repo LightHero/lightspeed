@@ -2,7 +2,7 @@ use std::fmt::Display;
 
 use crate::{FieldValidator, ValidationError};
 
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct MustContainError {
     pub pattern: String,
     pub case_sensitive: bool,
@@ -37,7 +37,7 @@ impl <S: AsRef<str>, Ctx> FieldValidator<S, ValidationError, Ctx> for MustContai
     }
 }
 
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct MustNotContainError {
     pub pattern: String,
     pub case_sensitive: bool,

@@ -3,7 +3,7 @@ use std::fmt::Display;
 use crate::{FieldValidator, ValidationError};
 
 /// Must be true
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct MustBeTrueError;
 
 impl Display for MustBeTrueError {
@@ -13,7 +13,7 @@ impl Display for MustBeTrueError {
 }
 
 /// Must be false
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct MustBeFalseError;
 
 impl Display for MustBeFalseError {

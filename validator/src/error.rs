@@ -3,7 +3,7 @@ use thiserror::Error;
 use crate::{contains::{MustContainError, MustNotContainError}, validation::boolean::{MustBeFalseError, MustBeTrueError}};
 
 
-#[derive(Debug, Error, PartialEq, Eq)]
+#[derive(Debug, Error, Clone, PartialEq, Eq)]
 pub enum ValidationError {
 
     #[error("{0}")]
@@ -20,6 +20,9 @@ pub enum ValidationError {
 
     #[error("MustBeGreater than {min}")]
     MustBeGreater { min: usize },
+
+    #[error("FieldsMustMatch [{a}, {b}]")]
+    FieldsMustMatch { a: &'static str, b: &'static str },
 }
 
 #[cfg(test)]

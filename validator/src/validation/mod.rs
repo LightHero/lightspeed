@@ -2,6 +2,7 @@ use crate::ValidationError;
 
 pub mod boolean;
 pub mod contains;
+pub mod fields_match;
 
 pub trait FieldValidator<T, E, CTX> {
     fn validate(&self, value: &T, context: &CTX) -> Result<(), E>;
@@ -9,8 +10,15 @@ pub trait FieldValidator<T, E, CTX> {
 
 impl<T, E, CTX> FieldValidator<T, E, CTX> for fn(&T, &CTX) -> Result<(), E> {
     fn validate(&self, value: &T, context: &CTX) -> Result<(), E> {
-        self(value, context) 
+        self(value, context)
     }
+}
+
+/// Runs after every field-level validator. Receives a reference to the whole
+/// validable struct so it can inspect multiple fields at once. Returns the
+/// collected errors as a `Vec<E>` (empty on success).
+pub trait StructValidator<T, E, CTX> {
+    fn validate(&self, value: &T, context: &CTX) -> Result<(), Vec<E>>;
 }
 
 pub struct ValidableType<T, Ctx = ()> {
@@ -39,6 +47,10 @@ impl<T, Ctx> ValidableType<T, Ctx> {
 
     pub fn errors(&self) -> &[ValidationError] {
         &self.errors
+    }
+
+    pub fn push_error(&mut self, error: ValidationError) {
+        self.errors.push(error);
     }
 
     pub fn validate(&mut self, ctx: &Ctx) {
