@@ -13,6 +13,7 @@ pub mod credit_card;
 pub mod ip;
 pub mod password;
 pub mod range;
+pub mod regex;
 pub mod struct_fields_match;
 pub mod url;
 
@@ -22,6 +23,7 @@ use syn::{Field, Ident, Type};
 use contains::ContainsArgs;
 use password::PasswordArgs;
 use range::RangeArgs;
+use regex::RegexSpec;
 
 const VALIDATE_ATTR: &str = "validate";
 
@@ -37,6 +39,7 @@ pub enum FieldValidator {
     Url,
     Password(PasswordArgs),
     Range(RangeArgs),
+    Regex(RegexSpec),
     #[cfg(feature = "credit_card")]
     CreditCard,
 }
@@ -96,6 +99,10 @@ pub fn parse_field_validators(field: &Field) -> syn::Result<Vec<FieldValidator>>
                     FieldValidator::Password(args)
                 }
                 "range" => FieldValidator::Range(range::parse_range_args(&meta)?),
+                "regex" => {
+                    regex::ensure_string_field(field)?;
+                    FieldValidator::Regex(regex::parse_regex_args(&meta)?)
+                }
                 #[cfg(feature = "credit_card")]
                 "credit_card" => {
                     credit_card::ensure_string_field(field)?;
@@ -132,6 +139,7 @@ pub fn generate_validator_instance(validator: &FieldValidator, field_ty: &Type) 
         FieldValidator::Url => url::url_validator_instance(),
         FieldValidator::Password(args) => password::password_validator_instance(args),
         FieldValidator::Range(args) => range::range_validator_instance(field_ty, args),
+        FieldValidator::Regex(spec) => regex::regex_validator_instance(spec),
         #[cfg(feature = "credit_card")]
         FieldValidator::CreditCard => credit_card::credit_card_validator_instance(),
     }

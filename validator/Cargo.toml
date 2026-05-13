@@ -12,6 +12,7 @@ keywords = []
 
 [dependencies]
 lightspeed_validator_derive = { workspace = true }
+regex = { workspace = true }
 serde = { workspace = true }
 thiserror = { workspace = true }
 url = { workspace = true }

@@ -60,6 +60,12 @@ const FIELDS_MATCH_KEYWORD: &str = "fields_match";
 ///   Rust expression (literal, constant path, …) — the macro emits a
 ///   `RangeValidator::<FieldTy>` so bound types are checked against the
 ///   field's type by the compiler;
+/// - `regex(path = <expr>)` / `regex(pattern = "...")` — requires a
+///   string-compatible field; the value must match the regex via
+///   `Regex::is_match`. `path` takes any expression that evaluates to
+///   `&'static ::regex::Regex` (typically `&*MY_LAZYLOCK_REGEX`); `pattern`
+///   takes a string literal and the macro generates a per-call-site
+///   `OnceLock<Regex>` initialized on first use;
 /// - `password` (bare or with options) — requires a string-compatible field;
 ///   checks character-class requirements suitable for password policies.
 ///   Options: `upper`, `lower`, `number` (all bool, default `true`);

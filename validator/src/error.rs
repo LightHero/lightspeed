@@ -8,6 +8,7 @@ use crate::{
         ip::IpError,
         password::PasswordError,
         range::RangeError,
+        regex::RegexError,
         url::UrlError,
     },
 };
@@ -50,6 +51,9 @@ pub enum ValidationError {
 
     #[error("{0}")]
     Range(RangeError),
+
+    #[error("{0}")]
+    Regex(RegexError),
 
     #[cfg(feature = "credit_card")]
     #[error("{0}")]

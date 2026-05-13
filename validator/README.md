@@ -217,6 +217,54 @@ NaN values silently pass every bound check, because Rust's `PartialOrd` for
 floats returns `false` for any comparison involving `NaN`. Add a custom
 validator if you need explicit NaN rejection.
 
+### regex
+
+Checks a string-compatible field against a regular expression via
+[`Regex::is_match`](https://docs.rs/regex). The validator holds a
+`&'static Regex`, so the regex is compiled once and reused across every
+`validate` call.
+
+Two forms are supported, exactly one of which must be provided:
+
+- **`path = <expr>`** — the expression should evaluate to
+  `&'static ::regex::Regex`. The caller controls how the regex is held —
+  typically with `LazyLock<Regex>`, `OnceLock<Regex>`, or `lazy_static!`:
+
+  ```rust,ignore
+  use std::sync::LazyLock;
+  use regex::Regex;
+
+  static EMAIL_RE: LazyLock<Regex> = LazyLock::new(|| {
+      Regex::new(r"^[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}$").unwrap()
+  });
+
+  #[derive(Validable)]
+  struct Form {
+      #[validate(regex(path = &EMAIL_RE))]
+      email: String,
+  }
+  ```
+
+- **`pattern = "..."`** — a string literal. The macro lifts the pattern
+  into a per-call-site `static OnceLock<Regex>` and initializes it on the
+  first `validate` call (subsequent calls reuse the cached regex). The
+  `OnceLock` is scoped to the generated `Box::new(...)` block so multiple
+  fields don't collide:
+
+  ```rust,ignore
+  #[derive(Validable)]
+  struct Form {
+      #[validate(regex(pattern = r"^\d{3}-\d{4}$"))]
+      phone_local: String,
+  }
+  ```
+
+  An invalid pattern panics at first validation with
+  `"invalid regex pattern: <pattern>"`.
+
+Error: `ValidationError::Regex(RegexError { pattern: String })`. The
+`pattern` field carries the regex source text (`Regex::as_str()`).
+
 ### password
 
 Checks a string against a configurable password policy. Works on the same
@@ -363,6 +411,7 @@ pub enum ValidationError {
     Url(UrlError),
     Password(PasswordError),
     Range(RangeError),
+    Regex(RegexError),
     // Only present when the `credit_card` feature is enabled:
     CreditCard(CreditCardError),
 }
