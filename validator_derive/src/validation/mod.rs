@@ -10,6 +10,7 @@ pub mod boolean;
 pub mod contains;
 pub mod ip;
 pub mod struct_fields_match;
+pub mod url;
 
 use proc_macro2::TokenStream as TokenStream2;
 use syn::{Field, Ident};
@@ -27,6 +28,7 @@ pub enum FieldValidator {
     Ip,
     Ipv4,
     Ipv6,
+    Url,
 }
 
 /// Parses every `#[validate(...)]` attribute on `field`, returning all
@@ -69,6 +71,10 @@ pub fn parse_field_validators(field: &Field) -> syn::Result<Vec<FieldValidator>>
                     ip::ensure_string_field(field)?;
                     FieldValidator::Ipv6
                 }
+                "url" => {
+                    url::ensure_string_field(field)?;
+                    FieldValidator::Url
+                }
                 other => {
                     return Err(syn::Error::new(
                         keyword.span(),
@@ -95,6 +101,7 @@ pub fn generate_validator_instance(validator: &FieldValidator) -> TokenStream2 {
         FieldValidator::Ip => ip::ip_validator_instance(),
         FieldValidator::Ipv4 => ip::ipv4_validator_instance(),
         FieldValidator::Ipv6 => ip::ipv6_validator_instance(),
+        FieldValidator::Url => url::url_validator_instance(),
     }
 }
 

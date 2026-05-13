@@ -161,6 +161,20 @@ link_local: String,
 Error: `ValidationError::Ip(IpError { kind })`, where `kind` mirrors which
 form was requested (`IpKind::Any` / `IpKind::V4` / `IpKind::V6`).
 
+### url
+
+Requires the field's value to parse as an absolute URL via the
+[`url`](https://docs.rs/url) crate. Works on the same string-compatible types
+as `contains`. Relative paths and missing-scheme inputs are rejected.
+
+```rust,ignore
+#[validate(url)]
+homepage: String,
+```
+
+Error: `ValidationError::Url(UrlError)` (unit-struct payload — failure means
+the value did not parse as an absolute URL).
+
 ### Multiple validators on the same field
 
 Field attributes are additive — you can either repeat the attribute or
@@ -232,6 +246,7 @@ pub enum ValidationError {
     FieldsMustMatch(FieldsMustMatch),
     MustMatchField(MustMatchField),
     Ip(IpError),
+    Url(UrlError),
 }
 ```
 

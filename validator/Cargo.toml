@@ -14,6 +14,7 @@ keywords = []
 lightspeed_validator_derive = { workspace = true }
 serde = { workspace = true }
 thiserror = { workspace = true }
+url = { workspace = true }
 
 [dev-dependencies]
 # c3p0 = { workspace = true }

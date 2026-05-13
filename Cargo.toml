@@ -80,6 +80,7 @@ tracing = { version = "0.1", default-features = false }
 tracing-appender = { version = "0.2", default-features = false }
 tracing-futures = "0.2"
 tracing-subscriber = { version = "0.3", default-features = false }
+url = "2"
 uuid = { version = "1", features = ["v4"] }
 
 [profile.dev]

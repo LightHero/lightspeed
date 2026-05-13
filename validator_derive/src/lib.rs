@@ -50,7 +50,9 @@ const FIELDS_MATCH_KEYWORD: &str = "fields_match";
 ///   types as `contains`; the value must NOT contain `pattern`.
 ///   `case_sensitive` defaults to `true`;
 /// - `ip` / `ipv4` / `ipv6` — requires a string-compatible field; the value
-///   must parse as an IP address of the corresponding kind (any / v4 / v6).
+///   must parse as an IP address of the corresponding kind (any / v4 / v6);
+/// - `url` — requires a string-compatible field; the value must parse as
+///   an absolute URL via the [`url`](https://docs.rs/url) crate.
 #[proc_macro_derive(Validable, attributes(validate))]
 pub fn derive_validable(item: TokenStream) -> TokenStream {
     let input = parse_macro_input!(item as ItemStruct);

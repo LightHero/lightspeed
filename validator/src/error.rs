@@ -6,6 +6,7 @@ use crate::{
         boolean::{MustBeFalseError, MustBeTrueError},
         fields_match::{FieldsMustMatch, MustMatchField},
         ip::IpError,
+        url::UrlError,
     },
 };
 
@@ -36,6 +37,9 @@ pub enum ValidationError {
 
     #[error("{0}")]
     Ip(IpError),
+
+    #[error("{0}")]
+    Url(UrlError),
 }
 
 #[cfg(test)]

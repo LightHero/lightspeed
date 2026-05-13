@@ -4,6 +4,7 @@ pub mod boolean;
 pub mod contains;
 pub mod fields_match;
 pub mod ip;
+pub mod url;
 
 pub trait FieldValidator<T, E, CTX> {
     fn validate(&self, value: &T, context: &CTX) -> Result<(), E>;
