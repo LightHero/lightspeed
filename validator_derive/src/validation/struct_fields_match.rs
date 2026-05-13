@@ -90,8 +90,21 @@ pub fn ensure_fields_exist(fields: &FieldsNamed, args: &FieldsMatchArgs) -> syn:
     Ok(())
 }
 
-/// Emits the per-rule unit struct and its `StructValidator` impl. The error
-/// payload depends on `attach_to_fields` (see module docs).
+/// Returns the narrow error type each rule emits — `FieldsMustMatch` when
+/// errors go to the top-level vec, or `MustMatchField` per field when
+/// `attach_to_fields = true`.
+fn narrow_error_type(args: &FieldsMatchArgs) -> TokenStream2 {
+    if args.attach_to_fields {
+        quote! { ::lightspeed_validator::fields_match::MustMatchField }
+    } else {
+        quote! { ::lightspeed_validator::fields_match::FieldsMustMatch }
+    }
+}
+
+/// Emits the per-rule unit struct and its `StructValidator` impl. Returns
+/// errors as their narrow type so the dispatch site can `.into()` them into
+/// either `ValidationError` (for top-level routing) or the targeted field's
+/// per-field error enum (for `attach_to_fields = true`).
 pub fn generate_validator_impl(
     validable_name: &Ident,
     ctx_ty: &Type,
@@ -102,31 +115,26 @@ pub fn generate_validator_impl(
     let b = &args.b;
     let a_str = a.to_string();
     let b_str = b.to_string();
+    let err_ty = narrow_error_type(args);
 
     let err_branch = if args.attach_to_fields {
         quote! {
             ::core::result::Result::Err(::std::vec![
-                ::lightspeed_validator::ValidationError::MustMatchField(
-                    ::lightspeed_validator::fields_match::MustMatchField {
-                        field: ::std::string::String::from(#b_str),
-                    }
-                ),
-                ::lightspeed_validator::ValidationError::MustMatchField(
-                    ::lightspeed_validator::fields_match::MustMatchField {
-                        field: ::std::string::String::from(#a_str),
-                    }
-                ),
+                ::lightspeed_validator::fields_match::MustMatchField {
+                    field: ::std::string::String::from(#b_str),
+                },
+                ::lightspeed_validator::fields_match::MustMatchField {
+                    field: ::std::string::String::from(#a_str),
+                },
             ])
         }
     } else {
         quote! {
             ::core::result::Result::Err(::std::vec![
-                ::lightspeed_validator::ValidationError::FieldsMustMatch(
-                    ::lightspeed_validator::fields_match::FieldsMustMatch {
-                        field_a: ::std::string::String::from(#a_str),
-                        field_b: ::std::string::String::from(#b_str),
-                    }
-                )
+                ::lightspeed_validator::fields_match::FieldsMustMatch {
+                    field_a: ::std::string::String::from(#a_str),
+                    field_b: ::std::string::String::from(#b_str),
+                }
             ])
         }
     };
@@ -138,7 +146,7 @@ pub fn generate_validator_impl(
 
         impl ::lightspeed_validator::StructValidator<
             #validable_name,
-            ::lightspeed_validator::ValidationError,
+            #err_ty,
             #ctx_ty,
         > for #validator_ident {
             fn validate(
@@ -147,7 +155,7 @@ pub fn generate_validator_impl(
                 _context: &#ctx_ty,
             ) -> ::core::result::Result<
                 (),
-                ::std::vec::Vec<::lightspeed_validator::ValidationError>,
+                ::std::vec::Vec<#err_ty>,
             > {
                 if value.#a.get() == value.#b.get() {
                     ::core::result::Result::Ok(())
@@ -160,7 +168,9 @@ pub fn generate_validator_impl(
 }
 
 /// Emits the call-site for one rule inside the generated `validate` body.
-/// Routes the produced errors per the module's error-routing convention.
+/// Each narrow error is `.into()`-converted to its routing target:
+/// `ValidationError` for the top-level vec, or the targeted field's
+/// per-field error enum for `attach_to_fields = true`.
 pub fn generate_dispatch(
     validator_ident: &Ident,
     validable_name: &Ident,
@@ -170,24 +180,29 @@ pub fn generate_dispatch(
 ) -> TokenStream2 {
     let a = &args.a;
     let b = &args.b;
+    let err_ty = narrow_error_type(args);
     let route_errors = if args.attach_to_fields {
         quote! {
             let mut __it = errs.into_iter();
             if let ::core::option::Option::Some(__e) = __it.next() {
-                self.#a.push_error(__e);
+                self.#a.push_error(::core::convert::Into::into(__e));
             }
             if let ::core::option::Option::Some(__e) = __it.next() {
-                self.#b.push_error(__e);
+                self.#b.push_error(::core::convert::Into::into(__e));
             }
         }
     } else {
-        quote! { self.top_level_errors.extend(errs); }
+        quote! {
+            self.top_level_errors.extend(
+                errs.into_iter().map(::core::convert::Into::into)
+            );
+        }
     };
     quote! {
         if let ::core::result::Result::Err(errs) =
             <#validator_ident as ::lightspeed_validator::StructValidator<
                 #validable_name,
-                ::lightspeed_validator::ValidationError,
+                #err_ty,
                 #ctx_ty,
             >>::validate(&#validator_ident, &self, #ctx_expr)
         {

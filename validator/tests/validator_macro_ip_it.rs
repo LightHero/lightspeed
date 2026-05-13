@@ -1,7 +1,7 @@
 use std::borrow::Cow;
 
 use lightspeed_validator::ip::{IpError, IpKind};
-use lightspeed_validator::{Validable, ValidationError};
+use lightspeed_validator::Validable;
 
 #[derive(Validable)]
 pub struct AnyIpHost {
@@ -34,8 +34,8 @@ pub struct StaticStrFields {
     pub address: &'static str,
 }
 
-fn ip_err(kind: IpKind) -> ValidationError {
-    ValidationError::Ip(IpError { kind })
+fn ip_err<E: From<IpError>>(kind: IpKind) -> E {
+    IpError { kind }.into()
 }
 
 #[test]

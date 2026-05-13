@@ -1,7 +1,7 @@
 use std::collections::{BTreeMap, HashMap};
 
 use lightspeed_validator::length::LengthError;
-use lightspeed_validator::{Validable, ValidationError};
+use lightspeed_validator::Validable;
 
 const MAX_TAGS: usize = 5;
 
@@ -32,13 +32,13 @@ pub struct Settings {
     pub aliases: BTreeMap<String, String>,
 }
 
-fn length_err(
+fn length_err<E: From<LengthError>>(
     actual: usize,
     min: Option<usize>,
     max: Option<usize>,
     equal: Option<usize>,
-) -> ValidationError {
-    ValidationError::Length(LengthError { min, max, equal, actual })
+) -> E {
+    LengthError { min, max, equal, actual }.into()
 }
 
 #[test]

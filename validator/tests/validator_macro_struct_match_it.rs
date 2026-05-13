@@ -2,6 +2,10 @@ use lightspeed_validator::contains::MustContainError;
 use lightspeed_validator::fields_match::{FieldsMustMatch, MustMatchField};
 use lightspeed_validator::{Validable, ValidationError};
 
+fn must_contain_err<E: From<MustContainError>>(pattern: &str, case_sensitive: bool) -> E {
+    MustContainError { pattern: pattern.to_string(), case_sensitive }.into()
+}
+
 #[derive(Validable)]
 #[validate(fields_match(password, password_confirm))]
 pub struct Signup {
@@ -41,15 +45,12 @@ pub struct WithFieldRules {
     pub password_confirm: String,
 }
 
-fn fields_must_match(a: &str, b: &str) -> ValidationError {
-    ValidationError::FieldsMustMatch(FieldsMustMatch {
-        field_a: a.to_string(),
-        field_b: b.to_string(),
-    })
+fn fields_must_match<E: From<FieldsMustMatch>>(a: &str, b: &str) -> E {
+    FieldsMustMatch { field_a: a.to_string(), field_b: b.to_string() }.into()
 }
 
-fn must_match_field(other: &str) -> ValidationError {
-    ValidationError::MustMatchField(MustMatchField { field: other.to_string() })
+fn must_match_field<E: From<MustMatchField>>(other: &str) -> E {
+    MustMatchField { field: other.to_string() }.into()
 }
 
 #[test]
@@ -175,13 +176,7 @@ fn struct_rule_runs_after_field_rules_and_both_can_fail() {
 
     assert_eq!(
         returned.password.errors(),
-        &[
-            ValidationError::MustContain(MustContainError {
-                pattern: "@".to_string(),
-                case_sensitive: true,
-            }),
-            must_match_field("password_confirm"),
-        ],
+        &[must_contain_err("@", true), must_match_field("password_confirm")],
         "field-level error first, then attached struct-level error pointing at the other field",
     );
     assert_eq!(returned.password_confirm.errors(), &[must_match_field("password")]);

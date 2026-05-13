@@ -1,6 +1,6 @@
 use std::fmt::Display;
 
-use crate::{FieldValidator, ValidationError};
+use crate::FieldValidator;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct RangeError {
@@ -54,22 +54,24 @@ impl<T> Default for RangeValidator<T> {
     }
 }
 
-impl<T, Ctx> FieldValidator<T, ValidationError, Ctx> for RangeValidator<T>
+impl<T, E, Ctx> FieldValidator<T, E, Ctx> for RangeValidator<T>
 where
     T: PartialOrd + Display,
+    E: From<RangeError>,
 {
-    fn validate(&self, value: &T, _context: &Ctx) -> Result<(), ValidationError> {
+    fn validate(&self, value: &T, _context: &Ctx) -> Result<(), E> {
         let out_of_range = self.min.as_ref().is_some_and(|m| value < m)
             || self.max.as_ref().is_some_and(|m| value > m)
             || self.exclusive_min.as_ref().is_some_and(|m| value <= m)
             || self.exclusive_max.as_ref().is_some_and(|m| value >= m);
         if out_of_range {
-            Err(ValidationError::Range(RangeError {
+            Err(RangeError {
                 min: self.min.as_ref().map(ToString::to_string),
                 max: self.max.as_ref().map(ToString::to_string),
                 exclusive_min: self.exclusive_min.as_ref().map(ToString::to_string),
                 exclusive_max: self.exclusive_max.as_ref().map(ToString::to_string),
-            }))
+            }
+            .into())
         } else {
             Ok(())
         }
@@ -81,6 +83,9 @@ where
 mod test {
 
     use super::*;
+    use crate::ValidationError;
+
+    const OK: Result<(), ValidationError> = Ok(());
 
     fn err(
         min: Option<&str>,
@@ -99,9 +104,9 @@ mod test {
     #[test]
     fn inclusive_min_max_accepts_boundary_values() {
         let v = RangeValidator::<i32> { min: Some(0), max: Some(100), ..Default::default() };
-        assert_eq!(v.validate(&0, &()), Ok(()), "lower bound accepted");
-        assert_eq!(v.validate(&50, &()), Ok(()));
-        assert_eq!(v.validate(&100, &()), Ok(()), "upper bound accepted");
+        assert_eq!(v.validate(&0, &()), OK, "lower bound accepted");
+        assert_eq!(v.validate(&50, &()), OK);
+        assert_eq!(v.validate(&100, &()), OK, "upper bound accepted");
     }
 
     #[test]
@@ -115,7 +120,7 @@ mod test {
     fn exclusive_min_rejects_boundary() {
         let v = RangeValidator::<i32> { exclusive_min: Some(0), ..Default::default() };
         assert_eq!(v.validate(&0, &()), err(None, None, Some("0"), None));
-        assert_eq!(v.validate(&1, &()), Ok(()));
+        assert_eq!(v.validate(&1, &()), OK);
         assert_eq!(v.validate(&-1, &()), err(None, None, Some("0"), None));
     }
 
@@ -123,7 +128,7 @@ mod test {
     fn exclusive_max_rejects_boundary() {
         let v = RangeValidator::<i32> { exclusive_max: Some(100), ..Default::default() };
         assert_eq!(v.validate(&100, &()), err(None, None, None, Some("100")));
-        assert_eq!(v.validate(&99, &()), Ok(()));
+        assert_eq!(v.validate(&99, &()), OK);
     }
 
     #[test]
@@ -134,37 +139,37 @@ mod test {
             exclusive_max: Some(100),
             ..Default::default()
         };
-        assert_eq!(v.validate(&0, &()), Ok(()));
-        assert_eq!(v.validate(&99, &()), Ok(()));
+        assert_eq!(v.validate(&0, &()), OK);
+        assert_eq!(v.validate(&99, &()), OK);
         assert_eq!(v.validate(&100, &()), err(Some("0"), None, None, Some("100")));
     }
 
     #[test]
     fn works_with_floats() {
         let v = RangeValidator::<f64> { min: Some(0.0), max: Some(1.0), ..Default::default() };
-        assert_eq!(v.validate(&0.0, &()), Ok(()));
-        assert_eq!(v.validate(&0.5, &()), Ok(()));
-        assert_eq!(v.validate(&1.0, &()), Ok(()));
+        assert_eq!(v.validate(&0.0, &()), OK);
+        assert_eq!(v.validate(&0.5, &()), OK);
+        assert_eq!(v.validate(&1.0, &()), OK);
         assert_eq!(v.validate(&1.5, &()), err(Some("0"), Some("1"), None, None));
     }
 
     #[test]
     fn works_with_unsigned_and_negative() {
         let v = RangeValidator::<u32> { min: Some(10), max: Some(20), ..Default::default() };
-        assert_eq!(v.validate(&15u32, &()), Ok(()));
+        assert_eq!(v.validate(&15u32, &()), OK);
         assert_eq!(v.validate(&5u32, &()), err(Some("10"), Some("20"), None, None));
 
         let v = RangeValidator::<i32> { min: Some(-100), max: Some(-10), ..Default::default() };
-        assert_eq!(v.validate(&-50, &()), Ok(()));
+        assert_eq!(v.validate(&-50, &()), OK);
         assert_eq!(v.validate(&0, &()), err(Some("-100"), Some("-10"), None, None));
     }
 
     #[test]
     fn no_bounds_accepts_every_value() {
         let v = RangeValidator::<i32>::default();
-        assert_eq!(v.validate(&0, &()), Ok(()));
-        assert_eq!(v.validate(&i32::MAX, &()), Ok(()));
-        assert_eq!(v.validate(&i32::MIN, &()), Ok(()));
+        assert_eq!(v.validate(&0, &()), OK);
+        assert_eq!(v.validate(&i32::MAX, &()), OK);
+        assert_eq!(v.validate(&i32::MIN, &()), OK);
     }
 
     #[test]

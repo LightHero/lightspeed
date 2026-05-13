@@ -4,7 +4,7 @@ use std::sync::LazyLock;
 use regex::Regex;
 
 use lightspeed_validator::regex::RegexError;
-use lightspeed_validator::{Validable, ValidationError};
+use lightspeed_validator::Validable;
 
 static EMAIL_RE: LazyLock<Regex> =
     LazyLock::new(|| Regex::new(r"^[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}$").unwrap());
@@ -28,8 +28,8 @@ pub struct CowStringFields {
     pub digits: Cow<'static, str>,
 }
 
-fn regex_err(pattern: &str) -> ValidationError {
-    ValidationError::Regex(RegexError { pattern: pattern.to_string() })
+fn regex_err<E: From<RegexError>>(pattern: &str) -> E {
+    RegexError { pattern: pattern.to_string() }.into()
 }
 
 #[test]

@@ -88,6 +88,50 @@ let result = FooValidable::new(foo).validate(&ctx);
 The context type is forwarded to every validator's `validate(value, ctx)`
 call, so you can write custom field validators that read it.
 
+### Per-field error enums
+
+For every field that carries at least one `#[validate(...)]` attribute (or
+is targeted by a struct-level rule with `attach_to_fields = true`), the
+macro generates a dedicated error enum:
+
+```rust,ignore
+#[derive(Validable)]
+struct Signup {
+    #[validate(length(min = 8), regex(pattern = r".*[!@#].*"))]
+    password: String,
+    #[validate(contains(pattern = "@"))]
+    email: String,
+}
+```
+
+emits two enums alongside `SignupValidable`:
+
+```rust,ignore
+pub enum SignupPasswordFieldError {
+    Length(LengthError),
+    Regex(RegexError),
+}
+
+pub enum SignupEmailFieldError {
+    MustContain(MustContainError),
+}
+```
+
+Each field's `ValidableType<T, E, Ctx>` is parameterised on its own enum,
+so iterating `validable.password.errors()` returns `&[SignupPasswordFieldError]`
+and a `match` on each element is exhaustive against *only* the variants that
+field could ever produce — no "Url"/"CreditCard"/etc. dead arms. Duplicate
+error types from multiple validators are deduplicated (two `regex(...)`
+attributes share one `Regex` variant).
+
+The macro also generates `From<NarrowError> for <PerFieldEnum>` impls (one
+per variant) and `From<PerFieldEnum> for ValidationError`, so values flow
+"upward" via `.into()` when you need a wide type for logging or storage.
+
+Fields with no field-level validators (and not targeted by any
+`attach_to_fields = true` rule) keep using `ValidationError` — the
+`ValidableType` default.
+
 ## Validators
 
 ### isTrue / isFalse

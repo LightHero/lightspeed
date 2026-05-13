@@ -32,8 +32,10 @@ pub struct Person {
 #[test]
 fn generated_field_type_uses_custom_context() {
     fn assert_field_types(v: &PersonValidable) {
-        let _: &ValidableType<u32, MinAgeContext> = &v.age;
-        let _: &ValidableType<String, MinAgeContext> = &v.name;
+        // Note: macro-generated fields use `ValidableType<T, ValidationError, Ctx>`
+        // (no field-level validators means the per-field enum isn't generated).
+        let _: &ValidableType<u32, ValidationError, MinAgeContext> = &v.age;
+        let _: &ValidableType<String, ValidationError, MinAgeContext> = &v.name;
     }
     let _ = assert_field_types;
 }

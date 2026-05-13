@@ -1,5 +1,5 @@
 use lightspeed_validator::boolean::{MustBeFalseError, MustBeTrueError};
-use lightspeed_validator::{Validable, ValidationError};
+use lightspeed_validator::Validable;
 
 #[derive(Validable)]
 pub struct Flags {
@@ -27,7 +27,10 @@ fn field_level_is_true_validator_rejects_false() {
         Ok(_) => panic!("expected Err"),
         Err(v) => v,
     };
-    assert_eq!(returned.enabled.errors(), &[ValidationError::MustBeTrue(MustBeTrueError)]);
+    assert_eq!(
+        returned.enabled.errors(),
+        &[FlagsEnabledFieldError::MustBeTrue(MustBeTrueError)],
+    );
     assert!(returned.debug.errors().is_empty());
 }
 
@@ -40,7 +43,10 @@ fn field_level_is_false_validator_rejects_true() {
         Err(v) => v,
     };
     assert!(returned.enabled.errors().is_empty());
-    assert_eq!(returned.debug.errors(), &[ValidationError::MustBeFalse(MustBeFalseError)]);
+    assert_eq!(
+        returned.debug.errors(),
+        &[FlagsDebugFieldError::MustBeFalse(MustBeFalseError)],
+    );
 }
 
 #[test]
@@ -72,7 +78,7 @@ fn is_true_validator_emitted_for_is_true_attribute() {
     assert_eq!(validator.validate(&true, &()), Ok(()));
     assert_eq!(
         validator.validate(&false, &()),
-        Err(ValidationError::MustBeTrue(MustBeTrueError))
+        Err(FlagsEnabledFieldError::MustBeTrue(MustBeTrueError)),
     );
 }
 
@@ -84,7 +90,7 @@ fn is_false_validator_emitted_for_is_false_attribute() {
     assert_eq!(validator.validate(&false, &()), Ok(()));
     assert_eq!(
         validator.validate(&true, &()),
-        Err(ValidationError::MustBeFalse(MustBeFalseError))
+        Err(FlagsDebugFieldError::MustBeFalse(MustBeFalseError)),
     );
 }
 
@@ -111,12 +117,12 @@ fn multiple_validators_emit_each_failure() {
 
     assert_eq!(
         validable.via_multiple_attrs.errors(),
-        &[ValidationError::MustBeFalse(MustBeFalseError)],
+        &[MultiAttrFlagsViaMultipleAttrsFieldError::MustBeFalse(MustBeFalseError)],
         "isTrue passes, isFalse fails for value = true",
     );
     assert_eq!(
         validable.via_single_attr.errors(),
-        &[ValidationError::MustBeTrue(MustBeTrueError)],
+        &[MultiAttrFlagsViaSingleAttrFieldError::MustBeTrue(MustBeTrueError)],
         "isTrue fails, isFalse passes for value = false",
     );
 }
@@ -131,5 +137,8 @@ fn validators_run_in_attribute_order() {
         }
     }
 
-    assert_eq!(validator_errors, vec![ValidationError::MustBeTrue(MustBeTrueError)]);
+    assert_eq!(
+        validator_errors,
+        vec![FlagsEnabledFieldError::MustBeTrue(MustBeTrueError)],
+    );
 }

@@ -1,7 +1,7 @@
 use std::borrow::Cow;
 
 use lightspeed_validator::url::UrlError;
-use lightspeed_validator::{Validable, ValidationError};
+use lightspeed_validator::Validable;
 
 #[derive(Validable)]
 pub struct Website {
@@ -20,6 +20,10 @@ pub struct CowStringFields {
 pub struct StaticStrFields {
     #[validate(url)]
     pub homepage: &'static str,
+}
+
+fn url_err<E: From<UrlError>>() -> E {
+    UrlError.into()
 }
 
 #[test]
@@ -43,7 +47,7 @@ fn url_rejects_garbage() {
         Ok(_) => panic!("expected Err"),
         Err(v) => v,
     };
-    assert_eq!(returned.homepage.errors(), &[ValidationError::Url(UrlError)]);
+    assert_eq!(returned.homepage.errors(), &[url_err()]);
     assert!(returned.untouched.errors().is_empty());
 }
 
@@ -57,7 +61,7 @@ fn url_rejects_relative_path() {
         Ok(_) => panic!("expected Err"),
         Err(v) => v,
     };
-    assert_eq!(returned.homepage.errors(), &[ValidationError::Url(UrlError)]);
+    assert_eq!(returned.homepage.errors(), &[url_err()]);
 }
 
 #[test]
@@ -74,7 +78,7 @@ fn url_validator_works_on_cow_str_field() {
         Ok(_) => panic!("expected Err"),
         Err(v) => v,
     };
-    assert_eq!(returned.homepage.errors(), &[ValidationError::Url(UrlError)]);
+    assert_eq!(returned.homepage.errors(), &[url_err()]);
 }
 
 #[test]
@@ -87,7 +91,7 @@ fn url_validator_works_on_static_str_field() {
         Ok(_) => panic!("expected Err"),
         Err(v) => v,
     };
-    assert_eq!(returned.homepage.errors(), &[ValidationError::Url(UrlError)]);
+    assert_eq!(returned.homepage.errors(), &[url_err()]);
 }
 
 #[test]

@@ -1,6 +1,6 @@
 use std::fmt::Display;
 
-use crate::{FieldValidator, ValidationError};
+use crate::FieldValidator;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct CreditCardError;
@@ -17,8 +17,10 @@ impl Display for CreditCardError {
 /// matching against the major issuers.
 pub struct CreditCardValidator;
 
-impl<S: AsRef<str>, Ctx> FieldValidator<S, ValidationError, Ctx> for CreditCardValidator {
-    fn validate(&self, value: &S, _context: &Ctx) -> Result<(), ValidationError> {
+impl<S: AsRef<str>, E: From<CreditCardError>, Ctx> FieldValidator<S, E, Ctx>
+    for CreditCardValidator
+{
+    fn validate(&self, value: &S, _context: &Ctx) -> Result<(), E> {
         let raw = value.as_ref();
         // `card_validate` doesn't normalize input, so strip the common
         // grouping characters before delegating.
@@ -26,7 +28,7 @@ impl<S: AsRef<str>, Ctx> FieldValidator<S, ValidationError, Ctx> for CreditCardV
         if ::card_validate::Validate::from(&cleaned).is_ok() {
             Ok(())
         } else {
-            Err(ValidationError::CreditCard(CreditCardError))
+            Err(CreditCardError.into())
         }
     }
 }
@@ -36,6 +38,9 @@ impl<S: AsRef<str>, Ctx> FieldValidator<S, ValidationError, Ctx> for CreditCardV
 mod test {
 
     use super::*;
+    use crate::ValidationError;
+
+    const OK: Result<(), ValidationError> = Ok(());
 
     #[test]
     fn accepts_well_known_test_card_numbers() {
@@ -49,7 +54,7 @@ mod test {
         ] {
             assert_eq!(
                 CreditCardValidator.validate(&ok, &()),
-                Ok(()),
+                OK,
                 "expected `{ok}` to be accepted",
             );
         }
@@ -60,7 +65,7 @@ mod test {
         for ok in ["4532 0151 1283 0366", "4532-0151-1283-0366", "4532 0151-1283 0366"] {
             assert_eq!(
                 CreditCardValidator.validate(&ok, &()),
-                Ok(()),
+                OK,
                 "expected `{ok}` to be accepted",
             );
         }
@@ -96,9 +101,9 @@ mod test {
     fn validator_works_on_string_and_cow() {
         use std::borrow::Cow;
         let owned: String = "4532015112830366".to_string();
-        assert_eq!(CreditCardValidator.validate(&owned, &()), Ok(()));
+        assert_eq!(CreditCardValidator.validate(&owned, &()), OK);
         let cow: Cow<'static, str> = Cow::Borrowed("4532015112830366");
-        assert_eq!(CreditCardValidator.validate(&cow, &()), Ok(()));
+        assert_eq!(CreditCardValidator.validate(&cow, &()), OK);
     }
 
     #[test]

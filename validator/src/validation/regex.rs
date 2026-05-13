@@ -1,6 +1,6 @@
 use std::fmt::Display;
 
-use crate::{FieldValidator, ValidationError};
+use crate::FieldValidator;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct RegexError {
@@ -23,14 +23,12 @@ pub struct RegexValidator {
     pub regex: &'static ::regex::Regex,
 }
 
-impl<S: AsRef<str>, Ctx> FieldValidator<S, ValidationError, Ctx> for RegexValidator {
-    fn validate(&self, value: &S, _context: &Ctx) -> Result<(), ValidationError> {
+impl<S: AsRef<str>, E: From<RegexError>, Ctx> FieldValidator<S, E, Ctx> for RegexValidator {
+    fn validate(&self, value: &S, _context: &Ctx) -> Result<(), E> {
         if self.regex.is_match(value.as_ref()) {
             Ok(())
         } else {
-            Err(ValidationError::Regex(RegexError {
-                pattern: self.regex.as_str().to_string(),
-            }))
+            Err(RegexError { pattern: self.regex.as_str().to_string() }.into())
         }
     }
 }
@@ -42,6 +40,9 @@ mod test {
     use std::sync::LazyLock;
 
     use super::*;
+    use crate::ValidationError;
+
+    const OK: Result<(), ValidationError> = Ok(());
 
     static EMAIL_RE: LazyLock<::regex::Regex> =
         LazyLock::new(|| ::regex::Regex::new(r"^[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}$").unwrap());
@@ -52,8 +53,8 @@ mod test {
     #[test]
     fn accepts_matching_strings() {
         let v = RegexValidator { regex: &EMAIL_RE };
-        assert_eq!(v.validate(&"user@example.com", &()), Ok(()));
-        assert_eq!(v.validate(&"u.s.e.r+tag@sub.example.com", &()), Ok(()));
+        assert_eq!(v.validate(&"user@example.com", &()), OK);
+        assert_eq!(v.validate(&"u.s.e.r+tag@sub.example.com", &()), OK);
     }
 
     #[test]
@@ -72,9 +73,9 @@ mod test {
         use std::borrow::Cow;
         let v = RegexValidator { regex: &DIGIT_RE };
         let owned: String = "12345".to_string();
-        assert_eq!(v.validate(&owned, &()), Ok(()));
+        assert_eq!(v.validate(&owned, &()), OK);
         let cow: Cow<'static, str> = Cow::Borrowed("0");
-        assert_eq!(v.validate(&cow, &()), Ok(()));
+        assert_eq!(v.validate(&cow, &()), OK);
         assert_eq!(
             v.validate(&"abc", &()),
             Err(ValidationError::Regex(RegexError { pattern: r"^\d+$".to_string() })),

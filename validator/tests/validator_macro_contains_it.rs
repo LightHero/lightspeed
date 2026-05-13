@@ -1,7 +1,15 @@
 use std::borrow::Cow;
 
 use lightspeed_validator::contains::{MustContainError, MustNotContainError};
-use lightspeed_validator::{Validable, ValidationError};
+use lightspeed_validator::Validable;
+
+fn must_contain_err<E: From<MustContainError>>(pattern: &str, case_sensitive: bool) -> E {
+    MustContainError { pattern: pattern.to_string(), case_sensitive }.into()
+}
+
+fn must_not_contain_err<E: From<MustNotContainError>>(pattern: &str, case_sensitive: bool) -> E {
+    MustNotContainError { pattern: pattern.to_string(), case_sensitive }.into()
+}
 
 #[derive(Validable)]
 pub struct Email {
@@ -70,13 +78,7 @@ fn contains_validator_fails_when_pattern_absent() {
         Ok(_) => panic!("expected Err"),
         Err(v) => v,
     };
-    assert_eq!(
-        returned.address.errors(),
-        &[ValidationError::MustContain(MustContainError {
-            pattern: "@".to_string(),
-            case_sensitive: true,
-        })],
-    );
+    assert_eq!(returned.address.errors(), &[must_contain_err("@", true)]);
     assert!(returned.subject.errors().is_empty());
 }
 
@@ -104,13 +106,7 @@ fn not_contains_validator_fails_when_pattern_present() {
         Err(v) => v,
     };
     assert!(returned.address.errors().is_empty());
-    assert_eq!(
-        returned.subject.errors(),
-        &[ValidationError::MustNotContain(MustNotContainError {
-            pattern: "spam".to_string(),
-            case_sensitive: true,
-        })],
-    );
+    assert_eq!(returned.subject.errors(), &[must_not_contain_err("spam", true)]);
 }
 
 #[test]
@@ -124,10 +120,9 @@ fn case_sensitive_defaults_to_true_when_omitted() {
 
     let err = validator.validate(&"HELLO".to_string(), &()).unwrap_err();
     match err {
-        ValidationError::MustContain(MustContainError { case_sensitive, .. }) => {
+        EmailAddressFieldError::MustContain(MustContainError { case_sensitive, .. }) => {
             assert!(case_sensitive, "case_sensitive should default to true");
         }
-        other => panic!("unexpected error variant: {other:?}"),
     }
 }
 
@@ -155,13 +150,7 @@ fn case_sensitive_contains_rejects_case_mismatch() {
         Err(v) => v,
     };
     assert!(returned.greeting_ci.errors().is_empty());
-    assert_eq!(
-        returned.greeting_cs.errors(),
-        &[ValidationError::MustContain(MustContainError {
-            pattern: "Hello".to_string(),
-            case_sensitive: true,
-        })],
-    );
+    assert_eq!(returned.greeting_cs.errors(), &[must_contain_err("Hello", true)]);
 }
 
 #[test]
@@ -176,13 +165,7 @@ fn case_insensitive_not_contains_rejects_any_casing() {
         Ok(_) => panic!("expected Err"),
         Err(v) => v,
     };
-    assert_eq!(
-        returned.body_ci.errors(),
-        &[ValidationError::MustNotContain(MustNotContainError {
-            pattern: "Bad".to_string(),
-            case_sensitive: false,
-        })],
-    );
+    assert_eq!(returned.body_ci.errors(), &[must_not_contain_err("Bad", false)]);
 }
 
 #[test]
@@ -195,13 +178,7 @@ fn contains_validator_works_on_cow_str_field() {
         Ok(_) => panic!("expected Err"),
         Err(v) => v,
     };
-    assert_eq!(
-        returned.note.errors(),
-        &[ValidationError::MustContain(MustContainError {
-            pattern: "ok".to_string(),
-            case_sensitive: true,
-        })],
-    );
+    assert_eq!(returned.note.errors(), &[must_contain_err("ok", true)]);
 }
 
 #[test]
@@ -214,13 +191,7 @@ fn contains_validator_works_on_static_str_field() {
         Ok(_) => panic!("expected Err"),
         Err(v) => v,
     };
-    assert_eq!(
-        returned.greeting.errors(),
-        &[ValidationError::MustContain(MustContainError {
-            pattern: "hi".to_string(),
-            case_sensitive: true,
-        })],
-    );
+    assert_eq!(returned.greeting.errors(), &[must_contain_err("hi", true)]);
 }
 
 #[test]
@@ -262,18 +233,12 @@ fn multiple_contains_validators_emit_each_failure() {
 
     assert_eq!(
         returned.via_multiple_attrs.errors(),
-        &[ValidationError::MustContain(MustContainError {
-            pattern: "bar".to_string(),
-            case_sensitive: true,
-        })],
+        &[must_contain_err("bar", true)],
         "only the second `contains(bar)` should fail",
     );
     assert_eq!(
         returned.via_single_attr.errors(),
-        &[ValidationError::MustNotContain(MustNotContainError {
-            pattern: "bar".to_string(),
-            case_sensitive: true,
-        })],
+        &[must_not_contain_err("bar", true)],
         "contains(foo) passes, not_contains(bar) fails",
     );
 }
@@ -293,15 +258,6 @@ fn contains_validators_run_in_attribute_order() {
     }
     assert_eq!(
         errs,
-        vec![
-            ValidationError::MustContain(MustContainError {
-                pattern: "foo".to_string(),
-                case_sensitive: true,
-            }),
-            ValidationError::MustContain(MustContainError {
-                pattern: "bar".to_string(),
-                case_sensitive: true,
-            }),
-        ],
+        vec![must_contain_err("foo", true), must_contain_err("bar", true)],
     );
 }

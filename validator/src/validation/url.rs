@@ -1,6 +1,6 @@
 use std::fmt::Display;
 
-use crate::{FieldValidator, ValidationError};
+use crate::FieldValidator;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct UrlError;
@@ -15,13 +15,9 @@ impl Display for UrlError {
 /// the [`url`] crate.
 pub struct UrlValidator;
 
-impl<S: AsRef<str>, Ctx> FieldValidator<S, ValidationError, Ctx> for UrlValidator {
-    fn validate(&self, value: &S, _context: &Ctx) -> Result<(), ValidationError> {
-        if ::url::Url::parse(value.as_ref()).is_ok() {
-            Ok(())
-        } else {
-            Err(ValidationError::Url(UrlError))
-        }
+impl<S: AsRef<str>, E: From<UrlError>, Ctx> FieldValidator<S, E, Ctx> for UrlValidator {
+    fn validate(&self, value: &S, _context: &Ctx) -> Result<(), E> {
+        if ::url::Url::parse(value.as_ref()).is_ok() { Ok(()) } else { Err(UrlError.into()) }
     }
 }
 
@@ -30,6 +26,9 @@ impl<S: AsRef<str>, Ctx> FieldValidator<S, ValidationError, Ctx> for UrlValidato
 mod test {
 
     use super::*;
+    use crate::ValidationError;
+
+    const OK: Result<(), ValidationError> = Ok(());
 
     #[test]
     fn accepts_common_absolute_urls() {
@@ -42,7 +41,7 @@ mod test {
             "file:///tmp/foo.txt",
             "https://user:pass@example.com",
         ] {
-            assert_eq!(UrlValidator.validate(&ok, &()), Ok(()), "expected `{ok}` to be accepted");
+            assert_eq!(UrlValidator.validate(&ok, &()), OK, "expected `{ok}` to be accepted");
         }
     }
 
@@ -61,9 +60,9 @@ mod test {
     fn validator_works_on_string_and_cow() {
         use std::borrow::Cow;
         let owned: String = "https://example.com".to_string();
-        assert_eq!(UrlValidator.validate(&owned, &()), Ok(()));
+        assert_eq!(UrlValidator.validate(&owned, &()), OK);
         let cow: Cow<'static, str> = Cow::Borrowed("https://example.com");
-        assert_eq!(UrlValidator.validate(&cow, &()), Ok(()));
+        assert_eq!(UrlValidator.validate(&cow, &()), OK);
     }
 
     #[test]

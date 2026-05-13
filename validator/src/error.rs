@@ -16,6 +16,9 @@ use crate::{
 #[cfg(feature = "credit_card")]
 use crate::validation::credit_card::CreditCardError;
 
+#[derive(Debug, Error, Clone, PartialEq, Eq)]
+pub enum NoError {
+}
 
 #[derive(Debug, Error, Clone, PartialEq, Eq)]
 pub enum ValidationError {
@@ -61,6 +64,36 @@ pub enum ValidationError {
     CreditCard(CreditCardError),
 }
 
+// `From<NarrowError> for ValidationError` impls. These let every built-in
+// `FieldValidator` impl be generic over `E: From<TheirNarrowError>` while
+// still working when the chosen `E` is `ValidationError`. They're also the
+// fallback used by macro-generated per-field error enums when converting
+// upward to `ValidationError`.
+macro_rules! impl_from_for_validation_error {
+    ($variant:ident, $ty:path) => {
+        impl From<$ty> for ValidationError {
+            fn from(e: $ty) -> Self {
+                ValidationError::$variant(e)
+            }
+        }
+    };
+}
+
+impl_from_for_validation_error!(MustBeTrue, MustBeTrueError);
+impl_from_for_validation_error!(MustBeFalse, MustBeFalseError);
+impl_from_for_validation_error!(MustContain, MustContainError);
+impl_from_for_validation_error!(MustNotContain, MustNotContainError);
+impl_from_for_validation_error!(FieldsMustMatch, FieldsMustMatch);
+impl_from_for_validation_error!(MustMatchField, MustMatchField);
+impl_from_for_validation_error!(Ip, IpError);
+impl_from_for_validation_error!(Url, UrlError);
+impl_from_for_validation_error!(Password, PasswordError);
+impl_from_for_validation_error!(Range, RangeError);
+impl_from_for_validation_error!(Regex, RegexError);
+impl_from_for_validation_error!(Length, LengthError);
+#[cfg(feature = "credit_card")]
+impl_from_for_validation_error!(CreditCard, CreditCardError);
+
 #[cfg(test)]
 mod test {
     use super::*;
@@ -82,5 +115,18 @@ mod test {
         let error =
             ValidationError::MustMatchField(MustMatchField { field: "password".to_string() });
         assert_eq!(error.to_string(), "MustMatchField [password]");
+    }
+
+    #[test]
+    fn from_narrow_error_lifts_to_validation_error() {
+        let v: ValidationError = MustContainError {
+            pattern: "x".to_string(),
+            case_sensitive: true,
+        }
+        .into();
+        assert!(matches!(v, ValidationError::MustContain(_)));
+
+        let v: ValidationError = MustMatchField { field: "foo".to_string() }.into();
+        assert!(matches!(v, ValidationError::MustMatchField(_)));
     }
 }

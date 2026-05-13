@@ -1,7 +1,7 @@
 use std::borrow::Cow;
 
 use lightspeed_validator::password::{PasswordError, PasswordViolation};
-use lightspeed_validator::{Validable, ValidationError};
+use lightspeed_validator::Validable;
 
 #[derive(Validable)]
 pub struct DefaultPolicy {
@@ -34,8 +34,8 @@ pub struct CowStringFields {
     pub password: Cow<'static, str>,
 }
 
-fn pw_err(violations: &[PasswordViolation]) -> ValidationError {
-    ValidationError::Password(PasswordError { violations: violations.to_vec() })
+fn pw_err<E: From<PasswordError>>(violations: &[PasswordViolation]) -> E {
+    PasswordError { violations: violations.to_vec() }.into()
 }
 
 #[test]

@@ -126,6 +126,64 @@ pub fn parse_field_validators(field: &Field) -> syn::Result<Vec<FieldValidator>>
     Ok(out)
 }
 
+impl FieldValidator {
+    /// `(variant_name, error_type_path)` for this validator.
+    ///
+    /// - `variant_name` is the variant the corresponding `ValidationError`
+    ///   wraps the narrow error in (also used as the variant name in the
+    ///   macro-generated per-field error enum).
+    /// - `error_type_path` is the fully-qualified path to the narrow error
+    ///   type the validator emits at runtime.
+    ///
+    /// Multiple variants may share the same `variant_name` / error type
+    /// (e.g. `Ip` / `Ipv4` / `Ipv6` all emit `IpError`); the per-field enum
+    /// generator deduplicates them.
+    pub fn error_info(&self) -> (&'static str, TokenStream2) {
+        match self {
+            FieldValidator::IsTrue => (
+                "MustBeTrue",
+                quote::quote! { ::lightspeed_validator::boolean::MustBeTrueError },
+            ),
+            FieldValidator::IsFalse => (
+                "MustBeFalse",
+                quote::quote! { ::lightspeed_validator::boolean::MustBeFalseError },
+            ),
+            FieldValidator::MustContain(_) => (
+                "MustContain",
+                quote::quote! { ::lightspeed_validator::contains::MustContainError },
+            ),
+            FieldValidator::MustNotContain(_) => (
+                "MustNotContain",
+                quote::quote! { ::lightspeed_validator::contains::MustNotContainError },
+            ),
+            FieldValidator::Ip | FieldValidator::Ipv4 | FieldValidator::Ipv6 => {
+                ("Ip", quote::quote! { ::lightspeed_validator::ip::IpError })
+            }
+            FieldValidator::Url => {
+                ("Url", quote::quote! { ::lightspeed_validator::url::UrlError })
+            }
+            FieldValidator::Password(_) => (
+                "Password",
+                quote::quote! { ::lightspeed_validator::password::PasswordError },
+            ),
+            FieldValidator::Range(_) => {
+                ("Range", quote::quote! { ::lightspeed_validator::range::RangeError })
+            }
+            FieldValidator::Regex(_) => {
+                ("Regex", quote::quote! { ::lightspeed_validator::regex::RegexError })
+            }
+            FieldValidator::Length(_) => {
+                ("Length", quote::quote! { ::lightspeed_validator::length::LengthError })
+            }
+            #[cfg(feature = "credit_card")]
+            FieldValidator::CreditCard => (
+                "CreditCard",
+                quote::quote! { ::lightspeed_validator::credit_card::CreditCardError },
+            ),
+        }
+    }
+}
+
 /// Emits the tokens that build a `Box<dyn FieldValidator<...>>` instance for
 /// `validator`, suitable for inclusion in a `vec![...]` passed to
 /// `ValidableType::new`. `field_ty` is the field's declared type; most

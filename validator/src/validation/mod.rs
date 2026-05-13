@@ -29,15 +29,15 @@ pub trait StructValidator<T, E, CTX> {
     fn validate(&self, value: &T, context: &CTX) -> Result<(), Vec<E>>;
 }
 
-pub struct ValidableType<T, Ctx = ()> {
+pub struct ValidableType<T, E = ValidationError, Ctx = ()> {
     value: T,
-    validators: Vec<Box<dyn FieldValidator<T, ValidationError, Ctx>>>,
-    errors: Vec<ValidationError>,
+    validators: Vec<Box<dyn FieldValidator<T, E, Ctx>>>,
+    errors: Vec<E>,
 }
 
-impl<T, Ctx> ValidableType<T, Ctx> {
-    
-    pub fn new(value: T, validators: Vec<Box<dyn FieldValidator<T, ValidationError, Ctx>>>) -> Self {
+impl<T, E, Ctx> ValidableType<T, E, Ctx> {
+
+    pub fn new(value: T, validators: Vec<Box<dyn FieldValidator<T, E, Ctx>>>) -> Self {
         Self { value, validators, errors: vec![] }
     }
 
@@ -49,15 +49,15 @@ impl<T, Ctx> ValidableType<T, Ctx> {
         self.value = value;
     }
 
-    pub fn validators(&self) -> &[Box<dyn FieldValidator<T, ValidationError, Ctx>>] {
+    pub fn validators(&self) -> &[Box<dyn FieldValidator<T, E, Ctx>>] {
         &self.validators
     }
 
-    pub fn errors(&self) -> &[ValidationError] {
+    pub fn errors(&self) -> &[E] {
         &self.errors
     }
 
-    pub fn push_error(&mut self, error: ValidationError) {
+    pub fn push_error(&mut self, error: E) {
         self.errors.push(error);
     }
 
@@ -225,7 +225,7 @@ mod test {
 
     #[test]
     fn validate_forwards_context_to_validators() {
-        let mut validable: ValidableType<usize, usize> =
+        let mut validable: ValidableType<usize, ValidationError, usize> =
             ValidableType::new(8, vec![Box::new(MinValidator { floor: 5 })]);
 
         validable.validate(&2);

@@ -112,6 +112,59 @@ fn test_if_a_field_has_an_error_validatios_fails() {
         assert!(v.validate().is_err());
     }
 
+}
+
+#[derive(Validable)]
+pub struct MatchOnValidator {
+    pub zero_validators: String,
+    #[validate(contains(pattern = "@"))]
+    pub one_validator: String,
+    #[validate(contains(pattern = "secret"))]
+    #[validate(password)]
+    #[validate(length(min = 3, max = 20))]
+    pub three_validators: String,
+}
+
+
+#[test]
+fn test_match_on_no_validators() {
+    let v = MatchOnValidatorValidable::new(MatchOnValidator {
+        zero_validators: String::new(),
+        one_validator: String::new(),
+        three_validators: String::new(),
+    });
+
+    for err in v.zero_validators.errors() {
+        match err {
+            lightspeed_validator::ValidationError::MustBeTrue(must_be_true_error) => todo!(),
+            lightspeed_validator::ValidationError::MustBeFalse(must_be_false_error) => todo!(),
+            lightspeed_validator::ValidationError::MustContain(must_contain_error) => todo!(),
+            lightspeed_validator::ValidationError::MustNotContain(must_not_contain_error) => todo!(),
+            lightspeed_validator::ValidationError::FieldsMustMatch(fields_must_match) => todo!(),
+            lightspeed_validator::ValidationError::MustMatchField(must_match_field) => todo!(),
+            lightspeed_validator::ValidationError::Ip(ip_error) => todo!(),
+            lightspeed_validator::ValidationError::Url(url_error) => todo!(),
+            lightspeed_validator::ValidationError::Password(password_error) => todo!(),
+            lightspeed_validator::ValidationError::Range(range_error) => todo!(),
+            lightspeed_validator::ValidationError::Regex(regex_error) => todo!(),
+            lightspeed_validator::ValidationError::Length(length_error) => todo!(),
+            lightspeed_validator::ValidationError::CreditCard(credit_card_error) => todo!(),
+        }
+    }
+
+    for err in v.one_validator.errors() {
+        match err {
+            MatchOnValidatorOneValidatorFieldError::MustContain(must_contain_error) => todo!(),
+        }
+    }
+
+    for err in v.three_validators.errors() {
+        match err {
+            MatchOnValidatorThreeValidatorsFieldError::MustContain(must_contain_error) => todo!(),
+            MatchOnValidatorThreeValidatorsFieldError::Password(password_error) => todo!(),
+            MatchOnValidatorThreeValidatorsFieldError::Length(length_error) => todo!(),
+        }
+    }
 
 }
 

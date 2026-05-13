@@ -120,7 +120,26 @@ pub fn derive_validable(item: TokenStream) -> TokenStream {
     let name = &input.ident;
     let validable_name = format_ident!("{}Validable", name);
 
-    let validable_struct = generate_validable_struct(vis, &validable_name, named_fields, &struct_attrs.context);
+    // For each field, compute its per-field error enum (if any). A field
+    // gets an enum when it has at least one `#[validate(...)]` attribute
+    // OR when a struct-level rule with `attach_to_fields = true` targets it.
+    let field_error_enums: Vec<Option<FieldErrorEnum>> = named_fields
+        .named
+        .iter()
+        .zip(field_validators.iter())
+        .map(|(f, (_, vs))| {
+            let ident = f.ident.as_ref().expect("named field has ident");
+            compute_field_error_enum(name, ident, vs, &struct_attrs.validators)
+        })
+        .collect();
+
+    let validable_struct = generate_validable_struct(
+        vis,
+        &validable_name,
+        named_fields,
+        &struct_attrs.context,
+        &field_error_enums,
+    );
     let new_fn = generate_new_fn(name, &validable_name, named_fields, &field_validators);
     let validate_fn = generate_validate_fn(
         name,
@@ -131,8 +150,11 @@ pub fn derive_validable(item: TokenStream) -> TokenStream {
     );
     let struct_validator_impls =
         generate_struct_validator_impls(&validable_name, &struct_attrs.context, &struct_attrs.validators);
+    let field_enum_defs = generate_field_error_enums(&field_error_enums);
 
     let expanded = quote! {
+        #field_enum_defs
+
         #validable_struct
 
         #new_fn
@@ -143,6 +165,108 @@ pub fn derive_validable(item: TokenStream) -> TokenStream {
     };
 
     expanded.into()
+}
+
+/// Per-field error enum metadata. `variants` is pre-deduplicated and
+/// preserves declaration order (field-level validators in source order,
+/// followed by `MustMatchField` if applicable).
+struct FieldErrorEnum {
+    name: Ident,
+    variants: Vec<(Ident, TokenStream2)>,
+}
+
+/// Computes the per-field error enum for one field. Returns `None` when
+/// the field has no validators and is not targeted by any
+/// `attach_to_fields = true` struct rule — those fields keep using
+/// `ValidationError` (the `ValidableType` default).
+fn compute_field_error_enum(
+    struct_name: &Ident,
+    field_ident: &Ident,
+    validators: &[FieldValidator],
+    struct_validators: &[StructLevelValidator],
+) -> Option<FieldErrorEnum> {
+    let is_attached = struct_validators.iter().any(|v| match v {
+        StructLevelValidator::FieldsMatch(args) => {
+            args.attach_to_fields && (&args.a == field_ident || &args.b == field_ident)
+        }
+    });
+    if validators.is_empty() && !is_attached {
+        return None;
+    }
+
+    let mut variants: Vec<(Ident, TokenStream2)> = Vec::new();
+    let mut seen: std::collections::HashSet<String> = std::collections::HashSet::new();
+    for v in validators {
+        let (name, ty) = v.error_info();
+        if seen.insert(name.to_string()) {
+            variants.push((format_ident!("{}", name), ty));
+        }
+    }
+    if is_attached && seen.insert("MustMatchField".to_string()) {
+        variants.push((
+            format_ident!("MustMatchField"),
+            quote! { ::lightspeed_validator::fields_match::MustMatchField },
+        ));
+    }
+
+    let name = format_ident!("{}{}FieldError", struct_name, snake_to_pascal(field_ident));
+    Some(FieldErrorEnum { name, variants })
+}
+
+fn snake_to_pascal(ident: &Ident) -> String {
+    let s = ident.to_string();
+    let mut out = String::new();
+    let mut upper_next = true;
+    for c in s.chars() {
+        if c == '_' {
+            upper_next = true;
+        } else if upper_next {
+            out.extend(c.to_uppercase());
+            upper_next = false;
+        } else {
+            out.push(c);
+        }
+    }
+    out
+}
+
+/// Emits, for every field that needs one, a per-field error enum plus its
+/// `From<NarrowError>` impls and a `From<PerFieldEnum> for ValidationError`
+/// impl (so callers can lift back to the wide type when needed).
+fn generate_field_error_enums(enums: &[Option<FieldErrorEnum>]) -> TokenStream2 {
+    let items = enums.iter().filter_map(|e| e.as_ref()).map(|e| {
+        let enum_name = &e.name;
+        let variant_decls = e.variants.iter().map(|(var, ty)| quote! { #var(#ty), });
+        let from_impls = e.variants.iter().map(|(var, ty)| {
+            quote! {
+                impl ::core::convert::From<#ty> for #enum_name {
+                    fn from(e: #ty) -> Self { Self::#var(e) }
+                }
+            }
+        });
+        let to_validation_arms = e.variants.iter().map(|(var, _ty)| {
+            quote! {
+                #enum_name::#var(inner) => ::core::convert::From::from(inner),
+            }
+        });
+        quote! {
+            #[derive(::core::fmt::Debug, ::core::clone::Clone, ::core::cmp::PartialEq, ::core::cmp::Eq)]
+            pub enum #enum_name {
+                #(#variant_decls)*
+            }
+
+            #(#from_impls)*
+
+            impl ::core::convert::From<#enum_name> for ::lightspeed_validator::ValidationError {
+                fn from(e: #enum_name) -> Self {
+                    match e {
+                        #(#to_validation_arms)*
+                    }
+                }
+            }
+        }
+    });
+    quote! { #( #items )* }
 }
 
 /// Struct-level configuration parsed from `#[validate(...)]` attributes on the
@@ -229,21 +353,31 @@ fn collect_field_validators(fields: &FieldsNamed) -> syn::Result<Vec<(Ident, Vec
 }
 
 /// Emits the `<Name>Validable` struct definition, mirroring the original
-/// fields with each type `T` wrapped as `ValidableType<T, Ctx>` and adding a
-/// private `top_level_errors` vec used by struct-level validators.
+/// fields with each type `T` wrapped as `ValidableType<T, E, Ctx>` and adding
+/// a private `top_level_errors` vec used by struct-level validators. `E` is
+/// the field's per-field error enum when one was generated, or
+/// `ValidationError` otherwise.
 fn generate_validable_struct(
     vis: &syn::Visibility,
     validable_name: &Ident,
     fields: &FieldsNamed,
     context: &StructContext,
+    field_error_enums: &[Option<FieldErrorEnum>],
 ) -> TokenStream2 {
     let ctx_ty = &context.ty;
-    let validable_fields = fields.named.iter().map(|f| {
+    let validable_fields = fields.named.iter().zip(field_error_enums.iter()).map(|(f, fe)| {
         let field_vis = &f.vis;
         let field_name = f.ident.as_ref().expect("named field has ident");
         let field_ty = &f.ty;
+        let err_ty: TokenStream2 = match fe {
+            Some(e) => {
+                let n = &e.name;
+                quote! { #n }
+            }
+            None => quote! { ::lightspeed_validator::ValidationError },
+        };
         quote! {
-            #field_vis #field_name: ::lightspeed_validator::ValidableType<#field_ty, #ctx_ty>
+            #field_vis #field_name: ::lightspeed_validator::ValidableType<#field_ty, #err_ty, #ctx_ty>
         }
     });
 

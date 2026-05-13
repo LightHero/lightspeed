@@ -3,7 +3,11 @@
 use std::borrow::Cow;
 
 use lightspeed_validator::credit_card::CreditCardError;
-use lightspeed_validator::{Validable, ValidationError};
+use lightspeed_validator::Validable;
+
+fn cc_err<E: From<CreditCardError>>() -> E {
+    CreditCardError.into()
+}
 
 #[derive(Validable)]
 pub struct Payment {
@@ -60,7 +64,7 @@ fn credit_card_rejects_luhn_invalid_number() {
         Ok(_) => panic!("expected Err"),
         Err(v) => v,
     };
-    assert_eq!(returned.card_number.errors(), &[ValidationError::CreditCard(CreditCardError)]);
+    assert_eq!(returned.card_number.errors(), &[cc_err()]);
     assert!(returned.untouched.errors().is_empty());
 }
 
@@ -74,12 +78,12 @@ fn credit_card_rejects_non_digit_characters() {
         Ok(_) => panic!("expected Err"),
         Err(v) => v,
     };
-    assert_eq!(returned.card_number.errors(), &[ValidationError::CreditCard(CreditCardError)]);
+    assert_eq!(returned.card_number.errors(), &[cc_err()]);
 }
 
 #[test]
 fn credit_card_rejects_too_short_or_too_long() {
-    let expected = vec![ValidationError::CreditCard(CreditCardError)];
+    let expected = vec![cc_err()];
     for bad in ["000000000000", "45320151128303661234"] {
         let v = PaymentValidable::new(Payment {
             card_number: bad.to_string(),
@@ -107,7 +111,7 @@ fn credit_card_validator_works_on_cow_str_field() {
         Ok(_) => panic!("expected Err"),
         Err(v) => v,
     };
-    assert_eq!(returned.card_number.errors(), &[ValidationError::CreditCard(CreditCardError)]);
+    assert_eq!(returned.card_number.errors(), &[cc_err()]);
 }
 
 #[test]
@@ -120,7 +124,7 @@ fn credit_card_validator_works_on_static_str_field() {
         Ok(_) => panic!("expected Err"),
         Err(v) => v,
     };
-    assert_eq!(returned.card_number.errors(), &[ValidationError::CreditCard(CreditCardError)]);
+    assert_eq!(returned.card_number.errors(), &[cc_err()]);
 }
 
 #[test]

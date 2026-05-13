@@ -1,6 +1,6 @@
 use std::fmt::Display;
 
-use crate::{FieldValidator, ValidationError};
+use crate::FieldValidator;
 
 /// Recommended special-character set used when [`PasswordValidator`]'s
 /// `special_chars` is `Some` but no custom list was provided. Matches the
@@ -83,8 +83,8 @@ impl Default for PasswordValidator {
     }
 }
 
-impl<S: AsRef<str>, Ctx> FieldValidator<S, ValidationError, Ctx> for PasswordValidator {
-    fn validate(&self, value: &S, _context: &Ctx) -> Result<(), ValidationError> {
+impl<S: AsRef<str>, E: From<PasswordError>, Ctx> FieldValidator<S, E, Ctx> for PasswordValidator {
+    fn validate(&self, value: &S, _context: &Ctx) -> Result<(), E> {
         let s = value.as_ref();
         let mut violations = Vec::new();
 
@@ -111,7 +111,7 @@ impl<S: AsRef<str>, Ctx> FieldValidator<S, ValidationError, Ctx> for PasswordVal
         if violations.is_empty() {
             Ok(())
         } else {
-            Err(ValidationError::Password(PasswordError { violations }))
+            Err(PasswordError { violations }.into())
         }
     }
 }
@@ -121,6 +121,9 @@ impl<S: AsRef<str>, Ctx> FieldValidator<S, ValidationError, Ctx> for PasswordVal
 mod test {
 
     use super::*;
+    use crate::ValidationError;
+
+    const OK: Result<(), ValidationError> = Ok(());
 
     fn err(violations: &[PasswordViolation]) -> Result<(), ValidationError> {
         Err(ValidationError::Password(PasswordError { violations: violations.to_vec() }))
@@ -129,8 +132,8 @@ mod test {
     #[test]
     fn default_config_accepts_strong_password() {
         let v = PasswordValidator::default();
-        assert_eq!(v.validate(&"Aa1!xyz", &()), Ok(()));
-        assert_eq!(v.validate(&"P@ssw0rd", &()), Ok(()));
+        assert_eq!(v.validate(&"Aa1!xyz", &()), OK);
+        assert_eq!(v.validate(&"P@ssw0rd", &()), OK);
     }
 
     #[test]
@@ -163,7 +166,7 @@ mod test {
     #[test]
     fn trailing_whitespaces_true_allows_trailing_space() {
         let v = PasswordValidator { trailing_whitespaces: true, ..PasswordValidator::default() };
-        assert_eq!(v.validate(&"Aa1!xyz ", &()), Ok(()));
+        assert_eq!(v.validate(&"Aa1!xyz ", &()), OK);
     }
 
     #[test]
@@ -175,7 +178,7 @@ mod test {
             special_chars: None,
             trailing_whitespaces: false,
         };
-        assert_eq!(v.validate(&"hello", &()), Ok(()));
+        assert_eq!(v.validate(&"hello", &()), OK);
     }
 
     #[test]
@@ -187,8 +190,8 @@ mod test {
             special_chars: Some(vec!['*', '$']),
             trailing_whitespaces: false,
         };
-        assert_eq!(v.validate(&"abc*def", &()), Ok(()));
-        assert_eq!(v.validate(&"abc$def", &()), Ok(()));
+        assert_eq!(v.validate(&"abc*def", &()), OK);
+        assert_eq!(v.validate(&"abc$def", &()), OK);
         // `!` is in DEFAULT_SPECIAL_CHARS but not in this custom list.
         assert_eq!(
             v.validate(&"abc!def", &()),
@@ -205,7 +208,7 @@ mod test {
             special_chars: None,
             trailing_whitespaces: false,
         };
-        assert_eq!(v.validate(&"plain", &()), Ok(()));
+        assert_eq!(v.validate(&"plain", &()), OK);
     }
 
     #[test]
@@ -227,9 +230,9 @@ mod test {
         use std::borrow::Cow;
         let v = PasswordValidator::default();
         let owned: String = "Aa1!xyz".to_string();
-        assert_eq!(v.validate(&owned, &()), Ok(()));
+        assert_eq!(v.validate(&owned, &()), OK);
         let cow: Cow<'static, str> = Cow::Borrowed("Aa1!xyz");
-        assert_eq!(v.validate(&cow, &()), Ok(()));
+        assert_eq!(v.validate(&cow, &()), OK);
     }
 
     #[test]

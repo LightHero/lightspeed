@@ -2,7 +2,7 @@ use std::borrow::Cow;
 use std::collections::{BTreeMap, BTreeSet, HashMap, HashSet, VecDeque};
 use std::fmt::Display;
 
-use crate::{FieldValidator, ValidationError};
+use crate::FieldValidator;
 
 /// Implemented for every type that the [`LengthValidator`] knows how to
 /// measure. The crate provides impls for the standard string-like types
@@ -133,22 +133,18 @@ impl Default for LengthValidator {
     }
 }
 
-impl<T, Ctx> FieldValidator<T, ValidationError, Ctx> for LengthValidator
+impl<T, E, Ctx> FieldValidator<T, E, Ctx> for LengthValidator
 where
     T: HasLength,
+    E: From<LengthError>,
 {
-    fn validate(&self, value: &T, _context: &Ctx) -> Result<(), ValidationError> {
+    fn validate(&self, value: &T, _context: &Ctx) -> Result<(), E> {
         let actual = value.length();
         let out_of_range = self.min.is_some_and(|m| actual < m)
             || self.max.is_some_and(|m| actual > m)
             || self.equal.is_some_and(|m| actual != m);
         if out_of_range {
-            Err(ValidationError::Length(LengthError {
-                min: self.min,
-                max: self.max,
-                equal: self.equal,
-                actual,
-            }))
+            Err(LengthError { min: self.min, max: self.max, equal: self.equal, actual }.into())
         } else {
             Ok(())
         }
@@ -160,6 +156,9 @@ where
 mod test {
 
     use super::*;
+    use crate::ValidationError;
+
+    const OK: Result<(), ValidationError> = Ok(());
 
     fn err(
         actual: usize,
@@ -173,23 +172,23 @@ mod test {
     #[test]
     fn min_accepts_at_or_above_bound() {
         let v = LengthValidator { min: Some(3), ..Default::default() };
-        assert_eq!(v.validate(&"abc", &()), Ok(()));
-        assert_eq!(v.validate(&"abcd", &()), Ok(()));
+        assert_eq!(v.validate(&"abc", &()), OK);
+        assert_eq!(v.validate(&"abcd", &()), OK);
         assert_eq!(v.validate(&"ab", &()), err(2, Some(3), None, None));
     }
 
     #[test]
     fn max_accepts_at_or_below_bound() {
         let v = LengthValidator { max: Some(3), ..Default::default() };
-        assert_eq!(v.validate(&"", &()), Ok(()));
-        assert_eq!(v.validate(&"abc", &()), Ok(()));
+        assert_eq!(v.validate(&"", &()), OK);
+        assert_eq!(v.validate(&"abc", &()), OK);
         assert_eq!(v.validate(&"abcd", &()), err(4, None, Some(3), None));
     }
 
     #[test]
     fn equal_requires_exact_length() {
         let v = LengthValidator { equal: Some(3), ..Default::default() };
-        assert_eq!(v.validate(&"abc", &()), Ok(()));
+        assert_eq!(v.validate(&"abc", &()), OK);
         assert_eq!(v.validate(&"ab", &()), err(2, None, None, Some(3)));
         assert_eq!(v.validate(&"abcd", &()), err(4, None, None, Some(3)));
     }
@@ -197,9 +196,9 @@ mod test {
     #[test]
     fn min_and_max_compose() {
         let v = LengthValidator { min: Some(3), max: Some(5), ..Default::default() };
-        assert_eq!(v.validate(&"abc", &()), Ok(()));
-        assert_eq!(v.validate(&"abcd", &()), Ok(()));
-        assert_eq!(v.validate(&"abcde", &()), Ok(()));
+        assert_eq!(v.validate(&"abc", &()), OK);
+        assert_eq!(v.validate(&"abcd", &()), OK);
+        assert_eq!(v.validate(&"abcde", &()), OK);
         assert_eq!(v.validate(&"ab", &()), err(2, Some(3), Some(5), None));
         assert_eq!(v.validate(&"abcdef", &()), err(6, Some(3), Some(5), None));
     }
@@ -209,7 +208,7 @@ mod test {
         // "café" is 4 chars but 5 bytes (é is 2 bytes in UTF-8).
         assert_eq!("café".len(), 5);
         let v = LengthValidator { equal: Some(4), ..Default::default() };
-        assert_eq!(v.validate(&"café".to_string(), &()), Ok(()));
+        assert_eq!(v.validate(&"café".to_string(), &()), OK);
     }
 
     #[test]
@@ -219,13 +218,13 @@ mod test {
         let combining = "e\u{0301}".to_string();
         assert_eq!(combining.chars().count(), 2);
         let v = LengthValidator { equal: Some(2), ..Default::default() };
-        assert_eq!(v.validate(&combining, &()), Ok(()));
+        assert_eq!(v.validate(&combining, &()), OK);
     }
 
     #[test]
     fn works_on_vec() {
         let v = LengthValidator { min: Some(1), max: Some(3), ..Default::default() };
-        assert_eq!(v.validate(&vec![1, 2], &()), Ok(()));
+        assert_eq!(v.validate(&vec![1, 2], &()), OK);
         assert_eq!(v.validate(&Vec::<i32>::new(), &()), err(0, Some(1), Some(3), None));
         assert_eq!(v.validate(&vec![1, 2, 3, 4], &()), err(4, Some(1), Some(3), None));
     }
@@ -238,17 +237,17 @@ mod test {
         hm.insert("a", 1);
         assert_eq!(v.validate(&hm, &()), err(1, Some(2), None, None));
         hm.insert("b", 2);
-        assert_eq!(v.validate(&hm, &()), Ok(()));
+        assert_eq!(v.validate(&hm, &()), OK);
 
         let bm: BTreeMap<i32, i32> = [(1, 1), (2, 2), (3, 3)].into_iter().collect();
-        assert_eq!(v.validate(&bm, &()), Ok(()));
+        assert_eq!(v.validate(&bm, &()), OK);
     }
 
     #[test]
     fn works_on_sets() {
         let v = LengthValidator { equal: Some(3), ..Default::default() };
         let hs: HashSet<i32> = [1, 2, 3].into_iter().collect();
-        assert_eq!(v.validate(&hs, &()), Ok(()));
+        assert_eq!(v.validate(&hs, &()), OK);
         let bs: BTreeSet<i32> = [1, 2].into_iter().collect();
         assert_eq!(v.validate(&bs, &()), err(2, None, None, Some(3)));
     }
@@ -257,7 +256,7 @@ mod test {
     fn works_on_cow_str() {
         let v = LengthValidator { min: Some(2), max: Some(5), ..Default::default() };
         let cow: Cow<'_, str> = Cow::Borrowed("abc");
-        assert_eq!(v.validate(&cow, &()), Ok(()));
+        assert_eq!(v.validate(&cow, &()), OK);
     }
 
     #[test]

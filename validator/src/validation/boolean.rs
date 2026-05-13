@@ -1,6 +1,6 @@
 use std::fmt::Display;
 
-use crate::{FieldValidator, ValidationError};
+use crate::FieldValidator;
 
 /// Must be true
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -25,26 +25,18 @@ impl Display for MustBeFalseError {
 /// validate that a value is true
 pub struct MustBeTrueValidator;
 
-impl <Ctx> FieldValidator<bool, ValidationError, Ctx> for MustBeTrueValidator {
-    fn validate(&self, value: &bool, _context: &Ctx) -> Result<(), ValidationError> {
-        if *value {
-            Ok(())
-        } else {
-            Err(ValidationError::MustBeTrue(MustBeTrueError))
-        }
+impl<E: From<MustBeTrueError>, Ctx> FieldValidator<bool, E, Ctx> for MustBeTrueValidator {
+    fn validate(&self, value: &bool, _context: &Ctx) -> Result<(), E> {
+        if *value { Ok(()) } else { Err(MustBeTrueError.into()) }
     }
 }
 
 /// validate that a value is false
 pub struct MustBeFalseValidator;
 
-impl <Ctx> FieldValidator<bool, ValidationError, Ctx> for MustBeFalseValidator {
-    fn validate(&self, value: &bool, _context: &Ctx) -> Result<(), ValidationError> {
-        if *value {
-            Err(ValidationError::MustBeFalse(MustBeFalseError))
-        } else {
-            Ok(())
-        }
+impl<E: From<MustBeFalseError>, Ctx> FieldValidator<bool, E, Ctx> for MustBeFalseValidator {
+    fn validate(&self, value: &bool, _context: &Ctx) -> Result<(), E> {
+        if *value { Err(MustBeFalseError.into()) } else { Ok(()) }
     }
 }
 
@@ -52,18 +44,35 @@ impl <Ctx> FieldValidator<bool, ValidationError, Ctx> for MustBeFalseValidator {
 #[cfg(test)]
 mod test {
 
+    use crate::ValidationError;
+
     use super::*;
 
     #[test]
     fn test_must_be_true() {
-        assert_eq!(MustBeTrueValidator.validate(&false, &()), Err(ValidationError::MustBeTrue(MustBeTrueError)));
-        assert_eq!(MustBeTrueValidator.validate(&true, &()), Ok(()));
+        assert_eq!(
+            <MustBeTrueValidator as FieldValidator<bool, ValidationError, ()>>::validate(
+                &MustBeTrueValidator, &false, &()),
+            Err(ValidationError::MustBeTrue(MustBeTrueError))
+        );
+        assert_eq!(
+            <MustBeTrueValidator as FieldValidator<bool, ValidationError, ()>>::validate(
+                &MustBeTrueValidator, &true, &()),
+            Ok(())
+        );
     }
 
     #[test]
     fn test_must_be_false() {
-        assert_eq!(MustBeFalseValidator.validate(&true, &()), Err(ValidationError::MustBeFalse(MustBeFalseError)));
-        assert_eq!(MustBeFalseValidator.validate(&false, &()), Ok(()));
+        assert_eq!(
+            <MustBeFalseValidator as FieldValidator<bool, ValidationError, ()>>::validate(
+                &MustBeFalseValidator, &true, &()),
+            Err(ValidationError::MustBeFalse(MustBeFalseError))
+        );
+        assert_eq!(
+            <MustBeFalseValidator as FieldValidator<bool, ValidationError, ()>>::validate(
+                &MustBeFalseValidator, &false, &()),
+            Ok(())
+        );
     }
-
 }

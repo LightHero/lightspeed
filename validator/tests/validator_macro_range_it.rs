@@ -1,5 +1,5 @@
 use lightspeed_validator::range::RangeError;
-use lightspeed_validator::{Validable, ValidationError};
+use lightspeed_validator::Validable;
 
 const MIN_AGE: i32 = 18;
 
@@ -41,18 +41,19 @@ pub struct ConstBounded {
     pub age: i32,
 }
 
-fn range_err(
+fn range_err<E: From<RangeError>>(
     min: Option<&str>,
     max: Option<&str>,
     excl_min: Option<&str>,
     excl_max: Option<&str>,
-) -> ValidationError {
-    ValidationError::Range(RangeError {
+) -> E {
+    RangeError {
         min: min.map(str::to_string),
         max: max.map(str::to_string),
         exclusive_min: excl_min.map(str::to_string),
         exclusive_max: excl_max.map(str::to_string),
-    })
+    }
+    .into()
 }
 
 #[test]
