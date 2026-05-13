@@ -1,21 +1,36 @@
 use proc_macro::TokenStream;
 use proc_macro2::TokenStream as TokenStream2;
 use quote::{format_ident, quote};
-use syn::{Field, Fields, FieldsNamed, Ident, ItemStruct, parse_macro_input};
+use syn::{Field, Fields, FieldsNamed, Ident, ItemStruct, Type, parse_macro_input, parse_quote};
 
 mod validation;
 
 use validation::FieldValidator;
 
+const VALIDATE_ATTR: &str = "validate";
+const CONTEXT_KEYWORD: &str = "context";
+
 /// Derive macro that generates a `<Name>Validable` companion type.
 ///
 /// Applied to a named-field struct via `#[derive(Validable)]`, this emits a
 /// sibling `<Name>Validable` whose fields are wrapped in
-/// [`lightspeed_validator::ValidableType`]. The sibling exposes
-/// `validate(self) -> Result<<Name>, Self>` which checks each field's
-/// `is_valid()` flag and returns the original struct when every field is
-/// valid, otherwise returns the validable struct unchanged.
+/// [`lightspeed_validator::ValidableType`]. The sibling exposes:
+/// - `new(value: <Name>) -> Self` to wrap an instance with the validator list
+///   declared by the field-level `#[validate(...)]` attributes;
+/// - `validate(self) -> Result<<Name>, Self>` (or `validate(self, ctx: &Ctx)`
+///   when a custom context is configured) which runs each field's validators
+///   and returns the original struct when no field collected any errors,
+///   otherwise returns the validable struct (with errors populated on each
+///   field's `ValidableType`).
 ///
+/// ## Struct-level attribute
+/// - `#[validate(context = <Type>)]` — selects the validation context type
+///   threaded to every validator's `validate(value, ctx)` call. Defaults to
+///   `()` when absent. The generated `validate` method's signature mirrors
+///   this: it takes no extra argument by default, and takes `ctx: &<Type>`
+///   when set.
+///
+/// ## Field-level attribute
 /// Field-level validators are declared via the helper attribute
 /// `#[validate(<keyword>)]`. Supported keywords:
 /// - `isTrue` — requires a `bool` field; the value must be `true`;
@@ -36,6 +51,11 @@ pub fn derive_validable(item: TokenStream) -> TokenStream {
         }
     };
 
+    let context = match parse_struct_context(&input) {
+        Ok(c) => c,
+        Err(e) => return e.to_compile_error().into(),
+    };
+
     let field_validators = match collect_field_validators(named_fields) {
         Ok(v) => v,
         Err(e) => return e.to_compile_error().into(),
@@ -45,9 +65,9 @@ pub fn derive_validable(item: TokenStream) -> TokenStream {
     let name = &input.ident;
     let validable_name = format_ident!("{}Validable", name);
 
-    let validable_struct = generate_validable_struct(vis, &validable_name, named_fields);
+    let validable_struct = generate_validable_struct(vis, &validable_name, named_fields, &context);
     let new_fn = generate_new_fn(name, &validable_name, named_fields, &field_validators);
-    let validate_fn = generate_validate_fn(name, &validable_name, named_fields);
+    let validate_fn = generate_validate_fn(name, &validable_name, named_fields, &context);
 
     let expanded = quote! {
         #validable_struct
@@ -58,6 +78,40 @@ pub fn derive_validable(item: TokenStream) -> TokenStream {
     };
 
     expanded.into()
+}
+
+/// Resolves the struct-level validation context.
+///
+/// Looks for `#[validate(context = <Type>)]` on the struct. When absent,
+/// defaults to `()`. Errors on unknown keys or duplicate `context = ...`.
+struct StructContext {
+    ty: Type,
+    is_explicit: bool,
+}
+
+fn parse_struct_context(input: &ItemStruct) -> syn::Result<StructContext> {
+    let mut ty: Option<Type> = None;
+    for attr in &input.attrs {
+        if !attr.path().is_ident(VALIDATE_ATTR) {
+            continue;
+        }
+        attr.parse_nested_meta(|meta| {
+            if meta.path.is_ident(CONTEXT_KEYWORD) {
+                if ty.is_some() {
+                    return Err(meta.error("duplicate `context = ...`"));
+                }
+                let value = meta.value()?;
+                ty = Some(value.parse()?);
+                Ok(())
+            } else {
+                Err(meta.error("unknown struct-level `#[validate(...)]` option"))
+            }
+        })?;
+    }
+    Ok(match ty {
+        Some(ty) => StructContext { ty, is_explicit: true },
+        None => StructContext { ty: parse_quote!(()), is_explicit: false },
+    })
 }
 
 /// Parses `#[validate(...)]` attributes from every field of the struct,
@@ -75,18 +129,20 @@ fn collect_field_validators(fields: &FieldsNamed) -> syn::Result<Vec<(Ident, Vec
 }
 
 /// Emits the `<Name>Validable` struct definition, mirroring the original
-/// fields with each type `T` wrapped as `ValidableType<T>`.
+/// fields with each type `T` wrapped as `ValidableType<T, Ctx>`.
 fn generate_validable_struct(
     vis: &syn::Visibility,
     validable_name: &Ident,
     fields: &FieldsNamed,
+    context: &StructContext,
 ) -> TokenStream2 {
+    let ctx_ty = &context.ty;
     let validable_fields = fields.named.iter().map(|f| {
         let field_vis = &f.vis;
         let field_name = f.ident.as_ref().expect("named field has ident");
         let field_ty = &f.ty;
         quote! {
-            #field_vis #field_name: ::lightspeed_validator::ValidableType<#field_ty>
+            #field_vis #field_name: ::lightspeed_validator::ValidableType<#field_ty, #ctx_ty>
         }
     });
 
@@ -125,16 +181,23 @@ fn generate_new_fn(
     }
 }
 
-/// Emits `impl <Name>Validable { pub fn validate(self) -> Result<<Name>, Self> }`.
-/// Iterates every field, returns `Err(self)` if any field reports invalid;
-/// otherwise moves each field's inner value into a fresh instance of the
-/// original struct. Field-level validation logic lives on each field's
-/// `ValidableType` validator list (wired up by `new`), so this function does
-/// not inspect field values directly.
+/// Emits the `validate` method on `<Name>Validable`.
+///
+/// Runs `validate(ctx)` on each field's `ValidableType` (populating its
+/// internal `errors`), then returns `Err(self)` if any field collected at
+/// least one error. Otherwise moves each field's inner value into a fresh
+/// instance of the original struct.
+///
+/// The method's signature is:
+/// - `pub fn validate(self) -> Result<<Name>, Self>` when no context is set
+///   (uses `&()` internally);
+/// - `pub fn validate(self, ctx: &<Ctx>) -> Result<<Name>, Self>` when the
+///   struct opted in to a custom context via `#[validate(context = <Ctx>)]`.
 fn generate_validate_fn(
     name: &Ident,
     validable_name: &Ident,
     fields: &FieldsNamed,
+    context: &StructContext,
 ) -> TokenStream2 {
     let field_idents: Vec<&Ident> = fields
         .named
@@ -142,11 +205,19 @@ fn generate_validate_fn(
         .map(|f: &Field| f.ident.as_ref().expect("named field has ident"))
         .collect();
 
+    let ctx_ty = &context.ty;
+    let (extra_param, ctx_expr) = if context.is_explicit {
+        (quote! { , ctx: &#ctx_ty }, quote! { ctx })
+    } else {
+        (quote! {}, quote! { &() })
+    };
+
     quote! {
         impl #validable_name {
-            pub fn validate(self) -> ::core::result::Result<#name, Self> {
-                let all_valid = true #( && self.#field_idents.is_valid() )*;
-                if !all_valid {
+            pub fn validate(mut self #extra_param) -> ::core::result::Result<#name, Self> {
+                #( self.#field_idents.validate(#ctx_expr); )*
+                let has_errors = false #( || !self.#field_idents.errors().is_empty() )*;
+                if has_errors {
                     return ::core::result::Result::Err(self);
                 }
                 ::core::result::Result::Ok(#name {

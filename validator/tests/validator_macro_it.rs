@@ -1,5 +1,3 @@
-use std::sync::Arc;
-
 use lightspeed_validator::{Validable, ValidableType, boolean::MustBeFalseValidator};
 
 #[derive(Validable)]
@@ -71,15 +69,11 @@ fn fields_without_validators_are_always_valid() {
         active: false,
     });
 
-    assert!(v.name.is_valid());
-    assert!(v.age.is_valid());
-    assert!(v.active.is_valid());
     assert!(v.name.errors().is_empty());
     assert!(v.age.errors().is_empty());
     assert!(v.active.errors().is_empty());
 
     assert!(v.validate().is_ok());
-
 }
 
 #[test]

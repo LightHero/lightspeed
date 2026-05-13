@@ -25,8 +25,8 @@ impl Display for MustBeFalseError {
 /// validate that a value is true
 pub struct MustBeTrueValidator;
 
-impl FieldValidator<bool, ValidationError, ()> for MustBeTrueValidator {
-    fn validate(&self, value: &bool, _context: &()) -> Result<(), ValidationError> {
+impl <Ctx> FieldValidator<bool, ValidationError, Ctx> for MustBeTrueValidator {
+    fn validate(&self, value: &bool, _context: &Ctx) -> Result<(), ValidationError> {
         if *value {
             Ok(())
         } else {
@@ -38,8 +38,8 @@ impl FieldValidator<bool, ValidationError, ()> for MustBeTrueValidator {
 /// validate that a value is false
 pub struct MustBeFalseValidator;
 
-impl FieldValidator<bool, ValidationError, ()> for MustBeFalseValidator {
-    fn validate(&self, value: &bool, _context: &()) -> Result<(), ValidationError> {
+impl <Ctx> FieldValidator<bool, ValidationError, Ctx> for MustBeFalseValidator {
+    fn validate(&self, value: &bool, _context: &Ctx) -> Result<(), ValidationError> {
         if *value {
             Err(ValidationError::MustBeFalse(MustBeFalseError))
         } else {

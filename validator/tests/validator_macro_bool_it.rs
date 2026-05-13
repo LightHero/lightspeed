@@ -28,7 +28,7 @@ fn field_level_is_true_validator_rejects_false() {
         Err(v) => v,
     };
     assert_eq!(returned.enabled.errors(), &[ValidationError::MustBeTrue(MustBeTrueError)]);
-    assert!(returned.debug.is_valid());
+    assert!(returned.debug.errors().is_empty());
 }
 
 #[test]
@@ -39,7 +39,7 @@ fn field_level_is_false_validator_rejects_true() {
         Ok(_) => panic!("expected Err"),
         Err(v) => v,
     };
-    assert!(returned.enabled.is_valid());
+    assert!(returned.enabled.errors().is_empty());
     assert_eq!(returned.debug.errors(), &[ValidationError::MustBeFalse(MustBeFalseError)]);
 }
 
@@ -103,6 +103,11 @@ fn multiple_validators_emit_each_failure() {
         via_multiple_attrs: true,
         via_single_attr: false,
     });
+
+    let validable = match validable.validate() {
+        Ok(_) => panic!("expected at least one failure"),
+        Err(v) => v,
+    };
 
     assert_eq!(
         validable.via_multiple_attrs.errors(),
