@@ -217,6 +217,54 @@ NaN values silently pass every bound check, because Rust's `PartialOrd` for
 floats returns `false` for any comparison involving `NaN`. Add a custom
 validator if you need explicit NaN rejection.
 
+### length
+
+Checks the length / size of a string-like value or a collection. Options
+(all `usize`-coerced expressions, all optional, at least one required):
+
+- `min` — required minimum length (inclusive);
+- `max` — required maximum length (inclusive);
+- `equal` — required exact length. Mutually exclusive with `min` / `max`.
+
+Works on any field whose type implements the runtime `HasLength` trait. The
+crate provides impls for:
+
+- string types: `String`, `&str`, `Cow<'_, str>`, `Box<str>`;
+- collections: `Vec`, `VecDeque`, slice `[T]`, `HashMap`, `BTreeMap`,
+  `HashSet`, `BTreeSet`;
+- plus a blanket `impl<T: HasLength + ?Sized> HasLength for &T` so any
+  reference to a length-having type works too.
+
+Downstream crates can add impls for their own types.
+
+```rust,ignore
+const MAX_TAGS: usize = 5;
+
+#[validate(length(min = 3, max = 20))]
+username: String,
+
+#[validate(length(equal = 6))]
+otp_code: String,
+
+#[validate(length(min = 1, max = MAX_TAGS))]
+tags: Vec<String>,
+
+#[validate(length(max = 100))]
+settings: std::collections::HashMap<String, String>,
+```
+
+**String length is `chars().count()`** — the number of Unicode scalar
+values, not the number of bytes and not the number of *visual characters*.
+A grapheme cluster (e.g. base letter + combining accent, or a multi-codepoint
+emoji sequence) can span more than one `char`, so an input the user perceives
+as a single character may count as several. If you need grapheme-cluster
+counting, use a crate like `unicode-segmentation` and add a custom
+`HasLength` impl for your wrapper type.
+
+Error: `ValidationError::Length(LengthError { min, max, equal, actual })`,
+where each bound is `Option<usize>` carrying the value that was configured
+(or `None` if that side wasn't set) and `actual` is the measured length.
+
 ### regex
 
 Checks a string-compatible field against a regular expression via
@@ -412,6 +460,7 @@ pub enum ValidationError {
     Password(PasswordError),
     Range(RangeError),
     Regex(RegexError),
+    Length(LengthError),
     // Only present when the `credit_card` feature is enabled:
     CreditCard(CreditCardError),
 }

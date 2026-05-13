@@ -60,6 +60,14 @@ const FIELDS_MATCH_KEYWORD: &str = "fields_match";
 ///   Rust expression (literal, constant path, …) — the macro emits a
 ///   `RangeValidator::<FieldTy>` so bound types are checked against the
 ///   field's type by the compiler;
+/// - `length(min = <expr>, max = <expr>, equal = <expr>)` — requires a
+///   field type implementing the runtime `HasLength` trait (provided for
+///   `String`, `&str`, `Cow<'_, str>`, `Vec`, `VecDeque`, slices, `HashMap`,
+///   `BTreeMap`, `HashSet`, `BTreeSet`). At least one bound is required;
+///   `equal` is mutually exclusive with `min`/`max`. Bounds are any
+///   expression that coerces to `usize`. For string-like types the length
+///   is `chars().count()` — i.e. Unicode scalar values, not bytes and not
+///   visual characters;
 /// - `regex(path = <expr>)` / `regex(pattern = "...")` — requires a
 ///   string-compatible field; the value must match the regex via
 ///   `Regex::is_match`. `path` takes any expression that evaluates to

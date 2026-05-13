@@ -11,6 +11,7 @@ pub mod contains;
 #[cfg(feature = "credit_card")]
 pub mod credit_card;
 pub mod ip;
+pub mod length;
 pub mod password;
 pub mod range;
 pub mod regex;
@@ -21,6 +22,7 @@ use proc_macro2::TokenStream as TokenStream2;
 use syn::{Field, Ident, Type};
 
 use contains::ContainsArgs;
+use length::LengthArgs;
 use password::PasswordArgs;
 use range::RangeArgs;
 use regex::RegexSpec;
@@ -40,6 +42,7 @@ pub enum FieldValidator {
     Password(PasswordArgs),
     Range(RangeArgs),
     Regex(RegexSpec),
+    Length(LengthArgs),
     #[cfg(feature = "credit_card")]
     CreditCard,
 }
@@ -103,6 +106,7 @@ pub fn parse_field_validators(field: &Field) -> syn::Result<Vec<FieldValidator>>
                     regex::ensure_string_field(field)?;
                     FieldValidator::Regex(regex::parse_regex_args(&meta)?)
                 }
+                "length" => FieldValidator::Length(length::parse_length_args(&meta)?),
                 #[cfg(feature = "credit_card")]
                 "credit_card" => {
                     credit_card::ensure_string_field(field)?;
@@ -140,6 +144,7 @@ pub fn generate_validator_instance(validator: &FieldValidator, field_ty: &Type) 
         FieldValidator::Password(args) => password::password_validator_instance(args),
         FieldValidator::Range(args) => range::range_validator_instance(field_ty, args),
         FieldValidator::Regex(spec) => regex::regex_validator_instance(spec),
+        FieldValidator::Length(args) => length::length_validator_instance(args),
         #[cfg(feature = "credit_card")]
         FieldValidator::CreditCard => credit_card::credit_card_validator_instance(),
     }

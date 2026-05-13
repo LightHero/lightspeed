@@ -6,6 +6,7 @@ use crate::{
         boolean::{MustBeFalseError, MustBeTrueError},
         fields_match::{FieldsMustMatch, MustMatchField},
         ip::IpError,
+        length::LengthError,
         password::PasswordError,
         range::RangeError,
         regex::RegexError,
@@ -54,6 +55,9 @@ pub enum ValidationError {
 
     #[error("{0}")]
     Regex(RegexError),
+
+    #[error("{0}")]
+    Length(LengthError),
 
     #[cfg(feature = "credit_card")]
     #[error("{0}")]
