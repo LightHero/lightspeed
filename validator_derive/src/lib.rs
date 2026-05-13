@@ -34,7 +34,13 @@ const CONTEXT_KEYWORD: &str = "context";
 /// Field-level validators are declared via the helper attribute
 /// `#[validate(<keyword>)]`. Supported keywords:
 /// - `isTrue` — requires a `bool` field; the value must be `true`;
-/// - `isFalse` — requires a `bool` field; the value must be `false`.
+/// - `isFalse` — requires a `bool` field; the value must be `false`;
+/// - `contains(pattern = "...", case_sensitive = <bool>)` — requires a
+///   string-compatible field (`String`, `&str`, `Cow<'_, str>`, …); the
+///   value must contain `pattern`. `case_sensitive` defaults to `true`;
+/// - `not_contains(pattern = "...", case_sensitive = <bool>)` — same field
+///   types as `contains`; the value must NOT contain `pattern`.
+///   `case_sensitive` defaults to `true`.
 #[proc_macro_derive(Validable, attributes(validate))]
 pub fn derive_validable(item: TokenStream) -> TokenStream {
     let input = parse_macro_input!(item as ItemStruct);

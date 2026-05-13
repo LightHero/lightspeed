@@ -2,14 +2,17 @@
 //!
 //! To add a new variant:
 //!  1. add it to [`FieldValidator`];
-//!  2. recognize its keyword in [`parse_keyword`];
-//!  3. declare its accepted field types in [`check_field_type`];
+//!  2. recognize its keyword in [`parse_field_validators`];
+//!  3. declare its accepted field types via the per-validator `ensure_*` helper;
 //!  4. emit its validator-instance tokens in [`generate_validator_instance`].
 
 pub mod boolean;
+pub mod contains;
 
 use proc_macro2::TokenStream as TokenStream2;
 use syn::{Field, Ident};
+
+use contains::ContainsArgs;
 
 const VALIDATE_ATTR: &str = "validate";
 
@@ -17,6 +20,8 @@ const VALIDATE_ATTR: &str = "validate";
 pub enum FieldValidator {
     IsTrue,
     IsFalse,
+    MustContain(ContainsArgs),
+    MustNotContain(ContainsArgs),
 }
 
 /// Parses every `#[validate(...)]` attribute on `field`, returning all
@@ -30,8 +35,30 @@ pub fn parse_field_validators(field: &Field) -> syn::Result<Vec<FieldValidator>>
         }
         attr.parse_nested_meta(|meta| {
             let keyword = meta.path.require_ident()?;
-            let validator = parse_keyword(keyword)?;
-            check_field_type(field, &validator)?;
+            let validator = match keyword.to_string().as_str() {
+                "isTrue" => {
+                    boolean::ensure_bool_field(field)?;
+                    FieldValidator::IsTrue
+                }
+                "isFalse" => {
+                    boolean::ensure_bool_field(field)?;
+                    FieldValidator::IsFalse
+                }
+                "contains" => {
+                    contains::ensure_string_field(field)?;
+                    FieldValidator::MustContain(contains::parse_contains_args(&meta)?)
+                }
+                "not_contains" => {
+                    contains::ensure_string_field(field)?;
+                    FieldValidator::MustNotContain(contains::parse_contains_args(&meta)?)
+                }
+                other => {
+                    return Err(syn::Error::new(
+                        keyword.span(),
+                        format!("unknown validator `{other}`"),
+                    ));
+                }
+            };
             out.push(validator);
             Ok(())
         })?;
@@ -46,6 +73,8 @@ pub fn generate_validator_instance(validator: &FieldValidator) -> TokenStream2 {
     match validator {
         FieldValidator::IsTrue => boolean::must_be_true_validator_instance(),
         FieldValidator::IsFalse => boolean::must_be_false_validator_instance(),
+        FieldValidator::MustContain(args) => contains::must_contain_validator_instance(args),
+        FieldValidator::MustNotContain(args) => contains::must_not_contain_validator_instance(args),
     }
 }
 
@@ -55,19 +84,5 @@ pub fn generate_validators_vec(_field_ident: &Ident, validators: &[FieldValidato
     let items = validators.iter().map(generate_validator_instance);
     quote::quote! {
         ::std::vec![ #( #items ),* ]
-    }
-}
-
-fn parse_keyword(keyword: &Ident) -> syn::Result<FieldValidator> {
-    match keyword.to_string().as_str() {
-        "isTrue" => Ok(FieldValidator::IsTrue),
-        "isFalse" => Ok(FieldValidator::IsFalse),
-        other => Err(syn::Error::new(keyword.span(), format!("unknown validator `{other}`"))),
-    }
-}
-
-fn check_field_type(field: &Field, validator: &FieldValidator) -> syn::Result<()> {
-    match validator {
-        FieldValidator::IsTrue | FieldValidator::IsFalse => boolean::ensure_bool_field(field),
     }
 }

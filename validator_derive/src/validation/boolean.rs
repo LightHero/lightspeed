@@ -1,8 +1,4 @@
 //! Bool-specific code generation for `#[validate(isTrue)]` / `#[validate(isFalse)]`.
-//!
-//! Each helper handles one half of the macro pipeline for bool validators:
-//! field-type checking at parse time, and validator-instance token emission
-//! at expansion time.
 
 use proc_macro2::TokenStream as TokenStream2;
 use quote::quote;
