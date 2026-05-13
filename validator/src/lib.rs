@@ -9,10 +9,9 @@ pub mod must_match;
 pub mod order;
 pub mod ownership;
 pub mod urls;
-mod macros;
 
 pub use error::{ErrorDetails, RootErrorDetails, ValidableType, ValidationError, ValidatorError};
-pub use macros::validable;
+pub use lightspeed_validator_macros::validable;
 
 pub trait Validable: Send + Sync {
     fn validate(&self, error_details: &mut ErrorDetails) -> Result<(), Box<dyn std::error::Error + Send + Sync>>;
@@ -397,61 +396,3 @@ pub mod test {
     }
 }
 
-#[cfg(test)]
-mod some {
-
-    #[test]
-    fn some() {
-
-        use serde::Deserialize;
-        // A trait that the Validate derive will impl
-        use validator::{Validate, ValidationError};
-        
-        #[derive(Validate, Deserialize)]
-        pub struct Val {
-            #[validate(email)]
-            pub email: String,
-            #[validate(url)]
-            pub url: String,
-        }
-
-        let val = Val {
-            email: "invalid".to_string(),
-            url: "invalid".to_string(),
-        };
-
-        let err = val.validate().unwrap_err();
-
-        println!("{:?}", err);
-
-    }
-}
-
-#[cfg(test)]
-mod validable_macro {
-    use crate::validable;
-
-    #[validable]
-    pub struct User {
-        pub name: String,
-        pub age: u32,
-        pub active: bool,
-    }
-
-    #[test]
-    fn generated_struct_has_validable_typed_fields() {
-        fn assert_types(v: &UserValidable) {
-            let _: &crate::ValidableType<String> = &v.name;
-            let _: &crate::ValidableType<u32> = &v.age;
-            let _: &crate::ValidableType<bool> = &v.active;
-        }
-
-        let user = User { name: "alice".to_string(), age: 30, active: true };
-        assert_eq!(user.name, "alice");
-        assert_eq!(user.age, 30);
-        assert!(user.active);
-
-        // Confirm the generated type name and field types compile.
-        let _ = assert_types;
-    }
-}
