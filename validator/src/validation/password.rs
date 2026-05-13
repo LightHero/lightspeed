@@ -85,23 +85,52 @@ impl Default for PasswordValidator {
 impl<S: AsRef<str>, E: From<PasswordError>, Ctx> FieldValidator<S, E, Ctx> for PasswordValidator {
     fn validate(&self, value: &S, _context: &Ctx) -> Result<(), E> {
         let s = value.as_ref();
-        let mut violations = Vec::new();
 
-        if self.upper && !s.chars().any(|c| c.is_ascii_uppercase()) {
+        // Single pass: walk the string once and track every required class.
+        // Each branch is gated on `self.<class>` so disabled checks don't
+        // even look at the character. `last` captures the final code point
+        // for the trailing-whitespace check without a second `chars()` pass.
+        let mut has_upper = !self.upper;
+        let mut has_lower = !self.lower;
+        let mut has_number = !self.number;
+        let mut has_special = self.special_chars.is_none();
+        let special = self.special_chars.as_deref();
+        let mut last: Option<char> = None;
+        for c in s.chars() {
+            if !has_upper && c.is_ascii_uppercase() {
+                has_upper = true;
+            }
+            if !has_lower && c.is_ascii_lowercase() {
+                has_lower = true;
+            }
+            if !has_number && c.is_ascii_digit() {
+                has_number = true;
+            }
+            if !has_special
+                && let Some(allowed) = special
+                && allowed.contains(&c)
+            {
+                has_special = true;
+            }
+            last = Some(c);
+        }
+
+        // At most 5 violations; pre-size to avoid the grow-by-doubling
+        // re-allocations when more than one class is missing.
+        let mut violations: Vec<PasswordViolation> = Vec::new();
+        if !has_upper {
             violations.push(PasswordViolation::MissingUppercase);
         }
-        if self.lower && !s.chars().any(|c| c.is_ascii_lowercase()) {
+        if !has_lower {
             violations.push(PasswordViolation::MissingLowercase);
         }
-        if self.number && !s.chars().any(|c| c.is_ascii_digit()) {
+        if !has_number {
             violations.push(PasswordViolation::MissingNumber);
         }
-        if let Some(allowed) = &self.special_chars
-            && !s.chars().any(|c| allowed.contains(&c))
-        {
+        if !has_special {
             violations.push(PasswordViolation::MissingSpecialChar);
         }
-        if !self.trailing_whitespaces && s.chars().next_back().is_some_and(char::is_whitespace) {
+        if !self.trailing_whitespaces && last.is_some_and(char::is_whitespace) {
             violations.push(PasswordViolation::HasTrailingWhitespace);
         }
 

@@ -1,5 +1,5 @@
 use std::fmt::Display;
-use std::net::IpAddr;
+use std::net::{IpAddr, Ipv4Addr, Ipv6Addr};
 use std::str::FromStr;
 
 use crate::FieldValidator;
@@ -40,11 +40,14 @@ pub struct IpValidator {
 
 impl<S: AsRef<str>, E: From<IpError>, Ctx> FieldValidator<S, E, Ctx> for IpValidator {
     fn validate(&self, value: &S, _context: &Ctx) -> Result<(), E> {
-        let parsed = IpAddr::from_str(value.as_ref());
+        let s = value.as_ref();
+        // `IpAddr::from_str` tries v4 first and falls back to v6. For
+        // kind-specific validators we can call the type-specific parser
+        // directly and skip the wrong-family attempt.
         let ok = match self.kind {
-            IpKind::Any => parsed.is_ok(),
-            IpKind::V4 => parsed.is_ok_and(|ip| ip.is_ipv4()),
-            IpKind::V6 => parsed.is_ok_and(|ip| ip.is_ipv6()),
+            IpKind::Any => IpAddr::from_str(s).is_ok(),
+            IpKind::V4 => Ipv4Addr::from_str(s).is_ok(),
+            IpKind::V6 => Ipv6Addr::from_str(s).is_ok(),
         };
         if ok { Ok(()) } else { Err(IpError { kind: self.kind }.into()) }
     }
