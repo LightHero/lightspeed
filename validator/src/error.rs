@@ -31,7 +31,10 @@ mod test {
         let error = ValidationError::MustBeGreater { min: 5 };
         assert_eq!(error.to_string(), "MustBeGreater than 5");
 
-        let error = ValidationError::MustContain(MustContainError("hello".to_string()));
-        assert_eq!(error.to_string(), "MustContain [hello]");
+        let error = ValidationError::MustContain(MustContainError {
+            pattern: "hello".to_string(),
+            case_sensitive: true,
+        });
+        assert_eq!(error.to_string(), "MustContain [hello] (case_sensitive: true)");
     }
 }
