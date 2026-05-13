@@ -8,6 +8,7 @@
 
 pub mod boolean;
 pub mod contains;
+pub mod ip;
 pub mod struct_fields_match;
 
 use proc_macro2::TokenStream as TokenStream2;
@@ -23,6 +24,9 @@ pub enum FieldValidator {
     IsFalse,
     MustContain(ContainsArgs),
     MustNotContain(ContainsArgs),
+    Ip,
+    Ipv4,
+    Ipv6,
 }
 
 /// Parses every `#[validate(...)]` attribute on `field`, returning all
@@ -53,6 +57,18 @@ pub fn parse_field_validators(field: &Field) -> syn::Result<Vec<FieldValidator>>
                     contains::ensure_string_field(field)?;
                     FieldValidator::MustNotContain(contains::parse_contains_args(&meta)?)
                 }
+                "ip" => {
+                    ip::ensure_string_field(field)?;
+                    FieldValidator::Ip
+                }
+                "ipv4" => {
+                    ip::ensure_string_field(field)?;
+                    FieldValidator::Ipv4
+                }
+                "ipv6" => {
+                    ip::ensure_string_field(field)?;
+                    FieldValidator::Ipv6
+                }
                 other => {
                     return Err(syn::Error::new(
                         keyword.span(),
@@ -76,6 +92,9 @@ pub fn generate_validator_instance(validator: &FieldValidator) -> TokenStream2 {
         FieldValidator::IsFalse => boolean::must_be_false_validator_instance(),
         FieldValidator::MustContain(args) => contains::must_contain_validator_instance(args),
         FieldValidator::MustNotContain(args) => contains::must_not_contain_validator_instance(args),
+        FieldValidator::Ip => ip::ip_validator_instance(),
+        FieldValidator::Ipv4 => ip::ipv4_validator_instance(),
+        FieldValidator::Ipv6 => ip::ipv6_validator_instance(),
     }
 }
 

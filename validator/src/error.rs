@@ -5,6 +5,7 @@ use crate::{
     validation::{
         boolean::{MustBeFalseError, MustBeTrueError},
         fields_match::{FieldsMustMatch, MustMatchField},
+        ip::IpError,
     },
 };
 
@@ -32,6 +33,9 @@ pub enum ValidationError {
 
     #[error("{0}")]
     MustMatchField(MustMatchField),
+
+    #[error("{0}")]
+    Ip(IpError),
 }
 
 #[cfg(test)]

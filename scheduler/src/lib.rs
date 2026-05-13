@@ -1,3 +1,5 @@
+#![doc = include_str!("../README.md")]
+
 use crate::error::SchedulerError;
 use crate::job::{Job, JobScheduler};
 use crate::scheduler::{Scheduler, TryToScheduler};
