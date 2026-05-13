@@ -6,6 +6,12 @@ pub trait FieldValidator<T, E, CTX> {
     fn validate(&self, value: &T, context: &CTX) -> Result<(), E>;
 }
 
+impl<T, E, CTX> FieldValidator<T, E, CTX> for fn(&T, &CTX) -> Result<(), E> {
+    fn validate(&self, value: &T, context: &CTX) -> Result<(), E> {
+        self(value, context) 
+    }
+}
+
 pub struct ValidableType<T, Ctx = ()> {
     value: T,
     validators: Vec<Box<dyn FieldValidator<T, ValidationError, Ctx>>>,
