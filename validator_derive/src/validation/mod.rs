@@ -11,6 +11,7 @@ pub mod contains;
 #[cfg(feature = "credit_card")]
 pub mod credit_card;
 pub mod ip;
+pub mod password;
 pub mod struct_fields_match;
 pub mod url;
 
@@ -18,6 +19,7 @@ use proc_macro2::TokenStream as TokenStream2;
 use syn::{Field, Ident};
 
 use contains::ContainsArgs;
+use password::PasswordArgs;
 
 const VALIDATE_ATTR: &str = "validate";
 
@@ -31,6 +33,7 @@ pub enum FieldValidator {
     Ipv4,
     Ipv6,
     Url,
+    Password(PasswordArgs),
     #[cfg(feature = "credit_card")]
     CreditCard,
 }
@@ -79,6 +82,16 @@ pub fn parse_field_validators(field: &Field) -> syn::Result<Vec<FieldValidator>>
                     url::ensure_string_field(field)?;
                     FieldValidator::Url
                 }
+                "password" => {
+                    password::ensure_string_field(field)?;
+                    // Accept both bare `password` and `password(...)`.
+                    let args = if meta.input.peek(syn::token::Paren) {
+                        password::parse_password_args(&meta)?
+                    } else {
+                        password::PasswordArgs::default()
+                    };
+                    FieldValidator::Password(args)
+                }
                 #[cfg(feature = "credit_card")]
                 "credit_card" => {
                     credit_card::ensure_string_field(field)?;
@@ -111,6 +124,7 @@ pub fn generate_validator_instance(validator: &FieldValidator) -> TokenStream2 {
         FieldValidator::Ipv4 => ip::ipv4_validator_instance(),
         FieldValidator::Ipv6 => ip::ipv6_validator_instance(),
         FieldValidator::Url => url::url_validator_instance(),
+        FieldValidator::Password(args) => password::password_validator_instance(args),
         #[cfg(feature = "credit_card")]
         FieldValidator::CreditCard => credit_card::credit_card_validator_instance(),
     }

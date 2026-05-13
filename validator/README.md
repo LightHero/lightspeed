@@ -175,6 +175,48 @@ homepage: String,
 Error: `ValidationError::Url(UrlError)` (unit-struct payload — failure means
 the value did not parse as an absolute URL).
 
+### password
+
+Checks a string against a configurable password policy. Works on the same
+string-compatible types as `contains`. All the options are optional and have
+sensible defaults — bare `#[validate(password)]` gives an OWASP-style policy.
+
+Options (all may be omitted):
+
+- `upper` (`bool`, default `true`) — require at least one ASCII uppercase letter.
+- `lower` (`bool`, default `true`) — require at least one ASCII lowercase letter.
+- `number` (`bool`, default `true`) — require at least one ASCII digit.
+- `special_char` (`bool` *or* string literal, default `true`) — controls
+  the special-character requirement:
+  - `true`: require one char from the recommended default list
+    (`DEFAULT_SPECIAL_CHARS` — the printable-ASCII non-alphanumeric,
+    non-space set);
+  - `false`: disable the special-character check entirely;
+  - `"..."`: require one char from the *provided* set (each char in the
+    string literal is an allowed special char).
+- `trailing_whitespaces` (`bool`, default `false`) — when `false` the
+  password must not end in a whitespace character. Set to `true` to allow
+  trailing whitespace.
+
+```rust,ignore
+// Default OWASP-style policy
+#[validate(password)]
+strong: String,
+
+// Relax the rules
+#[validate(password(upper = false, number = false, special_char = false))]
+loose: String,
+
+// Custom allowed special chars
+#[validate(password(special_char = "*$"))]
+star_or_dollar: String,
+```
+
+All policy violations from a single value are aggregated into one error:
+`ValidationError::Password(PasswordError { violations: Vec<PasswordViolation> })`
+where `PasswordViolation` is `MissingUppercase` / `MissingLowercase` /
+`MissingNumber` / `MissingSpecialChar` / `HasTrailingWhitespace`.
+
 ### credit_card
 
 *Requires the `credit_card` feature (off by default).*
@@ -277,6 +319,7 @@ pub enum ValidationError {
     MustMatchField(MustMatchField),
     Ip(IpError),
     Url(UrlError),
+    Password(PasswordError),
     // Only present when the `credit_card` feature is enabled:
     CreditCard(CreditCardError),
 }

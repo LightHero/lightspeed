@@ -53,6 +53,13 @@ const FIELDS_MATCH_KEYWORD: &str = "fields_match";
 ///   must parse as an IP address of the corresponding kind (any / v4 / v6);
 /// - `url` — requires a string-compatible field; the value must parse as
 ///   an absolute URL via the [`url`](https://docs.rs/url) crate;
+/// - `password` (bare or with options) — requires a string-compatible field;
+///   checks character-class requirements suitable for password policies.
+///   Options: `upper`, `lower`, `number` (all bool, default `true`);
+///   `special_char` (bool or string literal — `true` uses a default list,
+///   `false` disables, a string supplies the allowed set; default `true`);
+///   `trailing_whitespaces` (bool, default `false` — when `false` trailing
+///   whitespace is forbidden);
 /// - `credit_card` (requires the `credit_card` feature) — requires a
 ///   string-compatible field; the value must be recognized as a credit card
 ///   number by the [`card_validate`](https://docs.rs/card-validate) crate

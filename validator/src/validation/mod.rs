@@ -6,6 +6,7 @@ pub mod contains;
 pub mod credit_card;
 pub mod fields_match;
 pub mod ip;
+pub mod password;
 pub mod url;
 
 pub trait FieldValidator<T, E, CTX> {
