@@ -1,6 +1,12 @@
 use thiserror::Error;
 
-use crate::{contains::{MustContainError, MustNotContainError}, validation::boolean::{MustBeFalseError, MustBeTrueError}};
+use crate::{
+    contains::{MustContainError, MustNotContainError},
+    validation::{
+        boolean::{MustBeFalseError, MustBeTrueError},
+        fields_match::{FieldsMustMatch, MustMatchField},
+    },
+};
 
 
 #[derive(Debug, Error, Clone, PartialEq, Eq)]
@@ -21,8 +27,11 @@ pub enum ValidationError {
     #[error("MustBeGreater than {min}")]
     MustBeGreater { min: usize },
 
-    #[error("FieldsMustMatch [{a}, {b}]")]
-    FieldsMustMatch { a: &'static str, b: &'static str },
+    #[error("{0}")]
+    FieldsMustMatch(FieldsMustMatch),
+
+    #[error("{0}")]
+    MustMatchField(MustMatchField),
 }
 
 #[cfg(test)]
@@ -39,5 +48,15 @@ mod test {
             case_sensitive: true,
         });
         assert_eq!(error.to_string(), "MustContain [hello] (case_sensitive: true)");
+
+        let error = ValidationError::FieldsMustMatch(FieldsMustMatch {
+            field_a: "password".to_string(),
+            field_b: "password_confirm".to_string(),
+        });
+        assert_eq!(error.to_string(), "FieldsMustMatch [password, password_confirm]");
+
+        let error =
+            ValidationError::MustMatchField(MustMatchField { field: "password".to_string() });
+        assert_eq!(error.to_string(), "MustMatchField [password]");
     }
 }

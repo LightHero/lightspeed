@@ -6,6 +6,19 @@
 //! struct + `StructValidator` impl, and emitting the dispatch code that calls
 //! that validator inside the generated `validate` body and routes its errors
 //! either to the top-level `errors` vec or onto each named field.
+//!
+//! ## Error-routing convention
+//!
+//! The generated unit-struct impl and the generated dispatch site share an
+//! implicit contract:
+//! - When `attach_to_fields = false` the impl returns a single
+//!   `ValidationError::FieldsMustMatch(FieldsMustMatch { field_a, field_b })`
+//!   and the dispatch extends `self.top_level_errors`.
+//! - When `attach_to_fields = true` the impl returns exactly two
+//!   `ValidationError::MustMatchField(MustMatchField { field: ... })` errors:
+//!   the first names `field_b` (and is routed to `field_a`'s `errors`), the
+//!   second names `field_a` (and is routed to `field_b`'s `errors`). Both
+//!   ends are emitted by this module so they stay in lockstep.
 
 use proc_macro2::TokenStream as TokenStream2;
 use quote::quote;
@@ -77,9 +90,8 @@ pub fn ensure_fields_exist(fields: &FieldsNamed, args: &FieldsMatchArgs) -> syn:
     Ok(())
 }
 
-/// Emits the per-rule unit struct and its `StructValidator` impl. The body
-/// of the impl compares the two fields with `==` and returns
-/// `ValidationError::FieldsMustMatch` on inequality.
+/// Emits the per-rule unit struct and its `StructValidator` impl. The error
+/// payload depends on `attach_to_fields` (see module docs).
 pub fn generate_validator_impl(
     validable_name: &Ident,
     ctx_ty: &Type,
@@ -90,6 +102,35 @@ pub fn generate_validator_impl(
     let b = &args.b;
     let a_str = a.to_string();
     let b_str = b.to_string();
+
+    let err_branch = if args.attach_to_fields {
+        quote! {
+            ::core::result::Result::Err(::std::vec![
+                ::lightspeed_validator::ValidationError::MustMatchField(
+                    ::lightspeed_validator::fields_match::MustMatchField {
+                        field: ::std::string::String::from(#b_str),
+                    }
+                ),
+                ::lightspeed_validator::ValidationError::MustMatchField(
+                    ::lightspeed_validator::fields_match::MustMatchField {
+                        field: ::std::string::String::from(#a_str),
+                    }
+                ),
+            ])
+        }
+    } else {
+        quote! {
+            ::core::result::Result::Err(::std::vec![
+                ::lightspeed_validator::ValidationError::FieldsMustMatch(
+                    ::lightspeed_validator::fields_match::FieldsMustMatch {
+                        field_a: ::std::string::String::from(#a_str),
+                        field_b: ::std::string::String::from(#b_str),
+                    }
+                )
+            ])
+        }
+    };
+
     quote! {
         #[doc(hidden)]
         #[allow(non_camel_case_types)]
@@ -111,12 +152,7 @@ pub fn generate_validator_impl(
                 if value.#a.get() == value.#b.get() {
                     ::core::result::Result::Ok(())
                 } else {
-                    ::core::result::Result::Err(::std::vec![
-                        ::lightspeed_validator::ValidationError::FieldsMustMatch {
-                            a: #a_str,
-                            b: #b_str,
-                        }
-                    ])
+                    #err_branch
                 }
             }
         }
@@ -124,8 +160,7 @@ pub fn generate_validator_impl(
 }
 
 /// Emits the call-site for one rule inside the generated `validate` body.
-/// Routes the produced errors either to `self.top_level_errors` or onto each
-/// named field's `errors` based on the rule's `attach_to_fields` flag.
+/// Routes the produced errors per the module's error-routing convention.
 pub fn generate_dispatch(
     validator_ident: &Ident,
     validable_name: &Ident,
@@ -137,8 +172,11 @@ pub fn generate_dispatch(
     let b = &args.b;
     let route_errors = if args.attach_to_fields {
         quote! {
-            for __e in errs {
-                self.#a.push_error(::core::clone::Clone::clone(&__e));
+            let mut __it = errs.into_iter();
+            if let ::core::option::Option::Some(__e) = __it.next() {
+                self.#a.push_error(__e);
+            }
+            if let ::core::option::Option::Some(__e) = __it.next() {
                 self.#b.push_error(__e);
             }
         }

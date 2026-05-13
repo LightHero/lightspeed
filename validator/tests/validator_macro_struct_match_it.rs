@@ -1,4 +1,5 @@
 use lightspeed_validator::contains::MustContainError;
+use lightspeed_validator::fields_match::{FieldsMustMatch, MustMatchField};
 use lightspeed_validator::{Validable, ValidationError};
 
 #[derive(Validable)]
@@ -40,6 +41,17 @@ pub struct WithFieldRules {
     pub password_confirm: String,
 }
 
+fn fields_must_match(a: &str, b: &str) -> ValidationError {
+    ValidationError::FieldsMustMatch(FieldsMustMatch {
+        field_a: a.to_string(),
+        field_b: b.to_string(),
+    })
+}
+
+fn must_match_field(other: &str) -> ValidationError {
+    ValidationError::MustMatchField(MustMatchField { field: other.to_string() })
+}
+
 #[test]
 fn fields_match_passes_when_equal() {
     let v = SignupValidable::new(Signup {
@@ -54,7 +66,7 @@ fn fields_match_passes_when_equal() {
 }
 
 #[test]
-fn fields_match_default_pushes_to_top_level_errors() {
+fn fields_match_default_pushes_fields_must_match_to_top_level() {
     let v = SignupValidable::new(Signup {
         password: "a".to_string(),
         password_confirm: "b".to_string(),
@@ -64,16 +76,13 @@ fn fields_match_default_pushes_to_top_level_errors() {
         Err(v) => v,
     };
 
-    assert_eq!(
-        returned.top_level_errors(),
-        &[ValidationError::FieldsMustMatch { a: "password", b: "password_confirm" }],
-    );
+    assert_eq!(returned.top_level_errors(), &[fields_must_match("password", "password_confirm")]);
     assert!(returned.password.errors().is_empty());
     assert!(returned.password_confirm.errors().is_empty());
 }
 
 #[test]
-fn fields_match_attach_to_fields_pushes_to_each_field() {
+fn fields_match_attach_to_fields_pushes_must_match_field_to_each_field() {
     let v = SignupAttachValidable::new(SignupAttach {
         password: "a".to_string(),
         password_confirm: "b".to_string(),
@@ -84,9 +93,16 @@ fn fields_match_attach_to_fields_pushes_to_each_field() {
     };
 
     assert!(returned.top_level_errors().is_empty());
-    let expected = ValidationError::FieldsMustMatch { a: "password", b: "password_confirm" };
-    assert_eq!(returned.password.errors(), &[expected.clone()]);
-    assert_eq!(returned.password_confirm.errors(), &[expected]);
+    assert_eq!(
+        returned.password.errors(),
+        &[must_match_field("password_confirm")],
+        "password's error should point at the other field",
+    );
+    assert_eq!(
+        returned.password_confirm.errors(),
+        &[must_match_field("password")],
+        "password_confirm's error should point at the other field",
+    );
 }
 
 #[test]
@@ -113,12 +129,11 @@ fn multiple_struct_rules_are_each_evaluated_independently() {
 
     assert_eq!(
         returned.top_level_errors(),
-        &[ValidationError::FieldsMustMatch { a: "a", b: "b" }],
+        &[fields_must_match("a", "b")],
         "rule on (a, b) routes to top-level",
     );
-    let cd_err = ValidationError::FieldsMustMatch { a: "c", b: "d" };
-    assert_eq!(returned.c.errors(), &[cd_err.clone()]);
-    assert_eq!(returned.d.errors(), &[cd_err]);
+    assert_eq!(returned.c.errors(), &[must_match_field("d")]);
+    assert_eq!(returned.d.errors(), &[must_match_field("c")]);
     assert!(returned.a.errors().is_empty());
     assert!(returned.b.errors().is_empty());
 }
@@ -144,10 +159,7 @@ fn fields_match_works_on_non_string_types() {
         Ok(_) => panic!("expected Err"),
         Err(v) => v,
     };
-    assert_eq!(
-        returned.top_level_errors(),
-        &[ValidationError::FieldsMustMatch { a: "start", b: "end" }],
-    );
+    assert_eq!(returned.top_level_errors(), &[fields_must_match("start", "end")]);
 }
 
 #[test]
@@ -161,7 +173,6 @@ fn struct_rule_runs_after_field_rules_and_both_can_fail() {
         Err(v) => v,
     };
 
-    let match_err = ValidationError::FieldsMustMatch { a: "password", b: "password_confirm" };
     assert_eq!(
         returned.password.errors(),
         &[
@@ -169,11 +180,11 @@ fn struct_rule_runs_after_field_rules_and_both_can_fail() {
                 pattern: "@".to_string(),
                 case_sensitive: true,
             }),
-            match_err.clone(),
+            must_match_field("password_confirm"),
         ],
-        "field-level error first, then attached struct-level error",
+        "field-level error first, then attached struct-level error pointing at the other field",
     );
-    assert_eq!(returned.password_confirm.errors(), &[match_err]);
+    assert_eq!(returned.password_confirm.errors(), &[must_match_field("password")]);
     assert!(returned.top_level_errors().is_empty());
 }
 
