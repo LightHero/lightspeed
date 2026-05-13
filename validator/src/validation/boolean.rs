@@ -8,7 +8,7 @@ pub struct MustBeTrueError;
 
 impl Display for MustBeTrueError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "MustBeTrueError")
+        write!(f, "MustBeTrue")
     }
 }
 
@@ -18,7 +18,7 @@ pub struct MustBeFalseError;
 
 impl Display for MustBeFalseError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "MustBeFalseError")
+        write!(f, "MustBeFalse")
     }
 }
 
