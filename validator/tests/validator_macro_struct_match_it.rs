@@ -1,6 +1,6 @@
+use lightspeed_validator::Validable;
 use lightspeed_validator::contains::MustContainError;
 use lightspeed_validator::fields_match::{FieldsMustMatch, MustMatchField};
-use lightspeed_validator::Validable;
 
 fn must_contain_err<E: From<MustContainError>>(pattern: &str, case_sensitive: bool) -> E {
     MustContainError { pattern: pattern.to_string(), case_sensitive }.into()
@@ -55,10 +55,7 @@ fn must_match_field<E: From<MustMatchField>>(other: &str) -> E {
 
 #[test]
 fn fields_match_passes_when_equal() {
-    let v = SignupValidable::new(Signup {
-        password: "secret".to_string(),
-        password_confirm: "secret".to_string(),
-    });
+    let v = SignupValidable::new(Signup { password: "secret".to_string(), password_confirm: "secret".to_string() });
     let ok = match v.validate() {
         Ok(s) => s,
         Err(_) => panic!("expected Ok"),
@@ -68,10 +65,7 @@ fn fields_match_passes_when_equal() {
 
 #[test]
 fn fields_match_default_pushes_fields_must_match_to_top_level() {
-    let v = SignupValidable::new(Signup {
-        password: "a".to_string(),
-        password_confirm: "b".to_string(),
-    });
+    let v = SignupValidable::new(Signup { password: "a".to_string(), password_confirm: "b".to_string() });
     let returned = match v.validate() {
         Ok(_) => panic!("expected Err"),
         Err(v) => v,
@@ -84,10 +78,7 @@ fn fields_match_default_pushes_fields_must_match_to_top_level() {
 
 #[test]
 fn fields_match_attach_to_fields_pushes_must_match_field_to_each_field() {
-    let v = SignupAttachValidable::new(SignupAttach {
-        password: "a".to_string(),
-        password_confirm: "b".to_string(),
-    });
+    let v = SignupAttachValidable::new(SignupAttach { password: "a".to_string(), password_confirm: "b".to_string() });
     let returned = match v.validate() {
         Ok(_) => panic!("expected Err"),
         Err(v) => v,
@@ -108,10 +99,7 @@ fn fields_match_attach_to_fields_pushes_must_match_field_to_each_field() {
 
 #[test]
 fn fresh_validable_has_empty_top_level_errors() {
-    let v = SignupValidable::new(Signup {
-        password: "hi".to_string(),
-        password_confirm: "hi".to_string(),
-    });
+    let v = SignupValidable::new(Signup { password: "hi".to_string(), password_confirm: "hi".to_string() });
     assert!(v.top_level_errors().is_empty());
 }
 
@@ -128,11 +116,7 @@ fn multiple_struct_rules_are_each_evaluated_independently() {
         Err(v) => v,
     };
 
-    assert_eq!(
-        returned.top_level_errors(),
-        &[fields_must_match("a", "b")],
-        "rule on (a, b) routes to top-level",
-    );
+    assert_eq!(returned.top_level_errors(), &[fields_must_match("a", "b")], "rule on (a, b) routes to top-level",);
     assert_eq!(returned.c.errors(), &[must_match_field("d")]);
     assert_eq!(returned.d.errors(), &[must_match_field("c")]);
     assert!(returned.a.errors().is_empty());

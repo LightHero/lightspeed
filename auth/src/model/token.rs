@@ -1,7 +1,7 @@
 use c3p0::*;
 use lightspeed_core::utils::current_epoch_seconds;
-use lightspeed_validator::error::{ErrorDetails, ValidationError};
 use lightspeed_validator::Validable;
+use lightspeed_validator::error::{ErrorDetails, ValidationError};
 use serde::{Deserialize, Serialize};
 
 pub type TokenModel = Record<TokenData>;
@@ -48,8 +48,10 @@ impl Codec<TokenData> for TokenDataCodec {
 impl Validable for TokenData {
     fn validate(&self, error_details: &mut ErrorDetails) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
         if current_epoch_seconds() > self.expire_at_epoch_seconds {
-            error_details
-                .add_detail("expire_at_epoch", ValidationError::Custom { code: ERR_TOKEN_EXPIRED.into(), params: vec![] });
+            error_details.add_detail(
+                "expire_at_epoch",
+                ValidationError::Custom { code: ERR_TOKEN_EXPIRED.into(), params: vec![] },
+            );
         }
         Ok(())
     }
@@ -59,8 +61,8 @@ impl Validable for TokenData {
 pub mod test {
 
     use super::*;
-    use lightspeed_validator::error::ValidatorError;
     use lightspeed_validator::Validator;
+    use lightspeed_validator::error::ValidatorError;
 
     #[test]
     pub fn token_not_expired_should_be_valid() {

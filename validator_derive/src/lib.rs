@@ -137,21 +137,11 @@ pub fn derive_validable(item: TokenStream) -> TokenStream {
         })
         .collect();
 
-    let validable_struct = generate_validable_struct(
-        vis,
-        &validable_name,
-        named_fields,
-        &struct_attrs.context,
-        &field_error_enums,
-    );
+    let validable_struct =
+        generate_validable_struct(vis, &validable_name, named_fields, &struct_attrs.context, &field_error_enums);
     let new_fn = generate_new_fn(name, &validable_name, named_fields, &field_validators);
-    let validate_fn = generate_validate_fn(
-        name,
-        &validable_name,
-        named_fields,
-        &struct_attrs.context,
-        &struct_attrs.validators,
-    );
+    let validate_fn =
+        generate_validate_fn(name, &validable_name, named_fields, &struct_attrs.context, &struct_attrs.validators);
     let struct_validator_impls =
         generate_struct_validator_impls(&validable_name, &struct_attrs.context, &struct_attrs.validators);
     let field_enum_defs = generate_field_error_enums(&field_error_enums);
@@ -207,10 +197,8 @@ fn compute_field_error_enum(
         }
     }
     if is_attached && seen.insert("MustMatchField".to_string()) {
-        variants.push((
-            format_ident!("MustMatchField"),
-            quote! { ::lightspeed_validator::fields_match::MustMatchField },
-        ));
+        variants
+            .push((format_ident!("MustMatchField"), quote! { ::lightspeed_validator::fields_match::MustMatchField }));
     }
 
     let name = format_ident!("{}{}FieldError", struct_name, snake_to_pascal(field_ident));
@@ -309,9 +297,7 @@ fn parse_struct_attrs(input: &ItemStruct) -> syn::Result<StructAttrs> {
                 ty = Some(meta.value()?.parse()?);
                 Ok(())
             } else if meta.path.is_ident(FIELDS_MATCH_KEYWORD) {
-                validators.push(StructLevelValidator::FieldsMatch(
-                    struct_fields_match::parse_fields_match(&meta)?,
-                ));
+                validators.push(StructLevelValidator::FieldsMatch(struct_fields_match::parse_fields_match(&meta)?));
                 Ok(())
             } else {
                 Err(meta.error("unknown struct-level `#[validate(...)]` option"))
@@ -328,10 +314,7 @@ fn parse_struct_attrs(input: &ItemStruct) -> syn::Result<StructAttrs> {
 
 /// Ensures every field referenced by a struct-level rule exists on the struct.
 /// Dispatches to the per-variant `ensure_*` helper.
-fn validate_struct_field_refs(
-    fields: &FieldsNamed,
-    validators: &[StructLevelValidator],
-) -> syn::Result<()> {
+fn validate_struct_field_refs(fields: &FieldsNamed, validators: &[StructLevelValidator]) -> syn::Result<()> {
     for v in validators {
         match v {
             StructLevelValidator::FieldsMatch(args) => {
@@ -441,29 +424,19 @@ fn generate_validate_fn(
     context: &StructContext,
     struct_validators: &[StructLevelValidator],
 ) -> TokenStream2 {
-    let field_idents: Vec<&Ident> = fields
-        .named
-        .iter()
-        .map(|f: &Field| f.ident.as_ref().expect("named field has ident"))
-        .collect();
+    let field_idents: Vec<&Ident> =
+        fields.named.iter().map(|f: &Field| f.ident.as_ref().expect("named field has ident")).collect();
 
     let ctx_ty = &context.ty;
-    let (extra_param, ctx_expr) = if context.is_explicit {
-        (quote! { , ctx: &#ctx_ty }, quote! { ctx })
-    } else {
-        (quote! {}, quote! { &() })
-    };
+    let (extra_param, ctx_expr) =
+        if context.is_explicit { (quote! { , ctx: &#ctx_ty }, quote! { ctx }) } else { (quote! {}, quote! { &() }) };
 
     let struct_validator_calls = struct_validators.iter().enumerate().map(|(idx, v)| {
         let validator_ident = struct_validator_unit_ident(validable_name, idx);
         match v {
-            StructLevelValidator::FieldsMatch(args) => struct_fields_match::generate_dispatch(
-                &validator_ident,
-                validable_name,
-                ctx_ty,
-                &ctx_expr,
-                args,
-            ),
+            StructLevelValidator::FieldsMatch(args) => {
+                struct_fields_match::generate_dispatch(&validator_ident, validable_name, ctx_ty, &ctx_expr, args)
+            }
         }
     });
 
@@ -501,12 +474,9 @@ fn generate_struct_validator_impls(
     let items = struct_validators.iter().enumerate().map(|(idx, v)| {
         let validator_ident = struct_validator_unit_ident(validable_name, idx);
         match v {
-            StructLevelValidator::FieldsMatch(args) => struct_fields_match::generate_validator_impl(
-                validable_name,
-                ctx_ty,
-                &validator_ident,
-                args,
-            ),
+            StructLevelValidator::FieldsMatch(args) => {
+                struct_fields_match::generate_validator_impl(validable_name, ctx_ty, &validator_ident, args)
+            }
         }
     });
 

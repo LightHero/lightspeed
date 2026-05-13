@@ -23,7 +23,6 @@ impl Display for MustMatchField {
     }
 }
 
-
 #[cfg(test)]
 mod test {
     use super::*;

@@ -1,5 +1,5 @@
-use lightspeed_validator::boolean::{MustBeFalseError, MustBeTrueError};
 use lightspeed_validator::Validable;
+use lightspeed_validator::boolean::{MustBeFalseError, MustBeTrueError};
 
 #[derive(Validable)]
 pub struct Flags {
@@ -27,10 +27,7 @@ fn field_level_is_true_validator_rejects_false() {
         Ok(_) => panic!("expected Err"),
         Err(v) => v,
     };
-    assert_eq!(
-        returned.enabled.errors(),
-        &[FlagsEnabledFieldError::MustBeTrue(MustBeTrueError)],
-    );
+    assert_eq!(returned.enabled.errors(), &[FlagsEnabledFieldError::MustBeTrue(MustBeTrueError)],);
     assert!(returned.debug.errors().is_empty());
 }
 
@@ -43,10 +40,7 @@ fn field_level_is_false_validator_rejects_true() {
         Err(v) => v,
     };
     assert!(returned.enabled.errors().is_empty());
-    assert_eq!(
-        returned.debug.errors(),
-        &[FlagsDebugFieldError::MustBeFalse(MustBeFalseError)],
-    );
+    assert_eq!(returned.debug.errors(), &[FlagsDebugFieldError::MustBeFalse(MustBeFalseError)],);
 }
 
 #[test]
@@ -76,10 +70,7 @@ fn is_true_validator_emitted_for_is_true_attribute() {
     let validator = &v.enabled.validators()[0];
 
     assert_eq!(validator.validate(&true, &()), Ok(()));
-    assert_eq!(
-        validator.validate(&false, &()),
-        Err(FlagsEnabledFieldError::MustBeTrue(MustBeTrueError)),
-    );
+    assert_eq!(validator.validate(&false, &()), Err(FlagsEnabledFieldError::MustBeTrue(MustBeTrueError)),);
 }
 
 #[test]
@@ -88,10 +79,7 @@ fn is_false_validator_emitted_for_is_false_attribute() {
     let validator = &v.debug.validators()[0];
 
     assert_eq!(validator.validate(&false, &()), Ok(()));
-    assert_eq!(
-        validator.validate(&true, &()),
-        Err(FlagsDebugFieldError::MustBeFalse(MustBeFalseError)),
-    );
+    assert_eq!(validator.validate(&true, &()), Err(FlagsDebugFieldError::MustBeFalse(MustBeFalseError)),);
 }
 
 #[test]
@@ -105,10 +93,7 @@ fn macro_accepts_multiple_validate_attributes_on_same_field() {
 
 #[test]
 fn multiple_validators_emit_each_failure() {
-    let validable = MultiAttrFlagsValidable::new(MultiAttrFlags {
-        via_multiple_attrs: true,
-        via_single_attr: false,
-    });
+    let validable = MultiAttrFlagsValidable::new(MultiAttrFlags { via_multiple_attrs: true, via_single_attr: false });
 
     let validable = match validable.validate() {
         Ok(_) => panic!("expected at least one failure"),
@@ -137,8 +122,5 @@ fn validators_run_in_attribute_order() {
         }
     }
 
-    assert_eq!(
-        validator_errors,
-        vec![FlagsEnabledFieldError::MustBeTrue(MustBeTrueError)],
-    );
+    assert_eq!(validator_errors, vec![FlagsEnabledFieldError::MustBeTrue(MustBeTrueError)],);
 }

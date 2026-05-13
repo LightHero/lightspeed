@@ -1,7 +1,7 @@
 use std::borrow::Cow;
 
-use lightspeed_validator::contains::{MustContainError, MustNotContainError};
 use lightspeed_validator::Validable;
+use lightspeed_validator::contains::{MustContainError, MustNotContainError};
 
 fn must_contain_err<E: From<MustContainError>>(pattern: &str, case_sensitive: bool) -> E {
     MustContainError { pattern: pattern.to_string(), case_sensitive }.into()
@@ -256,8 +256,5 @@ fn contains_validators_run_in_attribute_order() {
             errs.push(e);
         }
     }
-    assert_eq!(
-        errs,
-        vec![must_contain_err("foo", true), must_contain_err("bar", true)],
-    );
+    assert_eq!(errs, vec![must_contain_err("foo", true), must_contain_err("bar", true)],);
 }

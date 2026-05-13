@@ -19,9 +19,7 @@ pub struct MustContainValidator {
     pub case_sensitive: bool,
 }
 
-impl<S: AsRef<str>, E: From<MustContainError>, Ctx> FieldValidator<S, E, Ctx>
-    for MustContainValidator
-{
+impl<S: AsRef<str>, E: From<MustContainError>, Ctx> FieldValidator<S, E, Ctx> for MustContainValidator {
     fn validate(&self, value: &S, _context: &Ctx) -> Result<(), E> {
         let contains = if self.case_sensitive {
             value.as_ref().contains(&self.pattern)
@@ -31,11 +29,7 @@ impl<S: AsRef<str>, E: From<MustContainError>, Ctx> FieldValidator<S, E, Ctx>
         if contains {
             Ok(())
         } else {
-            Err(MustContainError {
-                pattern: self.pattern.clone(),
-                case_sensitive: self.case_sensitive,
-            }
-            .into())
+            Err(MustContainError { pattern: self.pattern.clone(), case_sensitive: self.case_sensitive }.into())
         }
     }
 }
@@ -57,9 +51,7 @@ pub struct MustNotContainValidator {
     pub case_sensitive: bool,
 }
 
-impl<S: AsRef<str>, E: From<MustNotContainError>, Ctx> FieldValidator<S, E, Ctx>
-    for MustNotContainValidator
-{
+impl<S: AsRef<str>, E: From<MustNotContainError>, Ctx> FieldValidator<S, E, Ctx> for MustNotContainValidator {
     fn validate(&self, value: &S, _context: &Ctx) -> Result<(), E> {
         let contains = if self.case_sensitive {
             value.as_ref().contains(&self.pattern)
@@ -67,17 +59,12 @@ impl<S: AsRef<str>, E: From<MustNotContainError>, Ctx> FieldValidator<S, E, Ctx>
             value.as_ref().to_lowercase().contains(&self.pattern.to_lowercase())
         };
         if contains {
-            Err(MustNotContainError {
-                pattern: self.pattern.clone(),
-                case_sensitive: self.case_sensitive,
-            }
-            .into())
+            Err(MustNotContainError { pattern: self.pattern.clone(), case_sensitive: self.case_sensitive }.into())
         } else {
             Ok(())
         }
     }
 }
-
 
 #[cfg(test)]
 mod test {
@@ -115,10 +102,7 @@ mod test {
         let validator = MustContainValidator { pattern: "xyz".to_string(), case_sensitive: true };
         assert_eq!(
             validator.validate(&"hello", &()),
-            Err(ValidationError::MustContain(MustContainError {
-                pattern: "xyz".to_string(),
-                case_sensitive: true,
-            })),
+            Err(ValidationError::MustContain(MustContainError { pattern: "xyz".to_string(), case_sensitive: true })),
         );
     }
 
@@ -127,10 +111,7 @@ mod test {
         let validator = MustContainValidator { pattern: "a".to_string(), case_sensitive: true };
         assert_eq!(
             validator.validate(&"", &()),
-            Err(ValidationError::MustContain(MustContainError {
-                pattern: "a".to_string(),
-                case_sensitive: true,
-            })),
+            Err(ValidationError::MustContain(MustContainError { pattern: "a".to_string(), case_sensitive: true })),
         );
     }
 
@@ -139,10 +120,7 @@ mod test {
         let validator = MustContainValidator { pattern: "Hello".to_string(), case_sensitive: true };
         assert_eq!(
             validator.validate(&"hello", &()),
-            Err(ValidationError::MustContain(MustContainError {
-                pattern: "Hello".to_string(),
-                case_sensitive: true,
-            })),
+            Err(ValidationError::MustContain(MustContainError { pattern: "Hello".to_string(), case_sensitive: true })),
         );
     }
 
@@ -159,10 +137,7 @@ mod test {
         let validator = MustContainValidator { pattern: "xyz".to_string(), case_sensitive: false };
         assert_eq!(
             validator.validate(&"HELLO", &()),
-            Err(ValidationError::MustContain(MustContainError {
-                pattern: "xyz".to_string(),
-                case_sensitive: false,
-            })),
+            Err(ValidationError::MustContain(MustContainError { pattern: "xyz".to_string(), case_sensitive: false })),
         );
     }
 
@@ -214,10 +189,7 @@ mod test {
         let validator = MustNotContainValidator { pattern: String::new(), case_sensitive: true };
         assert_eq!(
             validator.validate(&"hello", &()),
-            Err(ValidationError::MustNotContain(MustNotContainError {
-                pattern: String::new(),
-                case_sensitive: true,
-            })),
+            Err(ValidationError::MustNotContain(MustNotContainError { pattern: String::new(), case_sensitive: true })),
         );
     }
 

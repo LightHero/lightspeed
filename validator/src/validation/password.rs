@@ -7,9 +7,8 @@ use crate::FieldValidator;
 /// printable-ASCII non-alphanumeric, non-space set commonly recommended for
 /// password policies.
 pub const DEFAULT_SPECIAL_CHARS: &[char] = &[
-    '!', '"', '#', '$', '%', '&', '\'', '(', ')', '*', '+', ',', '-', '.', '/',
-    ':', ';', '<', '=', '>', '?', '@', '[', '\\', ']', '^', '_', '`',
-    '{', '|', '}', '~',
+    '!', '"', '#', '$', '%', '&', '\'', '(', ')', '*', '+', ',', '-', '.', '/', ':', ';', '<', '=', '>', '?', '@', '[',
+    '\\', ']', '^', '_', '`', '{', '|', '}', '~',
 ];
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -97,25 +96,18 @@ impl<S: AsRef<str>, E: From<PasswordError>, Ctx> FieldValidator<S, E, Ctx> for P
         if self.number && !s.chars().any(|c| c.is_ascii_digit()) {
             violations.push(PasswordViolation::MissingNumber);
         }
-        if let Some(allowed) = &self.special_chars {
-            if !s.chars().any(|c| allowed.contains(&c)) {
-                violations.push(PasswordViolation::MissingSpecialChar);
-            }
-        }
-        if !self.trailing_whitespaces
-            && s.chars().next_back().is_some_and(char::is_whitespace)
+        if let Some(allowed) = &self.special_chars
+            && !s.chars().any(|c| allowed.contains(&c))
         {
+            violations.push(PasswordViolation::MissingSpecialChar);
+        }
+        if !self.trailing_whitespaces && s.chars().next_back().is_some_and(char::is_whitespace) {
             violations.push(PasswordViolation::HasTrailingWhitespace);
         }
 
-        if violations.is_empty() {
-            Ok(())
-        } else {
-            Err(PasswordError { violations }.into())
-        }
+        if violations.is_empty() { Ok(()) } else { Err(PasswordError { violations }.into()) }
     }
 }
-
 
 #[cfg(test)]
 mod test {
@@ -152,15 +144,9 @@ mod test {
     #[test]
     fn default_config_rejects_trailing_whitespace() {
         let v = PasswordValidator::default();
-        assert_eq!(
-            v.validate(&"Aa1!xyz ", &()),
-            err(&[PasswordViolation::HasTrailingWhitespace]),
-        );
+        assert_eq!(v.validate(&"Aa1!xyz ", &()), err(&[PasswordViolation::HasTrailingWhitespace]),);
         // Tab also counts.
-        assert_eq!(
-            v.validate(&"Aa1!xyz\t", &()),
-            err(&[PasswordViolation::HasTrailingWhitespace]),
-        );
+        assert_eq!(v.validate(&"Aa1!xyz\t", &()), err(&[PasswordViolation::HasTrailingWhitespace]),);
     }
 
     #[test]
@@ -193,10 +179,7 @@ mod test {
         assert_eq!(v.validate(&"abc*def", &()), OK);
         assert_eq!(v.validate(&"abc$def", &()), OK);
         // `!` is in DEFAULT_SPECIAL_CHARS but not in this custom list.
-        assert_eq!(
-            v.validate(&"abc!def", &()),
-            err(&[PasswordViolation::MissingSpecialChar]),
-        );
+        assert_eq!(v.validate(&"abc!def", &()), err(&[PasswordViolation::MissingSpecialChar]),);
     }
 
     #[test]
@@ -237,9 +220,8 @@ mod test {
 
     #[test]
     fn password_error_display() {
-        let e = PasswordError {
-            violations: vec![PasswordViolation::MissingUppercase, PasswordViolation::MissingNumber],
-        };
+        let e =
+            PasswordError { violations: vec![PasswordViolation::MissingUppercase, PasswordViolation::MissingNumber] };
         assert_eq!(e.to_string(), "Password [missing_uppercase, missing_number]");
     }
 }

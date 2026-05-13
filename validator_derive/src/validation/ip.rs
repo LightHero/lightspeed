@@ -17,10 +17,7 @@ fn is_string_like_type(ty: &Type) -> bool {
                 return false;
             }
             let Some(last) = p.path.segments.last() else { return false };
-            matches!(
-                last.ident.to_string().as_str(),
-                "String" | "Cow" | "Box" | "Rc" | "Arc" | "str"
-            )
+            matches!(last.ident.to_string().as_str(), "String" | "Cow" | "Box" | "Rc" | "Arc" | "str")
         }
         Type::Reference(r) => is_string_like_type(&r.elem),
         _ => false,

@@ -92,7 +92,6 @@ impl<T> HasLength for BTreeSet<T> {
     }
 }
 
-
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct LengthError {
     pub min: Option<usize>,
@@ -121,16 +120,11 @@ impl Display for LengthError {
 /// configured bounds. `min` / `max` may be combined; `equal` should be used on
 /// its own. At least one bound must be set (enforced by the macro; manual
 /// construction of `LengthValidator::default()` simply accepts every value).
+#[derive(Default)]
 pub struct LengthValidator {
     pub min: Option<usize>,
     pub max: Option<usize>,
     pub equal: Option<usize>,
-}
-
-impl Default for LengthValidator {
-    fn default() -> Self {
-        Self { min: None, max: None, equal: None }
-    }
 }
 
 impl<T, E, Ctx> FieldValidator<T, E, Ctx> for LengthValidator
@@ -151,7 +145,6 @@ where
     }
 }
 
-
 #[cfg(test)]
 mod test {
 
@@ -160,12 +153,7 @@ mod test {
 
     const OK: Result<(), ValidationError> = Ok(());
 
-    fn err(
-        actual: usize,
-        min: Option<usize>,
-        max: Option<usize>,
-        equal: Option<usize>,
-    ) -> Result<(), ValidationError> {
+    fn err(actual: usize, min: Option<usize>, max: Option<usize>, equal: Option<usize>) -> Result<(), ValidationError> {
         Err(ValidationError::Length(LengthError { min, max, equal, actual }))
     }
 

@@ -49,20 +49,12 @@ pub fn parse_range_args(meta: &ParseNestedMeta<'_>) -> syn::Result<RangeArgs> {
             args.exclusive_max = Some(inner.value()?.parse::<Expr>()?);
             Ok(())
         } else {
-            Err(inner.error(
-                "unknown `range` option (expected `min`, `max`, `exclusive_min` or `exclusive_max`)",
-            ))
+            Err(inner.error("unknown `range` option (expected `min`, `max`, `exclusive_min` or `exclusive_max`)"))
         }
     })?;
 
-    if args.min.is_none()
-        && args.max.is_none()
-        && args.exclusive_min.is_none()
-        && args.exclusive_max.is_none()
-    {
-        return Err(meta.error(
-            "`range` requires at least one of `min`, `max`, `exclusive_min`, `exclusive_max`",
-        ));
+    if args.min.is_none() && args.max.is_none() && args.exclusive_min.is_none() && args.exclusive_max.is_none() {
+        return Err(meta.error("`range` requires at least one of `min`, `max`, `exclusive_min`, `exclusive_max`"));
     }
 
     Ok(args)

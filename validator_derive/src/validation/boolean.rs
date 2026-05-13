@@ -13,10 +13,7 @@ pub fn type_is_bool(ty: &Type) -> bool {
 /// Ensures a field annotated with an `isTrue` / `isFalse` validator is `bool`.
 pub fn ensure_bool_field(field: &Field) -> syn::Result<()> {
     if !type_is_bool(&field.ty) {
-        return Err(syn::Error::new_spanned(
-            &field.ty,
-            "`isTrue` / `isFalse` validators require a `bool` field",
-        ));
+        return Err(syn::Error::new_spanned(&field.ty, "`isTrue` / `isFalse` validators require a `bool` field"));
     }
     Ok(())
 }

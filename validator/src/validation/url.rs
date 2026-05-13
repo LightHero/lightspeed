@@ -21,7 +21,6 @@ impl<S: AsRef<str>, E: From<UrlError>, Ctx> FieldValidator<S, E, Ctx> for UrlVal
     }
 }
 
-
 #[cfg(test)]
 mod test {
 

@@ -46,8 +46,7 @@ fn frontend_dist() -> PathBuf {
 async fn main() {
     tracing_subscriber::fmt()
         .with_env_filter(
-            tracing_subscriber::EnvFilter::try_from_default_env()
-                .unwrap_or_else(|_| "info,tower_http=info".into()),
+            tracing_subscriber::EnvFilter::try_from_default_env().unwrap_or_else(|_| "info,tower_http=info".into()),
         )
         .init();
 
@@ -70,9 +69,7 @@ async fn main() {
     let app = ApiRouter::new()
         .api_route(
             "/api/echo",
-            post_with(echo_handler, |op| {
-                op.id("echo").description("Echo back the message sent in the request body.")
-            }),
+            post_with(echo_handler, |op| op.id("echo").description("Echo back the message sent in the request body.")),
         )
         .route("/api/openapi.json", axum::routing::get(serve_openapi))
         .route("/api/docs", Scalar::new("/api/openapi.json").axum_route())

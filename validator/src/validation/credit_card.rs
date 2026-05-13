@@ -17,22 +17,15 @@ impl Display for CreditCardError {
 /// matching against the major issuers.
 pub struct CreditCardValidator;
 
-impl<S: AsRef<str>, E: From<CreditCardError>, Ctx> FieldValidator<S, E, Ctx>
-    for CreditCardValidator
-{
+impl<S: AsRef<str>, E: From<CreditCardError>, Ctx> FieldValidator<S, E, Ctx> for CreditCardValidator {
     fn validate(&self, value: &S, _context: &Ctx) -> Result<(), E> {
         let raw = value.as_ref();
         // `card_validate` doesn't normalize input, so strip the common
         // grouping characters before delegating.
         let cleaned: String = raw.chars().filter(|c| *c != ' ' && *c != '-').collect();
-        if ::card_validate::Validate::from(&cleaned).is_ok() {
-            Ok(())
-        } else {
-            Err(CreditCardError.into())
-        }
+        if ::card_validate::Validate::from(&cleaned).is_ok() { Ok(()) } else { Err(CreditCardError.into()) }
     }
 }
-
 
 #[cfg(test)]
 mod test {
@@ -45,29 +38,21 @@ mod test {
     #[test]
     fn accepts_well_known_test_card_numbers() {
         for ok in [
-            "4532015112830366",  // Visa
-            "5425233430109903",  // MasterCard
-            "374245455400126",   // Amex (15 digits — brand-specific length)
-            "6011000990139424",  // Discover
-            "30569309025904",    // Diners Club (14 digits)
-            "3530111333300000",  // JCB
+            "4532015112830366", // Visa
+            "5425233430109903", // MasterCard
+            "374245455400126",  // Amex (15 digits — brand-specific length)
+            "6011000990139424", // Discover
+            "30569309025904",   // Diners Club (14 digits)
+            "3530111333300000", // JCB
         ] {
-            assert_eq!(
-                CreditCardValidator.validate(&ok, &()),
-                OK,
-                "expected `{ok}` to be accepted",
-            );
+            assert_eq!(CreditCardValidator.validate(&ok, &()), OK, "expected `{ok}` to be accepted",);
         }
     }
 
     #[test]
     fn accepts_numbers_with_spaces_and_dashes() {
         for ok in ["4532 0151 1283 0366", "4532-0151-1283-0366", "4532 0151-1283 0366"] {
-            assert_eq!(
-                CreditCardValidator.validate(&ok, &()),
-                OK,
-                "expected `{ok}` to be accepted",
-            );
+            assert_eq!(CreditCardValidator.validate(&ok, &()), OK, "expected `{ok}` to be accepted",);
         }
     }
 
@@ -76,15 +61,11 @@ mod test {
         let expected = Err(ValidationError::CreditCard(CreditCardError));
         for bad in [
             "",
-            "1234567890123456",       // Luhn-invalid
-            "abcd1234efgh5678",       // non-digits
-            "9999999999999991",       // Luhn-valid but no known brand prefix → rejected by card-validate
+            "1234567890123456", // Luhn-invalid
+            "abcd1234efgh5678", // non-digits
+            "9999999999999991", // Luhn-valid but no known brand prefix → rejected by card-validate
         ] {
-            assert_eq!(
-                CreditCardValidator.validate(&bad, &()),
-                expected,
-                "expected `{bad}` to be rejected",
-            );
+            assert_eq!(CreditCardValidator.validate(&bad, &()), expected, "expected `{bad}` to be rejected",);
         }
     }
 

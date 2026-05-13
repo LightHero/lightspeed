@@ -1,5 +1,5 @@
-use lightspeed_validator::range::RangeError;
 use lightspeed_validator::Validable;
+use lightspeed_validator::range::RangeError;
 
 const MIN_AGE: i32 = 18;
 

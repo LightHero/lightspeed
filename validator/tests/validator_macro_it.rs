@@ -22,11 +22,7 @@ fn generated_struct_has_validable_typed_fields() {
 
 #[test]
 fn new_wraps_fields_in_validable_type() {
-    let v = UserValidable::new(User {
-        name: "alice".to_string(),
-        age: 30,
-        active: true,
-    });
+    let v = UserValidable::new(User { name: "alice".to_string(), age: 30, active: true });
 
     assert_eq!(v.name.get(), "alice");
     assert_eq!(v.age.get(), &30);
@@ -35,11 +31,7 @@ fn new_wraps_fields_in_validable_type() {
 
 #[test]
 fn validate_returns_ok_when_all_fields_are_valid() {
-    let validable = UserValidable::new(User {
-        name: "alice".to_string(),
-        age: 30,
-        active: true,
-    });
+    let validable = UserValidable::new(User { name: "alice".to_string(), age: 30, active: true });
 
     let user = match validable.validate() {
         Ok(user) => user,
@@ -52,11 +44,7 @@ fn validate_returns_ok_when_all_fields_are_valid() {
 
 #[test]
 fn fields_without_validate_attribute_have_no_validators() {
-    let v = UserValidable::new(User {
-        name: "alice".to_string(),
-        age: 30,
-        active: true,
-    });
+    let v = UserValidable::new(User { name: "alice".to_string(), age: 30, active: true });
 
     assert!(v.name.validators().is_empty());
     assert!(v.age.validators().is_empty());
@@ -65,11 +53,7 @@ fn fields_without_validate_attribute_have_no_validators() {
 
 #[test]
 fn fields_without_validators_are_always_valid() {
-    let v = UserValidable::new(User {
-        name: String::new(),
-        age: 0,
-        active: false,
-    });
+    let v = UserValidable::new(User { name: String::new(), age: 0, active: false });
 
     assert!(v.name.errors().is_empty());
     assert!(v.age.errors().is_empty());
@@ -89,28 +73,17 @@ pub struct UserMustBeInactive {
 #[test]
 fn test_if_a_field_has_an_error_validatios_fails() {
     // active = false satisfies isFalse → Ok
-    let v = UserMustBeInactiveValidable::new(UserMustBeInactive {
-        name: "alice".to_string(),
-        age: 30,
-        active: false,
-    });
+    let v = UserMustBeInactiveValidable::new(UserMustBeInactive { name: "alice".to_string(), age: 30, active: false });
     assert!(v.validate().is_ok());
 
     // mutate via `set` to make it fail
-    let mut v = UserMustBeInactiveValidable::new(UserMustBeInactive {
-        name: "alice".to_string(),
-        age: 30,
-        active: false,
-    });
+    let mut v =
+        UserMustBeInactiveValidable::new(UserMustBeInactive { name: "alice".to_string(), age: 30, active: false });
     v.active.set(true);
     assert!(v.validate().is_err());
 
     // construct already-bad → Err
-    let v = UserMustBeInactiveValidable::new(UserMustBeInactive {
-        name: "alice".to_string(),
-        age: 30,
-        active: true,
-    });
+    let v = UserMustBeInactiveValidable::new(UserMustBeInactive { name: "alice".to_string(), age: 30, active: true });
     assert!(v.validate().is_err());
 }
 
@@ -124,7 +97,6 @@ pub struct MatchOnValidator {
     #[validate(length(min = 3, max = 20))]
     pub three_validators: String,
 }
-
 
 #[test]
 fn test_match_on_no_validators() {
@@ -155,4 +127,3 @@ fn test_match_on_no_validators() {
         }
     }
 }
-

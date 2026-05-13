@@ -1,7 +1,7 @@
 use std::borrow::Cow;
 
-use lightspeed_validator::url::UrlError;
 use lightspeed_validator::Validable;
+use lightspeed_validator::url::UrlError;
 
 #[derive(Validable)]
 pub struct Website {
@@ -29,20 +29,14 @@ fn url_err<E: From<UrlError>>() -> E {
 #[test]
 fn url_accepts_common_absolute_urls() {
     for ok in ["https://example.com", "http://example.com:8080/path?q=1", "mailto:user@example.com"] {
-        let v = WebsiteValidable::new(Website {
-            homepage: ok.to_string(),
-            untouched: String::new(),
-        });
+        let v = WebsiteValidable::new(Website { homepage: ok.to_string(), untouched: String::new() });
         assert!(v.validate().is_ok(), "expected `{ok}` to be accepted");
     }
 }
 
 #[test]
 fn url_rejects_garbage() {
-    let v = WebsiteValidable::new(Website {
-        homepage: "not a url".to_string(),
-        untouched: String::new(),
-    });
+    let v = WebsiteValidable::new(Website { homepage: "not a url".to_string(), untouched: String::new() });
     let returned = match v.validate() {
         Ok(_) => panic!("expected Err"),
         Err(v) => v,
@@ -53,10 +47,7 @@ fn url_rejects_garbage() {
 
 #[test]
 fn url_rejects_relative_path() {
-    let v = WebsiteValidable::new(Website {
-        homepage: "/relative/path".to_string(),
-        untouched: String::new(),
-    });
+    let v = WebsiteValidable::new(Website { homepage: "/relative/path".to_string(), untouched: String::new() });
     let returned = match v.validate() {
         Ok(_) => panic!("expected Err"),
         Err(v) => v,
@@ -66,14 +57,10 @@ fn url_rejects_relative_path() {
 
 #[test]
 fn url_validator_works_on_cow_str_field() {
-    let v = CowStringFieldsValidable::new(CowStringFields {
-        homepage: Cow::Borrowed("https://example.com"),
-    });
+    let v = CowStringFieldsValidable::new(CowStringFields { homepage: Cow::Borrowed("https://example.com") });
     assert!(v.validate().is_ok());
 
-    let v = CowStringFieldsValidable::new(CowStringFields {
-        homepage: Cow::Owned("nope".to_string()),
-    });
+    let v = CowStringFieldsValidable::new(CowStringFields { homepage: Cow::Owned("nope".to_string()) });
     let returned = match v.validate() {
         Ok(_) => panic!("expected Err"),
         Err(v) => v,
@@ -96,10 +83,7 @@ fn url_validator_works_on_static_str_field() {
 
 #[test]
 fn macro_attaches_one_validator_per_url_attribute() {
-    let v = WebsiteValidable::new(Website {
-        homepage: "https://example.com".to_string(),
-        untouched: String::new(),
-    });
+    let v = WebsiteValidable::new(Website { homepage: "https://example.com".to_string(), untouched: String::new() });
     assert_eq!(v.homepage.validators().len(), 1);
     assert_eq!(v.untouched.validators().len(), 0);
 }

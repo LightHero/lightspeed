@@ -1,7 +1,7 @@
 use std::collections::{BTreeMap, HashMap};
 
-use lightspeed_validator::length::LengthError;
 use lightspeed_validator::Validable;
+use lightspeed_validator::length::LengthError;
 
 const MAX_TAGS: usize = 5;
 
@@ -32,31 +32,20 @@ pub struct Settings {
     pub aliases: BTreeMap<String, String>,
 }
 
-fn length_err<E: From<LengthError>>(
-    actual: usize,
-    min: Option<usize>,
-    max: Option<usize>,
-    equal: Option<usize>,
-) -> E {
+fn length_err<E: From<LengthError>>(actual: usize, min: Option<usize>, max: Option<usize>, equal: Option<usize>) -> E {
     LengthError { min, max, equal, actual }.into()
 }
 
 #[test]
 fn string_length_uses_unicode_scalar_count() {
     // "café" — 4 chars (é precomposed), 5 bytes. Should pass `max = 20`.
-    let v = UsernameValidable::new(Username {
-        name: "café".to_string(),
-        untouched: String::new(),
-    });
+    let v = UsernameValidable::new(Username { name: "café".to_string(), untouched: String::new() });
     assert!(v.validate().is_ok());
 }
 
 #[test]
 fn string_min_rejects_too_short_with_actual_length_in_error() {
-    let v = UsernameValidable::new(Username {
-        name: "ab".to_string(),
-        untouched: String::new(),
-    });
+    let v = UsernameValidable::new(Username { name: "ab".to_string(), untouched: String::new() });
     let returned = match v.validate() {
         Ok(_) => panic!("expected Err"),
         Err(v) => v,
@@ -68,10 +57,7 @@ fn string_min_rejects_too_short_with_actual_length_in_error() {
 #[test]
 fn string_max_rejects_too_long_with_actual_length_in_error() {
     let too_long = "a".repeat(21);
-    let v = UsernameValidable::new(Username {
-        name: too_long,
-        untouched: String::new(),
-    });
+    let v = UsernameValidable::new(Username { name: too_long, untouched: String::new() });
     let returned = match v.validate() {
         Ok(_) => panic!("expected Err"),
         Err(v) => v,
@@ -104,9 +90,7 @@ fn works_on_vec_with_const_bound() {
     };
     assert_eq!(returned.tags.errors(), &[length_err(0, Some(1), Some(MAX_TAGS), None)]);
 
-    let v = TagsValidable::new(Tags {
-        tags: (0..6).map(|i| format!("tag{i}")).collect(),
-    });
+    let v = TagsValidable::new(Tags { tags: (0..6).map(|i| format!("tag{i}")).collect() });
     let returned = match v.validate() {
         Ok(_) => panic!("expected Err"),
         Err(v) => v,
@@ -118,8 +102,7 @@ fn works_on_vec_with_const_bound() {
 fn works_on_hashmap_and_btreemap() {
     let mut opts = HashMap::new();
     opts.insert("a".to_string(), "1".to_string());
-    let aliases: BTreeMap<String, String> =
-        [("k", "v")].iter().map(|(k, v)| (k.to_string(), v.to_string())).collect();
+    let aliases: BTreeMap<String, String> = [("k", "v")].iter().map(|(k, v)| (k.to_string(), v.to_string())).collect();
 
     let v = SettingsValidable::new(Settings { options: opts, aliases });
     assert!(v.validate().is_ok());
@@ -127,10 +110,7 @@ fn works_on_hashmap_and_btreemap() {
 
 #[test]
 fn empty_hashmap_fails_min_length() {
-    let v = SettingsValidable::new(Settings {
-        options: HashMap::new(),
-        aliases: BTreeMap::new(),
-    });
+    let v = SettingsValidable::new(Settings { options: HashMap::new(), aliases: BTreeMap::new() });
     let returned = match v.validate() {
         Ok(_) => panic!("expected Err"),
         Err(v) => v,
@@ -141,9 +121,7 @@ fn empty_hashmap_fails_min_length() {
 
 #[test]
 fn btreemap_max_rejects_when_too_large() {
-    let aliases: BTreeMap<String, String> = (0..4)
-        .map(|i| (format!("k{i}"), format!("v{i}")))
-        .collect();
+    let aliases: BTreeMap<String, String> = (0..4).map(|i| (format!("k{i}"), format!("v{i}"))).collect();
     let mut opts = HashMap::new();
     opts.insert("a".to_string(), "b".to_string());
     let v = SettingsValidable::new(Settings { options: opts, aliases });
@@ -157,10 +135,7 @@ fn btreemap_max_rejects_when_too_large() {
 
 #[test]
 fn macro_attaches_one_validator_per_length_attribute() {
-    let v = UsernameValidable::new(Username {
-        name: "abcde".to_string(),
-        untouched: String::new(),
-    });
+    let v = UsernameValidable::new(Username { name: "abcde".to_string(), untouched: String::new() });
     assert_eq!(v.name.validators().len(), 1);
     assert_eq!(v.untouched.validators().len(), 0);
 }

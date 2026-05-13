@@ -37,7 +37,6 @@ pub struct ValidableType<T, E = ValidationError, Ctx = ()> {
 }
 
 impl<T, E, Ctx> ValidableType<T, E, Ctx> {
-
     pub fn new(value: T, validators: Vec<Box<dyn FieldValidator<T, E, Ctx>>>) -> Self {
         Self { value, validators, errors: vec![] }
     }
@@ -71,7 +70,6 @@ impl<T, E, Ctx> ValidableType<T, E, Ctx> {
         }
     }
 
-
     pub fn into_value(self) -> T {
         self.value
     }
@@ -100,11 +98,7 @@ mod test {
 
     impl FieldValidator<usize, ValidationError, ()> for MustBeGreaterValidator {
         fn validate(&self, value: &usize, _context: &()) -> Result<(), ValidationError> {
-            if *value > self.min {
-                Ok(())
-            } else {
-                Err(must_be_greater_err(self.min))
-            }
+            if *value > self.min { Ok(()) } else { Err(must_be_greater_err(self.min)) }
         }
     }
 
@@ -124,20 +118,14 @@ mod test {
 
     #[test]
     fn validate_with_passing_validator_leaves_errors_empty() {
-        let mut validable = ValidableType::new(
-            10,
-            vec![Box::new(MustBeGreaterValidator { min: 5 })],
-        );
+        let mut validable = ValidableType::new(10, vec![Box::new(MustBeGreaterValidator { min: 5 })]);
         validable.validate(&());
         assert!(validable.errors().is_empty());
     }
 
     #[test]
     fn validate_with_failing_validator_collects_error() {
-        let mut validable = ValidableType::new(
-            3,
-            vec![Box::new(MustBeGreaterValidator { min: 5 })],
-        );
+        let mut validable = ValidableType::new(3, vec![Box::new(MustBeGreaterValidator { min: 5 })]);
         validable.validate(&());
         assert_eq!(1, validable.errors().len());
         assert_eq!(&must_be_greater_err(5), &validable.errors()[0]);
@@ -147,10 +135,7 @@ mod test {
     fn validate_collects_errors_from_all_failing_validators() {
         let mut validable = ValidableType::new(
             3,
-            vec![
-                Box::new(MustBeGreaterValidator { min: 5 }),
-                Box::new(MustBeGreaterValidator { min: 10 }),
-            ],
+            vec![Box::new(MustBeGreaterValidator { min: 5 }), Box::new(MustBeGreaterValidator { min: 10 })],
         );
         validable.validate(&());
         assert_eq!(2, validable.errors().len());
@@ -162,10 +147,7 @@ mod test {
     fn validate_mixed_passing_and_failing_validators() {
         let mut validable = ValidableType::new(
             7,
-            vec![
-                Box::new(MustBeGreaterValidator { min: 5 }),
-                Box::new(MustBeGreaterValidator { min: 10 }),
-            ],
+            vec![Box::new(MustBeGreaterValidator { min: 5 }), Box::new(MustBeGreaterValidator { min: 10 })],
         );
         validable.validate(&());
         assert_eq!(1, validable.errors().len());
@@ -174,10 +156,7 @@ mod test {
 
     #[test]
     fn validate_clears_previous_errors_on_rerun() {
-        let mut validable = ValidableType::new(
-            3,
-            vec![Box::new(MustBeGreaterValidator { min: 5 })],
-        );
+        let mut validable = ValidableType::new(3, vec![Box::new(MustBeGreaterValidator { min: 5 })]);
         validable.validate(&());
         assert_eq!(1, validable.errors().len());
 
@@ -188,10 +167,7 @@ mod test {
 
     #[test]
     fn set_updates_value_without_revalidating() {
-        let mut validable = ValidableType::new(
-            3,
-            vec![Box::new(MustBeGreaterValidator { min: 5 })],
-        );
+        let mut validable = ValidableType::new(3, vec![Box::new(MustBeGreaterValidator { min: 5 })]);
         validable.set(10);
         assert_eq!(&10, validable.get());
         assert!(validable.errors().is_empty());

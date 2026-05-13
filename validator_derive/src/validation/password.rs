@@ -75,10 +75,7 @@ pub fn parse_password_args(meta: &ParseNestedMeta<'_>) -> syn::Result<PasswordAr
                 }
                 Lit::Str(s) => SpecialCharSpec::CustomList(s.value()),
                 other => {
-                    return Err(syn::Error::new_spanned(
-                        other,
-                        "`special_char` expects a `bool` or a string literal",
-                    ));
+                    return Err(syn::Error::new_spanned(other, "`special_char` expects a `bool` or a string literal"));
                 }
             };
             Ok(())
@@ -97,11 +94,7 @@ pub fn parse_password_args(meta: &ParseNestedMeta<'_>) -> syn::Result<PasswordAr
     Ok(args)
 }
 
-fn check_duplicate(
-    set_keys: &mut Vec<&'static str>,
-    key: &'static str,
-    meta: &ParseNestedMeta<'_>,
-) -> syn::Result<()> {
+fn check_duplicate(set_keys: &mut Vec<&'static str>, key: &'static str, meta: &ParseNestedMeta<'_>) -> syn::Result<()> {
     if set_keys.contains(&key) {
         return Err(meta.error(format!("duplicate `{key} = ...`")));
     }
@@ -118,10 +111,7 @@ fn is_string_like_type(ty: &Type) -> bool {
                 return false;
             }
             let Some(last) = p.path.segments.last() else { return false };
-            matches!(
-                last.ident.to_string().as_str(),
-                "String" | "Cow" | "Box" | "Rc" | "Arc" | "str"
-            )
+            matches!(last.ident.to_string().as_str(), "String" | "Cow" | "Box" | "Rc" | "Arc" | "str")
         }
         Type::Reference(r) => is_string_like_type(&r.elem),
         _ => false,

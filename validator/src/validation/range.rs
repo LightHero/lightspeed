@@ -78,7 +78,6 @@ where
     }
 }
 
-
 #[cfg(test)]
 mod test {
 
@@ -134,11 +133,7 @@ mod test {
     #[test]
     fn mixed_inclusive_and_exclusive_bounds_compose() {
         // [0, 100)
-        let v = RangeValidator::<i32> {
-            min: Some(0),
-            exclusive_max: Some(100),
-            ..Default::default()
-        };
+        let v = RangeValidator::<i32> { min: Some(0), exclusive_max: Some(100), ..Default::default() };
         assert_eq!(v.validate(&0, &()), OK);
         assert_eq!(v.validate(&99, &()), OK);
         assert_eq!(v.validate(&100, &()), err(Some("0"), None, None, Some("100")));

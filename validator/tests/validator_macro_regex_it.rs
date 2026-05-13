@@ -3,11 +3,10 @@ use std::sync::LazyLock;
 
 use regex::Regex;
 
-use lightspeed_validator::regex::RegexError;
 use lightspeed_validator::Validable;
+use lightspeed_validator::regex::RegexError;
 
-static EMAIL_RE: LazyLock<Regex> =
-    LazyLock::new(|| Regex::new(r"^[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}$").unwrap());
+static EMAIL_RE: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"^[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}$").unwrap());
 
 #[derive(Validable)]
 pub struct WithPathRegex {
@@ -34,40 +33,28 @@ fn regex_err<E: From<RegexError>>(pattern: &str) -> E {
 
 #[test]
 fn path_variant_accepts_matching_value() {
-    let v = WithPathRegexValidable::new(WithPathRegex {
-        email: "user@example.com".to_string(),
-        untouched: String::new(),
-    });
+    let v =
+        WithPathRegexValidable::new(WithPathRegex { email: "user@example.com".to_string(), untouched: String::new() });
     assert!(v.validate().is_ok());
 }
 
 #[test]
 fn path_variant_rejects_non_matching_with_pattern_in_error() {
-    let v = WithPathRegexValidable::new(WithPathRegex {
-        email: "not-an-email".to_string(),
-        untouched: String::new(),
-    });
+    let v = WithPathRegexValidable::new(WithPathRegex { email: "not-an-email".to_string(), untouched: String::new() });
     let returned = match v.validate() {
         Ok(_) => panic!("expected Err"),
         Err(v) => v,
     };
-    assert_eq!(
-        returned.email.errors(),
-        &[regex_err(r"^[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}$")],
-    );
+    assert_eq!(returned.email.errors(), &[regex_err(r"^[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}$")],);
     assert!(returned.untouched.errors().is_empty());
 }
 
 #[test]
 fn pattern_variant_compiles_regex_once_via_oncelock() {
-    let v = WithPatternRegexValidable::new(WithPatternRegex {
-        phone_local: "555-1234".to_string(),
-    });
+    let v = WithPatternRegexValidable::new(WithPatternRegex { phone_local: "555-1234".to_string() });
     assert!(v.validate().is_ok());
 
-    let v = WithPatternRegexValidable::new(WithPatternRegex {
-        phone_local: "555-12345".to_string(),
-    });
+    let v = WithPatternRegexValidable::new(WithPatternRegex { phone_local: "555-12345".to_string() });
     let returned = match v.validate() {
         Ok(_) => panic!("expected Err"),
         Err(v) => v,
@@ -82,23 +69,17 @@ fn pattern_variant_caches_compiled_regex_between_runs() {
     // accidental recompilation that would still yield the same result but
     // be wasteful.
     for _ in 0..3 {
-        let v = WithPatternRegexValidable::new(WithPatternRegex {
-            phone_local: "123-4567".to_string(),
-        });
+        let v = WithPatternRegexValidable::new(WithPatternRegex { phone_local: "123-4567".to_string() });
         assert!(v.validate().is_ok());
     }
 }
 
 #[test]
 fn regex_validator_works_on_cow_str_field() {
-    let v = CowStringFieldsValidable::new(CowStringFields {
-        digits: Cow::Borrowed("12345"),
-    });
+    let v = CowStringFieldsValidable::new(CowStringFields { digits: Cow::Borrowed("12345") });
     assert!(v.validate().is_ok());
 
-    let v = CowStringFieldsValidable::new(CowStringFields {
-        digits: Cow::Owned("abc".to_string()),
-    });
+    let v = CowStringFieldsValidable::new(CowStringFields { digits: Cow::Owned("abc".to_string()) });
     let returned = match v.validate() {
         Ok(_) => panic!("expected Err"),
         Err(v) => v,
@@ -108,10 +89,8 @@ fn regex_validator_works_on_cow_str_field() {
 
 #[test]
 fn macro_attaches_one_validator_per_regex_attribute() {
-    let v = WithPathRegexValidable::new(WithPathRegex {
-        email: "user@example.com".to_string(),
-        untouched: String::new(),
-    });
+    let v =
+        WithPathRegexValidable::new(WithPathRegex { email: "user@example.com".to_string(), untouched: String::new() });
     assert_eq!(v.email.validators().len(), 1);
     assert_eq!(v.untouched.validators().len(), 0);
 }

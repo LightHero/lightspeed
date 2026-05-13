@@ -40,7 +40,6 @@ impl<E: From<MustBeFalseError>, Ctx> FieldValidator<bool, E, Ctx> for MustBeFals
     }
 }
 
-
 #[cfg(test)]
 mod test {
 
@@ -52,12 +51,18 @@ mod test {
     fn test_must_be_true() {
         assert_eq!(
             <MustBeTrueValidator as FieldValidator<bool, ValidationError, ()>>::validate(
-                &MustBeTrueValidator, &false, &()),
+                &MustBeTrueValidator,
+                &false,
+                &()
+            ),
             Err(ValidationError::MustBeTrue(MustBeTrueError))
         );
         assert_eq!(
             <MustBeTrueValidator as FieldValidator<bool, ValidationError, ()>>::validate(
-                &MustBeTrueValidator, &true, &()),
+                &MustBeTrueValidator,
+                &true,
+                &()
+            ),
             Ok(())
         );
     }
@@ -66,12 +71,18 @@ mod test {
     fn test_must_be_false() {
         assert_eq!(
             <MustBeFalseValidator as FieldValidator<bool, ValidationError, ()>>::validate(
-                &MustBeFalseValidator, &true, &()),
+                &MustBeFalseValidator,
+                &true,
+                &()
+            ),
             Err(ValidationError::MustBeFalse(MustBeFalseError))
         );
         assert_eq!(
             <MustBeFalseValidator as FieldValidator<bool, ValidationError, ()>>::validate(
-                &MustBeFalseValidator, &false, &()),
+                &MustBeFalseValidator,
+                &false,
+                &()
+            ),
             Ok(())
         );
     }

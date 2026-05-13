@@ -43,9 +43,7 @@ pub fn parse_regex_args(meta: &ParseNestedMeta<'_>) -> syn::Result<RegexSpec> {
         }
     })?;
 
-    spec.ok_or_else(|| {
-        meta.error("`regex` requires either `path = <expr>` or `pattern = \"...\"`")
-    })
+    spec.ok_or_else(|| meta.error("`regex` requires either `path = <expr>` or `pattern = \"...\"`"))
 }
 
 /// Returns true when `ty` looks like a string-compatible type (`String`,
@@ -57,10 +55,7 @@ fn is_string_like_type(ty: &Type) -> bool {
                 return false;
             }
             let Some(last) = p.path.segments.last() else { return false };
-            matches!(
-                last.ident.to_string().as_str(),
-                "String" | "Cow" | "Box" | "Rc" | "Arc" | "str"
-            )
+            matches!(last.ident.to_string().as_str(), "String" | "Cow" | "Box" | "Rc" | "Arc" | "str")
         }
         Type::Reference(r) => is_string_like_type(&r.elem),
         _ => false,

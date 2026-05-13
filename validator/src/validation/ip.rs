@@ -50,7 +50,6 @@ impl<S: AsRef<str>, E: From<IpError>, Ctx> FieldValidator<S, E, Ctx> for IpValid
     }
 }
 
-
 #[cfg(test)]
 mod test {
 
@@ -90,19 +89,13 @@ mod test {
             validator.validate(&"fe80::223:6cff:fe8a:2e8a", &()),
             Err(ValidationError::Ip(IpError { kind: IpKind::V4 })),
         );
-        assert_eq!(
-            validator.validate(&"::", &()),
-            Err(ValidationError::Ip(IpError { kind: IpKind::V4 })),
-        );
+        assert_eq!(validator.validate(&"::", &()), Err(ValidationError::Ip(IpError { kind: IpKind::V4 })),);
     }
 
     #[test]
     fn ipv4_rejects_arabic_digits() {
         let validator = IpValidator { kind: IpKind::V4 };
-        assert_eq!(
-            validator.validate(&"٧.2٥.3٣.243", &()),
-            Err(ValidationError::Ip(IpError { kind: IpKind::V4 })),
-        );
+        assert_eq!(validator.validate(&"٧.2٥.3٣.243", &()), Err(ValidationError::Ip(IpError { kind: IpKind::V4 })),);
     }
 
     #[test]
@@ -113,10 +106,7 @@ mod test {
         assert_eq!(validator.validate(&"::", &()), OK);
         assert_eq!(validator.validate(&"::a", &()), OK);
         assert_eq!(validator.validate(&"::ffff:254.42.16.14", &()), OK);
-        assert_eq!(
-            validator.validate(&"127.0.0.1", &()),
-            Err(ValidationError::Ip(IpError { kind: IpKind::V6 })),
-        );
+        assert_eq!(validator.validate(&"127.0.0.1", &()), Err(ValidationError::Ip(IpError { kind: IpKind::V6 })),);
     }
 
     #[test]

@@ -1,7 +1,7 @@
 use std::borrow::Cow;
 
-use lightspeed_validator::ip::{IpError, IpKind};
 use lightspeed_validator::Validable;
+use lightspeed_validator::ip::{IpError, IpKind};
 
 #[derive(Validable)]
 pub struct AnyIpHost {
@@ -40,25 +40,16 @@ fn ip_err<E: From<IpError>>(kind: IpKind) -> E {
 
 #[test]
 fn ip_accepts_v4_and_v6() {
-    let v = AnyIpHostValidable::new(AnyIpHost {
-        address: "1.1.1.1".to_string(),
-        untouched: String::new(),
-    });
+    let v = AnyIpHostValidable::new(AnyIpHost { address: "1.1.1.1".to_string(), untouched: String::new() });
     assert!(v.validate().is_ok());
 
-    let v = AnyIpHostValidable::new(AnyIpHost {
-        address: "fe80::1".to_string(),
-        untouched: String::new(),
-    });
+    let v = AnyIpHostValidable::new(AnyIpHost { address: "fe80::1".to_string(), untouched: String::new() });
     assert!(v.validate().is_ok());
 }
 
 #[test]
 fn ip_rejects_garbage() {
-    let v = AnyIpHostValidable::new(AnyIpHost {
-        address: "not-an-ip".to_string(),
-        untouched: String::new(),
-    });
+    let v = AnyIpHostValidable::new(AnyIpHost { address: "not-an-ip".to_string(), untouched: String::new() });
     let returned = match v.validate() {
         Ok(_) => panic!("expected Err"),
         Err(v) => v,
@@ -95,14 +86,10 @@ fn ipv6_accepts_v6_only() {
 
 #[test]
 fn ip_validator_works_on_cow_str_field() {
-    let v = CowStringFieldsValidable::new(CowStringFields {
-        address: Cow::Borrowed("10.0.0.1"),
-    });
+    let v = CowStringFieldsValidable::new(CowStringFields { address: Cow::Borrowed("10.0.0.1") });
     assert!(v.validate().is_ok());
 
-    let v = CowStringFieldsValidable::new(CowStringFields {
-        address: Cow::Owned("nope".to_string()),
-    });
+    let v = CowStringFieldsValidable::new(CowStringFields { address: Cow::Owned("nope".to_string()) });
     let returned = match v.validate() {
         Ok(_) => panic!("expected Err"),
         Err(v) => v,
@@ -125,10 +112,7 @@ fn ipv4_validator_works_on_static_str_field() {
 
 #[test]
 fn macro_attaches_one_validator_per_ip_attribute() {
-    let v = AnyIpHostValidable::new(AnyIpHost {
-        address: "1.1.1.1".to_string(),
-        untouched: String::new(),
-    });
+    let v = AnyIpHostValidable::new(AnyIpHost { address: "1.1.1.1".to_string(), untouched: String::new() });
     assert_eq!(v.address.validators().len(), 1);
     assert_eq!(v.untouched.validators().len(), 0);
 }

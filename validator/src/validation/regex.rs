@@ -33,7 +33,6 @@ impl<S: AsRef<str>, E: From<RegexError>, Ctx> FieldValidator<S, E, Ctx> for Rege
     }
 }
 
-
 #[cfg(test)]
 mod test {
 
@@ -47,8 +46,7 @@ mod test {
     static EMAIL_RE: LazyLock<::regex::Regex> =
         LazyLock::new(|| ::regex::Regex::new(r"^[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}$").unwrap());
 
-    static DIGIT_RE: LazyLock<::regex::Regex> =
-        LazyLock::new(|| ::regex::Regex::new(r"^\d+$").unwrap());
+    static DIGIT_RE: LazyLock<::regex::Regex> = LazyLock::new(|| ::regex::Regex::new(r"^\d+$").unwrap());
 
     #[test]
     fn accepts_matching_strings() {
@@ -62,9 +60,7 @@ mod test {
         let v = RegexValidator { regex: &EMAIL_RE };
         assert_eq!(
             v.validate(&"not-an-email", &()),
-            Err(ValidationError::Regex(RegexError {
-                pattern: r"^[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}$".to_string(),
-            })),
+            Err(ValidationError::Regex(RegexError { pattern: r"^[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}$".to_string() })),
         );
     }
 
@@ -76,10 +72,7 @@ mod test {
         assert_eq!(v.validate(&owned, &()), OK);
         let cow: Cow<'static, str> = Cow::Borrowed("0");
         assert_eq!(v.validate(&cow, &()), OK);
-        assert_eq!(
-            v.validate(&"abc", &()),
-            Err(ValidationError::Regex(RegexError { pattern: r"^\d+$".to_string() })),
-        );
+        assert_eq!(v.validate(&"abc", &()), Err(ValidationError::Regex(RegexError { pattern: r"^\d+$".to_string() })),);
     }
 
     #[test]

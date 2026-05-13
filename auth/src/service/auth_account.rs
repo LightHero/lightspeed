@@ -3,6 +3,7 @@ use crate::dto::change_password_dto::ChangePasswordDto;
 use crate::dto::create_login_dto::CreateLoginDto;
 use crate::dto::reset_password_dto::ResetPasswordDto;
 use crate::dto::validate_min_password_len;
+use crate::into_ls_error;
 use crate::model::auth_account::{AuthAccountData, AuthAccountModel, AuthAccountStatus};
 use crate::model::token::{TokenModel, TokenType};
 use crate::repository::{AuthAccountRepository, AuthRepositoryManager};
@@ -10,12 +11,11 @@ use crate::service::password_codec::LsPasswordCodecService;
 use crate::service::token::LsTokenService;
 use c3p0::sqlx::Database;
 use c3p0::*;
-use crate::into_ls_error;
 use lightspeed_core::error::*;
 use lightspeed_core::service::auth::Auth;
 use lightspeed_core::utils::current_epoch_seconds;
-use lightspeed_validator::error::{ErrorDetails, ValidationError};
 use lightspeed_validator::Validator;
+use lightspeed_validator::error::{ErrorDetails, ValidationError};
 use log::*;
 use std::sync::Arc;
 
@@ -257,10 +257,8 @@ impl<RepoManager: AuthRepositoryManager> LsAuthAccountService<RepoManager> {
         Validator::validate(&|error_details: &mut ErrorDetails| {
             match &token.data.token_type {
                 TokenType::AccountActivation => {}
-                _ => error_details.add_detail(
-                    "token_type",
-                    ValidationError::Custom { code: WRONG_TYPE.into(), params: vec![] },
-                ),
+                _ => error_details
+                    .add_detail("token_type", ValidationError::Custom { code: WRONG_TYPE.into(), params: vec![] }),
             };
             Ok(())
         })
@@ -348,10 +346,8 @@ impl<RepoManager: AuthRepositoryManager> LsAuthAccountService<RepoManager> {
         Validator::validate(&|error_details: &mut ErrorDetails| {
             match &token.data.token_type {
                 TokenType::ResetPassword => {}
-                _ => error_details.add_detail(
-                    "token_type",
-                    ValidationError::Custom { code: WRONG_TYPE.into(), params: vec![] },
-                ),
+                _ => error_details
+                    .add_detail("token_type", ValidationError::Custom { code: WRONG_TYPE.into(), params: vec![] }),
             };
             Ok(())
         })

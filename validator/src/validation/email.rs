@@ -19,14 +19,9 @@ pub struct EmailValidator;
 
 impl<S: AsRef<str>, E: From<EmailError>, Ctx> FieldValidator<S, E, Ctx> for EmailValidator {
     fn validate(&self, value: &S, _context: &Ctx) -> Result<(), E> {
-        if ::email_address::EmailAddress::is_valid(value.as_ref()) {
-            Ok(())
-        } else {
-            Err(EmailError.into())
-        }
+        if ::email_address::EmailAddress::is_valid(value.as_ref()) { Ok(()) } else { Err(EmailError.into()) }
     }
 }
-
 
 #[cfg(test)]
 mod test {
@@ -38,12 +33,7 @@ mod test {
 
     #[test]
     fn accepts_well_formed_emails() {
-        for ok in [
-            "user@example.com",
-            "u.s.e.r+tag@sub.example.com",
-            "first.last@example.co.uk",
-            "x@y.z",
-        ] {
+        for ok in ["user@example.com", "u.s.e.r+tag@sub.example.com", "first.last@example.co.uk", "x@y.z"] {
             assert_eq!(EmailValidator.validate(&ok, &()), OK, "expected `{ok}` accepted");
         }
     }

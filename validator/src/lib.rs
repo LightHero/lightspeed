@@ -1,7 +1,7 @@
 #![doc = include_str!("../README.md")]
 
-mod validation;
 mod error;
+mod validation;
 
 pub use error::*;
 pub use lightspeed_validator_derive::Validable;

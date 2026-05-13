@@ -59,10 +59,7 @@ pub fn parse_fields_match(meta: &ParseNestedMeta<'_>) -> syn::Result<FieldsMatch
     })?;
 
     if field_idents.len() != 2 {
-        return Err(meta.error(format!(
-            "`fields_match` requires exactly 2 field names, got {}",
-            field_idents.len()
-        )));
+        return Err(meta.error(format!("`fields_match` requires exactly 2 field names, got {}", field_idents.len())));
     }
 
     let mut iter = field_idents.into_iter();
@@ -75,12 +72,7 @@ pub fn parse_fields_match(meta: &ParseNestedMeta<'_>) -> syn::Result<FieldsMatch
 /// Ensures both field names referenced by the rule exist on the target
 /// struct, producing a span-pointed error at the bad identifier otherwise.
 pub fn ensure_fields_exist(fields: &FieldsNamed, args: &FieldsMatchArgs) -> syn::Result<()> {
-    let exists = |needle: &Ident| {
-        fields
-            .named
-            .iter()
-            .any(|f| f.ident.as_ref().is_some_and(|i| i == needle))
-    };
+    let exists = |needle: &Ident| fields.named.iter().any(|f| f.ident.as_ref().is_some_and(|i| i == needle));
     if !exists(&args.a) {
         return Err(syn::Error::new(args.a.span(), format!("unknown field `{}`", args.a)));
     }

@@ -119,10 +119,7 @@ pub fn parse_field_validators(field: &Field) -> syn::Result<Vec<FieldValidator>>
                     FieldValidator::CreditCard
                 }
                 other => {
-                    return Err(syn::Error::new(
-                        keyword.span(),
-                        format!("unknown validator `{other}`"),
-                    ));
+                    return Err(syn::Error::new(keyword.span(), format!("unknown validator `{other}`")));
                 }
             };
             out.push(validator);
@@ -146,49 +143,33 @@ impl FieldValidator {
     /// generator deduplicates them.
     pub fn error_info(&self) -> (&'static str, TokenStream2) {
         match self {
-            FieldValidator::IsTrue => (
-                "MustBeTrue",
-                quote::quote! { ::lightspeed_validator::boolean::MustBeTrueError },
-            ),
-            FieldValidator::IsFalse => (
-                "MustBeFalse",
-                quote::quote! { ::lightspeed_validator::boolean::MustBeFalseError },
-            ),
-            FieldValidator::MustContain(_) => (
-                "MustContain",
-                quote::quote! { ::lightspeed_validator::contains::MustContainError },
-            ),
-            FieldValidator::MustNotContain(_) => (
-                "MustNotContain",
-                quote::quote! { ::lightspeed_validator::contains::MustNotContainError },
-            ),
+            FieldValidator::IsTrue => {
+                ("MustBeTrue", quote::quote! { ::lightspeed_validator::boolean::MustBeTrueError })
+            }
+            FieldValidator::IsFalse => {
+                ("MustBeFalse", quote::quote! { ::lightspeed_validator::boolean::MustBeFalseError })
+            }
+            FieldValidator::MustContain(_) => {
+                ("MustContain", quote::quote! { ::lightspeed_validator::contains::MustContainError })
+            }
+            FieldValidator::MustNotContain(_) => {
+                ("MustNotContain", quote::quote! { ::lightspeed_validator::contains::MustNotContainError })
+            }
             FieldValidator::Ip | FieldValidator::Ipv4 | FieldValidator::Ipv6 => {
                 ("Ip", quote::quote! { ::lightspeed_validator::ip::IpError })
             }
-            FieldValidator::Url => {
-                ("Url", quote::quote! { ::lightspeed_validator::url::UrlError })
+            FieldValidator::Url => ("Url", quote::quote! { ::lightspeed_validator::url::UrlError }),
+            FieldValidator::Email => ("Email", quote::quote! { ::lightspeed_validator::email::EmailError }),
+            FieldValidator::Password(_) => {
+                ("Password", quote::quote! { ::lightspeed_validator::password::PasswordError })
             }
-            FieldValidator::Email => {
-                ("Email", quote::quote! { ::lightspeed_validator::email::EmailError })
-            }
-            FieldValidator::Password(_) => (
-                "Password",
-                quote::quote! { ::lightspeed_validator::password::PasswordError },
-            ),
-            FieldValidator::Range(_) => {
-                ("Range", quote::quote! { ::lightspeed_validator::range::RangeError })
-            }
-            FieldValidator::Regex(_) => {
-                ("Regex", quote::quote! { ::lightspeed_validator::regex::RegexError })
-            }
-            FieldValidator::Length(_) => {
-                ("Length", quote::quote! { ::lightspeed_validator::length::LengthError })
-            }
+            FieldValidator::Range(_) => ("Range", quote::quote! { ::lightspeed_validator::range::RangeError }),
+            FieldValidator::Regex(_) => ("Regex", quote::quote! { ::lightspeed_validator::regex::RegexError }),
+            FieldValidator::Length(_) => ("Length", quote::quote! { ::lightspeed_validator::length::LengthError }),
             #[cfg(feature = "credit_card")]
-            FieldValidator::CreditCard => (
-                "CreditCard",
-                quote::quote! { ::lightspeed_validator::credit_card::CreditCardError },
-            ),
+            FieldValidator::CreditCard => {
+                ("CreditCard", quote::quote! { ::lightspeed_validator::credit_card::CreditCardError })
+            }
         }
     }
 }
@@ -221,11 +202,7 @@ pub fn generate_validator_instance(validator: &FieldValidator, field_ty: &Type) 
 /// Emits a `vec![...]` of validator instances for `validators`. An empty input
 /// produces an empty vec literal. `field_ty` is forwarded to each
 /// validator's instance emitter (only used by generics like `range`).
-pub fn generate_validators_vec(
-    _field_ident: &Ident,
-    field_ty: &Type,
-    validators: &[FieldValidator],
-) -> TokenStream2 {
+pub fn generate_validators_vec(_field_ident: &Ident, field_ty: &Type, validators: &[FieldValidator]) -> TokenStream2 {
     let items = validators.iter().map(|v| generate_validator_instance(v, field_ty));
     quote::quote! {
         ::std::vec![ #( #items ),* ]
