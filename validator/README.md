@@ -9,6 +9,82 @@ with a different shape: validation produces a parallel `Validable` value that
 either yields back the original struct on success or exposes per-field and
 top-level error vecs on failure.
 
+## What makes this crate different: exhaustive per-field errors
+
+Most validators stuff every possible error into one big enum and hand you
+back `Vec<ValidationError>`. Matching is a chore — every consumer has to
+handle, or wildcard-skip, variants the field could never produce in the
+first place.
+
+`lightspeed_validator` flips that around. **For every field, the macro
+generates a dedicated error enum containing *only* the variants that
+field's validators can actually produce** (with duplicates collapsed). The
+enum is the field's `E` in `ValidableType<T, E, Ctx>`, so a `match` on
+`field.errors()` is exhaustively checked against that field's true error
+set — no `_ =>` wildcards, no dead arms, and adding or removing a
+`#[validate(...)]` attribute forces every consumer to acknowledge the
+shape change at compile time.
+
+Fields with **no** validators get `NoError`, an uninhabited enum: their
+error vec is always empty, and a `match` against `&NoError` needs no arms
+at all. The same struct demonstrates all three regimes:
+
+```rust,ignore
+#[derive(Validable)]
+pub struct MatchOnValidator {
+    pub zero_validators: String,
+
+    #[validate(contains(pattern = "@"))]
+    pub one_validator: String,
+
+    #[validate(contains(pattern = "secret"))]
+    #[validate(password)]
+    #[validate(length(min = 3, max = 20))]
+    pub three_validators: String,
+}
+
+let v = MatchOnValidatorValidable::new(MatchOnValidator {
+    zero_validators: String::new(),
+    one_validator: String::new(),
+    three_validators: String::new(),
+});
+
+// No `#[validate(...)]` on the field → `ValidableType<String, NoError, _>`.
+// `NoError` has no variants; the loop body is statically unreachable.
+for _err in v.zero_validators.errors() {
+    // unreachable
+}
+
+// One validator → the enum has exactly one variant.
+for err in v.one_validator.errors() {
+    match err {
+        MatchOnValidatorOneValidatorFieldError::MustContain(_) => { /* … */ }
+    }
+}
+
+// Three validators → exactly the three variants you wrote, no others.
+// Add a fourth `#[validate(...)]` and this match stops compiling until
+// you handle the new arm. Remove one and the dead arm errors out.
+for err in v.three_validators.errors() {
+    match err {
+        MatchOnValidatorThreeValidatorsFieldError::MustContain(_) => { /* … */ }
+        MatchOnValidatorThreeValidatorsFieldError::Password(_) => { /* … */ }
+        MatchOnValidatorThreeValidatorsFieldError::Length(_) => { /* … */ }
+    }
+}
+```
+
+This is the core ergonomics win: **the compiler keeps your error-handling
+code in sync with your validation rules.** UI layers, JSON-API responders,
+form-error renderers — anything that consumes `field.errors()` — fail to
+build the moment the validation rules drift out from under them, instead
+of silently dropping new failure modes on the floor.
+
+When you do need a single uniform error type (logging, persisting,
+cross-field aggregation), each per-field enum gets a generated
+`From<…FieldError> for ValidationError` impl, so `.into()` lifts back to
+the wide type whenever you want it.
+
 ## Installation
 
 ```toml
@@ -88,49 +164,25 @@ let result = FooValidable::new(foo).validate(&ctx);
 The context type is forwarded to every validator's `validate(value, ctx)`
 call, so you can write custom field validators that read it.
 
-### Per-field error enums
+### Per-field error enums — rules
 
-For every field that carries at least one `#[validate(...)]` attribute (or
-is targeted by a struct-level rule with `attach_to_fields = true`), the
-macro generates a dedicated error enum:
+(See the "What makes this crate different" section at the top of this README
+for the motivation and a complete example.) Concretely the macro emits:
 
-```rust,ignore
-#[derive(Validable)]
-struct Signup {
-    #[validate(length(min = 8), regex(pattern = r".*[!@#].*"))]
-    password: String,
-    #[validate(contains(pattern = "@"))]
-    email: String,
-}
-```
-
-emits two enums alongside `SignupValidable`:
-
-```rust,ignore
-pub enum SignupPasswordFieldError {
-    Length(LengthError),
-    Regex(RegexError),
-}
-
-pub enum SignupEmailFieldError {
-    MustContain(MustContainError),
-}
-```
-
-Each field's `ValidableType<T, E, Ctx>` is parameterised on its own enum,
-so iterating `validable.password.errors()` returns `&[SignupPasswordFieldError]`
-and a `match` on each element is exhaustive against *only* the variants that
-field could ever produce — no "Url"/"CreditCard"/etc. dead arms. Duplicate
-error types from multiple validators are deduplicated (two `regex(...)`
-attributes share one `Regex` variant).
-
-The macro also generates `From<NarrowError> for <PerFieldEnum>` impls (one
-per variant) and `From<PerFieldEnum> for ValidationError`, so values flow
-"upward" via `.into()` when you need a wide type for logging or storage.
-
-Fields with no field-level validators (and not targeted by any
-`attach_to_fields = true` rule) keep using `ValidationError` — the
-`ValidableType` default.
+- one `pub enum <Struct><FieldPascalCase>FieldError` per field that has at
+  least one `#[validate(...)]` attribute *or* is targeted by an
+  `attach_to_fields = true` struct rule. Variants mirror the
+  `ValidationError` variant names (`MustContain`, `Range`, `Length`, …),
+  one per *unique* error type — duplicates from multiple validators on the
+  same field (e.g. two `regex(...)` attributes) collapse into a single
+  variant;
+- `From<NarrowError> for <FieldError>` impls — one per variant — so each
+  validator's narrow error lifts into the field's enum automatically;
+- `From<<FieldError>> for ValidationError` — lift back to the wide type
+  with `.into()` when you need a single uniform error type;
+- for fields with no validators and no struct-rule targeting:
+  `ValidableType<T, NoError, Ctx>`. `NoError` is uninhabited, so the
+  errors vec is always empty and `match err {}` (no arms) is exhaustive.
 
 ## Validators
 

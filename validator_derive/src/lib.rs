@@ -355,8 +355,11 @@ fn collect_field_validators(fields: &FieldsNamed) -> syn::Result<Vec<(Ident, Vec
 /// Emits the `<Name>Validable` struct definition, mirroring the original
 /// fields with each type `T` wrapped as `ValidableType<T, E, Ctx>` and adding
 /// a private `top_level_errors` vec used by struct-level validators. `E` is
-/// the field's per-field error enum when one was generated, or
-/// `ValidationError` otherwise.
+/// the field's per-field error enum when one was generated, or the
+/// uninhabited [`NoError`] for fields that can never accumulate any error
+/// (no field-level validators and not targeted by any struct rule). Matching
+/// `&[NoError]` is trivially exhaustive — `match err {}` — so the caller
+/// never has to handle variants the field can't produce.
 fn generate_validable_struct(
     vis: &syn::Visibility,
     validable_name: &Ident,
@@ -374,7 +377,7 @@ fn generate_validable_struct(
                 let n = &e.name;
                 quote! { #n }
             }
-            None => quote! { ::lightspeed_validator::ValidationError },
+            None => quote! { ::lightspeed_validator::NoError },
         };
         quote! {
             #field_vis #field_name: ::lightspeed_validator::ValidableType<#field_ty, #err_ty, #ctx_ty>

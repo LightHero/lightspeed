@@ -1,4 +1,4 @@
-use lightspeed_validator::{Validable, ValidableType, boolean::MustBeFalseValidator};
+use lightspeed_validator::{NoError, Validable, ValidableType};
 
 #[derive(Validable)]
 pub struct User {
@@ -10,9 +10,11 @@ pub struct User {
 #[test]
 fn generated_struct_has_validable_typed_fields() {
     fn assert_types(v: &UserValidable) {
-        let _: &ValidableType<String> = &v.name;
-        let _: &ValidableType<u32> = &v.age;
-        let _: &ValidableType<bool> = &v.active;
+        // No `#[validate(...)]` attributes means each field's `E` is the
+        // uninhabited `NoError` — errors can't be constructed at all.
+        let _: &ValidableType<String, NoError, ()> = &v.name;
+        let _: &ValidableType<u32, NoError, ()> = &v.age;
+        let _: &ValidableType<bool, NoError, ()> = &v.active;
     }
 
     let _ = assert_types;
@@ -76,42 +78,40 @@ fn fields_without_validators_are_always_valid() {
     assert!(v.validate().is_ok());
 }
 
+#[derive(Validable)]
+pub struct UserMustBeInactive {
+    pub name: String,
+    pub age: u32,
+    #[validate(isFalse)]
+    pub active: bool,
+}
+
 #[test]
 fn test_if_a_field_has_an_error_validatios_fails() {
-    {
-        let mut v = UserValidable::new(User {
-            name: "alice".to_string(),
-            age: 30,
-            active: true,
-        });
+    // active = false satisfies isFalse → Ok
+    let v = UserMustBeInactiveValidable::new(UserMustBeInactive {
+        name: "alice".to_string(),
+        age: 30,
+        active: false,
+    });
+    assert!(v.validate().is_ok());
 
-        v.active = ValidableType::new(false, vec![Box::new(MustBeFalseValidator {})]);
-        assert!(v.validate().is_ok());
-    }
+    // mutate via `set` to make it fail
+    let mut v = UserMustBeInactiveValidable::new(UserMustBeInactive {
+        name: "alice".to_string(),
+        age: 30,
+        active: false,
+    });
+    v.active.set(true);
+    assert!(v.validate().is_err());
 
-        {
-        let mut v = UserValidable::new(User {
-            name: "alice".to_string(),
-            age: 30,
-            active: true,
-        });
-
-        v.active = ValidableType::new(false, vec![Box::new(MustBeFalseValidator {})]);
-        v.active.set(true);
-        assert!(v.validate().is_err());
-    }
-
-    {
-        let mut v = UserValidable::new(User {
-            name: "alice".to_string(),
-            age: 30,
-            active: true,
-        });
-
-        v.active = ValidableType::new(true, vec![Box::new(MustBeFalseValidator {})]);
-        assert!(v.validate().is_err());
-    }
-
+    // construct already-bad → Err
+    let v = UserMustBeInactiveValidable::new(UserMustBeInactive {
+        name: "alice".to_string(),
+        age: 30,
+        active: true,
+    });
+    assert!(v.validate().is_err());
 }
 
 #[derive(Validable)]
@@ -134,37 +134,25 @@ fn test_match_on_no_validators() {
         three_validators: String::new(),
     });
 
-    for err in v.zero_validators.errors() {
-        match err {
-            lightspeed_validator::ValidationError::MustBeTrue(must_be_true_error) => todo!(),
-            lightspeed_validator::ValidationError::MustBeFalse(must_be_false_error) => todo!(),
-            lightspeed_validator::ValidationError::MustContain(must_contain_error) => todo!(),
-            lightspeed_validator::ValidationError::MustNotContain(must_not_contain_error) => todo!(),
-            lightspeed_validator::ValidationError::FieldsMustMatch(fields_must_match) => todo!(),
-            lightspeed_validator::ValidationError::MustMatchField(must_match_field) => todo!(),
-            lightspeed_validator::ValidationError::Ip(ip_error) => todo!(),
-            lightspeed_validator::ValidationError::Url(url_error) => todo!(),
-            lightspeed_validator::ValidationError::Password(password_error) => todo!(),
-            lightspeed_validator::ValidationError::Range(range_error) => todo!(),
-            lightspeed_validator::ValidationError::Regex(regex_error) => todo!(),
-            lightspeed_validator::ValidationError::Length(length_error) => todo!(),
-            lightspeed_validator::ValidationError::CreditCard(credit_card_error) => todo!(),
-        }
+    // `zero_validators` has no `#[validate(...)]` attributes so the macro
+    // gives it `ValidableType<String, NoError, _>`. `NoError` is empty, so
+    // the match below is trivially exhaustive — the loop body can never run.
+    for _err in v.zero_validators.errors() {
+        // Cannot match because _err has no variant
     }
 
     for err in v.one_validator.errors() {
         match err {
-            MatchOnValidatorOneValidatorFieldError::MustContain(must_contain_error) => todo!(),
+            MatchOnValidatorOneValidatorFieldError::MustContain(_) => {}
         }
     }
 
     for err in v.three_validators.errors() {
         match err {
-            MatchOnValidatorThreeValidatorsFieldError::MustContain(must_contain_error) => todo!(),
-            MatchOnValidatorThreeValidatorsFieldError::Password(password_error) => todo!(),
-            MatchOnValidatorThreeValidatorsFieldError::Length(length_error) => todo!(),
+            MatchOnValidatorThreeValidatorsFieldError::MustContain(_) => {}
+            MatchOnValidatorThreeValidatorsFieldError::Password(_) => {}
+            MatchOnValidatorThreeValidatorsFieldError::Length(_) => {}
         }
     }
-
 }
 

@@ -1,6 +1,6 @@
 use lightspeed_validator::contains::MustContainError;
 use lightspeed_validator::fields_match::{FieldsMustMatch, MustMatchField};
-use lightspeed_validator::{Validable, ValidationError};
+use lightspeed_validator::Validable;
 
 fn must_contain_err<E: From<MustContainError>>(pattern: &str, case_sensitive: bool) -> E {
     MustContainError { pattern: pattern.to_string(), case_sensitive }.into()
