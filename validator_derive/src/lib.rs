@@ -53,6 +53,13 @@ const FIELDS_MATCH_KEYWORD: &str = "fields_match";
 ///   must parse as an IP address of the corresponding kind (any / v4 / v6);
 /// - `url` — requires a string-compatible field; the value must parse as
 ///   an absolute URL via the [`url`](https://docs.rs/url) crate;
+/// - `range(min = <expr>, max = <expr>, exclusive_min = <expr>,
+///   exclusive_max = <expr>)` — requires any field type that is
+///   `PartialOrd + Display` (designed for the numeric primitives). All four
+///   bounds are optional; at least one must be supplied. Bounds may be any
+///   Rust expression (literal, constant path, …) — the macro emits a
+///   `RangeValidator::<FieldTy>` so bound types are checked against the
+///   field's type by the compiler;
 /// - `password` (bare or with options) — requires a string-compatible field;
 ///   checks character-class requirements suitable for password policies.
 ///   Options: `upper`, `lower`, `number` (all bool, default `true`);
@@ -245,7 +252,7 @@ fn generate_new_fn(
 ) -> TokenStream2 {
     let field_inits = fields.named.iter().zip(field_validators.iter()).map(|(f, (_, vs))| {
         let field_ident = f.ident.as_ref().expect("named field has ident");
-        let validators_vec = validation::generate_validators_vec(field_ident, vs);
+        let validators_vec = validation::generate_validators_vec(field_ident, &f.ty, vs);
         quote! {
             #field_ident: ::lightspeed_validator::ValidableType::new(value.#field_ident, #validators_vec)
         }

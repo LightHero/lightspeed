@@ -12,14 +12,16 @@ pub mod contains;
 pub mod credit_card;
 pub mod ip;
 pub mod password;
+pub mod range;
 pub mod struct_fields_match;
 pub mod url;
 
 use proc_macro2::TokenStream as TokenStream2;
-use syn::{Field, Ident};
+use syn::{Field, Ident, Type};
 
 use contains::ContainsArgs;
 use password::PasswordArgs;
+use range::RangeArgs;
 
 const VALIDATE_ATTR: &str = "validate";
 
@@ -34,6 +36,7 @@ pub enum FieldValidator {
     Ipv6,
     Url,
     Password(PasswordArgs),
+    Range(RangeArgs),
     #[cfg(feature = "credit_card")]
     CreditCard,
 }
@@ -92,6 +95,7 @@ pub fn parse_field_validators(field: &Field) -> syn::Result<Vec<FieldValidator>>
                     };
                     FieldValidator::Password(args)
                 }
+                "range" => FieldValidator::Range(range::parse_range_args(&meta)?),
                 #[cfg(feature = "credit_card")]
                 "credit_card" => {
                     credit_card::ensure_string_field(field)?;
@@ -113,8 +117,10 @@ pub fn parse_field_validators(field: &Field) -> syn::Result<Vec<FieldValidator>>
 
 /// Emits the tokens that build a `Box<dyn FieldValidator<...>>` instance for
 /// `validator`, suitable for inclusion in a `vec![...]` passed to
-/// `ValidableType::new`.
-pub fn generate_validator_instance(validator: &FieldValidator) -> TokenStream2 {
+/// `ValidableType::new`. `field_ty` is the field's declared type; most
+/// validators ignore it, but generic validators like `range` need it to
+/// pin their type parameter.
+pub fn generate_validator_instance(validator: &FieldValidator, field_ty: &Type) -> TokenStream2 {
     match validator {
         FieldValidator::IsTrue => boolean::must_be_true_validator_instance(),
         FieldValidator::IsFalse => boolean::must_be_false_validator_instance(),
@@ -125,15 +131,21 @@ pub fn generate_validator_instance(validator: &FieldValidator) -> TokenStream2 {
         FieldValidator::Ipv6 => ip::ipv6_validator_instance(),
         FieldValidator::Url => url::url_validator_instance(),
         FieldValidator::Password(args) => password::password_validator_instance(args),
+        FieldValidator::Range(args) => range::range_validator_instance(field_ty, args),
         #[cfg(feature = "credit_card")]
         FieldValidator::CreditCard => credit_card::credit_card_validator_instance(),
     }
 }
 
 /// Emits a `vec![...]` of validator instances for `validators`. An empty input
-/// produces an empty vec literal.
-pub fn generate_validators_vec(_field_ident: &Ident, validators: &[FieldValidator]) -> TokenStream2 {
-    let items = validators.iter().map(generate_validator_instance);
+/// produces an empty vec literal. `field_ty` is forwarded to each
+/// validator's instance emitter (only used by generics like `range`).
+pub fn generate_validators_vec(
+    _field_ident: &Ident,
+    field_ty: &Type,
+    validators: &[FieldValidator],
+) -> TokenStream2 {
+    let items = validators.iter().map(|v| generate_validator_instance(v, field_ty));
     quote::quote! {
         ::std::vec![ #( #items ),* ]
     }

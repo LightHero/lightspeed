@@ -7,6 +7,7 @@ use crate::{
         fields_match::{FieldsMustMatch, MustMatchField},
         ip::IpError,
         password::PasswordError,
+        range::RangeError,
         url::UrlError,
     },
 };
@@ -46,6 +47,9 @@ pub enum ValidationError {
 
     #[error("{0}")]
     Password(PasswordError),
+
+    #[error("{0}")]
+    Range(RangeError),
 
     #[cfg(feature = "credit_card")]
     #[error("{0}")]

@@ -175,6 +175,48 @@ homepage: String,
 Error: `ValidationError::Url(UrlError)` (unit-struct payload — failure means
 the value did not parse as an absolute URL).
 
+### range
+
+Checks that a numeric value falls within the configured bounds. All four
+bounds — `min`, `max`, `exclusive_min`, `exclusive_max` — are optional, and
+any combination may be supplied. At least one must be provided.
+
+Works on any field whose type is `PartialOrd + Display`, which covers all
+the integer (`i8`…`i128`, `u8`…`u128`, `isize`, `usize`) and float
+(`f32`, `f64`) primitives. Bounds may be any Rust expression — literals,
+named constants, etc. — and their types are checked against the field's
+type by the compiler.
+
+```rust,ignore
+const MIN_AGE: i32 = 18;
+
+#[validate(range(min = 0, max = 120))]
+age: i32,
+
+#[validate(range(min = 0.0, max = 1.0))]
+probability: f64,
+
+#[validate(range(exclusive_min = 0))]
+positive_count: u32,
+
+// Half-open [0, 100)
+#[validate(range(min = 0, exclusive_max = 100))]
+bucket: i32,
+
+// Bound from a `const`
+#[validate(range(min = MIN_AGE, max = 99))]
+adult_age: i32,
+```
+
+Error: `ValidationError::Range(RangeError { min, max, exclusive_min, exclusive_max })`
+where each field is `Option<String>` carrying the bound's `Display`-formatted
+value (or `None` if that side wasn't configured). The `Display` impl on
+`RangeError` only shows the bounds that were set.
+
+NaN values silently pass every bound check, because Rust's `PartialOrd` for
+floats returns `false` for any comparison involving `NaN`. Add a custom
+validator if you need explicit NaN rejection.
+
 ### password
 
 Checks a string against a configurable password policy. Works on the same
@@ -320,6 +362,7 @@ pub enum ValidationError {
     Ip(IpError),
     Url(UrlError),
     Password(PasswordError),
+    Range(RangeError),
     // Only present when the `credit_card` feature is enabled:
     CreditCard(CreditCardError),
 }
