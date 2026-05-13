@@ -29,7 +29,11 @@ impl<T> ValidableType<T> {
         self.validate();
     }
 
-    pub fn errors(&self) -> &Vec<ValidationError> {
+    pub fn validators(&self) -> &[Box<dyn FieldValidator<T, ValidationError, ()>>] {
+        &self.validators
+    }
+
+    pub fn errors(&self) -> &[ValidationError] {
         &self.errors
     }
 

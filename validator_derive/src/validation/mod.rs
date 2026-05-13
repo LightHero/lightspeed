@@ -4,13 +4,12 @@
 //!  1. add it to [`FieldValidator`];
 //!  2. recognize its keyword in [`parse_keyword`];
 //!  3. declare its accepted field types in [`check_field_type`];
-//!  4. emit its runtime check in [`generate_check`].
+//!  4. emit its validator-instance tokens in [`generate_validator_instance`].
 
 pub mod boolean;
 
 use proc_macro2::TokenStream as TokenStream2;
-use quote::quote;
-use syn::{Field, Ident, Type};
+use syn::{Field, Ident};
 
 const VALIDATE_ATTR: &str = "validate";
 
@@ -40,24 +39,22 @@ pub fn parse_field_validators(field: &Field) -> syn::Result<Vec<FieldValidator>>
     Ok(out)
 }
 
-/// Emits the runtime check for `validator` against `self.<field_ident>`,
-/// pushing the appropriate `ValidationError` on failure.
-pub fn generate_check(field_ident: &Ident, validator: &FieldValidator) -> TokenStream2 {
+/// Emits the tokens that build a `Box<dyn FieldValidator<...>>` instance for
+/// `validator`, suitable for inclusion in a `vec![...]` passed to
+/// `ValidableType::new`.
+pub fn generate_validator_instance(validator: &FieldValidator) -> TokenStream2 {
     match validator {
-        FieldValidator::IsTrue => quote! {
-            if !*self.#field_ident.get() {
-                self.#field_ident.push_error(
-                    ::lightspeed_validator::ValidationError::MustBeTrue,
-                );
-            }
-        },
-        FieldValidator::IsFalse => quote! {
-            if *self.#field_ident.get() {
-                self.#field_ident.push_error(
-                    ::lightspeed_validator::ValidationError::MustBeFalse,
-                );
-            }
-        },
+        FieldValidator::IsTrue => boolean::must_be_true_validator_instance(),
+        FieldValidator::IsFalse => boolean::must_be_false_validator_instance(),
+    }
+}
+
+/// Emits a `vec![...]` of validator instances for `validators`. An empty input
+/// produces an empty vec literal.
+pub fn generate_validators_vec(_field_ident: &Ident, validators: &[FieldValidator]) -> TokenStream2 {
+    let items = validators.iter().map(generate_validator_instance);
+    quote::quote! {
+        ::std::vec![ #( #items ),* ]
     }
 }
 
@@ -71,19 +68,6 @@ fn parse_keyword(keyword: &Ident) -> syn::Result<FieldValidator> {
 
 fn check_field_type(field: &Field, validator: &FieldValidator) -> syn::Result<()> {
     match validator {
-        FieldValidator::IsTrue | FieldValidator::IsFalse => {
-            if !type_is_bool(&field.ty) {
-                return Err(syn::Error::new_spanned(
-                    &field.ty,
-                    "`isTrue` / `isFalse` validators require a `bool` field",
-                ));
-            }
-        }
+        FieldValidator::IsTrue | FieldValidator::IsFalse => boolean::ensure_bool_field(field),
     }
-    Ok(())
-}
-
-fn type_is_bool(ty: &Type) -> bool {
-    let Type::Path(p) = ty else { return false };
-    p.qself.is_none() && p.path.is_ident("bool")
 }

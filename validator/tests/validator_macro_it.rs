@@ -1,4 +1,6 @@
-use lightspeed_validator::{Validable, ValidableType, ValidationError};
+use std::sync::Arc;
+
+use lightspeed_validator::{Validable, ValidableType, boolean::MustBeFalseValidator};
 
 #[derive(Validable)]
 pub struct User {
@@ -19,12 +21,25 @@ fn generated_struct_has_validable_typed_fields() {
 }
 
 #[test]
+fn new_wraps_fields_in_validable_type() {
+    let v = UserValidable::new(User {
+        name: "alice".to_string(),
+        age: 30,
+        active: true,
+    });
+
+    assert_eq!(v.name.get(), "alice");
+    assert_eq!(v.age.get(), &30);
+    assert_eq!(v.active.get(), &true);
+}
+
+#[test]
 fn validate_returns_ok_when_all_fields_are_valid() {
-    let validable = UserValidable {
-        name: ValidableType::new("alice".to_string()),
-        age: ValidableType::new(30),
-        active: ValidableType::new(true),
-    };
+    let validable = UserValidable::new(User {
+        name: "alice".to_string(),
+        age: 30,
+        active: true,
+    });
 
     let user = match validable.validate() {
         Ok(user) => user,
@@ -36,21 +51,73 @@ fn validate_returns_ok_when_all_fields_are_valid() {
 }
 
 #[test]
-fn validate_returns_self_when_any_field_is_invalid() {
-    let mut age = ValidableType::new(30u32);
-    age.push_error(ValidationError::MustBeGreater { min: 100 });
+fn fields_without_validate_attribute_have_no_validators() {
+    let v = UserValidable::new(User {
+        name: "alice".to_string(),
+        age: 30,
+        active: true,
+    });
 
-    let validable = UserValidable {
-        name: ValidableType::new("alice".to_string()),
-        age,
-        active: ValidableType::new(true),
-    };
-
-    let returned = match validable.validate() {
-        Ok(_) => panic!("expected Err"),
-        Err(v) => v,
-    };
-    assert!(!returned.age.is_valid());
-    assert!(returned.name.is_valid());
-    assert!(returned.active.is_valid());
+    assert!(v.name.validators().is_empty());
+    assert!(v.age.validators().is_empty());
+    assert!(v.active.validators().is_empty());
 }
+
+#[test]
+fn fields_without_validators_are_always_valid() {
+    let v = UserValidable::new(User {
+        name: String::new(),
+        age: 0,
+        active: false,
+    });
+
+    assert!(v.name.is_valid());
+    assert!(v.age.is_valid());
+    assert!(v.active.is_valid());
+    assert!(v.name.errors().is_empty());
+    assert!(v.age.errors().is_empty());
+    assert!(v.active.errors().is_empty());
+
+    assert!(v.validate().is_ok());
+
+}
+
+#[test]
+fn test_if_a_field_has_an_error_validatios_fails() {
+    {
+        let mut v = UserValidable::new(User {
+            name: "alice".to_string(),
+            age: 30,
+            active: true,
+        });
+
+        v.active = ValidableType::new(false, vec![Box::new(MustBeFalseValidator {})]);
+        assert!(v.validate().is_ok());
+    }
+
+        {
+        let mut v = UserValidable::new(User {
+            name: "alice".to_string(),
+            age: 30,
+            active: true,
+        });
+
+        v.active = ValidableType::new(false, vec![Box::new(MustBeFalseValidator {})]);
+        v.active.set(true);
+        assert!(v.validate().is_err());
+    }
+
+    {
+        let mut v = UserValidable::new(User {
+            name: "alice".to_string(),
+            age: 30,
+            active: true,
+        });
+
+        v.active = ValidableType::new(true, vec![Box::new(MustBeFalseValidator {})]);
+        assert!(v.validate().is_err());
+    }
+
+
+}
+
