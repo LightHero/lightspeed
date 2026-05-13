@@ -175,6 +175,36 @@ homepage: String,
 Error: `ValidationError::Url(UrlError)` (unit-struct payload — failure means
 the value did not parse as an absolute URL).
 
+### credit_card
+
+*Requires the `credit_card` feature (off by default).*
+
+Requires the field's value to be recognized as a credit card number. Spaces
+and dashes are stripped, then the cleaned input is passed to the
+[`card-validate`](https://docs.rs/card-validate) crate, which runs:
+
+- Luhn checksum,
+- brand-specific length checks (e.g. Amex must be 15 digits, MasterCard 16),
+- IIN range matching for the major issuers (Visa, MasterCard, Amex,
+  Discover, Diners Club, JCB, UnionPay, MIR, Maestro, Dankort, Visa Electron,
+  Forbrugsforeningen).
+
+Numbers that pass Luhn but don't match any known issuer prefix are rejected.
+
+```rust,ignore
+#[validate(credit_card)]
+card_number: String,
+```
+
+Error: `ValidationError::CreditCard(CreditCardError)` (unit-struct payload).
+
+To use this validator, enable the feature:
+
+```toml
+[dependencies]
+lightspeed_validator = { version = "0.66", features = ["credit_card"] }
+```
+
 ### Multiple validators on the same field
 
 Field attributes are additive — you can either repeat the attribute or
@@ -247,6 +277,8 @@ pub enum ValidationError {
     MustMatchField(MustMatchField),
     Ip(IpError),
     Url(UrlError),
+    // Only present when the `credit_card` feature is enabled:
+    CreditCard(CreditCardError),
 }
 ```
 
@@ -282,3 +314,11 @@ assert!(!field.errors().is_empty());
 
 The `StructValidator<T, ValidationError, Ctx>` trait plays the same role for
 rules that need access to the whole validable struct after the field pass.
+
+## Cargo features
+
+- `credit_card` — pulls in the [`card-validate`](https://docs.rs/card-validate)
+  crate and enables the `#[validate(credit_card)]` field validator together
+  with `lightspeed_validator::credit_card` and
+  `ValidationError::CreditCard(...)`. Off by default to keep the dependency
+  footprint small for users that don't need card validation.

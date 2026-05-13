@@ -2,6 +2,8 @@ use crate::ValidationError;
 
 pub mod boolean;
 pub mod contains;
+#[cfg(feature = "credit_card")]
+pub mod credit_card;
 pub mod fields_match;
 pub mod ip;
 pub mod url;

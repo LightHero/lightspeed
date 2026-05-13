@@ -52,7 +52,12 @@ const FIELDS_MATCH_KEYWORD: &str = "fields_match";
 /// - `ip` / `ipv4` / `ipv6` — requires a string-compatible field; the value
 ///   must parse as an IP address of the corresponding kind (any / v4 / v6);
 /// - `url` — requires a string-compatible field; the value must parse as
-///   an absolute URL via the [`url`](https://docs.rs/url) crate.
+///   an absolute URL via the [`url`](https://docs.rs/url) crate;
+/// - `credit_card` (requires the `credit_card` feature) — requires a
+///   string-compatible field; the value must be recognized as a credit card
+///   number by the [`card_validate`](https://docs.rs/card-validate) crate
+///   (Luhn + brand-specific length + IIN range matching for the major
+///   issuers).
 #[proc_macro_derive(Validable, attributes(validate))]
 pub fn derive_validable(item: TokenStream) -> TokenStream {
     let input = parse_macro_input!(item as ItemStruct);

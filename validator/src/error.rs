@@ -9,6 +9,8 @@ use crate::{
         url::UrlError,
     },
 };
+#[cfg(feature = "credit_card")]
+use crate::validation::credit_card::CreditCardError;
 
 
 #[derive(Debug, Error, Clone, PartialEq, Eq)]
@@ -40,6 +42,10 @@ pub enum ValidationError {
 
     #[error("{0}")]
     Url(UrlError),
+
+    #[cfg(feature = "credit_card")]
+    #[error("{0}")]
+    CreditCard(CreditCardError),
 }
 
 #[cfg(test)]

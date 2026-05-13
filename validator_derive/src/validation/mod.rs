@@ -8,6 +8,8 @@
 
 pub mod boolean;
 pub mod contains;
+#[cfg(feature = "credit_card")]
+pub mod credit_card;
 pub mod ip;
 pub mod struct_fields_match;
 pub mod url;
@@ -29,6 +31,8 @@ pub enum FieldValidator {
     Ipv4,
     Ipv6,
     Url,
+    #[cfg(feature = "credit_card")]
+    CreditCard,
 }
 
 /// Parses every `#[validate(...)]` attribute on `field`, returning all
@@ -75,6 +79,11 @@ pub fn parse_field_validators(field: &Field) -> syn::Result<Vec<FieldValidator>>
                     url::ensure_string_field(field)?;
                     FieldValidator::Url
                 }
+                #[cfg(feature = "credit_card")]
+                "credit_card" => {
+                    credit_card::ensure_string_field(field)?;
+                    FieldValidator::CreditCard
+                }
                 other => {
                     return Err(syn::Error::new(
                         keyword.span(),
@@ -102,6 +111,8 @@ pub fn generate_validator_instance(validator: &FieldValidator) -> TokenStream2 {
         FieldValidator::Ipv4 => ip::ipv4_validator_instance(),
         FieldValidator::Ipv6 => ip::ipv6_validator_instance(),
         FieldValidator::Url => url::url_validator_instance(),
+        #[cfg(feature = "credit_card")]
+        FieldValidator::CreditCard => credit_card::credit_card_validator_instance(),
     }
 }
 

@@ -15,6 +15,11 @@ lightspeed_validator_derive = { workspace = true }
 serde = { workspace = true }
 thiserror = { workspace = true }
 url = { workspace = true }
+card-validate = { workspace = true, optional = true }
+
+[features]
+default = []
+credit_card = ["dep:card-validate", "lightspeed_validator_derive/credit_card"]
 
 [dev-dependencies]
 # c3p0 = { workspace = true }
