@@ -12,6 +12,7 @@ members = [
     "lightspeed",
     "test_utils",
     "validator",
+    "validator_macros",
     "spikes/*"
 ]
 
@@ -31,6 +32,7 @@ lightspeed_logger = { version = "0.66.0", path = "./logger" }
 lightspeed_scheduler = { version = "0.66.0", path = "./scheduler" }
 lightspeed_test_utils = { version = "0.66.0", path = "./test_utils" }
 lightspeed_validator = { version = "0.66.0", path = "./validator" }
+lightspeed_validator_macros = { version = "0.66.0", path = "./validator_macros" }
 
 arc-swap = "1.6"
 argon2 = "0.5"
@@ -56,6 +58,8 @@ moka = { version = "0.12", default-features = false, features = ["future"] }
 opendal = { version = "0.56", default-features = false }
 parking_lot = "0.12"
 percent-encoding = "2"
+proc-macro2 = "1"
+quote = "1"
 rand = "0.10"
 regex = "1"
 reqwest = { version = "0.13", default-features = false, features = ["json", "rustls"] }
@@ -66,6 +70,7 @@ sha2 = "0.11"
 sqlx = "0.9.0-alpha.1"
 strum = { version = "0.28", features = ["derive"] }
 subtle = "2"
+syn = { version = "2", features = ["full"] }
 tempfile = "3"
 testcontainers = { package = "testcontainers-modules", version = "0.15", features = ["mysql", "postgres"] }
 thiserror = { version = "2" }

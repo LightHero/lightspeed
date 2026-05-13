@@ -1,0 +1,17 @@
+[package]
+name = "lightspeed_validator_macros"
+license = "MIT"
+version.workspace = true
+edition.workspace = true
+authors = ["Francesco Cina <ufoscout@gmail.com>"]
+description = "LightSpeed Validator procedural macros"
+homepage = "https://github.com/LightHero/lightspeed"
+repository = "https://github.com/LightHero/lightspeed"
+
+[lib]
+proc-macro = true
+
+[dependencies]
+proc-macro2 = { workspace = true }
+quote = { workspace = true }
+syn = { workspace = true }

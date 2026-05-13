@@ -2,6 +2,11 @@ use std::collections::HashMap;
 use std::collections::hash_map::Entry;
 use thiserror::Error;
 
+pub struct ValidableType<T> {
+    value: T,
+    errors: Vec<ValidationError>,
+}
+
 #[derive(Debug, Clone, PartialEq, Error)]
 pub enum ValidationError {
     #[error("MUST_BE_TRUE")]
