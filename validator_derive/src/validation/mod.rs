@@ -45,9 +45,9 @@ pub enum FieldValidator {
     Url,
     Email,
     Password(PasswordArgs),
-    Range(RangeArgs),
+    Range(Box<RangeArgs>),
     Regex(RegexSpec),
-    Length(LengthArgs),
+    Length(Box<LengthArgs>),
     #[cfg(feature = "credit_card")]
     CreditCard,
     Custom(CustomArgs),
@@ -111,12 +111,12 @@ pub fn parse_field_validators(field: &Field) -> syn::Result<Vec<FieldValidator>>
                     };
                     FieldValidator::Password(args)
                 }
-                "range" => FieldValidator::Range(range::parse_range_args(&meta)?),
+                "range" => FieldValidator::Range(Box::new(range::parse_range_args(&meta)?)),
                 "regex" => {
                     regex::ensure_string_field(field)?;
                     FieldValidator::Regex(regex::parse_regex_args(&meta)?)
                 }
-                "length" => FieldValidator::Length(length::parse_length_args(&meta)?),
+                "length" => FieldValidator::Length(Box::new(length::parse_length_args(&meta)?)),
                 #[cfg(feature = "credit_card")]
                 "credit_card" => {
                     credit_card::ensure_string_field(field)?;

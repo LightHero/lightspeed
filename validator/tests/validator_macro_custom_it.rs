@@ -2,6 +2,7 @@ use std::collections::HashMap;
 
 use lightspeed_validator::{FieldValidator, Validable, ValidationError, length::LengthError};
 
+#[allow(clippy::ptr_arg)]
 fn not_empty(value: &String, _ctx: &()) -> Result<(), ValidationError> {
     if value.is_empty() {
         Err(ValidationError::Custom {
@@ -74,6 +75,7 @@ pub struct MinLenContext {
     pub min: usize,
 }
 
+#[allow(clippy::ptr_arg)]
 fn at_least_min(value: &String, ctx: &MinLenContext) -> Result<(), ValidationError> {
     if value.chars().count() >= ctx.min {
         Ok(())
@@ -106,7 +108,7 @@ fn custom_validator_reads_the_struct_context() {
 // ---- custom alongside other validators ----------------------------------
 
 fn must_be_even(value: &u32, _ctx: &()) -> Result<(), ValidationError> {
-    if value % 2 == 0 {
+    if value.is_multiple_of(2) {
         Ok(())
     } else {
         Err(ValidationError::Custom {
@@ -155,6 +157,7 @@ fn custom_validator_composes_with_built_in_validators() {
 
 // ---- custom via bare path (no string literal) ---------------------------
 
+#[allow(clippy::ptr_arg)]
 fn not_blank(value: &String, _ctx: &()) -> Result<(), ValidationError> {
     if value.trim().is_empty() {
         Err(ValidationError::Custom {
@@ -184,7 +187,7 @@ fn custom_validator_accepts_bare_path() {
 // In tailored mode the per-field enum gains `Custom(ValidationError)` plus
 // `From<ValidationError>` — the user function returns the wide
 // `ValidationError` and `.into()` lifts it into the narrow enum.
-
+#[allow(clippy::ptr_arg)]
 fn ban_root(value: &String, _ctx: &()) -> Result<(), TailoredUserNameFieldError> {
     if value == "root" {
         Err(ValidationError::Custom {

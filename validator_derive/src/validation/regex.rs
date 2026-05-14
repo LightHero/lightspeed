@@ -16,7 +16,7 @@ use syn::{Expr, Field, LitStr, meta::ParseNestedMeta};
 
 pub enum RegexSpec {
     /// User-provided expression that already evaluates to `&'static Regex`.
-    Path(Expr),
+    Path(Box<Expr>),
     /// Regex source text — the macro will generate an inline `OnceLock`.
     Pattern(String),
 }
@@ -29,7 +29,7 @@ pub fn parse_regex_args(meta: &ParseNestedMeta<'_>) -> syn::Result<RegexSpec> {
             if spec.is_some() {
                 return Err(inner.error("`path` and `pattern` are mutually exclusive"));
             }
-            spec = Some(RegexSpec::Path(inner.value()?.parse::<Expr>()?));
+            spec = Some(RegexSpec::Path(Box::new(inner.value()?.parse::<Expr>()?)));
             Ok(())
         } else if inner.path.is_ident("pattern") {
             if spec.is_some() {
