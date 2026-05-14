@@ -5,10 +5,10 @@ use lightspeed_account_management::config::AuthConfig;
 use lightspeed_account_management::dto::change_password_dto::ChangePasswordDto;
 use lightspeed_account_management::dto::create_login_dto::CreateLoginDto;
 use lightspeed_account_management::dto::reset_password_dto::ResetPasswordDto;
+use lightspeed_account_management::error::LsAccountManagerError;
 use lightspeed_account_management::model::auth_account::AuthAccountStatus;
 use lightspeed_account_management::model::token::TokenType;
 use lightspeed_account_management::repository::{AuthAccountRepository, AuthRepositoryManager};
-use lightspeed_account_management::error::LsAccountManagerError;
 use lightspeed_account_management::service::auth_account::LsAuthAccountService;
 use lightspeed_core::model::language::Language;
 use lightspeed_core::utils::{current_epoch_seconds, new_hyphenated_uuid};
@@ -393,7 +393,8 @@ fn generate_new_activation_token_should_use_uniform_error_for_all_failure_modes(
 }
 
 #[test]
-fn should_regenerate_activation_token_by_email_and_username_even_if_token_expired() -> Result<(), LsAccountManagerError> {
+fn should_regenerate_activation_token_by_email_and_username_even_if_token_expired() -> Result<(), LsAccountManagerError>
+{
     tokio_test(async {
         // Run serially: this test installs an expired token row and then
         // observes its effect across multiple transactions. A concurrent
@@ -487,7 +488,8 @@ fn should_not_login_inactive_user() -> Result<(), LsAccountManagerError> {
 }
 
 #[test]
-fn should_return_wrong_credentials_on_login_of_inactive_user_with_wrong_password() -> Result<(), LsAccountManagerError> {
+fn should_return_wrong_credentials_on_login_of_inactive_user_with_wrong_password() -> Result<(), LsAccountManagerError>
+{
     tokio_test(async {
         let data = data(false).await;
         let auth_module = &data.0;
@@ -532,7 +534,6 @@ fn should_not_login_with_wrong_password() -> Result<(), LsAccountManagerError> {
         Ok(())
     })
 }
-
 
 #[test]
 fn create_user_should_fail_if_username_not_unique() -> Result<(), LsAccountManagerError> {

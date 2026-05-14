@@ -1,9 +1,9 @@
+use crate::error::LsAccountManagerError;
 use crate::model::token::{TokenData, TokenModel};
 use crate::repository::TokenRepository;
 use ::sqlx::AssertSqlSafe;
 use c3p0::sqlx::*;
 use c3p0::*;
-use crate::error::LsAccountManagerError;
 
 #[derive(Clone)]
 pub struct PgTokenRepository;
@@ -23,7 +23,11 @@ impl PgTokenRepository {
 impl TokenRepository for PgTokenRepository {
     type DB = Postgres;
 
-    async fn fetch_by_token(&self, tx: &mut PgConnection, token_string: &str) -> Result<TokenModel, LsAccountManagerError> {
+    async fn fetch_by_token(
+        &self,
+        tx: &mut PgConnection,
+        token_string: &str,
+    ) -> Result<TokenModel, LsAccountManagerError> {
         Ok(TokenModel::query_with_tail(
             r#"
             where data ->> 'token' = $1
@@ -35,7 +39,11 @@ impl TokenRepository for PgTokenRepository {
         .await?)
     }
 
-    async fn fetch_by_username(&self, tx: &mut PgConnection, username: &str) -> Result<Vec<TokenModel>, LsAccountManagerError> {
+    async fn fetch_by_username(
+        &self,
+        tx: &mut PgConnection,
+        username: &str,
+    ) -> Result<Vec<TokenModel>, LsAccountManagerError> {
         Ok(TokenModel::query_with_tail(
             r#"
             where data ->> 'username' = $1
@@ -46,7 +54,11 @@ impl TokenRepository for PgTokenRepository {
         .await?)
     }
 
-    async fn save(&self, tx: &mut PgConnection, model: NewRecord<TokenData>) -> Result<TokenModel, LsAccountManagerError> {
+    async fn save(
+        &self,
+        tx: &mut PgConnection,
+        model: NewRecord<TokenData>,
+    ) -> Result<TokenModel, LsAccountManagerError> {
         Ok(tx.save(model).await?)
     }
 
@@ -54,7 +66,11 @@ impl TokenRepository for PgTokenRepository {
         Ok(tx.delete(model).await?)
     }
 
-    async fn delete_expired(&self, tx: &mut PgConnection, threshold_epoch_seconds: i64) -> Result<u64, LsAccountManagerError> {
+    async fn delete_expired(
+        &self,
+        tx: &mut PgConnection,
+        threshold_epoch_seconds: i64,
+    ) -> Result<u64, LsAccountManagerError> {
         let sql = format!(
             "DELETE FROM {} WHERE (data->>'expire_at_epoch_seconds')::bigint < $1",
             <TokenData as DataType>::TABLE_NAME

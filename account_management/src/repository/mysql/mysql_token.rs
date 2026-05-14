@@ -1,9 +1,9 @@
+use crate::error::LsAccountManagerError;
 use crate::model::token::{TokenData, TokenModel};
 use crate::repository::TokenRepository;
 use ::sqlx::AssertSqlSafe;
 use c3p0::sqlx::*;
 use c3p0::*;
-use crate::error::LsAccountManagerError;
 
 #[derive(Clone)]
 pub struct MySqlTokenRepository {}
@@ -23,7 +23,11 @@ impl MySqlTokenRepository {
 impl TokenRepository for MySqlTokenRepository {
     type DB = MySql;
 
-    async fn fetch_by_token(&self, tx: &mut MySqlConnection, token_string: &str) -> Result<TokenModel, LsAccountManagerError> {
+    async fn fetch_by_token(
+        &self,
+        tx: &mut MySqlConnection,
+        token_string: &str,
+    ) -> Result<TokenModel, LsAccountManagerError> {
         Ok(TokenModel::query_with_tail(
             r#"
             where JSON_VALUE(data, '$.token' RETURNING CHAR(255)) = ?
@@ -35,7 +39,11 @@ impl TokenRepository for MySqlTokenRepository {
         .await?)
     }
 
-    async fn fetch_by_username(&self, tx: &mut MySqlConnection, username: &str) -> Result<Vec<TokenModel>, LsAccountManagerError> {
+    async fn fetch_by_username(
+        &self,
+        tx: &mut MySqlConnection,
+        username: &str,
+    ) -> Result<Vec<TokenModel>, LsAccountManagerError> {
         Ok(TokenModel::query_with_tail(
             r#"
             where JSON_VALUE(data, '$.username' RETURNING CHAR(255)) = ?
@@ -46,7 +54,11 @@ impl TokenRepository for MySqlTokenRepository {
         .await?)
     }
 
-    async fn save(&self, tx: &mut MySqlConnection, model: NewRecord<TokenData>) -> Result<TokenModel, LsAccountManagerError> {
+    async fn save(
+        &self,
+        tx: &mut MySqlConnection,
+        model: NewRecord<TokenData>,
+    ) -> Result<TokenModel, LsAccountManagerError> {
         Ok(tx.save(model).await?)
     }
 
@@ -54,7 +66,11 @@ impl TokenRepository for MySqlTokenRepository {
         Ok(tx.delete(model).await?)
     }
 
-    async fn delete_expired(&self, tx: &mut MySqlConnection, threshold_epoch_seconds: i64) -> Result<u64, LsAccountManagerError> {
+    async fn delete_expired(
+        &self,
+        tx: &mut MySqlConnection,
+        threshold_epoch_seconds: i64,
+    ) -> Result<u64, LsAccountManagerError> {
         // Two-phase to avoid InnoDB deadlocks. A direct DELETE on the JSON
         // predicate — even backed by the LS_AUTH_TOKEN_EXPIRE_AT functional
         // index — takes next-key locks during the index range scan; rows

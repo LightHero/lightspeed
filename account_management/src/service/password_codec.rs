@@ -56,12 +56,9 @@ impl LsPasswordCodecService {
         let argon2 = self.argon2.clone();
         tokio::task::spawn_blocking(move || -> Result<String, LsAccountManagerError> {
             let salt = SaltString::generate(&mut OsRng);
-            argon2
-                .hash_password(plain.as_bytes(), &salt)
-                .map(|h| h.to_string())
-                .map_err(|err| LsAccountManagerError::PasswordEncryptionError {
-                    message: format!("argon2 hash: {err:?}"),
-                })
+            argon2.hash_password(plain.as_bytes(), &salt).map(|h| h.to_string()).map_err(|err| {
+                LsAccountManagerError::PasswordEncryptionError { message: format!("argon2 hash: {err:?}") }
+            })
         })
         .await
         .map_err(|err| LsAccountManagerError::PasswordEncryptionError {

@@ -17,9 +17,7 @@ use crate::{FieldValidator, ValidatorRef};
 /// struct's `Ctx`, and the field error type picked by the `errors(...)`
 /// strategy — any mismatch surfaces as a normal type error pointing at the
 /// user's function.
-pub fn boxed_fn<T: 'static, E: 'static, CTX: 'static>(
-    f: fn(&T, &CTX) -> Result<(), E>,
-) -> ValidatorRef<T, E, CTX> {
+pub fn boxed_fn<T: 'static, E: 'static, CTX: 'static>(f: fn(&T, &CTX) -> Result<(), E>) -> ValidatorRef<T, E, CTX> {
     let boxed: Box<dyn FieldValidator<T, E, CTX>> = Box::new(f);
     ValidatorRef::Boxed(boxed)
 }

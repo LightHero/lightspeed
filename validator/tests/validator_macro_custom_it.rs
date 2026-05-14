@@ -65,10 +65,7 @@ fn custom_validator_invokes_the_user_function() {
     let validator = &v.name.validators()[0];
 
     assert!(validator.validate(&"alice".to_string(), &()).is_ok());
-    assert!(matches!(
-        validator.validate(&String::new(), &()),
-        Err(ValidationError::Custom { .. }),
-    ));
+    assert!(matches!(validator.validate(&String::new(), &()), Err(ValidationError::Custom { .. }),));
 }
 
 // ---- custom + context ----------------------------------------------------

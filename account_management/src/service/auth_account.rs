@@ -536,9 +536,7 @@ impl<RepoManager: AuthRepositoryManager> LsAuthAccountService<RepoManager> {
 
         match &user.data.status {
             AuthAccountStatus::Disabled => {}
-            _ => {
-                return Err(LsAccountManagerError::NotDisabledUser(user.data.username.to_string()))
-            }
+            _ => return Err(LsAccountManagerError::NotDisabledUser(user.data.username.to_string())),
         };
 
         user.data.status = AuthAccountStatus::Active;

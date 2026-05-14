@@ -14,9 +14,7 @@ impl IntoResponse for LsError {
             | LsError::UnauthenticatedError => response_with_code(StatusCode::UNAUTHORIZED),
             LsError::ForbiddenError { .. } => response_with_code(StatusCode::FORBIDDEN),
 
-            LsError::BadRequest { .. } => {
-                response_with_code(StatusCode::BAD_REQUEST)
-            }
+            LsError::BadRequest { .. } => response_with_code(StatusCode::BAD_REQUEST),
             LsError::C3p0Error { .. } => response_with_code(StatusCode::BAD_REQUEST),
             LsError::SqlxError { .. } => response_with_code(StatusCode::BAD_REQUEST),
             LsError::RequestConflict { .. } | LsError::ServiceUnavailable { .. } => {

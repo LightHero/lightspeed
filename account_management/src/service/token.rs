@@ -72,7 +72,6 @@ impl<RepoManager: AuthRepositoryManager> LsTokenService<RepoManager> {
         } else {
             Ok(token_model)
         }
-
     }
 
     pub async fn fetch_all_by_username_with_conn(

@@ -1,8 +1,8 @@
+use crate::error::LsAccountManagerError;
 use crate::model::auth_account::{AuthAccountData, AuthAccountModel, AuthAccountStatus};
 use crate::repository::AuthAccountRepository;
 use c3p0::sqlx::*;
 use c3p0::*;
-use crate::error::LsAccountManagerError;
 use lightspeed_core::error::ErrorCodes;
 
 #[derive(Clone)]
@@ -44,11 +44,19 @@ impl AuthAccountRepository for SqliteAuthAccountRepository {
         .await?)
     }
 
-    async fn fetch_by_id(&self, tx: &mut SqliteConnection, user_id: i64) -> Result<AuthAccountModel, LsAccountManagerError> {
+    async fn fetch_by_id(
+        &self,
+        tx: &mut SqliteConnection,
+        user_id: i64,
+    ) -> Result<AuthAccountModel, LsAccountManagerError> {
         Ok(tx.fetch_one_by_id::<AuthAccountData>(user_id).await?)
     }
 
-    async fn fetch_by_username(&self, tx: &mut SqliteConnection, username: &str) -> Result<AuthAccountModel, LsAccountManagerError> {
+    async fn fetch_by_username(
+        &self,
+        tx: &mut SqliteConnection,
+        username: &str,
+    ) -> Result<AuthAccountModel, LsAccountManagerError> {
         self.fetch_by_username_optional(tx, username).await?.ok_or_else(|| LsAccountManagerError::BadRequest {
             message: format!("No user found with username [{username}]"),
             code: ErrorCodes::NOT_FOUND,
@@ -95,11 +103,19 @@ impl AuthAccountRepository for SqliteAuthAccountRepository {
         Ok(tx.save(model).await?)
     }
 
-    async fn update(&self, tx: &mut SqliteConnection, model: AuthAccountModel) -> Result<AuthAccountModel, LsAccountManagerError> {
+    async fn update(
+        &self,
+        tx: &mut SqliteConnection,
+        model: AuthAccountModel,
+    ) -> Result<AuthAccountModel, LsAccountManagerError> {
         Ok(tx.update(model).await?)
     }
 
-    async fn delete(&self, tx: &mut SqliteConnection, model: AuthAccountModel) -> Result<AuthAccountModel, LsAccountManagerError> {
+    async fn delete(
+        &self,
+        tx: &mut SqliteConnection,
+        model: AuthAccountModel,
+    ) -> Result<AuthAccountModel, LsAccountManagerError> {
         Ok(tx.delete(model).await?)
     }
 
