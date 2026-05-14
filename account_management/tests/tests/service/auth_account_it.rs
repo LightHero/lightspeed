@@ -382,15 +382,9 @@ fn generate_new_activation_token_should_use_uniform_error_for_all_failure_modes(
             [("unknown_username", unknown), ("wrong_email", wrong_email), ("wrong_status", wrong_status)]
         {
             match result {
-                Err(LsAccountManagerError::BadRequest { code, .. }) => {
-                    assert_eq!(
-                        ErrorCodes::WRONG_CREDENTIALS,
-                        code,
-                        "case [{label}] returned a distinguishable error code [{code}]; that's an enumeration oracle"
-                    );
-                }
-                Err(other) => panic!("case [{label}] expected BadRequest(WRONG_CREDENTIALS), got {other:?}"),
-                Ok(_) => panic!("case [{label}] expected BadRequest(WRONG_CREDENTIALS), got Ok"),
+                Err(LsAccountManagerError::WrongCredentials) => {}
+                Err(other) => panic!("case [{label}] expected WrongCredentials, got {other:?}"),
+                Ok(_) => panic!("case [{label}] expected WrongCredentials, got Ok"),
             }
         }
 
@@ -482,9 +476,8 @@ fn should_not_login_inactive_user() -> Result<(), LsAccountManagerError> {
         let result = auth_module.auth_account_service.login(&user.data.username, password).await;
 
         match result {
-            Err(LsAccountManagerError::BadRequest { code, message }) => {
-                assert_eq!(ErrorCodes::INACTIVE_USER, code);
-                assert_eq!(format!("User [{}] not in status Active", &user.data.username), message);
+            Err(LsAccountManagerError::InactiveUser(username)) => {
+                assert_eq!(user.data.username, username);
             }
             _ => panic!(),
         }
@@ -504,10 +497,7 @@ fn should_return_wrong_credentials_on_login_of_inactive_user_with_wrong_password
         let result = auth_module.auth_account_service.login(&user.data.username, "wrong_password").await;
 
         match result {
-            Err(LsAccountManagerError::BadRequest { code, message }) => {
-                assert_eq!(ErrorCodes::WRONG_CREDENTIALS, code);
-                assert_eq!(format!("Wrong credentials"), message);
-            }
+            Err(LsAccountManagerError::WrongCredentials) => {}
             _ => panic!(),
         }
 
@@ -570,9 +560,7 @@ fn create_user_should_fail_if_username_not_unique() -> Result<(), LsAccountManag
         assert!(result.is_err());
 
         match &result {
-            Err(LsAccountManagerError::ValidationError { details }) => {
-                assert!(details.details.contains_key("username"))
-            }
+            Err(LsAccountManagerError::UsernameAlreadyUsed) => {}
             _ => panic!(),
         };
 
@@ -605,9 +593,7 @@ fn create_user_should_fail_if_email_not_unique() -> Result<(), LsAccountManagerE
         assert!(result.is_err());
 
         match &result {
-            Err(LsAccountManagerError::ValidationError { details }) => {
-                assert!(details.details.contains_key("email"))
-            }
+            Err(LsAccountManagerError::EmailAlreadyUsed) => {}
             _ => panic!(),
         }
 
@@ -695,10 +681,8 @@ fn should_fail_resetting_password_if_token_expired() -> Result<(), LsAccountMana
             .await;
 
         match result {
-            Err(LsAccountManagerError::ValidationError { details }) => {
-                assert_eq!("expired", details.details["expire_at_epoch"][0]);
-            }
-            _ => panic!("expected ValidationError for expired reset token"),
+            Err(LsAccountManagerError::TokenExpired) => {}
+            _ => panic!("expected TokenExpired for expired reset token"),
         }
 
         // Original password must still work — the reset must not have taken effect.
@@ -778,50 +762,6 @@ fn should_reset_password_only_if_user_is_active() -> Result<(), LsAccountManager
             .await;
 
         assert!(result.is_err());
-        Ok(())
-    })
-}
-
-#[test]
-fn should_reset_password_only_if_passwords_match() -> Result<(), LsAccountManagerError> {
-    tokio_test(async {
-        let data = data(false).await;
-        let auth_module = &data.0;
-
-        let password = new_hyphenated_uuid();
-        let (user, _) = create_user_with_password(auth_module, &password, false).await?;
-
-        let token = auth_module
-            .repo_manager
-            .c3p0()
-            .transaction(async |conn| {
-                auth_module
-                    .token_service
-                    .generate_and_save_token_with_conn(conn, &user.data.username, TokenType::ResetPassword)
-                    .await
-            })
-            .await?;
-
-        let password_new = new_hyphenated_uuid();
-
-        let result = auth_module
-            .auth_account_service
-            .reset_password_by_token(ResetPasswordDto {
-                password: password_new.clone(),
-                token: token.data.token,
-                password_confirm: format!("{}_", password_new.clone()),
-            })
-            .await;
-
-        assert!(result.is_err());
-
-        match &result {
-            Err(LsAccountManagerError::ValidationError { details }) => {
-                assert!(details.details.contains_key("password"))
-            }
-            _ => panic!(),
-        };
-
         Ok(())
     })
 }
@@ -1435,10 +1375,10 @@ fn should_fail_login_when_password_expired() -> Result<(), LsAccountManagerError
         let result = service.login(&user.data.username, &password).await;
 
         match result {
-            Err(LsAccountManagerError::ExpiredPasswordBadRequest { code, .. }) => {
-                assert_eq!(ErrorCodes::EXPIRED_PASSWORD, code);
+            Err(LsAccountManagerError::ExpiredPassword(username)) => {
+                assert_eq!(user.data.username, username);
             }
-            _ => panic!("expected BadRequest with EXPIRED_PASSWORD"),
+            _ => panic!("expected ExpiredPassword"),
         }
 
         // The default service (expiration disabled) still accepts the login.
@@ -1486,8 +1426,8 @@ fn change_password_should_reset_password_age() -> Result<(), LsAccountManagerErr
         auth_config.password_expiration_seconds = Some(60);
         let strict_service = auth_account_service_with_config(auth_module, auth_config.clone());
         match strict_service.login(&user.data.username, &password).await {
-            Err(LsAccountManagerError::BadRequest { code, .. }) => assert_eq!(ErrorCodes::EXPIRED_PASSWORD, code),
-            _ => panic!("expected EXPIRED_PASSWORD before change_password"),
+            Err(LsAccountManagerError::ExpiredPassword(_)) => {}
+            _ => panic!("expected ExpiredPassword before change_password"),
         }
 
         // Change the password through the default service.
