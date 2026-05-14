@@ -582,11 +582,10 @@ and dashes are stripped, then the cleaned input is passed to the
 
 Numbers that pass Luhn but don't match any known issuer prefix are rejected.
 
-```rust,ignore
-// `rust,ignore` because the `credit_card` validator requires the
-// `credit_card` cargo feature, which is off by default for doctests.
+```rust,no_run
 use lightspeed_validator::Validable;
 
+#[cfg(feature = "credit_card")]
 #[derive(Validable)]
 struct Example {
     #[validate(credit_card)]
@@ -794,37 +793,6 @@ struct SignupAttach {
 Both named fields must exist on the struct; unknown names produce a
 compile-time error pointing at the bad identifier. Multiple `fields_match`
 rules can be declared on the same struct.
-
-## Error types
-
-All errors flow through the `ValidationError` enum. The current variants are:
-
-```rust,ignore
-// `rust,ignore` because this is a copy of the *existing* `ValidationError`
-// type as it ships in `lightspeed_validator::ValidationError`, included
-// for documentation rather than for the user to redefine.
-pub enum ValidationError {
-    MustBeTrue(MustBeTrueError),
-    MustBeFalse(MustBeFalseError),
-    MustContain(MustContainError),
-    MustNotContain(MustNotContainError),
-    FieldsMustMatch(FieldsMustMatch),
-    MustMatchField(MustMatchField),
-    Ip(IpError),
-    Url(UrlError),
-    Password(PasswordError),
-    Range(RangeError),
-    Regex(RegexError),
-    Length(LengthError),
-    Email(EmailError),
-    // Only present when the `credit_card` feature is enabled:
-    CreditCard(CreditCardError),
-}
-```
-
-`ValidationError`, every inner `*Error` struct, and the `FieldsMustMatch` /
-`MustMatchField` payload structs all derive `Debug`, `Clone`, `PartialEq`,
-`Eq`, and `Display`.
 
 ## Writing a custom field validator
 
