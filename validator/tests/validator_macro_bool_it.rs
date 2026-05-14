@@ -1,7 +1,10 @@
 use lightspeed_validator::Validable;
 use lightspeed_validator::boolean::{MustBeFalseError, MustBeTrueError};
 
+// These tests reference the per-field enum names (e.g. `FlagsEnabledFieldError`)
+// directly, so the struct opts into the `tailored` error strategy.
 #[derive(Validable)]
+#[validate(errors(tailored))]
 pub struct Flags {
     #[validate(isTrue)]
     pub enabled: bool,
@@ -11,6 +14,7 @@ pub struct Flags {
 }
 
 #[derive(Validable)]
+#[validate(errors(tailored))]
 pub struct MultiAttrFlags {
     #[validate(isTrue)]
     #[validate(isFalse)]

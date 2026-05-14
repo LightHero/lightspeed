@@ -34,7 +34,7 @@ impl<E: From<RangeError>> FieldValidator<u32, E, MinAgeContext> for MinAgeValida
 // field types are parameterised by the context.
 
 #[derive(Validable)]
-#[validate(context = MinAgeContext)]
+#[validate(context = MinAgeContext, errors(tailored))]
 pub struct Person {
     pub age: u32,
     pub name: String,

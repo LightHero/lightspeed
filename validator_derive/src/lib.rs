@@ -11,6 +11,7 @@ use validation::struct_fields_match::{self, FieldsMatchArgs};
 const VALIDATE_ATTR: &str = "validate";
 const CONTEXT_KEYWORD: &str = "context";
 const FIELDS_MATCH_KEYWORD: &str = "fields_match";
+const ERRORS_KEYWORD: &str = "errors";
 
 /// Derive macro that generates a `<Name>Validable` companion type.
 ///
@@ -37,6 +38,15 @@ const FIELDS_MATCH_KEYWORD: &str = "fields_match";
 ///   `ValidationError::FieldsMustMatch { a, b }` on failure. By default the
 ///   error goes onto the top-level `errors` vec; pass `attach_to_fields = true`
 ///   to push a copy onto each named field's `errors` instead.
+/// - `#[validate(errors(shared | tailored | custom = <Type>))]` — selects
+///   the field error-type strategy. `shared` (default) uses the wide
+///   `ValidationError` enum for every field. `tailored` generates a
+///   dedicated `<Struct><Field>FieldError` enum per field carrying only
+///   the variants that field's validators can produce (and `NoError` for
+///   fields with no validators), enabling exhaustive matching against the
+///   field's true error set. `custom = <Type>` uses the user-provided
+///   `<Type>` for every field; `<Type>` must implement `From<NarrowError>`
+///   for every narrow error emitted on the struct.
 ///
 /// ## Field-level attribute
 /// Field-level validators are declared via the helper attribute
@@ -124,27 +134,42 @@ pub fn derive_validable(item: TokenStream) -> TokenStream {
     let name = &input.ident;
     let validable_name = format_ident!("{}Validable", name);
 
-    // For each field, compute its per-field error enum (if any). A field
-    // gets an enum when it has at least one `#[validate(...)]` attribute
-    // OR when a struct-level rule with `attach_to_fields = true` targets it.
-    let field_error_enums: Vec<Option<FieldErrorEnum>> = named_fields
-        .named
-        .iter()
-        .zip(field_validators.iter())
-        .map(|(f, (_, vs))| {
-            let ident = f.ident.as_ref().expect("named field has ident");
-            compute_field_error_enum(name, ident, vs, &struct_attrs.validators)
-        })
-        .collect();
+    // Per-field error enums are only generated in `errors(tailored)` mode.
+    // In `shared` / `custom` mode every field shares a single error type so
+    // there's nothing per-field to emit, and the strategy alone is enough to
+    // type the validable's fields.
+    let field_error_enums: Vec<Option<FieldErrorEnum>> = match struct_attrs.field_errors {
+        FieldErrorStrategy::Tailored => named_fields
+            .named
+            .iter()
+            .zip(field_validators.iter())
+            .map(|(f, (_, vs))| {
+                let ident = f.ident.as_ref().expect("named field has ident");
+                compute_field_error_enum(name, ident, vs, &struct_attrs.validators)
+            })
+            .collect(),
+        FieldErrorStrategy::Shared | FieldErrorStrategy::Custom(_) => {
+            (0..named_fields.named.len()).map(|_| None).collect()
+        }
+    };
 
-    let validable_struct =
-        generate_validable_struct(vis, &validable_name, named_fields, &struct_attrs.context, &field_error_enums);
+    let validable_struct = generate_validable_struct(
+        vis,
+        &validable_name,
+        named_fields,
+        &struct_attrs.context,
+        &struct_attrs.field_errors,
+        &field_error_enums,
+    );
     let new_fn = generate_new_fn(name, &validable_name, named_fields, &field_validators);
     let validate_fn =
         generate_validate_fn(name, &validable_name, named_fields, &struct_attrs.context, &struct_attrs.validators);
     let struct_validator_impls =
         generate_struct_validator_impls(&validable_name, &struct_attrs.context, &struct_attrs.validators);
-    let field_enum_defs = generate_field_error_enums(&field_error_enums);
+    let field_enum_defs = match struct_attrs.field_errors {
+        FieldErrorStrategy::Tailored => generate_field_error_enums(&field_error_enums),
+        FieldErrorStrategy::Shared | FieldErrorStrategy::Custom(_) => quote! {},
+    };
 
     let expanded = quote! {
         #field_enum_defs
@@ -267,11 +292,35 @@ fn generate_field_error_enums(enums: &[Option<FieldErrorEnum>]) -> TokenStream2 
 struct StructAttrs {
     context: StructContext,
     validators: Vec<StructLevelValidator>,
+    field_errors: FieldErrorStrategy,
 }
 
 struct StructContext {
     ty: Type,
     is_explicit: bool,
+}
+
+/// How field-level error types are picked for the generated `<Name>Validable`.
+///
+/// Selected via the struct-level `#[validate(errors(...))]` attribute:
+/// - `errors(shared)` — every field uses [`ValidationError`] (the default
+///   when no `errors(...)` is given);
+/// - `errors(tailored)` — for each field with at least one `#[validate(...)]`
+///   attribute (or targeted by an `attach_to_fields = true` struct rule) the
+///   macro generates a dedicated `<Struct><Field>FieldError` enum carrying
+///   only the variants that field can produce. Fields with no validators
+///   use the uninhabited `NoError`;
+/// - `errors(custom = <Type>)` — every field uses `<Type>`. `<Type>` must
+///   implement `From<NarrowError>` for every narrow error type emitted by
+///   the validators attached to any field on the struct (and `From<MustMatchField>`
+///   if any `fields_match(..., attach_to_fields = true)` rule is present).
+enum FieldErrorStrategy {
+    Shared,
+    Tailored,
+    // Boxed because `syn::Type` is ~224 bytes whereas the other two
+    // variants are zero-sized — without the box this would balloon the
+    // enum and trip `clippy::large_enum_variant`.
+    Custom(Box<Type>),
 }
 
 /// A single struct-level rule. Parsing, validation and code generation for
@@ -284,6 +333,7 @@ enum StructLevelValidator {
 fn parse_struct_attrs(input: &ItemStruct) -> syn::Result<StructAttrs> {
     let mut ty: Option<Type> = None;
     let mut validators: Vec<StructLevelValidator> = Vec::new();
+    let mut field_errors: Option<FieldErrorStrategy> = None;
 
     for attr in &input.attrs {
         if !attr.path().is_ident(VALIDATE_ATTR) {
@@ -299,6 +349,12 @@ fn parse_struct_attrs(input: &ItemStruct) -> syn::Result<StructAttrs> {
             } else if meta.path.is_ident(FIELDS_MATCH_KEYWORD) {
                 validators.push(StructLevelValidator::FieldsMatch(struct_fields_match::parse_fields_match(&meta)?));
                 Ok(())
+            } else if meta.path.is_ident(ERRORS_KEYWORD) {
+                if field_errors.is_some() {
+                    return Err(meta.error("duplicate `errors(...)`"));
+                }
+                field_errors = Some(parse_errors_arg(&meta)?);
+                Ok(())
             } else {
                 Err(meta.error("unknown struct-level `#[validate(...)]` option"))
             }
@@ -309,7 +365,32 @@ fn parse_struct_attrs(input: &ItemStruct) -> syn::Result<StructAttrs> {
         Some(ty) => StructContext { ty, is_explicit: true },
         None => StructContext { ty: parse_quote!(()), is_explicit: false },
     };
-    Ok(StructAttrs { context, validators })
+    Ok(StructAttrs { context, validators, field_errors: field_errors.unwrap_or(FieldErrorStrategy::Shared) })
+}
+
+/// Parses the body of `errors(...)`. Accepts exactly one of the three modes
+/// — `shared`, `tailored`, or `custom = <Type>` — and rejects everything else.
+fn parse_errors_arg(meta: &syn::meta::ParseNestedMeta<'_>) -> syn::Result<FieldErrorStrategy> {
+    let mut strategy: Option<FieldErrorStrategy> = None;
+    meta.parse_nested_meta(|inner| {
+        if strategy.is_some() {
+            return Err(inner.error("`errors(...)` accepts exactly one of `shared`, `tailored`, `custom = <Type>`"));
+        }
+        if inner.path.is_ident("shared") {
+            strategy = Some(FieldErrorStrategy::Shared);
+            Ok(())
+        } else if inner.path.is_ident("tailored") {
+            strategy = Some(FieldErrorStrategy::Tailored);
+            Ok(())
+        } else if inner.path.is_ident("custom") {
+            let value = inner.value()?;
+            strategy = Some(FieldErrorStrategy::Custom(Box::new(value.parse()?)));
+            Ok(())
+        } else {
+            Err(inner.error("expected `shared`, `tailored`, or `custom = <Type>`"))
+        }
+    })?;
+    strategy.ok_or_else(|| meta.error("`errors(...)` requires `shared`, `tailored`, or `custom = <Type>`"))
 }
 
 /// Ensures every field referenced by a struct-level rule exists on the struct.
@@ -342,16 +423,17 @@ fn collect_field_validators(fields: &FieldsNamed) -> syn::Result<Vec<(Ident, Vec
 /// Emits the `<Name>Validable` struct definition, mirroring the original
 /// fields with each type `T` wrapped as `ValidableType<T, E, Ctx>` and adding
 /// a private `top_level_errors` vec used by struct-level validators. `E` is
-/// the field's per-field error enum when one was generated, or the
-/// uninhabited [`NoError`] for fields that can never accumulate any error
-/// (no field-level validators and not targeted by any struct rule). Matching
-/// `&[NoError]` is trivially exhaustive — `match err {}` — so the caller
-/// never has to handle variants the field can't produce.
+/// picked according to [`FieldErrorStrategy`]:
+/// - `Shared` → every field uses `ValidationError`;
+/// - `Tailored` → the field's generated per-field enum when one was emitted,
+///   otherwise the uninhabited `NoError`;
+/// - `Custom(T)` → every field uses `T`.
 fn generate_validable_struct(
     vis: &syn::Visibility,
     validable_name: &Ident,
     fields: &FieldsNamed,
     context: &StructContext,
+    strategy: &FieldErrorStrategy,
     field_error_enums: &[Option<FieldErrorEnum>],
 ) -> TokenStream2 {
     let ctx_ty = &context.ty;
@@ -359,12 +441,19 @@ fn generate_validable_struct(
         let field_vis = &f.vis;
         let field_name = f.ident.as_ref().expect("named field has ident");
         let field_ty = &f.ty;
-        let err_ty: TokenStream2 = match fe {
-            Some(e) => {
-                let n = &e.name;
-                quote! { #n }
+        let err_ty: TokenStream2 = match strategy {
+            FieldErrorStrategy::Shared => quote! { ::lightspeed_validator::ValidationError },
+            FieldErrorStrategy::Custom(t) => {
+                let t = &**t;
+                quote! { #t }
             }
-            None => quote! { ::lightspeed_validator::NoError },
+            FieldErrorStrategy::Tailored => match fe {
+                Some(e) => {
+                    let n = &e.name;
+                    quote! { #n }
+                }
+                None => quote! { ::lightspeed_validator::NoError },
+            },
         };
         quote! {
             #field_vis #field_name: ::lightspeed_validator::ValidableType<#field_ty, #err_ty, #ctx_ty>

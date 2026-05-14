@@ -1,5 +1,6 @@
-use lightspeed_validator::{NoError, Validable, ValidableType};
+use lightspeed_validator::{NoError, Validable, ValidableType, ValidationError};
 
+// Default error strategy (`errors(shared)`): every field uses `ValidationError`.
 #[derive(Validable)]
 pub struct User {
     pub name: String,
@@ -7,16 +8,32 @@ pub struct User {
     pub active: bool,
 }
 
+// Opt-in `errors(tailored)`: fields with no validators get `NoError`.
+#[derive(Validable)]
+#[validate(errors(tailored))]
+pub struct UserTailored {
+    pub name: String,
+    pub age: u32,
+    pub active: bool,
+}
+
 #[test]
-fn generated_struct_has_validable_typed_fields() {
+fn shared_strategy_uses_validation_error_for_every_field() {
     fn assert_types(v: &UserValidable) {
-        // No `#[validate(...)]` attributes means each field's `E` is the
-        // uninhabited `NoError` — errors can't be constructed at all.
+        let _: &ValidableType<String, ValidationError, ()> = &v.name;
+        let _: &ValidableType<u32, ValidationError, ()> = &v.age;
+        let _: &ValidableType<bool, ValidationError, ()> = &v.active;
+    }
+    let _ = assert_types;
+}
+
+#[test]
+fn tailored_strategy_uses_no_error_for_validator_less_fields() {
+    fn assert_types(v: &UserTailoredValidable) {
         let _: &ValidableType<String, NoError, ()> = &v.name;
         let _: &ValidableType<u32, NoError, ()> = &v.age;
         let _: &ValidableType<bool, NoError, ()> = &v.active;
     }
-
     let _ = assert_types;
 }
 
@@ -87,7 +104,10 @@ fn test_if_a_field_has_an_error_validatios_fails() {
     assert!(v.validate().is_err());
 }
 
+// `test_match_on_no_validators` is the showcase for tailored field errors —
+// it matches on each field's dedicated `<Struct><Field>FieldError` enum.
 #[derive(Validable)]
+#[validate(errors(tailored))]
 pub struct MatchOnValidator {
     pub zero_validators: String,
     #[validate(contains(pattern = "@"))]

@@ -9,28 +9,35 @@ with a different shape: validation produces a parallel `Validable` value that
 either yields back the original struct on success or exposes per-field and
 top-level error vecs on failure.
 
-## What makes this crate different: exhaustive per-field errors
+## Three error-type strategies, one switch
 
-Most validators stuff every possible error into one big enum and hand you
-back `Vec<ValidationError>`. Matching is a chore — every consumer has to
-handle, or wildcard-skip, variants the field could never produce in the
-first place.
+Field-level error types are controlled by the struct-level attribute
+`#[validate(errors(<mode>))]`. Pick the trade-off that fits the consumer
+of `field.errors()`:
 
-`lightspeed_validator` flips that around. **For every field, the macro
-generates a dedicated error enum containing *only* the variants that
-field's validators can actually produce** (with duplicates collapsed). The
-enum is the field's `E` in `ValidableType<T, E, Ctx>`, so a `match` on
-`field.errors()` is exhaustively checked against that field's true error
-set — no `_ =>` wildcards, no dead arms, and adding or removing a
-`#[validate(...)]` attribute forces every consumer to acknowledge the
-shape change at compile time.
+| Mode | `errors(...)` | What `field.errors()` returns | When to use |
+|---|---|---|---|
+| **Shared** *(default)* | `errors(shared)` or omitted | `&[ValidationError]` on every field | Quick start, logging, JSON-style aggregation — one homogeneous error type across the whole struct. |
+| **Tailored** | `errors(tailored)` | A per-field `<Struct><Field>FieldError` enum carrying only the variants the field can produce (`NoError` for no-validator fields) | UI / form renderers and any code that wants the compiler to keep `match`es in sync with the validation rules. |
+| **Custom** | `errors(custom = <Type>)` | `&[<Type>]` on every field, where `<Type>` is your own enum | You already have an app-wide error type and want validation failures to fit into it. `<Type>` must `impl From<NarrowError>` for every narrow error your validators emit. |
+
+### `errors(tailored)` — exhaustive per-field matching
+
+The exhaustive-matching mode is what makes this crate different from the
+usual one-big-enum design. **The macro generates a dedicated error enum
+per field containing *only* the variants that field's validators can
+actually produce** (duplicates collapsed). That enum becomes the field's
+`E` in `ValidableType<T, E, Ctx>`, so a `match` on `field.errors()` is
+exhaustively checked against that field's true error set — no `_ =>`
+wildcards, no dead arms. Adding or removing a `#[validate(...)]` attribute
+forces every consumer to acknowledge the shape change at compile time.
 
 Fields with **no** validators get `NoError`, an uninhabited enum: their
-error vec is always empty, and a `match` against `&NoError` needs no arms
-at all. The same struct demonstrates all three regimes:
+error vec is always empty, and `match err {}` (no arms) is exhaustive.
 
 ```rust,ignore
 #[derive(Validable)]
+#[validate(errors(tailored))]
 pub struct MatchOnValidator {
     pub zero_validators: String,
 
@@ -84,6 +91,40 @@ When you do need a single uniform error type (logging, persisting,
 cross-field aggregation), each per-field enum gets a generated
 `From<…FieldError> for ValidationError` impl, so `.into()` lifts back to
 the wide type whenever you want it.
+
+### `errors(custom = MyError)` — plug in your own error type
+
+```rust,ignore
+use lightspeed_validator::contains::MustContainError;
+use lightspeed_validator::length::LengthError;
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum SignupError {
+    BadEmail(MustContainError),
+    BadLength(LengthError),
+}
+
+impl From<MustContainError> for SignupError {
+    fn from(e: MustContainError) -> Self { Self::BadEmail(e) }
+}
+impl From<LengthError> for SignupError {
+    fn from(e: LengthError) -> Self { Self::BadLength(e) }
+}
+
+#[derive(Validable)]
+#[validate(errors(custom = SignupError))]
+pub struct Signup {
+    #[validate(contains(pattern = "@"))]
+    pub email: String,
+    #[validate(length(min = 8))]
+    pub password: String,
+}
+```
+
+Every field's `ValidableType` is now `ValidableType<…, SignupError, …>`. If
+you add a validator emitting a narrow error `MyError` doesn't `impl From`
+for, you get a normal `From` trait error at compile time — pointing at the
+exact validator construction site.
 
 ## Installation
 
@@ -164,10 +205,10 @@ let result = FooValidable::new(foo).validate(&ctx);
 The context type is forwarded to every validator's `validate(value, ctx)`
 call, so you can write custom field validators that read it.
 
-### Per-field error enums — rules
+### Per-field error enums — generation rules
 
-(See the "What makes this crate different" section at the top of this README
-for the motivation and a complete example.) Concretely the macro emits:
+Only emitted when `#[validate(errors(tailored))]` is set on the struct.
+The macro then emits, in addition to the usual `<Name>Validable`:
 
 - one `pub enum <Struct><FieldPascalCase>FieldError` per field that has at
   least one `#[validate(...)]` attribute *or* is targeted by an

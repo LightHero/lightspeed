@@ -11,7 +11,11 @@ fn must_not_contain_err<E: From<MustNotContainError>>(pattern: &str, case_sensit
     MustNotContainError { pattern: pattern.to_string(), case_sensitive }.into()
 }
 
+// `case_sensitive_defaults_to_true_when_omitted` matches on
+// `EmailAddressFieldError::MustContain(...)` directly, so `Email` opts into
+// tailored field errors.
 #[derive(Validable)]
+#[validate(errors(tailored))]
 pub struct Email {
     #[validate(contains(pattern = "@"))]
     pub address: String,
