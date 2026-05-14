@@ -5,7 +5,7 @@ use crate::repository::opendal::opendal_file_store_binary::OpendalFileStoreBinar
 use c3p0::sql::OrderBy;
 use c3p0::sqlx::Database;
 use c3p0::*;
-use lightspeed_core::error::{ErrorCodes, LsError};
+use lightspeed_core::error::LsError;
 use lightspeed_core::utils::current_epoch_seconds;
 use log::*;
 use std::collections::HashMap;
@@ -251,7 +251,7 @@ impl<RepoManager: DBFileStoreRepositoryManager> LsFileStoreService<RepoManager> 
     fn get_repository(&self, repository_name: &str) -> Result<&RepositoryStoreType, LsError> {
         self.repositories.get(repository_name).ok_or_else(|| LsError::BadRequest {
             message: format!("LsFileStoreService - Cannot find FS repository with name [{repository_name}]"),
-            code: ErrorCodes::NOT_FOUND,
+            code: "",
         })
     }
 
@@ -272,7 +272,7 @@ impl<RepoManager: DBFileStoreRepositoryManager> LsFileStoreService<RepoManager> 
                 .await
                 .map_err(|err| LsError::BadRequest {
                     message: format!("LsFileStoreService - Cannot stat file [{path}]: {err:?}"),
-                    code: ErrorCodes::IO_ERROR,
+                    code: "",
                 })?
                 .content_length(),
             BinaryContent::Stream { .. } => {
@@ -284,7 +284,7 @@ impl<RepoManager: DBFileStoreRepositoryManager> LsFileStoreService<RepoManager> 
         if actual > max as u64 {
             return Err(LsError::BadRequest {
                 message: format!("LsFileStoreService - File size [{actual}] exceeds save_max_size_bytes [{max}]"),
-                code: ErrorCodes::PAYLOAD_TOO_LARGE,
+                code: "",
             });
         }
         Ok(())
@@ -305,19 +305,19 @@ fn validate_safe_relative_path(field: &'static str, value: &str) -> Result<(), L
     if value.is_empty() {
         return Err(LsError::BadRequest {
             message: format!("LsFileStoreService - {field} cannot be empty"),
-            code: ErrorCodes::PARSE_ERROR,
+            code: "",
         });
     }
     if value.contains('\0') {
         return Err(LsError::BadRequest {
             message: format!("LsFileStoreService - {field} contains NUL byte"),
-            code: ErrorCodes::PARSE_ERROR,
+            code: "",
         });
     }
     if value.starts_with('/') || value.starts_with('\\') {
         return Err(LsError::BadRequest {
             message: format!("LsFileStoreService - {field} must be a relative path, got [{value}]"),
-            code: ErrorCodes::PARSE_ERROR,
+            code: "",
         });
     }
     for segment in value.split(['/', '\\']) {
@@ -326,7 +326,7 @@ fn validate_safe_relative_path(field: &'static str, value: &str) -> Result<(), L
                 message: format!(
                     "LsFileStoreService - {field} contains parent-directory traversal segment, got [{value}]"
                 ),
-                code: ErrorCodes::PARSE_ERROR,
+                code: "",
             });
         }
     }
@@ -336,12 +336,12 @@ fn validate_safe_relative_path(field: &'static str, value: &str) -> Result<(), L
 #[cfg(test)]
 mod path_validation_tests {
     use super::validate_safe_relative_path;
-    use lightspeed_core::error::{ErrorCodes, LsError};
+    use lightspeed_core::error::LsError;
 
     fn assert_rejected(value: &str) {
         match validate_safe_relative_path("file_path", value) {
             Err(LsError::BadRequest { code, .. }) => {
-                assert_eq!(ErrorCodes::PARSE_ERROR, code, "value [{value}] rejected with wrong code");
+                assert_eq!("", code, "value [{value}] rejected with wrong code");
             }
             other => panic!("expected BadRequest(PARSE_ERROR) for [{value}], got {other:?}"),
         }

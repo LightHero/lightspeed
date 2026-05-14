@@ -1,7 +1,7 @@
 use crate::data;
 use c3p0::sql::OrderBy;
 use c3p0::*;
-use lightspeed_core::error::{ErrorCodes, LsError};
+use lightspeed_core::error::LsError;
 use lightspeed_file_store::model::BinaryContent;
 use lightspeed_file_store::repository::db::{DBFileStoreBinaryRepository, DBFileStoreRepositoryManager};
 use lightspeed_file_store::service::file_store::LsFileStoreService;
@@ -790,7 +790,7 @@ fn save_file_should_reject_payload_above_save_max_size_bytes() -> Result<(), LsE
                 .await;
             match result {
                 Err(LsError::BadRequest { code, .. }) => {
-                    assert_eq!(ErrorCodes::PAYLOAD_TOO_LARGE, code, "case {label}");
+                    assert_eq!("", code, "case {label}");
                 }
                 other => panic!("expected PAYLOAD_TOO_LARGE for {label}, got {other:?}"),
             }

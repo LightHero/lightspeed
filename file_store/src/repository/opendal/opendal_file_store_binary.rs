@@ -2,7 +2,7 @@ use std::sync::Arc;
 
 use crate::model::BinaryContent;
 use futures::StreamExt;
-use lightspeed_core::error::{ErrorCodes, LsError};
+use lightspeed_core::error::LsError;
 use opendal::Operator;
 
 #[derive(Clone)]
@@ -22,7 +22,7 @@ impl OpendalFileStoreBinaryRepository {
     pub async fn exists(&self, file_path: &str) -> Result<bool, LsError> {
         self.operator.exists(file_path).await.map_err(|err| LsError::BadRequest {
             message: format!("OpendalFileStoreDataRepository - Cannot check file [{file_path}]. Err: {err:?}"),
-            code: ErrorCodes::IO_ERROR,
+            code: "",
         })
     }
 
@@ -33,7 +33,7 @@ impl OpendalFileStoreBinaryRepository {
                     message: format!(
                         "OpendalFileStoreDataRepository - Cannot write data to [{file_path}]. Err: {err:?}"
                     ),
-                    code: ErrorCodes::IO_ERROR,
+                    code: "",
                 })?;
                 Ok(())
             }
@@ -42,7 +42,7 @@ impl OpendalFileStoreBinaryRepository {
                     message: format!(
                         "OpendalFileStoreDataRepository - Cannot create writer to [{file_path}]. Err: {err:?}"
                     ),
-                    code: ErrorCodes::IO_ERROR,
+                    code: "",
                 })?;
                 let mut guard = stream.lock().await;
                 while let Some(chunk) = guard.next().await {
@@ -51,28 +51,28 @@ impl OpendalFileStoreBinaryRepository {
                         message: format!(
                             "OpendalFileStoreDataRepository - Cannot write chunk to [{file_path}]. Err: {err:?}"
                         ),
-                        code: ErrorCodes::IO_ERROR,
+                        code: "",
                     })?;
                 }
                 writer.close().await.map_err(|err| LsError::BadRequest {
                     message: format!(
                         "OpendalFileStoreDataRepository - Cannot finalize writer to [{file_path}]. Err: {err:?}"
                     ),
-                    code: ErrorCodes::IO_ERROR,
+                    code: "",
                 })?;
                 Ok(())
             }
             BinaryContent::OpenDal { operator, path } => {
                 let reader = operator.reader(path).await.map_err(|err| LsError::BadRequest {
                     message: format!("OpendalFileStoreDataRepository - Cannot read file [{path}]. Err: {err:?}"),
-                    code: ErrorCodes::IO_ERROR,
+                    code: "",
                 })?;
 
                 let byte_stream = reader.into_bytes_stream(..).await.map_err(|err| LsError::BadRequest {
                     message: format!(
                         "OpendalFileStoreDataRepository - Cannot create byte stream from file [{path}]. Err: {err:?}"
                     ),
-                    code: ErrorCodes::IO_ERROR,
+                    code: "",
                 })?;
 
                 let byte_sink = self
@@ -83,7 +83,7 @@ impl OpendalFileStoreBinaryRepository {
                         message: format!(
                             "OpendalFileStoreDataRepository - Cannot create writer to [{file_path}]. Err: {err:?}"
                         ),
-                        code: ErrorCodes::IO_ERROR,
+                        code: "",
                     })?
                     .into_bytes_sink();
 
@@ -91,7 +91,7 @@ impl OpendalFileStoreBinaryRepository {
                     message: format!(
                         "OpendalFileStoreDataRepository - Cannot write data to [{file_path}]. Err: {err:?}"
                     ),
-                    code: ErrorCodes::IO_ERROR,
+                    code: "",
                 })
             }
         }
@@ -100,7 +100,7 @@ impl OpendalFileStoreBinaryRepository {
     pub async fn delete_by_filename(&self, file_name: &str) -> Result<(), LsError> {
         self.operator.delete(file_name).await.map_err(|err| LsError::BadRequest {
             message: format!("OpendalFileStoreDataRepository - Cannot delete file [{file_name}]. Err: {err:?}"),
-            code: ErrorCodes::IO_ERROR,
+            code: "",
         })
     }
 }

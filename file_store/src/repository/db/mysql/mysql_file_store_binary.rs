@@ -4,7 +4,7 @@ use c3p0::C3p0Pool;
 use c3p0::MySqlC3p0Pool;
 use c3p0::sqlx::{MySql, Row, query};
 use futures::StreamExt;
-use lightspeed_core::error::{ErrorCodes, LsError};
+use lightspeed_core::error::LsError;
 use sqlx::{AssertSqlSafe, MySqlConnection};
 use std::borrow::Cow;
 
@@ -73,7 +73,7 @@ impl DBFileStoreBinaryRepository for MySqlFileStoreBinaryRepository {
             BinaryContent::OpenDal { operator, path } => {
                 let buffer = operator.read(path).await.map_err(|err| LsError::BadRequest {
                     message: format!("MySqlFileStoreBinaryRepository - Cannot read file [{path}]. Err: {err:?}"),
-                    code: ErrorCodes::IO_ERROR,
+                    code: "",
                 })?;
                 Cow::Owned(buffer.to_vec())
             }

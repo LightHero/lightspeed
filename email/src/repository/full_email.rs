@@ -5,7 +5,7 @@ use lettre::message::header::ContentType;
 use lettre::message::{Attachment, Mailbox, MultiPart, SinglePart};
 use lettre::transport::smtp::authentication::Credentials;
 use lettre::{AsyncSmtpTransport, AsyncTransport, Message, Tokio1Executor};
-use lightspeed_core::error::{ErrorCodes, LsError};
+use lightspeed_core::error::LsError;
 use log::*;
 use std::future::Future;
 use std::path::Path;
@@ -147,7 +147,7 @@ impl EmailClient for FullEmailClient {
 fn parse_mailbox(address: &str) -> Result<Mailbox, LsError> {
     address.parse::<Mailbox>().map_err(|err| LsError::BadRequest {
         message: format!("Cannot parse email address [{address}]. Err: {err:?}"),
-        code: ErrorCodes::PARSE_ERROR,
+        code: "",
     })
 }
 

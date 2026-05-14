@@ -4,7 +4,7 @@ use c3p0::PgC3p0Pool;
 use c3p0::sqlx::{Postgres, Row, query};
 use futures::StreamExt;
 use futures::stream::BoxStream;
-use lightspeed_core::error::{ErrorCodes, LsError};
+use lightspeed_core::error::LsError;
 use sqlx::postgres::types::Oid;
 use sqlx::{AssertSqlSafe, PgConnection};
 use tokio::sync::{Mutex, mpsc};
@@ -78,7 +78,7 @@ impl DBFileStoreBinaryRepository for PgFileStoreBinaryRepository {
         // and that borrow can't be moved across a tokio::spawn boundary.
         let mut conn = self.pool.pool().acquire().await.map_err(|err| LsError::BadRequest {
             message: format!("PgFileStoreBinaryRepository - Cannot acquire connection: {err:?}"),
-            code: ErrorCodes::IO_ERROR,
+            code: "",
         })?;
 
         query("BEGIN").execute(&mut *conn).await?;
@@ -147,16 +147,16 @@ impl DBFileStoreBinaryRepository for PgFileStoreBinaryRepository {
                 let reader =
                     operator.reader_with(path).chunk(LO_CHUNK_SIZE).await.map_err(|err| LsError::BadRequest {
                         message: format!("PgFileStoreBinaryRepository - Cannot open reader for [{path}]: {err:?}"),
-                        code: ErrorCodes::IO_ERROR,
+                        code: "",
                     })?;
                 let mut stream = reader.into_bytes_stream(..).await.map_err(|err| LsError::BadRequest {
                     message: format!("PgFileStoreBinaryRepository - Cannot stream [{path}]: {err:?}"),
-                    code: ErrorCodes::IO_ERROR,
+                    code: "",
                 })?;
                 while let Some(chunk_result) = stream.next().await {
                     let chunk = chunk_result.map_err(|err| LsError::BadRequest {
                         message: format!("PgFileStoreBinaryRepository - Stream error on [{path}]: {err:?}"),
-                        code: ErrorCodes::IO_ERROR,
+                        code: "",
                     })?;
                     query("SELECT lowrite($1, $2)").bind(fd).bind(chunk.as_ref()).execute(&mut *tx).await?;
                 }

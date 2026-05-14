@@ -3,7 +3,6 @@ use crate::model::auth_account::{AuthAccountData, AuthAccountModel, AuthAccountS
 use crate::repository::AuthAccountRepository;
 use c3p0::sqlx::*;
 use c3p0::*;
-use lightspeed_core::error::ErrorCodes;
 
 #[derive(Clone)]
 pub struct MySqlAuthAccountRepository {}
@@ -59,7 +58,7 @@ impl AuthAccountRepository for MySqlAuthAccountRepository {
     ) -> Result<AuthAccountModel, LsAccountManagerError> {
         self.fetch_by_username_optional(tx, username).await?.ok_or_else(|| LsAccountManagerError::BadRequest {
             message: format!("No user found with username [{username}]"),
-            code: ErrorCodes::NOT_FOUND,
+            code: "",
         })
     }
 
