@@ -1,13 +1,13 @@
 use crate::data;
 use c3p0::*;
+use lightspeed_account_management::error::LsAccountManagerError;
 use lightspeed_account_management::model::token::{TokenData, TokenType};
 use lightspeed_account_management::repository::AuthRepositoryManager;
-use lightspeed_core::error::LsError;
 use lightspeed_core::utils::{current_epoch_seconds, new_hyphenated_uuid};
 use lightspeed_test_utils::tokio_test;
 
 #[test]
-fn should_delete_token() -> Result<(), LsError> {
+fn should_delete_token() -> Result<(), LsAccountManagerError> {
     tokio_test(async {
         let data = data(false).await;
         let auth_module = &data.0;
@@ -37,7 +37,7 @@ fn should_delete_token() -> Result<(), LsError> {
 }
 
 #[test]
-fn should_generate_token() -> Result<(), LsError> {
+fn should_generate_token() -> Result<(), LsAccountManagerError> {
     tokio_test(async {
         let data = data(false).await;
         let auth_module = &data.0;
@@ -75,7 +75,7 @@ fn should_generate_token() -> Result<(), LsError> {
 }
 
 #[test]
-fn should_validate_token_on_fetch() -> Result<(), LsError> {
+fn should_validate_token_on_fetch() -> Result<(), LsAccountManagerError> {
     tokio_test(async {
         let data = data(false).await;
         let auth_module = &data.0;
@@ -105,14 +105,14 @@ fn should_validate_token_on_fetch() -> Result<(), LsError> {
 }
 
 #[test]
-fn generate_and_save_token_should_lazily_delete_all_expired_tokens() -> Result<(), LsError> {
+fn generate_and_save_token_should_lazily_delete_all_expired_tokens() -> Result<(), LsAccountManagerError> {
     tokio_test(async {
         let data = data(false).await;
         let auth_module = &data.0;
         let token_service = &auth_module.token_service;
         let c3p0 = auth_module.repo_manager.c3p0();
 
-        c3p0.transaction::<_, LsError, _>(async |conn| {
+        c3p0.transaction::<_, LsAccountManagerError, _>(async |conn| {
             // Two stale tokens belonging to two different usernames — the sweep
             // must hit both, not just rows for the user we are minting next.
             let stale_a = conn
@@ -165,14 +165,14 @@ fn generate_and_save_token_should_lazily_delete_all_expired_tokens() -> Result<(
 }
 
 #[test]
-fn delete_expired_with_conn_should_remove_only_rows_below_threshold() -> Result<(), LsError> {
+fn delete_expired_with_conn_should_remove_only_rows_below_threshold() -> Result<(), LsAccountManagerError> {
     tokio_test(async {
         let data = data(false).await;
         let auth_module = &data.0;
         let token_service = &auth_module.token_service;
         let c3p0 = auth_module.repo_manager.c3p0();
 
-        c3p0.transaction::<_, LsError, _>(async |conn| {
+        c3p0.transaction::<_, LsAccountManagerError, _>(async |conn| {
             let now = current_epoch_seconds();
 
             let below = conn
@@ -221,7 +221,7 @@ fn delete_expired_with_conn_should_remove_only_rows_below_threshold() -> Result<
 }
 
 #[test]
-fn should_return_all_tokens_by_username() -> Result<(), LsError> {
+fn should_return_all_tokens_by_username() -> Result<(), LsAccountManagerError> {
     tokio_test(async {
         let data = data(false).await;
         let auth_module = &data.0;

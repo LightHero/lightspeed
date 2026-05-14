@@ -10,7 +10,6 @@ use crate::service::password_codec::LsPasswordCodecService;
 use crate::service::token::LsTokenService;
 use c3p0::sqlx::Database;
 use c3p0::*;
-use lightspeed_core::error::ErrorCodes;
 use lightspeed_core::service::auth::Auth;
 use lightspeed_core::utils::current_epoch_seconds;
 use log::*;
@@ -57,10 +56,7 @@ impl<RepoManager: AuthRepositoryManager> LsAuthAccountService<RepoManager> {
             match &user.data.status {
                 AuthAccountStatus::Active => {}
                 _ => {
-                    return Err(LsAccountManagerError::BadRequest {
-                        message: format!("User [{username}] not in status Active"),
-                        code: ErrorCodes::INACTIVE_USER,
-                    });
+                    return Err(LsAccountManagerError::InactiveUser(username.to_string()));
                 }
             };
 
@@ -69,10 +65,7 @@ impl<RepoManager: AuthRepositoryManager> LsAuthAccountService<RepoManager> {
             if let Some(expiration_secs) = self.auth_config.password_expiration_seconds {
                 let password_set_at = user.data.password_updated_date_epoch_seconds;
                 if creation_ts_seconds.saturating_sub(password_set_at) >= expiration_secs as i64 {
-                    return Err(LsAccountManagerError::BadRequest {
-                        message: format!("Password for user [{username}] has expired and must be changed"),
-                        code: ErrorCodes::EXPIRED_PASSWORD,
-                    });
+                    return Err(LsAccountManagerError::ExpiredPassword(username.to_string()));
                 }
             }
 
@@ -92,10 +85,7 @@ impl<RepoManager: AuthRepositoryManager> LsAuthAccountService<RepoManager> {
             let _ = self.password_service.verify_match(password, self.password_service.dummy_hash()).await;
         };
 
-        Err(LsAccountManagerError::BadRequest {
-            message: "Wrong credentials".to_string(),
-            code: ErrorCodes::WRONG_CREDENTIALS,
-        })
+        Err(LsAccountManagerError::WrongCredentials)
     }
 
     pub async fn create_user(
@@ -197,10 +187,7 @@ impl<RepoManager: AuthRepositoryManager> LsAuthAccountService<RepoManager> {
         // theirs" from "their account is already active". We now log the
         // precise reason at debug level for ops/forensics and surface a
         // single opaque error to the caller.
-        let generic_failure = || LsAccountManagerError::BadRequest {
-            message: "Cannot generate a new activation token for the provided username and email".to_owned(),
-            code: ErrorCodes::WRONG_CREDENTIALS,
-        };
+        let generic_failure = || LsAccountManagerError::WrongCredentials;
 
         let user = match self.auth_repo.fetch_by_username_optional(conn, username).await? {
             Some(u) => u,
@@ -258,10 +245,7 @@ impl<RepoManager: AuthRepositoryManager> LsAuthAccountService<RepoManager> {
         match &user.data.status {
             AuthAccountStatus::PendingActivation => {}
             _ => {
-                return Err(LsAccountManagerError::BadRequest {
-                    message: format!("User [{}] not in status PendingActivation", token.data.username),
-                    code: ErrorCodes::NOT_PENDING_USER,
-                });
+                return Err(LsAccountManagerError::UserNotPendingActivation);
             }
         };
 
@@ -291,10 +275,7 @@ impl<RepoManager: AuthRepositoryManager> LsAuthAccountService<RepoManager> {
         match &user.data.status {
             AuthAccountStatus::Active => {}
             _ => {
-                return Err(LsAccountManagerError::BadRequest {
-                    message: format!("User [{username}] not in status Active"),
-                    code: ErrorCodes::INACTIVE_USER,
-                });
+                return Err(LsAccountManagerError::InactiveUser(username.to_string()));
             }
         };
 
@@ -334,10 +315,7 @@ impl<RepoManager: AuthRepositoryManager> LsAuthAccountService<RepoManager> {
         match &user.data.status {
             AuthAccountStatus::Active => {}
             _ => {
-                return Err(LsAccountManagerError::BadRequest {
-                    message: format!("User [{}] not in status Active", token.data.username),
-                    code: ErrorCodes::INACTIVE_USER,
-                });
+                return Err(LsAccountManagerError::InactiveUser(token.data.username.to_string()));
             }
         };
 
@@ -366,18 +344,12 @@ impl<RepoManager: AuthRepositoryManager> LsAuthAccountService<RepoManager> {
         match &user.data.status {
             AuthAccountStatus::Active => {}
             _ => {
-                return Err(LsAccountManagerError::BadRequest {
-                    message: format!("User [{}] not in status Active", user.data.username),
-                    code: ErrorCodes::INACTIVE_USER,
-                });
+                return Err(LsAccountManagerError::InactiveUser(user.data.username.to_string()));
             }
         };
 
         if !self.password_service.verify_match(&dto.old_password, &user.data.password).await? {
-            return Err(LsAccountManagerError::BadRequest {
-                message: "Wrong credentials".to_owned(),
-                code: ErrorCodes::WRONG_CREDENTIALS,
-            });
+            return Err(LsAccountManagerError::WrongCredentials);
         }
 
         user.data.password = self.password_service.hash_password(&dto.new_password).await?;
@@ -537,10 +509,7 @@ impl<RepoManager: AuthRepositoryManager> LsAuthAccountService<RepoManager> {
         match &user.data.status {
             AuthAccountStatus::Active => {}
             _ => {
-                return Err(LsAccountManagerError::BadRequest {
-                    message: format!("User [{user_id:?}] not in status Active"),
-                    code: ErrorCodes::INACTIVE_USER,
-                });
+                return Err(LsAccountManagerError::InactiveUser(user.data.username.to_string()));
             }
         };
 
@@ -568,10 +537,7 @@ impl<RepoManager: AuthRepositoryManager> LsAuthAccountService<RepoManager> {
         match &user.data.status {
             AuthAccountStatus::Disabled => {}
             _ => {
-                return Err(LsAccountManagerError::BadRequest {
-                    message: format!("User [{user_id:?}] not in status Disabled"),
-                    code: ErrorCodes::ACTIVE_USER,
-                });
+                return Err(LsAccountManagerError::NotDisabledUser(user.data.username.to_string()))
             }
         };
 

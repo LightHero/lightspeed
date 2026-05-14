@@ -32,4 +32,19 @@ pub enum LsAccountManagerError {
         #[from]
         source: c3p0::sqlx::Error,
     },
+
+    #[error("InactiveUser: {0}")]
+    InactiveUser(String),
+
+    #[error("NotDisabledUser: {0}")]
+    NotDisabledUser(String),
+
+    #[error("ExpiredPassword for user {0}")]
+    ExpiredPassword(String),
+
+    #[error("WrongCredentials")]
+    WrongCredentials,
+
+    #[error("UserNotPendingActivation")]
+    UserNotPendingActivation,
 }
