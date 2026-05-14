@@ -1,6 +1,8 @@
 use std::fmt::Display;
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+use thiserror::Error;
+
+#[derive(Debug, Clone, Error, PartialEq, Eq)]
 pub struct FieldsMustMatch {
     pub field_a: String,
     pub field_b: String,
@@ -12,7 +14,7 @@ impl Display for FieldsMustMatch {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, Error, PartialEq, Eq)]
 pub struct MustMatchField {
     pub field: String,
 }

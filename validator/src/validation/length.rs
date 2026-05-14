@@ -2,6 +2,8 @@ use std::borrow::Cow;
 use std::collections::{BTreeMap, BTreeSet, HashMap, HashSet, VecDeque};
 use std::fmt::Display;
 
+use thiserror::Error;
+
 use crate::FieldValidator;
 
 /// Implemented for every type that the [`LengthValidator`] knows how to
@@ -92,7 +94,7 @@ impl<T> HasLength for BTreeSet<T> {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, Error, PartialEq, Eq)]
 pub struct LengthError {
     pub min: Option<usize>,
     pub max: Option<usize>,

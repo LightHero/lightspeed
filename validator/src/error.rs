@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+
 use thiserror::Error;
 
 #[cfg(feature = "credit_card")]
@@ -20,82 +22,59 @@ use crate::{
 #[derive(Debug, Error, Clone, PartialEq, Eq)]
 pub enum NoError {}
 
-#[derive(Debug, Error, Clone, PartialEq, Eq)]
+#[derive(Debug, Error, PartialEq, Eq)]
 pub enum ValidationError {
-    #[error("{0}")]
-    MustBeTrue(MustBeTrueError),
+    #[error(transparent)]
+    MustBeTrue(#[from] MustBeTrueError),
 
-    #[error("{0}")]
-    MustBeFalse(MustBeFalseError),
+    #[error(transparent)]
+    MustBeFalse(#[from] MustBeFalseError),
 
-    #[error("{0}")]
-    MustContain(MustContainError),
+    #[error(transparent)]
+    MustContain(#[from] MustContainError),
 
-    #[error("{0}")]
-    MustNotContain(MustNotContainError),
+    #[error(transparent)]
+    MustNotContain(#[from] MustNotContainError),
 
-    #[error("{0}")]
-    FieldsMustMatch(FieldsMustMatch),
+    #[error(transparent)]
+    FieldsMustMatch(#[from] FieldsMustMatch),
 
-    #[error("{0}")]
-    MustMatchField(MustMatchField),
+    #[error(transparent)]
+    MustMatchField(#[from] MustMatchField),
 
-    #[error("{0}")]
-    Ip(IpError),
+    #[error(transparent)]
+    Ip(#[from] IpError),
 
-    #[error("{0}")]
-    Url(UrlError),
+    #[error(transparent)]
+    Url(#[from] UrlError),
 
-    #[error("{0}")]
-    Password(PasswordError),
+    #[error(transparent)]
+    Password(#[from] PasswordError),
 
-    #[error("{0}")]
-    Range(RangeError),
+    #[error(transparent)]
+    Range(#[from] RangeError),
 
-    #[error("{0}")]
-    Regex(RegexError),
+    #[error(transparent)]
+    Regex(#[from] RegexError),
 
-    #[error("{0}")]
-    Length(LengthError),
+    #[error(transparent)]
+    Length(#[from] LengthError),
 
-    #[error("{0}")]
-    Email(EmailError),
+    #[error(transparent)]
+    Email(#[from] EmailError),
 
     #[cfg(feature = "credit_card")]
-    #[error("{0}")]
-    CreditCard(CreditCardError),
+    #[error(transparent)]
+    CreditCard(#[from] CreditCardError),
+
+    #[error("ValidationError::Custom {code}: {message} - params: {params:?}")]
+    Custom{
+        code: String,
+        message: String,
+        params: HashMap<String, String>,
+    },
 }
 
-// `From<NarrowError> for ValidationError` impls. These let every built-in
-// `FieldValidator` impl be generic over `E: From<TheirNarrowError>` while
-// still working when the chosen `E` is `ValidationError`. They're also the
-// fallback used by macro-generated per-field error enums when converting
-// upward to `ValidationError`.
-macro_rules! impl_from_for_validation_error {
-    ($variant:ident, $ty:path) => {
-        impl From<$ty> for ValidationError {
-            fn from(e: $ty) -> Self {
-                ValidationError::$variant(e)
-            }
-        }
-    };
-}
-
-impl_from_for_validation_error!(MustBeTrue, MustBeTrueError);
-impl_from_for_validation_error!(MustBeFalse, MustBeFalseError);
-impl_from_for_validation_error!(MustContain, MustContainError);
-impl_from_for_validation_error!(MustNotContain, MustNotContainError);
-impl_from_for_validation_error!(FieldsMustMatch, FieldsMustMatch);
-impl_from_for_validation_error!(MustMatchField, MustMatchField);
-impl_from_for_validation_error!(Ip, IpError);
-impl_from_for_validation_error!(Url, UrlError);
-impl_from_for_validation_error!(Password, PasswordError);
-impl_from_for_validation_error!(Range, RangeError);
-impl_from_for_validation_error!(Regex, RegexError);
-impl_from_for_validation_error!(Length, LengthError);
-impl_from_for_validation_error!(Email, EmailError);
-#[cfg(feature = "credit_card")]
-impl_from_for_validation_error!(CreditCard, CreditCardError);
 
 #[cfg(test)]
 mod test {

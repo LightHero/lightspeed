@@ -1,8 +1,10 @@
 use std::fmt::Display;
 
+use thiserror::Error;
+
 use crate::FieldValidator;
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, Error, PartialEq, Eq)]
 pub struct MustContainError {
     pub pattern: String,
     pub case_sensitive: bool,
@@ -56,7 +58,7 @@ impl<S: AsRef<str>, E: From<MustContainError>, Ctx> FieldValidator<S, E, Ctx> fo
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, Error, PartialEq, Eq)]
 pub struct MustNotContainError {
     pub pattern: String,
     pub case_sensitive: bool,

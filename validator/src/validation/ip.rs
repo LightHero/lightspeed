@@ -2,6 +2,8 @@ use std::fmt::Display;
 use std::net::{IpAddr, Ipv4Addr, Ipv6Addr};
 use std::str::FromStr;
 
+use thiserror::Error;
+
 use crate::FieldValidator;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -21,7 +23,7 @@ impl Display for IpKind {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, Error, PartialEq, Eq)]
 pub struct IpError {
     pub kind: IpKind,
 }

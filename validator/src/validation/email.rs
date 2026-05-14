@@ -1,8 +1,10 @@
 use std::fmt::Display;
 
+use thiserror::Error;
+
 use crate::FieldValidator;
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, Error)]
 pub struct EmailError;
 
 impl Display for EmailError {

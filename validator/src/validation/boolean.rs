@@ -1,9 +1,11 @@
 use std::fmt::Display;
 
+use thiserror::Error;
+
 use crate::FieldValidator;
 
 /// Must be true
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, Error, PartialEq, Eq)]
 pub struct MustBeTrueError;
 
 impl Display for MustBeTrueError {
@@ -13,7 +15,7 @@ impl Display for MustBeTrueError {
 }
 
 /// Must be false
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, Error, PartialEq, Eq)]
 pub struct MustBeFalseError;
 
 impl Display for MustBeFalseError {

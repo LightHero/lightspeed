@@ -1,8 +1,10 @@
 use std::fmt::Display;
 
+use thiserror::Error;
+
 use crate::FieldValidator;
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, Error, PartialEq, Eq)]
 pub struct RegexError {
     pub pattern: String,
 }
