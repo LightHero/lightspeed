@@ -204,10 +204,7 @@ mod test {
         let validator = MustNotContainValidator::new("ell", true);
         assert_eq!(
             validator.validate(&"hello", &()),
-            Err(ValidationError::MustNotContain(MustNotContainError {
-                pattern: "ell",
-                case_sensitive: true,
-            })),
+            Err(ValidationError::MustNotContain(MustNotContainError { pattern: "ell", case_sensitive: true })),
         );
     }
 
@@ -216,10 +213,7 @@ mod test {
         let validator = MustNotContainValidator::new("hello", true);
         assert_eq!(
             validator.validate(&"hello", &()),
-            Err(ValidationError::MustNotContain(MustNotContainError {
-                pattern: "hello",
-                case_sensitive: true,
-            })),
+            Err(ValidationError::MustNotContain(MustNotContainError { pattern: "hello", case_sensitive: true })),
         );
     }
 
@@ -237,17 +231,11 @@ mod test {
         let validator = MustNotContainValidator::new("Hello", false);
         assert_eq!(
             validator.validate(&"hello", &()),
-            Err(ValidationError::MustNotContain(MustNotContainError {
-                pattern: "Hello",
-                case_sensitive: false,
-            })),
+            Err(ValidationError::MustNotContain(MustNotContainError { pattern: "Hello", case_sensitive: false })),
         );
         assert_eq!(
             validator.validate(&"say HeLLo!", &()),
-            Err(ValidationError::MustNotContain(MustNotContainError {
-                pattern: "Hello",
-                case_sensitive: false,
-            })),
+            Err(ValidationError::MustNotContain(MustNotContainError { pattern: "Hello", case_sensitive: false })),
         );
     }
 

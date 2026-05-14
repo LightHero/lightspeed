@@ -71,8 +71,10 @@ pub fn regex_validator_instance(spec: &RegexSpec) -> TokenStream2 {
         },
     };
     quote! {
-        ::std::boxed::Box::new(::lightspeed_validator::regex::RegexValidator {
-            regex: #regex_expr,
-        })
+        ::lightspeed_validator::ValidatorRef::Boxed(::std::boxed::Box::new(
+            ::lightspeed_validator::regex::RegexValidator {
+                regex: #regex_expr,
+            }
+        ))
     }
 }

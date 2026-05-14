@@ -40,6 +40,15 @@ pub struct IpValidator {
     pub kind: IpKind,
 }
 
+/// Stateless `IpValidator` instance for `IpKind::Any`.
+pub static IP_ANY_VALIDATOR: IpValidator = IpValidator { kind: IpKind::Any };
+
+/// Stateless `IpValidator` instance for `IpKind::V4`.
+pub static IPV4_VALIDATOR: IpValidator = IpValidator { kind: IpKind::V4 };
+
+/// Stateless `IpValidator` instance for `IpKind::V6`.
+pub static IPV6_VALIDATOR: IpValidator = IpValidator { kind: IpKind::V6 };
+
 impl<S: AsRef<str>, E: From<IpError>, Ctx> FieldValidator<S, E, Ctx> for IpValidator {
     fn validate(&self, value: &S, _context: &Ctx) -> Result<(), E> {
         let s = value.as_ref();

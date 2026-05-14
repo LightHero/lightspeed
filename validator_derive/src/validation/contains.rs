@@ -56,9 +56,9 @@ pub fn must_contain_validator_instance(args: &ContainsArgs) -> TokenStream2 {
     // `case_sensitive == false`, so the per-call `validate` body avoids the
     // `pattern.to_lowercase()` allocation it would otherwise pay every time.
     quote! {
-        ::std::boxed::Box::new(
+        ::lightspeed_validator::ValidatorRef::Boxed(::std::boxed::Box::new(
             ::lightspeed_validator::contains::MustContainValidator::new(#pattern, #case_sensitive)
-        )
+        ))
     }
 }
 
@@ -67,8 +67,8 @@ pub fn must_not_contain_validator_instance(args: &ContainsArgs) -> TokenStream2 
     let pattern = &args.pattern;
     let case_sensitive = args.case_sensitive;
     quote! {
-        ::std::boxed::Box::new(
+        ::lightspeed_validator::ValidatorRef::Boxed(::std::boxed::Box::new(
             ::lightspeed_validator::contains::MustNotContainValidator::new(#pattern, #case_sensitive)
-        )
+        ))
     }
 }

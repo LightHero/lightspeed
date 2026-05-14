@@ -1,5 +1,5 @@
-use lightspeed_validator::Validable;
 use lightspeed_validator::boolean::{MustBeFalseError, MustBeTrueError};
+use lightspeed_validator::{FieldValidator, Validable};
 
 // These tests reference the per-field enum names (e.g. `FlagsEnabledFieldError`)
 // directly, so the struct opts into the `tailored` error strategy.

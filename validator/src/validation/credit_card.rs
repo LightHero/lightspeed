@@ -13,6 +13,9 @@ impl Display for CreditCardError {
     }
 }
 
+/// Program-wide stateless instance of [`CreditCardValidator`].
+pub static CREDIT_CARD_VALIDATOR: CreditCardValidator = CreditCardValidator;
+
 /// Validates that a string-compatible value is a recognized credit card
 /// number. Delegates to the [`card_validate`](https://docs.rs/card-validate)
 /// crate, which runs Luhn, brand-specific length checks, and IIN range

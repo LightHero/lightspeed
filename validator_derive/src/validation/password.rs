@@ -133,12 +133,14 @@ pub fn password_validator_instance(args: &PasswordArgs) -> TokenStream2 {
     };
 
     quote! {
-        ::std::boxed::Box::new(::lightspeed_validator::password::PasswordValidator {
-            upper: #upper,
-            lower: #lower,
-            number: #number,
-            special_chars: #special_chars,
-            trailing_whitespaces: #trailing,
-        })
+        ::lightspeed_validator::ValidatorRef::Boxed(::std::boxed::Box::new(
+            ::lightspeed_validator::password::PasswordValidator {
+                upper: #upper,
+                lower: #lower,
+                number: #number,
+                special_chars: #special_chars,
+                trailing_whitespaces: #trailing,
+            }
+        ))
     }
 }

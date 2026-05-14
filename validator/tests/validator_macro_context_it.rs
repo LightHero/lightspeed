@@ -80,7 +80,7 @@ fn default_context_generates_no_arg_validate() {
 // constructing one directly with a custom validator that reads the context.
 
 fn min_age_age(value: u32) -> ValidableType<u32, ValidationError, MinAgeContext> {
-    ValidableType::new(value, vec![Box::new(MinAgeValidator)])
+    ValidableType::new(value, vec![Box::new(MinAgeValidator).into()])
 }
 
 #[test]

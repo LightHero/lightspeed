@@ -13,6 +13,9 @@ impl Display for UrlError {
     }
 }
 
+/// Program-wide stateless instance of [`UrlValidator`].
+pub static URL_VALIDATOR: UrlValidator = UrlValidator;
+
 /// Validates that a string-compatible value parses as an absolute URL via
 /// the [`url`] crate.
 pub struct UrlValidator;

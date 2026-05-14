@@ -61,11 +61,13 @@ pub fn length_validator_instance(args: &LengthArgs) -> TokenStream2 {
     let max = expr_to_option_usize(&args.max);
     let equal = expr_to_option_usize(&args.equal);
     quote! {
-        ::std::boxed::Box::new(::lightspeed_validator::length::LengthValidator {
-            min: #min,
-            max: #max,
-            equal: #equal,
-        })
+        ::lightspeed_validator::ValidatorRef::Boxed(::std::boxed::Box::new(
+            ::lightspeed_validator::length::LengthValidator {
+                min: #min,
+                max: #max,
+                equal: #equal,
+            }
+        ))
     }
 }
 

@@ -13,6 +13,9 @@ impl Display for EmailError {
     }
 }
 
+/// Program-wide stateless instance of [`EmailValidator`].
+pub static EMAIL_VALIDATOR: EmailValidator = EmailValidator;
+
 /// Validates that a string-compatible value parses as an email address via
 /// the [`email_address`](https://docs.rs/email_address) crate (RFC 5321
 /// / 5322 compliant). The validator only checks shape — it does not perform

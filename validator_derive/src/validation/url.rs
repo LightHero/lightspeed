@@ -10,9 +10,12 @@ pub fn ensure_string_field(field: &Field) -> syn::Result<()> {
     super::string_field::ensure_string_field(field, "url")
 }
 
-/// Tokens that construct a `Box<dyn FieldValidator<...>>` for `UrlValidator`.
+/// Tokens that reference the program-wide static `UrlValidator` — no
+/// per-validator heap allocation.
 pub fn url_validator_instance() -> TokenStream2 {
     quote! {
-        ::std::boxed::Box::new(::lightspeed_validator::url::UrlValidator)
+        ::lightspeed_validator::ValidatorRef::Static(
+            &::lightspeed_validator::url::URL_VALIDATOR
+        )
     }
 }

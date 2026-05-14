@@ -11,9 +11,12 @@ pub fn ensure_string_field(field: &Field) -> syn::Result<()> {
     super::string_field::ensure_string_field(field, "credit_card")
 }
 
-/// Tokens that construct a `Box<dyn FieldValidator<...>>` for `CreditCardValidator`.
+/// Tokens that reference the program-wide static `CreditCardValidator` —
+/// no per-validator heap allocation.
 pub fn credit_card_validator_instance() -> TokenStream2 {
     quote! {
-        ::std::boxed::Box::new(::lightspeed_validator::credit_card::CreditCardValidator)
+        ::lightspeed_validator::ValidatorRef::Static(
+            &::lightspeed_validator::credit_card::CREDIT_CARD_VALIDATOR
+        )
     }
 }

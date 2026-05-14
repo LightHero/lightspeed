@@ -36,8 +36,7 @@ fn shared_is_the_default_and_uses_validation_error_everywhere() {
     };
     // Both fields' errors are `ValidationError`, so they can be put into the
     // same `Vec<ValidationError>` and matched against the wide enum.
-    let all: Vec<&ValidationError> =
-        returned.email.errors().iter().chain(returned.password.errors().iter()).collect();
+    let all: Vec<&ValidationError> = returned.email.errors().iter().chain(returned.password.errors().iter()).collect();
     assert_eq!(all.len(), 2);
     assert!(matches!(all[0], ValidationError::MustContain(_)));
     assert!(matches!(all[1], ValidationError::Length(_)));
@@ -98,7 +97,6 @@ fn tailored_generates_per_field_enums_and_no_error_for_empty_fields() {
     let _: &[NoError] = returned.display_name.errors();
     assert!(returned.display_name.errors().is_empty());
 }
-
 
 /// A user-defined error type for the `custom` strategy. Must implement
 /// `From<NarrowError>` for every narrow error emitted by any validator on
@@ -162,7 +160,6 @@ fn custom_strategy_uses_user_provided_error_for_every_field() {
     assert_eq!(all.len(), 2);
 }
 
-
 /// Test that the custom strategy still composes with string-compatible
 /// non-`String` field types.
 #[derive(Validable)]
@@ -174,14 +171,10 @@ pub struct CowFieldWithCustomErrors {
 
 #[test]
 fn custom_strategy_works_with_cow_field_types() {
-    let v = CowFieldWithCustomErrorsValidable::new(CowFieldWithCustomErrors {
-        note: Cow::Borrowed("this is ok"),
-    });
+    let v = CowFieldWithCustomErrorsValidable::new(CowFieldWithCustomErrors { note: Cow::Borrowed("this is ok") });
     assert!(v.validate().is_ok());
 
-    let v = CowFieldWithCustomErrorsValidable::new(CowFieldWithCustomErrors {
-        note: Cow::Borrowed("nope"),
-    });
+    let v = CowFieldWithCustomErrorsValidable::new(CowFieldWithCustomErrors { note: Cow::Borrowed("nope") });
     let returned = match v.validate() {
         Ok(_) => panic!("expected Err"),
         Err(v) => v,

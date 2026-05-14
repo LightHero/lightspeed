@@ -68,13 +68,8 @@ pub enum ValidationError {
     CreditCard(#[from] CreditCardError),
 
     #[error("ValidationError::Custom {code}: {message} - params: {params:?}")]
-    Custom{
-        code: String,
-        message: String,
-        params: HashMap<String, String>,
-    },
+    Custom { code: String, message: String, params: HashMap<String, String> },
 }
-
 
 #[cfg(test)]
 mod test {
@@ -82,14 +77,11 @@ mod test {
 
     #[test]
     fn test_error() {
-        let error =
-            ValidationError::MustContain(MustContainError { pattern: "hello", case_sensitive: true });
+        let error = ValidationError::MustContain(MustContainError { pattern: "hello", case_sensitive: true });
         assert_eq!(error.to_string(), "MustContain [hello] (case_sensitive: true)");
 
-        let error = ValidationError::FieldsMustMatch(FieldsMustMatch {
-            field_a: "password",
-            field_b: "password_confirm",
-        });
+        let error =
+            ValidationError::FieldsMustMatch(FieldsMustMatch { field_a: "password", field_b: "password_confirm" });
         assert_eq!(error.to_string(), "FieldsMustMatch [password, password_confirm]");
 
         let error = ValidationError::MustMatchField(MustMatchField { field: "password" });

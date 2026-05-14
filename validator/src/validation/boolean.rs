@@ -24,6 +24,13 @@ impl Display for MustBeFalseError {
     }
 }
 
+/// Program-wide stateless instance of [`MustBeTrueValidator`]. Used by the
+/// macro to avoid a per-validator `Box::new` heap allocation.
+pub static MUST_BE_TRUE_VALIDATOR: MustBeTrueValidator = MustBeTrueValidator;
+
+/// Program-wide stateless instance of [`MustBeFalseValidator`].
+pub static MUST_BE_FALSE_VALIDATOR: MustBeFalseValidator = MustBeFalseValidator;
+
 /// validate that a value is true
 pub struct MustBeTrueValidator;
 

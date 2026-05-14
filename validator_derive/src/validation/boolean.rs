@@ -18,16 +18,23 @@ pub fn ensure_bool_field(field: &Field) -> syn::Result<()> {
     Ok(())
 }
 
-/// Tokens that construct a `Box<dyn FieldValidator<...>>` for `MustBeTrueValidator`.
+/// Tokens that hand a `&'static dyn FieldValidator<…>` to a `ValidatorRef`.
+/// The validator is a unit type (zero-sized), so the program-wide static
+/// instance defined in `lightspeed_validator::boolean` is reused — no
+/// `Box::new` allocation per validable construction.
 pub fn must_be_true_validator_instance() -> TokenStream2 {
     quote! {
-        ::std::boxed::Box::new(::lightspeed_validator::boolean::MustBeTrueValidator)
+        ::lightspeed_validator::ValidatorRef::Static(
+            &::lightspeed_validator::boolean::MUST_BE_TRUE_VALIDATOR
+        )
     }
 }
 
-/// Tokens that construct a `Box<dyn FieldValidator<...>>` for `MustBeFalseValidator`.
+/// See [`must_be_true_validator_instance`].
 pub fn must_be_false_validator_instance() -> TokenStream2 {
     quote! {
-        ::std::boxed::Box::new(::lightspeed_validator::boolean::MustBeFalseValidator)
+        ::lightspeed_validator::ValidatorRef::Static(
+            &::lightspeed_validator::boolean::MUST_BE_FALSE_VALIDATOR
+        )
     }
 }

@@ -727,7 +727,7 @@ impl FieldValidator<usize, ValidationError, ()> for MustBeGreaterValidator {
 }
 
 let mut field: ValidableType<usize> =
-    ValidableType::new(3, vec![Box::new(MustBeGreaterValidator { min: 5 })]);
+    ValidableType::new(3, vec![Box::new(MustBeGreaterValidator { min: 5 }).into()]);
 field.validate(&());
 assert!(!field.errors().is_empty());
 ```

@@ -67,12 +67,14 @@ pub fn range_validator_instance(field_ty: &Type, args: &RangeArgs) -> TokenStrea
     let exclusive_min = expr_to_option(&args.exclusive_min);
     let exclusive_max = expr_to_option(&args.exclusive_max);
     quote! {
-        ::std::boxed::Box::new(::lightspeed_validator::range::RangeValidator::<#field_ty> {
-            min: #min,
-            max: #max,
-            exclusive_min: #exclusive_min,
-            exclusive_max: #exclusive_max,
-        })
+        ::lightspeed_validator::ValidatorRef::Boxed(::std::boxed::Box::new(
+            ::lightspeed_validator::range::RangeValidator::<#field_ty> {
+                min: #min,
+                max: #max,
+                exclusive_min: #exclusive_min,
+                exclusive_max: #exclusive_max,
+            }
+        ))
     }
 }
 

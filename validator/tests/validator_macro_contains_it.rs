@@ -1,7 +1,7 @@
 use std::borrow::Cow;
 
-use lightspeed_validator::Validable;
 use lightspeed_validator::contains::{MustContainError, MustNotContainError};
+use lightspeed_validator::{FieldValidator, Validable};
 
 fn must_contain_err<E: From<MustContainError>>(pattern: &'static str, case_sensitive: bool) -> E {
     MustContainError { pattern, case_sensitive }.into()

@@ -15,28 +15,30 @@ pub fn ensure_string_field(field: &Field) -> syn::Result<()> {
     super::string_field::ensure_string_field(field, "ip` / `ipv4` / `ipv6")
 }
 
-/// Tokens that construct a `Box<dyn FieldValidator<...>>` for `IpValidator`
-/// with the configured `IpKind`.
+/// Tokens that reference the program-wide static `IpValidator` for
+/// `IpKind::Any` — no per-validator heap allocation.
 pub fn ip_validator_instance() -> TokenStream2 {
     quote! {
-        ::std::boxed::Box::new(::lightspeed_validator::ip::IpValidator {
-            kind: ::lightspeed_validator::ip::IpKind::Any,
-        })
+        ::lightspeed_validator::ValidatorRef::Static(
+            &::lightspeed_validator::ip::IP_ANY_VALIDATOR
+        )
     }
 }
 
+/// See [`ip_validator_instance`].
 pub fn ipv4_validator_instance() -> TokenStream2 {
     quote! {
-        ::std::boxed::Box::new(::lightspeed_validator::ip::IpValidator {
-            kind: ::lightspeed_validator::ip::IpKind::V4,
-        })
+        ::lightspeed_validator::ValidatorRef::Static(
+            &::lightspeed_validator::ip::IPV4_VALIDATOR
+        )
     }
 }
 
+/// See [`ip_validator_instance`].
 pub fn ipv6_validator_instance() -> TokenStream2 {
     quote! {
-        ::std::boxed::Box::new(::lightspeed_validator::ip::IpValidator {
-            kind: ::lightspeed_validator::ip::IpKind::V6,
-        })
+        ::lightspeed_validator::ValidatorRef::Static(
+            &::lightspeed_validator::ip::IPV6_VALIDATOR
+        )
     }
 }

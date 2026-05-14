@@ -30,14 +30,58 @@ pub trait StructValidator<T, E, CTX> {
     fn validate(&self, value: &T, context: &CTX) -> Result<(), Vec<E>>;
 }
 
-pub struct ValidableType<T, E = ValidationError, Ctx = ()> {
+/// How a [`FieldValidator`] is stored inside [`ValidableType`].
+pub enum ValidatorRef<T: 'static, E: 'static, Ctx: 'static> {
+    Static(&'static dyn FieldValidator<T, E, Ctx>),
+    Boxed(Box<dyn FieldValidator<T, E, Ctx>>),
+}
+
+impl<T: 'static, E: 'static, Ctx: 'static> ValidatorRef<T, E, Ctx> {
+    pub fn as_validator(&self) -> &dyn FieldValidator<T, E, Ctx> {
+        match self {
+            Self::Static(v) => *v,
+            Self::Boxed(b) => b.as_ref(),
+        }
+    }
+}
+
+impl<T: 'static, E: 'static, Ctx: 'static> FieldValidator<T, E, Ctx> for ValidatorRef<T, E, Ctx> {
+    fn validate(&self, value: &T, context: &Ctx) -> Result<(), E> {
+        self.as_validator().validate(value, context)
+    }
+}
+
+impl<T: 'static, E: 'static, Ctx: 'static> From<Box<dyn FieldValidator<T, E, Ctx>>> for ValidatorRef<T, E, Ctx> {
+    fn from(b: Box<dyn FieldValidator<T, E, Ctx>>) -> Self {
+        Self::Boxed(b)
+    }
+}
+
+impl<T: 'static, E: 'static, Ctx: 'static> From<&'static dyn FieldValidator<T, E, Ctx>> for ValidatorRef<T, E, Ctx> {
+    fn from(s: &'static dyn FieldValidator<T, E, Ctx>) -> Self {
+        Self::Static(s)
+    }
+}
+
+/// `From<Box<V>>` for any concrete validator type.
+impl<V, T: 'static, E: 'static, Ctx: 'static> From<Box<V>> for ValidatorRef<T, E, Ctx>
+where
+    V: FieldValidator<T, E, Ctx> + 'static,
+{
+    fn from(b: Box<V>) -> Self {
+        Self::Boxed(b as Box<dyn FieldValidator<T, E, Ctx>>)
+    }
+}
+
+pub struct ValidableType<T: 'static, E: 'static = ValidationError, Ctx: 'static = ()> {
     value: T,
-    validators: Vec<Box<dyn FieldValidator<T, E, Ctx>>>,
+    validators: Vec<ValidatorRef<T, E, Ctx>>,
     errors: Vec<E>,
 }
 
-impl<T, E, Ctx> ValidableType<T, E, Ctx> {
-    pub fn new(value: T, validators: Vec<Box<dyn FieldValidator<T, E, Ctx>>>) -> Self {
+impl<T: 'static, E: 'static, Ctx: 'static> ValidableType<T, E, Ctx> {
+    /// Construct a `ValidableType` with an explicit list of [`ValidatorRef`]s.
+    pub fn new(value: T, validators: Vec<ValidatorRef<T, E, Ctx>>) -> Self {
         Self { value, validators, errors: vec![] }
     }
 
@@ -49,7 +93,7 @@ impl<T, E, Ctx> ValidableType<T, E, Ctx> {
         self.value = value;
     }
 
-    pub fn validators(&self) -> &[Box<dyn FieldValidator<T, E, Ctx>>] {
+    pub fn validators(&self) -> &[ValidatorRef<T, E, Ctx>] {
         &self.validators
     }
 
@@ -104,7 +148,7 @@ mod test {
 
     #[test]
     fn new_does_not_auto_validate() {
-        let validable = ValidableType::new(3, vec![Box::new(MustBeGreaterValidator { min: 5 })]);
+        let validable = ValidableType::new(3, vec![Box::new(MustBeGreaterValidator { min: 5 }).into()]);
         assert!(validable.errors().is_empty());
         assert_eq!(&3, validable.get());
     }
@@ -118,14 +162,14 @@ mod test {
 
     #[test]
     fn validate_with_passing_validator_leaves_errors_empty() {
-        let mut validable = ValidableType::new(10, vec![Box::new(MustBeGreaterValidator { min: 5 })]);
+        let mut validable = ValidableType::new(10, vec![Box::new(MustBeGreaterValidator { min: 5 }).into()]);
         validable.validate(&());
         assert!(validable.errors().is_empty());
     }
 
     #[test]
     fn validate_with_failing_validator_collects_error() {
-        let mut validable = ValidableType::new(3, vec![Box::new(MustBeGreaterValidator { min: 5 })]);
+        let mut validable = ValidableType::new(3, vec![Box::new(MustBeGreaterValidator { min: 5 }).into()]);
         validable.validate(&());
         assert_eq!(1, validable.errors().len());
         assert_eq!(&must_be_greater_err(5), &validable.errors()[0]);
@@ -135,7 +179,10 @@ mod test {
     fn validate_collects_errors_from_all_failing_validators() {
         let mut validable = ValidableType::new(
             3,
-            vec![Box::new(MustBeGreaterValidator { min: 5 }), Box::new(MustBeGreaterValidator { min: 10 })],
+            vec![
+                Box::new(MustBeGreaterValidator { min: 5 }).into(),
+                Box::new(MustBeGreaterValidator { min: 10 }).into(),
+            ],
         );
         validable.validate(&());
         assert_eq!(2, validable.errors().len());
@@ -147,7 +194,10 @@ mod test {
     fn validate_mixed_passing_and_failing_validators() {
         let mut validable = ValidableType::new(
             7,
-            vec![Box::new(MustBeGreaterValidator { min: 5 }), Box::new(MustBeGreaterValidator { min: 10 })],
+            vec![
+                Box::new(MustBeGreaterValidator { min: 5 }).into(),
+                Box::new(MustBeGreaterValidator { min: 10 }).into(),
+            ],
         );
         validable.validate(&());
         assert_eq!(1, validable.errors().len());
@@ -156,7 +206,7 @@ mod test {
 
     #[test]
     fn validate_clears_previous_errors_on_rerun() {
-        let mut validable = ValidableType::new(3, vec![Box::new(MustBeGreaterValidator { min: 5 })]);
+        let mut validable = ValidableType::new(3, vec![Box::new(MustBeGreaterValidator { min: 5 }).into()]);
         validable.validate(&());
         assert_eq!(1, validable.errors().len());
 
@@ -167,7 +217,7 @@ mod test {
 
     #[test]
     fn set_updates_value_without_revalidating() {
-        let mut validable = ValidableType::new(3, vec![Box::new(MustBeGreaterValidator { min: 5 })]);
+        let mut validable = ValidableType::new(3, vec![Box::new(MustBeGreaterValidator { min: 5 }).into()]);
         validable.set(10);
         assert_eq!(&10, validable.get());
         assert!(validable.errors().is_empty());
@@ -203,7 +253,7 @@ mod test {
     #[test]
     fn validate_forwards_context_to_validators() {
         let mut validable: ValidableType<usize, ValidationError, usize> =
-            ValidableType::new(8, vec![Box::new(MinValidator { floor: 5 })]);
+            ValidableType::new(8, vec![Box::new(MinValidator { floor: 5 }).into()]);
 
         validable.validate(&2);
         assert!(validable.errors().is_empty(), "8 >= 5 + 2 should pass");
