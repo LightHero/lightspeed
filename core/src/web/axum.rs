@@ -17,13 +17,9 @@ impl IntoResponse for LsError {
             LsError::BadRequest { .. } => response_with_code(StatusCode::BAD_REQUEST),
             LsError::C3p0Error { .. } => response_with_code(StatusCode::BAD_REQUEST),
             LsError::SqlxError { .. } => response_with_code(StatusCode::BAD_REQUEST),
-            LsError::RequestConflict { .. } | LsError::ServiceUnavailable { .. } => {
-                response_with_code(StatusCode::CONFLICT)
+            LsError::ModuleStartError { .. } | LsError::ConfigurationError { .. } => {
+                response_with_code(http::StatusCode::INTERNAL_SERVER_ERROR)
             }
-            LsError::InternalServerError { .. }
-            | LsError::ModuleBuilderError { .. }
-            | LsError::ModuleStartError { .. }
-            | LsError::ConfigurationError { .. } => response_with_code(http::StatusCode::INTERNAL_SERVER_ERROR),
         }
     }
 }

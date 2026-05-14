@@ -14,8 +14,6 @@ pub enum LsError {
     ParseAuthHeaderError { message: String },
 
     // Module
-    #[error("ModuleBuilderError: {message}")]
-    ModuleBuilderError { message: String },
     #[error("ModuleStartError: {message}")]
     ModuleStartError { message: String },
     #[error("ConfigurationError: {message}")]
@@ -26,9 +24,6 @@ pub enum LsError {
     UnauthenticatedError,
     #[error("ForbiddenError: {message}")]
     ForbiddenError { message: String },
-
-    #[error("InternalServerError: {message}")]
-    InternalServerError { message: String },
 
     #[error("C3p0Error: {source:?}")]
     C3p0Error {
@@ -44,12 +39,6 @@ pub enum LsError {
 
     #[error("BadRequest: {message} - {code}")]
     BadRequest { message: String, code: &'static str },
-
-    #[error("RequestConflict: {message} - {code}")]
-    RequestConflict { message: String, code: &'static str },
-
-    #[error("ServiceUnavailable: {message} - {code}")]
-    ServiceUnavailable { message: String, code: &'static str },
 }
 
 impl From<serde_json::Error> for LsError {

@@ -7,7 +7,6 @@ pub enum SchedulerError {
     JobLockError { message: String },
     JobExecutionStateError { message: String },
     JobExecutionError { source: Box<dyn std::error::Error + Send + Sync> },
-    JobExecutionPanic { cause: String },
 }
 
 impl Display for SchedulerError {
@@ -17,7 +16,6 @@ impl Display for SchedulerError {
             SchedulerError::JobLockError { message } => write!(f, "JobLockError: [{message}]"),
             SchedulerError::JobExecutionStateError { message } => write!(f, "JobExecutionStateError: [{message}]"),
             SchedulerError::JobExecutionError { .. } => write!(f, "JobExecutionError"),
-            SchedulerError::JobExecutionPanic { cause } => write!(f, "JobExecutionPanic: [{cause}]"),
         }
     }
 }
@@ -27,8 +25,7 @@ impl Error for SchedulerError {
         match self {
             SchedulerError::ScheduleDefinitionError { .. }
             | SchedulerError::JobLockError { .. }
-            | SchedulerError::JobExecutionStateError { .. }
-            | SchedulerError::JobExecutionPanic { .. } => None,
+            | SchedulerError::JobExecutionStateError { .. } => None,
 
             SchedulerError::JobExecutionError { source } => Some(source.as_ref()),
         }
