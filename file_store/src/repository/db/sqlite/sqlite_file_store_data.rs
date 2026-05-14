@@ -1,9 +1,9 @@
+use crate::error::LsFileStoreError;
 use crate::model::{FileStoreDataData, FileStoreDataModel};
 use crate::repository::db::FileStoreDataRepository;
 use c3p0::sql::OrderBy;
 use c3p0::sqlx::{Row, Sqlite, query};
 use c3p0::{sqlx::*, *};
-use lightspeed_core::error::LsError;
 
 #[derive(Clone, Default)]
 pub struct SqliteFileStoreDataRepository {}
@@ -16,14 +16,18 @@ impl FileStoreDataRepository for SqliteFileStoreDataRepository {
         tx: &mut SqliteConnection,
         repository: &str,
         file_path: &str,
-    ) -> Result<bool, LsError> {
+    ) -> Result<bool, LsFileStoreError> {
         let sql = "SELECT EXISTS (SELECT 1 FROM LS_FILE_STORE_DATA WHERE (data ->> '$.repository') = ? AND (data ->> '$.file_path') = ?)";
 
         let res = query(sql).bind(repository).bind(file_path).fetch_one(tx).await.and_then(|row| row.try_get(0))?;
         Ok(res)
     }
 
-    async fn fetch_one_by_id(&self, tx: &mut SqliteConnection, id: i64) -> Result<FileStoreDataModel, LsError> {
+    async fn fetch_one_by_id(
+        &self,
+        tx: &mut SqliteConnection,
+        id: i64,
+    ) -> Result<FileStoreDataModel, LsFileStoreError> {
         Ok(tx.fetch_one_by_id::<FileStoreDataData>(id).await?)
     }
 
@@ -32,7 +36,7 @@ impl FileStoreDataRepository for SqliteFileStoreDataRepository {
         tx: &mut SqliteConnection,
         repository: &str,
         file_path: &str,
-    ) -> Result<FileStoreDataModel, LsError> {
+    ) -> Result<FileStoreDataModel, LsFileStoreError> {
         Ok(FileStoreDataModel::query_with_tail(
             r#"
             WHERE (data ->> '$.repository') = ? AND (data ->> '$.file_path') = ?
@@ -51,7 +55,7 @@ impl FileStoreDataRepository for SqliteFileStoreDataRepository {
         offset: usize,
         max: usize,
         sort: OrderBy,
-    ) -> Result<Vec<FileStoreDataModel>, LsError> {
+    ) -> Result<Vec<FileStoreDataModel>, LsFileStoreError> {
         Ok(FileStoreDataModel::query_with_tail(&format!(
             r#"
                WHERE (data ->> '$.repository') = ?
@@ -70,11 +74,11 @@ impl FileStoreDataRepository for SqliteFileStoreDataRepository {
         &self,
         tx: &mut SqliteConnection,
         model: NewRecord<FileStoreDataData>,
-    ) -> Result<FileStoreDataModel, LsError> {
+    ) -> Result<FileStoreDataModel, LsFileStoreError> {
         Ok(tx.save(model).await?)
     }
 
-    async fn delete_by_id(&self, tx: &mut SqliteConnection, id: i64) -> Result<u64, LsError> {
+    async fn delete_by_id(&self, tx: &mut SqliteConnection, id: i64) -> Result<u64, LsFileStoreError> {
         Ok(tx.delete_by_id::<FileStoreDataData>(id).await?)
     }
 }

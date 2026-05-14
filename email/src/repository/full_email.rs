@@ -1,11 +1,11 @@
 use crate::config::EmailClientConfig;
+use crate::error::LsEmailError;
 use crate::model::email::{EmailAttachment, EmailMessage};
 use crate::repository::email::EmailClient;
 use lettre::message::header::ContentType;
 use lettre::message::{Attachment, Mailbox, MultiPart, SinglePart};
 use lettre::transport::smtp::authentication::Credentials;
 use lettre::{AsyncSmtpTransport, AsyncTransport, Message, Tokio1Executor};
-use lightspeed_core::error::LsError;
 use log::*;
 use std::future::Future;
 use std::path::Path;
@@ -20,7 +20,7 @@ pub struct FullEmailClient {
 }
 
 impl FullEmailClient {
-    pub fn new(email_config: EmailClientConfig) -> Result<Self, LsError> {
+    pub fn new(email_config: EmailClientConfig) -> Result<Self, LsEmailError> {
         let mut smtp_transport_builder = if email_config.dangerous_no_tls {
             // `builder_dangerous` skips TLS entirely — credentials and message
             // bodies travel in plaintext. Acceptable only against a local
@@ -33,7 +33,7 @@ impl FullEmailClient {
             AsyncSmtpTransport::<Tokio1Executor>::builder_dangerous(&email_config.email_server_address)
         } else {
             AsyncSmtpTransport::<Tokio1Executor>::relay(&email_config.email_server_address).map_err(|err| {
-                LsError::InternalServerError {
+                LsEmailError::BuildTransportError {
                     message: format!(
                         "FullEmailService.new - Cannot build SmtpTransport with TLS to the server [{}]. Err: {:?}",
                         email_config.email_server_address, err
@@ -59,7 +59,7 @@ impl FullEmailClient {
 }
 
 impl EmailClient for FullEmailClient {
-    fn send(&self, email_message: EmailMessage) -> Pin<Box<dyn Future<Output = Result<(), LsError>> + Send>> {
+    fn send(&self, email_message: EmailMessage) -> Pin<Box<dyn Future<Output = Result<(), LsEmailError>> + Send>> {
         let client = self.client.clone();
         Box::pin(async move {
             debug!("Sending email {email_message:?}");
@@ -106,9 +106,9 @@ impl EmailClient for FullEmailClient {
                             Path::new(&path).file_name().and_then(|os_str| os_str.to_str()).unwrap_or("")
                         });
 
-                        let body = tokio::fs::read(&path).await.map_err(|err| LsError::BadRequest {
-                            message: format!("Cannot attach the requested attachment from file [{path}]. Err: {err:?}"),
-                            code: "",
+                        let body = tokio::fs::read(&path).await.map_err(|err| LsEmailError::AttachmentReadError {
+                            path: path.clone(),
+                            message: format!("{err:?}"),
                         })?;
                         multipart = multipart
                             .singlepart(Attachment::new(filename.to_owned()).body(body, to_content_type(&mime_type)?));
@@ -116,11 +116,11 @@ impl EmailClient for FullEmailClient {
                 }
             }
 
-            let email = builder.multipart(multipart).map_err(|err| LsError::InternalServerError {
+            let email = builder.multipart(multipart).map_err(|err| LsEmailError::BuildMessageError {
                 message: format!("FullEmailService.send - Cannot build the email. Err: {err:?}"),
             })?;
 
-            let response = client.send(email).await.map_err(|err| LsError::InternalServerError {
+            let response = client.send(email).await.map_err(|err| LsEmailError::SendError {
                 message: format!("FullEmailService.send - Cannot send email to the SMTP server. Err: {err:?}"),
             })?;
 
@@ -129,33 +129,28 @@ impl EmailClient for FullEmailClient {
         })
     }
 
-    fn get_emails(&self) -> Result<Vec<EmailMessage>, LsError> {
-        Err(LsError::InternalServerError {
-            message: "FullEmailService.get_emails - Cannot return sent email".to_owned(),
-        })
+    fn get_emails(&self) -> Result<Vec<EmailMessage>, LsEmailError> {
+        Err(LsEmailError::OperationNotSupported { operation: "FullEmailClient::get_emails" })
     }
 
-    fn clear_emails(&self) -> Result<(), LsError> {
-        Err(LsError::InternalServerError { message: "FullEmailService.clear_emails - Cannot clear_emails".to_owned() })
+    fn clear_emails(&self) -> Result<(), LsEmailError> {
+        Err(LsEmailError::OperationNotSupported { operation: "FullEmailClient::clear_emails" })
     }
 
-    fn retain_emails(&self, _: Box<dyn FnMut(&EmailMessage) -> bool>) -> Result<(), LsError> {
-        Err(LsError::InternalServerError { message: "FullEmailService.clear_emails - Cannot retain_emails".to_owned() })
+    fn retain_emails(&self, _: Box<dyn FnMut(&EmailMessage) -> bool>) -> Result<(), LsEmailError> {
+        Err(LsEmailError::OperationNotSupported { operation: "FullEmailClient::retain_emails" })
     }
 }
 
-fn parse_mailbox(address: &str) -> Result<Mailbox, LsError> {
-    address.parse::<Mailbox>().map_err(|err| LsError::BadRequest {
-        message: format!("Cannot parse email address [{address}]. Err: {err:?}"),
-        code: "",
-    })
+fn parse_mailbox(address: &str) -> Result<Mailbox, LsEmailError> {
+    address
+        .parse::<Mailbox>()
+        .map_err(|err| LsEmailError::InvalidMailbox { address: address.to_owned(), message: format!("{err:?}") })
 }
 
-fn to_content_type(mime_type: &str) -> Result<ContentType, LsError> {
-    ContentType::parse(mime_type).map_err(|err| LsError::BadRequest {
-        message: format!("Cannot parse the mime type [{mime_type}]. Err: {err:?}"),
-        code: "",
-    })
+fn to_content_type(mime_type: &str) -> Result<ContentType, LsEmailError> {
+    ContentType::parse(mime_type)
+        .map_err(|err| LsEmailError::InvalidMimeType { mime_type: mime_type.to_owned(), message: format!("{err:?}") })
 }
 
 #[cfg(test)]

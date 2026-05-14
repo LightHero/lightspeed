@@ -1,10 +1,12 @@
 use crate::config::EmailClientConfig;
+use crate::error::LsEmailError;
 use crate::service::LsEmailService;
 use lightspeed_core::error::LsError;
 use log::*;
 use std::sync::Arc;
 
 pub mod config;
+pub mod error;
 pub mod model;
 pub mod repository;
 pub mod service;
@@ -16,7 +18,7 @@ pub struct LsEmailClientModule {
 }
 
 impl LsEmailClientModule {
-    pub fn new(email_config: EmailClientConfig) -> Result<Self, LsError> {
+    pub fn new(email_config: EmailClientConfig) -> Result<Self, LsEmailError> {
         println!("Creating LsEmailClientModule");
         info!("Creating LsEmailClientModule");
 

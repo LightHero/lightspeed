@@ -1,9 +1,9 @@
+use crate::error::LsFileStoreError;
 use crate::model::{FileStoreDataData, FileStoreDataModel};
 use crate::repository::db::FileStoreDataRepository;
 use c3p0::sql::OrderBy;
 use c3p0::sqlx::{Postgres, Row, query};
 use c3p0::{sqlx::*, *};
-use lightspeed_core::error::LsError;
 
 #[derive(Clone, Default)]
 pub struct PgFileStoreDataRepository {}
@@ -16,7 +16,7 @@ impl FileStoreDataRepository for PgFileStoreDataRepository {
         tx: &mut PgConnection,
         repository: &str,
         file_path: &str,
-    ) -> Result<bool, LsError> {
+    ) -> Result<bool, LsFileStoreError> {
         let sql = "SELECT EXISTS (SELECT 1 FROM LS_FILE_STORE_DATA WHERE (data ->> 'repository') = $1 AND (data ->> 'file_path') = $2)";
 
         let res =
@@ -24,7 +24,7 @@ impl FileStoreDataRepository for PgFileStoreDataRepository {
         Ok(res)
     }
 
-    async fn fetch_one_by_id(&self, tx: &mut PgConnection, id: i64) -> Result<FileStoreDataModel, LsError> {
+    async fn fetch_one_by_id(&self, tx: &mut PgConnection, id: i64) -> Result<FileStoreDataModel, LsFileStoreError> {
         Ok(tx.fetch_one_by_id::<FileStoreDataData>(id).await?)
     }
 
@@ -33,7 +33,7 @@ impl FileStoreDataRepository for PgFileStoreDataRepository {
         tx: &mut PgConnection,
         repository: &str,
         file_path: &str,
-    ) -> Result<FileStoreDataModel, LsError> {
+    ) -> Result<FileStoreDataModel, LsFileStoreError> {
         Ok(FileStoreDataModel::query_with_tail(
             r#"
             WHERE (data ->> 'repository') = $1 AND (data ->> 'file_path') = $2
@@ -52,7 +52,7 @@ impl FileStoreDataRepository for PgFileStoreDataRepository {
         offset: usize,
         max: usize,
         sort: OrderBy,
-    ) -> Result<Vec<FileStoreDataModel>, LsError> {
+    ) -> Result<Vec<FileStoreDataModel>, LsFileStoreError> {
         Ok(FileStoreDataModel::query_with_tail(&format!(
             r#"
                WHERE (data ->> 'repository') = $1
@@ -71,11 +71,11 @@ impl FileStoreDataRepository for PgFileStoreDataRepository {
         &self,
         tx: &mut PgConnection,
         model: NewRecord<FileStoreDataData>,
-    ) -> Result<FileStoreDataModel, LsError> {
+    ) -> Result<FileStoreDataModel, LsFileStoreError> {
         Ok(tx.save(model).await?)
     }
 
-    async fn delete_by_id(&self, tx: &mut PgConnection, id: i64) -> Result<u64, LsError> {
+    async fn delete_by_id(&self, tx: &mut PgConnection, id: i64) -> Result<u64, LsFileStoreError> {
         Ok(tx.delete_by_id::<FileStoreDataData>(id).await?)
     }
 }

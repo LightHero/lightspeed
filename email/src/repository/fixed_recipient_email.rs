@@ -1,6 +1,6 @@
+use crate::error::LsEmailError;
 use crate::model::email::EmailMessage;
 use crate::repository::email::EmailClient;
-use lightspeed_core::error::LsError;
 use log::warn;
 use std::future::Future;
 use std::pin::Pin;
@@ -22,7 +22,7 @@ impl FixedRecipientEmailClient {
 }
 
 impl EmailClient for FixedRecipientEmailClient {
-    fn send(&self, mut email_message: EmailMessage) -> Pin<Box<dyn Future<Output = Result<(), LsError>> + Send>> {
+    fn send(&self, mut email_message: EmailMessage) -> Pin<Box<dyn Future<Output = Result<(), LsEmailError>> + Send>> {
         let client = self.client.clone();
         let fixed_to_recipients = self.fixed_to_recipients.clone();
 
@@ -54,15 +54,15 @@ impl EmailClient for FixedRecipientEmailClient {
         })
     }
 
-    fn get_emails(&self) -> Result<Vec<EmailMessage>, LsError> {
+    fn get_emails(&self) -> Result<Vec<EmailMessage>, LsEmailError> {
         self.client.get_emails()
     }
 
-    fn clear_emails(&self) -> Result<(), LsError> {
+    fn clear_emails(&self) -> Result<(), LsEmailError> {
         self.client.clear_emails()
     }
 
-    fn retain_emails(&self, retain: Box<dyn FnMut(&EmailMessage) -> bool>) -> Result<(), LsError> {
+    fn retain_emails(&self, retain: Box<dyn FnMut(&EmailMessage) -> bool>) -> Result<(), LsEmailError> {
         self.client.retain_emails(retain)
     }
 }

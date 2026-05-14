@@ -1,7 +1,7 @@
 use crate::data;
 use c3p0::sql::OrderBy;
 use c3p0::*;
-use lightspeed_core::error::LsError;
+use lightspeed_file_store::error::LsFileStoreError;
 use lightspeed_file_store::model::BinaryContent;
 use lightspeed_file_store::repository::db::{DBFileStoreBinaryRepository, DBFileStoreRepositoryManager};
 use lightspeed_file_store::service::file_store::LsFileStoreService;
@@ -14,7 +14,7 @@ use std::path::{Path, PathBuf};
 const SOURCE_FILE: &str = "./Cargo.toml";
 
 #[test]
-fn should_save_file_to_db() -> Result<(), LsError> {
+fn should_save_file_to_db() -> Result<(), LsFileStoreError> {
     tokio_test(async {
         let data = data(false).await;
         let file_store = &data.0.file_store_service;
@@ -45,7 +45,7 @@ fn should_save_file_to_db() -> Result<(), LsError> {
 }
 
 #[test]
-fn should_save_file_to_fs() -> Result<(), LsError> {
+fn should_save_file_to_fs() -> Result<(), LsFileStoreError> {
     tokio_test(async {
         let data = data(false).await;
         let file_store = &data.0.file_store_service;
@@ -78,7 +78,7 @@ fn should_save_file_to_fs() -> Result<(), LsError> {
 }
 
 #[test]
-fn should_save_file_to_db_with_specific_repo() -> Result<(), LsError> {
+fn should_save_file_to_db_with_specific_repo() -> Result<(), LsFileStoreError> {
     tokio_test(async {
         let data = data(false).await;
         let file_store = &data.0.file_store_service;
@@ -136,7 +136,7 @@ fn should_save_file_to_db_with_specific_repo() -> Result<(), LsError> {
 }
 
 #[test]
-fn should_save_file_to_fs_with_specific_repo() -> Result<(), LsError> {
+fn should_save_file_to_fs_with_specific_repo() -> Result<(), LsFileStoreError> {
     tokio_test(async {
         let data = data(false).await;
         let file_store = &data.0.file_store_service;
@@ -199,7 +199,7 @@ fn should_save_file_to_fs_with_specific_repo() -> Result<(), LsError> {
 }
 
 #[test]
-fn save_should_fails_if_fs_repo_does_not_exist() -> Result<(), LsError> {
+fn save_should_fails_if_fs_repo_does_not_exist() -> Result<(), LsFileStoreError> {
     tokio_test(async {
         let data = data(false).await;
         let file_store = &data.0.file_store_service;
@@ -229,7 +229,7 @@ fn save_should_fails_if_fs_repo_does_not_exist() -> Result<(), LsError> {
 }
 
 #[test]
-fn should_save_file_to_db_with_relative_folder() -> Result<(), LsError> {
+fn should_save_file_to_db_with_relative_folder() -> Result<(), LsFileStoreError> {
     tokio_test(async {
         let data = data(false).await;
         let file_store = &data.0.file_store_service;
@@ -259,7 +259,7 @@ fn should_save_file_to_db_with_relative_folder() -> Result<(), LsError> {
 }
 
 #[test]
-fn should_save_file_to_fs_with_relative_folder() -> Result<(), LsError> {
+fn should_save_file_to_fs_with_relative_folder() -> Result<(), LsFileStoreError> {
     tokio_test(async {
         let data = data(false).await;
         let file_store = &data.0.file_store_service;
@@ -293,7 +293,7 @@ fn should_save_file_to_fs_with_relative_folder() -> Result<(), LsError> {
 }
 
 #[test]
-fn should_save_file_to_db_with_relative_folder_in_repository() -> Result<(), LsError> {
+fn should_save_file_to_db_with_relative_folder_in_repository() -> Result<(), LsFileStoreError> {
     tokio_test(async {
         let data = data(false).await;
         let file_store = &data.0.file_store_service;
@@ -324,7 +324,7 @@ fn should_save_file_to_db_with_relative_folder_in_repository() -> Result<(), LsE
 }
 
 #[test]
-fn should_save_file_to_fs_with_relative_folder_in_repository() -> Result<(), LsError> {
+fn should_save_file_to_fs_with_relative_folder_in_repository() -> Result<(), LsFileStoreError> {
     tokio_test(async {
         let data = data(false).await;
         let file_store = &data.0.file_store_service;
@@ -359,7 +359,7 @@ fn should_save_file_to_fs_with_relative_folder_in_repository() -> Result<(), LsE
 }
 
 #[test]
-fn should_delete_file_from_db() -> Result<(), LsError> {
+fn should_delete_file_from_db() -> Result<(), LsFileStoreError> {
     tokio_test(async {
         let data = data(false).await;
         let file_store = &data.0.file_store_service;
@@ -381,7 +381,7 @@ fn should_delete_file_from_db() -> Result<(), LsError> {
         data.0
             .repo_manager
             .c3p0()
-            .transaction::<_, LsError, _>(async |conn| {
+            .transaction::<_, LsFileStoreError, _>(async |conn| {
                 assert!(db_file_binary_repo.read_file(conn, save_repository, &file_path).await.is_ok());
                 Ok(())
             })
@@ -394,7 +394,7 @@ fn should_delete_file_from_db() -> Result<(), LsError> {
         data.0
             .repo_manager
             .c3p0()
-            .transaction::<_, LsError, _>(async |conn| {
+            .transaction::<_, LsFileStoreError, _>(async |conn| {
                 assert!(db_file_binary_repo.read_file(conn, save_repository, &file_path).await.is_err());
                 Ok(())
             })
@@ -406,7 +406,7 @@ fn should_delete_file_from_db() -> Result<(), LsError> {
 }
 
 #[test]
-fn should_delete_file_from_fs() -> Result<(), LsError> {
+fn should_delete_file_from_fs() -> Result<(), LsFileStoreError> {
     tokio_test(async {
         let data = data(false).await;
         let file_store = &data.0.file_store_service;
@@ -437,7 +437,7 @@ fn should_delete_file_from_fs() -> Result<(), LsError> {
 }
 
 #[test]
-fn should_allow_files_with_same_path_but_different_repository() -> Result<(), LsError> {
+fn should_allow_files_with_same_path_but_different_repository() -> Result<(), LsFileStoreError> {
     tokio_test(async {
         let data = data(false).await;
         let file_store = &data.0.file_store_service;
@@ -507,7 +507,7 @@ fn should_allow_files_with_same_path_but_different_repository() -> Result<(), Ls
 }
 
 #[test]
-fn should_fail_if_file_already_exists_in_db() -> Result<(), LsError> {
+fn should_fail_if_file_already_exists_in_db() -> Result<(), LsFileStoreError> {
     tokio_test(async {
         let data = data(false).await;
         let file_store = &data.0.file_store_service;
@@ -583,7 +583,7 @@ fn should_fail_if_file_already_exists_in_db() -> Result<(), LsError> {
 }
 
 #[test]
-fn should_fail_if_file_already_exists_in_fs() -> Result<(), LsError> {
+fn should_fail_if_file_already_exists_in_fs() -> Result<(), LsFileStoreError> {
     tokio_test(async {
         let data = data(false).await;
         let file_store = &data.0.file_store_service;
@@ -660,7 +660,7 @@ fn should_fail_if_file_already_exists_in_fs() -> Result<(), LsError> {
 }
 
 #[test]
-fn should_read_all_file_data_by_repository() -> Result<(), LsError> {
+fn should_read_all_file_data_by_repository() -> Result<(), LsFileStoreError> {
     tokio_test(async {
         let data = data(false).await;
         let file_store = &data.0.file_store_service;
@@ -730,7 +730,7 @@ fn should_read_all_file_data_by_repository() -> Result<(), LsError> {
 }
 
 #[test]
-fn should_return_if_file_exists_by_repository() -> Result<(), LsError> {
+fn should_return_if_file_exists_by_repository() -> Result<(), LsFileStoreError> {
     tokio_test(async {
         let data = data(false).await;
         let file_store = &data.0.file_store_service;
@@ -758,7 +758,7 @@ fn should_return_if_file_exists_by_repository() -> Result<(), LsError> {
 }
 
 #[test]
-fn save_file_should_reject_payload_above_save_max_size_bytes() -> Result<(), LsError> {
+fn save_file_should_reject_payload_above_save_max_size_bytes() -> Result<(), LsFileStoreError> {
     tokio_test(async {
         let data = data(false).await;
         let module = &data.0;
@@ -789,9 +789,7 @@ fn save_file_should_reject_payload_above_save_max_size_bytes() -> Result<(), LsE
                 .save_file((*repo).to_owned(), path.clone(), path, "application/octet-stream".to_owned(), content)
                 .await;
             match result {
-                Err(LsError::BadRequest { code, .. }) => {
-                    assert_eq!("", code, "case {label}");
-                }
+                Err(LsFileStoreError::PayloadTooLarge { .. }) => {}
                 other => panic!("expected PAYLOAD_TOO_LARGE for {label}, got {other:?}"),
             }
         }

@@ -16,6 +16,7 @@ lettre = { workspace = true, features = ["smtp-transport", "builder", "hostname"
 log = { workspace = true }
 parking_lot = { workspace = true }
 serde = { workspace = true, features = ["derive", "rc"] }
+thiserror = { workspace = true }
 tokio = { workspace = true, features = ["fs"] }
 
 [dev-dependencies]

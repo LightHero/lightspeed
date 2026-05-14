@@ -1,8 +1,8 @@
 use std::sync::Arc;
 
+use crate::error::LsFileStoreError;
 use crate::model::BinaryContent;
 use futures::StreamExt;
-use lightspeed_core::error::LsError;
 use opendal::Operator;
 
 #[derive(Clone)]
@@ -15,92 +15,85 @@ impl OpendalFileStoreBinaryRepository {
         Self { operator }
     }
 
-    pub async fn read_file(&self, file_path: &str) -> Result<BinaryContent<'static>, LsError> {
+    pub async fn read_file(&self, file_path: &str) -> Result<BinaryContent<'static>, LsFileStoreError> {
         Ok(BinaryContent::OpenDal { operator: self.operator.clone(), path: file_path.to_owned() })
     }
 
-    pub async fn exists(&self, file_path: &str) -> Result<bool, LsError> {
-        self.operator.exists(file_path).await.map_err(|err| LsError::BadRequest {
+    pub async fn exists(&self, file_path: &str) -> Result<bool, LsFileStoreError> {
+        self.operator.exists(file_path).await.map_err(|err| LsFileStoreError::OpenDalError {
             message: format!("OpendalFileStoreDataRepository - Cannot check file [{file_path}]. Err: {err:?}"),
-            code: "",
         })
     }
 
-    pub async fn save_file(&self, file_path: &str, content: &BinaryContent<'_>) -> Result<(), LsError> {
+    pub async fn save_file(&self, file_path: &str, content: &BinaryContent<'_>) -> Result<(), LsFileStoreError> {
         match content {
             BinaryContent::InMemory { content } => {
-                self.operator.write(file_path, content.to_vec()).await.map_err(|err| LsError::BadRequest {
-                    message: format!(
-                        "OpendalFileStoreDataRepository - Cannot write data to [{file_path}]. Err: {err:?}"
-                    ),
-                    code: "",
+                self.operator.write(file_path, content.to_vec()).await.map_err(|err| {
+                    LsFileStoreError::OpenDalError {
+                        message: format!(
+                            "OpendalFileStoreDataRepository - Cannot write data to [{file_path}]. Err: {err:?}"
+                        ),
+                    }
                 })?;
                 Ok(())
             }
             BinaryContent::Stream { stream } => {
-                let mut writer = self.operator.writer(file_path).await.map_err(|err| LsError::BadRequest {
-                    message: format!(
-                        "OpendalFileStoreDataRepository - Cannot create writer to [{file_path}]. Err: {err:?}"
-                    ),
-                    code: "",
-                })?;
+                let mut writer =
+                    self.operator.writer(file_path).await.map_err(|err| LsFileStoreError::OpenDalError {
+                        message: format!(
+                            "OpendalFileStoreDataRepository - Cannot create writer to [{file_path}]. Err: {err:?}"
+                        ),
+                    })?;
                 let mut guard = stream.lock().await;
                 while let Some(chunk) = guard.next().await {
                     let chunk = chunk?;
-                    writer.write(chunk).await.map_err(|err| LsError::BadRequest {
+                    writer.write(chunk).await.map_err(|err| LsFileStoreError::OpenDalError {
                         message: format!(
                             "OpendalFileStoreDataRepository - Cannot write chunk to [{file_path}]. Err: {err:?}"
                         ),
-                        code: "",
                     })?;
                 }
-                writer.close().await.map_err(|err| LsError::BadRequest {
+                writer.close().await.map_err(|err| LsFileStoreError::OpenDalError {
                     message: format!(
                         "OpendalFileStoreDataRepository - Cannot finalize writer to [{file_path}]. Err: {err:?}"
                     ),
-                    code: "",
                 })?;
                 Ok(())
             }
             BinaryContent::OpenDal { operator, path } => {
-                let reader = operator.reader(path).await.map_err(|err| LsError::BadRequest {
+                let reader = operator.reader(path).await.map_err(|err| LsFileStoreError::OpenDalError {
                     message: format!("OpendalFileStoreDataRepository - Cannot read file [{path}]. Err: {err:?}"),
-                    code: "",
                 })?;
 
-                let byte_stream = reader.into_bytes_stream(..).await.map_err(|err| LsError::BadRequest {
+                let byte_stream = reader.into_bytes_stream(..).await.map_err(|err| LsFileStoreError::OpenDalError {
                     message: format!(
                         "OpendalFileStoreDataRepository - Cannot create byte stream from file [{path}]. Err: {err:?}"
                     ),
-                    code: "",
                 })?;
 
                 let byte_sink = self
                     .operator
                     .writer(file_path)
                     .await
-                    .map_err(|err| LsError::BadRequest {
+                    .map_err(|err| LsFileStoreError::OpenDalError {
                         message: format!(
                             "OpendalFileStoreDataRepository - Cannot create writer to [{file_path}]. Err: {err:?}"
                         ),
-                        code: "",
                     })?
                     .into_bytes_sink();
 
-                byte_stream.forward(byte_sink).await.map_err(|err| LsError::BadRequest {
+                byte_stream.forward(byte_sink).await.map_err(|err| LsFileStoreError::OpenDalError {
                     message: format!(
                         "OpendalFileStoreDataRepository - Cannot write data to [{file_path}]. Err: {err:?}"
                     ),
-                    code: "",
                 })
             }
         }
     }
 
-    pub async fn delete_by_filename(&self, file_name: &str) -> Result<(), LsError> {
-        self.operator.delete(file_name).await.map_err(|err| LsError::BadRequest {
+    pub async fn delete_by_filename(&self, file_name: &str) -> Result<(), LsFileStoreError> {
+        self.operator.delete(file_name).await.map_err(|err| LsFileStoreError::OpenDalError {
             message: format!("OpendalFileStoreDataRepository - Cannot delete file [{file_name}]. Err: {err:?}"),
-            code: "",
         })
     }
 }
@@ -109,7 +102,7 @@ impl OpendalFileStoreBinaryRepository {
 mod test {
 
     use super::*;
-    use lightspeed_core::error::LsError;
+    use crate::error::LsFileStoreError;
     use opendal::services;
     use std::borrow::Cow;
 
@@ -125,7 +118,7 @@ mod test {
     }
 
     #[tokio::test]
-    async fn should_save_file_from_fs() -> Result<(), LsError> {
+    async fn should_save_file_from_fs() -> Result<(), LsFileStoreError> {
         let random: u32 = rand::random();
         let file_name = format!("file_{random}");
 
@@ -154,7 +147,7 @@ mod test {
     }
 
     #[tokio::test]
-    async fn should_save_file_from_memory() -> Result<(), LsError> {
+    async fn should_save_file_from_memory() -> Result<(), LsFileStoreError> {
         let random: u32 = rand::random();
         let file_name = format!("file_{random}");
 
@@ -178,25 +171,8 @@ mod test {
         Ok(())
     }
 
-    // #[tokio::test]
-    // async fn save_file_should_fail_if_file_exists() -> Result<(), LsError> {
-    //     let random: u32 = rand::random();
-    //     let file_name = format!("file_{random}");
-    //     let source_store = source_store();
-    //     let binary_content = BinaryContent::OpenDal { operator: &source_store, path: SOURCE_FILE };
-
-    //     let tempdir = tempfile::tempdir().unwrap();
-    //     let temp_dir_path = tempdir.path().to_str().unwrap().to_owned();
-    //     let file_store = OpendalFileStoreBinaryRepository::new(new_operator(&temp_dir_path));
-
-    //     file_store.save_file(&file_name, &binary_content).await?;
-    //     assert!(file_store.save_file(&file_name, &binary_content).await.is_err());
-
-    //     Ok(())
-    // }
-
     #[tokio::test]
-    async fn should_save_file_with_relative_folder() -> Result<(), LsError> {
+    async fn should_save_file_with_relative_folder() -> Result<(), LsFileStoreError> {
         let random: u32 = rand::random();
         let file_name = format!("test/temp/file_{random}");
         let source_store = source_store();
@@ -220,7 +196,7 @@ mod test {
     }
 
     #[tokio::test]
-    async fn should_delete_file_with_relative_folder() -> Result<(), LsError> {
+    async fn should_delete_file_with_relative_folder() -> Result<(), LsFileStoreError> {
         let random: u32 = rand::random();
         let file_name = format!("/test/temp/file_{random}");
         let source_store = source_store();
@@ -240,7 +216,7 @@ mod test {
     }
 
     #[tokio::test]
-    async fn should_read_a_saved_file() -> Result<(), LsError> {
+    async fn should_read_a_saved_file() -> Result<(), LsFileStoreError> {
         let random: u32 = rand::random();
         let file_name = format!("file_{random}");
         let source_store = source_store();

@@ -1,6 +1,6 @@
+use crate::error::LsEmailError;
 use crate::model::email::EmailMessage;
 use crate::repository::email::EmailClient;
-use lightspeed_core::error::LsError;
 use log::*;
 use std::sync::Arc;
 
@@ -14,7 +14,7 @@ impl LsEmailService {
         Self { client }
     }
 
-    pub async fn send(&self, email_message: EmailMessage) -> Result<(), LsError> {
+    pub async fn send(&self, email_message: EmailMessage) -> Result<(), LsEmailError> {
         debug!("Send email message from [{:?}] to [{:?}]", email_message.from, email_message.to);
         self.client.send(email_message).await
     }

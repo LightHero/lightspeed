@@ -1,11 +1,11 @@
 use crate::config::RepositoryType;
+use crate::error::LsFileStoreError;
 use crate::model::{BinaryContent, FileStoreDataData, FileStoreDataModel};
 use crate::repository::db::{DBFileStoreBinaryRepository, DBFileStoreRepositoryManager, FileStoreDataRepository};
 use crate::repository::opendal::opendal_file_store_binary::OpendalFileStoreBinaryRepository;
 use c3p0::sql::OrderBy;
 use c3p0::sqlx::Database;
 use c3p0::*;
-use lightspeed_core::error::LsError;
 use lightspeed_core::utils::current_epoch_seconds;
 use log::*;
 use std::collections::HashMap;
@@ -51,7 +51,7 @@ impl<RepoManager: DBFileStoreRepositoryManager> LsFileStoreService<RepoManager> 
         }
     }
 
-    pub async fn read_file_data_by_id(&self, id: i64) -> Result<FileStoreDataModel, LsError> {
+    pub async fn read_file_data_by_id(&self, id: i64) -> Result<FileStoreDataModel, LsFileStoreError> {
         self.c3p0.transaction(async |conn| self.read_file_data_by_id_with_conn(conn, id).await).await
     }
 
@@ -59,12 +59,12 @@ impl<RepoManager: DBFileStoreRepositoryManager> LsFileStoreService<RepoManager> 
         &self,
         conn: &mut <RepoManager::DB as Database>::Connection,
         id: i64,
-    ) -> Result<FileStoreDataModel, LsError> {
+    ) -> Result<FileStoreDataModel, LsFileStoreError> {
         debug!("LsFileStoreService - Read file by id [{id}]");
         self.db_data_repo.fetch_one_by_id(conn, id).await
     }
 
-    pub async fn exists_by_repository(&self, repository: &str, file_path: &str) -> Result<bool, LsError> {
+    pub async fn exists_by_repository(&self, repository: &str, file_path: &str) -> Result<bool, LsFileStoreError> {
         self.c3p0.transaction(async |conn| self.exists_by_repository_with_conn(conn, repository, file_path).await).await
     }
 
@@ -73,7 +73,7 @@ impl<RepoManager: DBFileStoreRepositoryManager> LsFileStoreService<RepoManager> 
         conn: &mut <RepoManager::DB as Database>::Connection,
         repository: &str,
         file_path: &str,
-    ) -> Result<bool, LsError> {
+    ) -> Result<bool, LsFileStoreError> {
         debug!("LsFileStoreService - Check if file exists by repository [{repository:?}]");
         self.db_data_repo.exists_by_repository(conn, repository, file_path).await
     }
@@ -82,7 +82,7 @@ impl<RepoManager: DBFileStoreRepositoryManager> LsFileStoreService<RepoManager> 
         &self,
         repository: &str,
         file_path: &str,
-    ) -> Result<FileStoreDataModel, LsError> {
+    ) -> Result<FileStoreDataModel, LsFileStoreError> {
         self.c3p0
             .transaction(async |conn| self.read_file_data_by_repository_with_conn(conn, repository, file_path).await)
             .await
@@ -93,7 +93,7 @@ impl<RepoManager: DBFileStoreRepositoryManager> LsFileStoreService<RepoManager> 
         conn: &mut <RepoManager::DB as Database>::Connection,
         repository: &str,
         file_path: &str,
-    ) -> Result<FileStoreDataModel, LsError> {
+    ) -> Result<FileStoreDataModel, LsFileStoreError> {
         debug!("LsFileStoreService - Read file data by repository [{repository:?}]");
         self.db_data_repo.fetch_one_by_repository(conn, repository, file_path).await
     }
@@ -104,7 +104,7 @@ impl<RepoManager: DBFileStoreRepositoryManager> LsFileStoreService<RepoManager> 
         offset: usize,
         max: usize,
         sort: OrderBy,
-    ) -> Result<Vec<FileStoreDataModel>, LsError> {
+    ) -> Result<Vec<FileStoreDataModel>, LsFileStoreError> {
         self.c3p0
             .transaction(async |conn| {
                 self.read_all_file_data_by_repository_with_conn(conn, repository, offset, max, sort).await
@@ -119,7 +119,7 @@ impl<RepoManager: DBFileStoreRepositoryManager> LsFileStoreService<RepoManager> 
         offset: usize,
         max: usize,
         sort: OrderBy,
-    ) -> Result<Vec<FileStoreDataModel>, LsError> {
+    ) -> Result<Vec<FileStoreDataModel>, LsFileStoreError> {
         debug!("LsFileStoreService - Read file data by repository [{repository:?}]");
         self.db_data_repo.fetch_all_by_repository(conn, repository, offset, max, sort).await
     }
@@ -134,7 +134,7 @@ impl<RepoManager: DBFileStoreRepositoryManager> LsFileStoreService<RepoManager> 
         &self,
         repository: &str,
         file_path: &str,
-    ) -> Result<BinaryContent<'static>, LsError> {
+    ) -> Result<BinaryContent<'static>, LsFileStoreError> {
         debug!("LsFileStoreService - Read repository [{repository}] file [{file_path}]");
         validate_safe_relative_path("file_path", file_path)?;
         match self.get_repository(repository)? {
@@ -150,7 +150,7 @@ impl<RepoManager: DBFileStoreRepositoryManager> LsFileStoreService<RepoManager> 
         conn: &mut <RepoManager::DB as Database>::Connection,
         repository: &str,
         file_path: &str,
-    ) -> Result<BinaryContent<'_>, LsError> {
+    ) -> Result<BinaryContent<'_>, LsFileStoreError> {
         debug!("LsFileStoreService - Read repository [{repository}] file [{file_path}]");
         validate_safe_relative_path("file_path", file_path)?;
         match self.get_repository(repository)? {
@@ -169,7 +169,7 @@ impl<RepoManager: DBFileStoreRepositoryManager> LsFileStoreService<RepoManager> 
         filename: String,
         content_type: String,
         content: &'a BinaryContent<'a>,
-    ) -> Result<FileStoreDataModel, LsError> {
+    ) -> Result<FileStoreDataModel, LsFileStoreError> {
         info!(
             "LsFileStoreService - Repository [{repository}] - Save file [{file_path}], content type [{content_type}]"
         );
@@ -212,7 +212,7 @@ impl<RepoManager: DBFileStoreRepositoryManager> LsFileStoreService<RepoManager> 
         filename: String,
         content_type: String,
         content: &'a BinaryContent<'a>,
-    ) -> Result<FileStoreDataModel, LsError> {
+    ) -> Result<FileStoreDataModel, LsFileStoreError> {
         self.c3p0
             .transaction(async |conn| {
                 self.save_file_with_conn(conn, repository, file_path, filename, content_type, content).await
@@ -220,7 +220,7 @@ impl<RepoManager: DBFileStoreRepositoryManager> LsFileStoreService<RepoManager> 
             .await
     }
 
-    pub async fn delete_file_by_id(&self, id: i64) -> Result<(), LsError> {
+    pub async fn delete_file_by_id(&self, id: i64) -> Result<(), LsFileStoreError> {
         self.c3p0.transaction(async |conn| self.delete_file_by_id_with_conn(conn, id).await).await
     }
 
@@ -228,7 +228,7 @@ impl<RepoManager: DBFileStoreRepositoryManager> LsFileStoreService<RepoManager> 
         &self,
         conn: &mut <RepoManager::DB as Database>::Connection,
         id: i64,
-    ) -> Result<(), LsError> {
+    ) -> Result<(), LsFileStoreError> {
         info!("LsFileStoreService - Delete file by id [{id}]");
 
         let file_data = self.read_file_data_by_id_with_conn(conn, id).await?;
@@ -248,11 +248,10 @@ impl<RepoManager: DBFileStoreRepositoryManager> LsFileStoreService<RepoManager> 
     }
 
     #[inline]
-    fn get_repository(&self, repository_name: &str) -> Result<&RepositoryStoreType, LsError> {
-        self.repositories.get(repository_name).ok_or_else(|| LsError::BadRequest {
-            message: format!("LsFileStoreService - Cannot find FS repository with name [{repository_name}]"),
-            code: "",
-        })
+    fn get_repository(&self, repository_name: &str) -> Result<&RepositoryStoreType, LsFileStoreError> {
+        self.repositories
+            .get(repository_name)
+            .ok_or_else(|| LsFileStoreError::RepositoryNotFound { repository: repository_name.to_owned() })
     }
 
     /// Reject a save that would exceed `max` bytes before any read
@@ -264,15 +263,14 @@ impl<RepoManager: DBFileStoreRepositoryManager> LsFileStoreService<RepoManager> 
     /// the cumulative byte count crosses the cap; for now we simply allow
     /// the save to proceed and rely on downstream limits).
     /// Applies regardless of destination — DB column or OpenDal repository.
-    async fn enforce_save_max_size(&self, content: &BinaryContent<'_>, max: usize) -> Result<(), LsError> {
+    async fn enforce_save_max_size(&self, content: &BinaryContent<'_>, max: usize) -> Result<(), LsFileStoreError> {
         let actual: u64 = match content {
             BinaryContent::InMemory { content } => content.len() as u64,
             BinaryContent::OpenDal { operator, path } => operator
                 .stat(path)
                 .await
-                .map_err(|err| LsError::BadRequest {
+                .map_err(|err| LsFileStoreError::OpenDalError {
                     message: format!("LsFileStoreService - Cannot stat file [{path}]: {err:?}"),
-                    code: "",
                 })?
                 .content_length(),
             BinaryContent::Stream { .. } => {
@@ -282,10 +280,7 @@ impl<RepoManager: DBFileStoreRepositoryManager> LsFileStoreService<RepoManager> 
             }
         };
         if actual > max as u64 {
-            return Err(LsError::BadRequest {
-                message: format!("LsFileStoreService - File size [{actual}] exceeds save_max_size_bytes [{max}]"),
-                code: "",
-            });
+            return Err(LsFileStoreError::PayloadTooLarge { actual, max: max as u64 });
         }
         Ok(())
     }
@@ -301,33 +296,19 @@ impl<RepoManager: DBFileStoreRepositoryManager> LsFileStoreService<RepoManager> 
 /// * leading `/` or `\\` (would escape the FS-backed Opendal root),
 /// * any segment that is exactly `..` when split on either path separator
 ///   (catches `../etc/passwd`, `foo/../bar`, `foo\\..\\bar`, etc.).
-fn validate_safe_relative_path(field: &'static str, value: &str) -> Result<(), LsError> {
+fn validate_safe_relative_path(field: &'static str, value: &str) -> Result<(), LsFileStoreError> {
     if value.is_empty() {
-        return Err(LsError::BadRequest {
-            message: format!("LsFileStoreService - {field} cannot be empty"),
-            code: "",
-        });
+        return Err(LsFileStoreError::InvalidPathEmpty { field });
     }
     if value.contains('\0') {
-        return Err(LsError::BadRequest {
-            message: format!("LsFileStoreService - {field} contains NUL byte"),
-            code: "",
-        });
+        return Err(LsFileStoreError::InvalidPathNul { field });
     }
     if value.starts_with('/') || value.starts_with('\\') {
-        return Err(LsError::BadRequest {
-            message: format!("LsFileStoreService - {field} must be a relative path, got [{value}]"),
-            code: "",
-        });
+        return Err(LsFileStoreError::InvalidPathAbsolute { field, value: value.to_owned() });
     }
     for segment in value.split(['/', '\\']) {
         if segment == ".." {
-            return Err(LsError::BadRequest {
-                message: format!(
-                    "LsFileStoreService - {field} contains parent-directory traversal segment, got [{value}]"
-                ),
-                code: "",
-            });
+            return Err(LsFileStoreError::InvalidPathTraversal { field, value: value.to_owned() });
         }
     }
     Ok(())
@@ -336,14 +317,15 @@ fn validate_safe_relative_path(field: &'static str, value: &str) -> Result<(), L
 #[cfg(test)]
 mod path_validation_tests {
     use super::validate_safe_relative_path;
-    use lightspeed_core::error::LsError;
+    use crate::error::LsFileStoreError;
 
     fn assert_rejected(value: &str) {
         match validate_safe_relative_path("file_path", value) {
-            Err(LsError::BadRequest { code, .. }) => {
-                assert_eq!("", code, "value [{value}] rejected with wrong code");
-            }
-            other => panic!("expected BadRequest(PARSE_ERROR) for [{value}], got {other:?}"),
+            Err(LsFileStoreError::InvalidPathEmpty { .. })
+            | Err(LsFileStoreError::InvalidPathNul { .. })
+            | Err(LsFileStoreError::InvalidPathAbsolute { .. })
+            | Err(LsFileStoreError::InvalidPathTraversal { .. }) => {}
+            other => panic!("expected InvalidPath* for [{value}], got {other:?}"),
         }
     }
 

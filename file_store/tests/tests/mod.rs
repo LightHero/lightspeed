@@ -1,6 +1,6 @@
 use futures::StreamExt;
-use lightspeed_core::error::LsError;
 use lightspeed_file_store::config::{FileStoreConfig, RepositoryType};
+use lightspeed_file_store::error::LsFileStoreError;
 use lightspeed_file_store::model::BinaryContent;
 use opendal::{Operator, services::Fs};
 
@@ -11,13 +11,13 @@ pub mod service;
 /// for byte-level assertions. The name signals what's happening: the stream
 /// (if any) is fully buffered. Production code must NOT do this — it has to
 /// route streams through their native streaming consumer instead.
-pub async fn collect_bytes(content: BinaryContent<'_>) -> Result<Vec<u8>, LsError> {
+pub async fn collect_bytes(content: BinaryContent<'_>) -> Result<Vec<u8>, LsFileStoreError> {
     match content {
         BinaryContent::InMemory { content } => Ok(content.into_owned()),
         BinaryContent::OpenDal { operator, path } => Ok(operator
             .read(&path)
             .await
-            .map_err(|err| LsError::InternalServerError {
+            .map_err(|err| LsFileStoreError::OpenDalError {
                 message: format!("collect_bytes - opendal read [{path}]: {err:?}"),
             })?
             .to_vec()),

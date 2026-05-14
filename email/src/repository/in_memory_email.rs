@@ -1,6 +1,6 @@
+use crate::error::LsEmailError;
 use crate::model::email::EmailMessage;
 use crate::repository::email::EmailClient;
-use lightspeed_core::error::LsError;
 use log::warn;
 use parking_lot::Mutex;
 use std::future::Future;
@@ -22,7 +22,7 @@ impl InMemoryEmailClient {
 }
 
 impl EmailClient for InMemoryEmailClient {
-    fn send(&self, email_message: EmailMessage) -> Pin<Box<dyn Future<Output = Result<(), LsError>> + Send>> {
+    fn send(&self, email_message: EmailMessage) -> Pin<Box<dyn Future<Output = Result<(), LsEmailError>> + Send>> {
         let emails = self.emails.clone();
 
         Box::pin(async move {
@@ -35,18 +35,18 @@ impl EmailClient for InMemoryEmailClient {
         })
     }
 
-    fn get_emails(&self) -> Result<Vec<EmailMessage>, LsError> {
+    fn get_emails(&self) -> Result<Vec<EmailMessage>, LsEmailError> {
         let lock = self.emails.lock();
         Ok(lock.clone())
     }
 
-    fn clear_emails(&self) -> Result<(), LsError> {
+    fn clear_emails(&self) -> Result<(), LsEmailError> {
         let mut lock = self.emails.lock();
         lock.clear();
         Ok(())
     }
 
-    fn retain_emails(&self, mut retain: Box<dyn FnMut(&EmailMessage) -> bool>) -> Result<(), LsError> {
+    fn retain_emails(&self, mut retain: Box<dyn FnMut(&EmailMessage) -> bool>) -> Result<(), LsEmailError> {
         let mut lock = self.emails.lock();
         lock.retain(|email| retain(email));
         Ok(())

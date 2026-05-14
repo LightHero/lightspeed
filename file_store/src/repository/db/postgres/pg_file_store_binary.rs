@@ -1,10 +1,10 @@
+use crate::error::LsFileStoreError;
 use crate::model::BinaryContent;
 use crate::repository::db::DBFileStoreBinaryRepository;
 use c3p0::PgC3p0Pool;
 use c3p0::sqlx::{Postgres, Row, query};
 use futures::StreamExt;
 use futures::stream::BoxStream;
-use lightspeed_core::error::LsError;
 use sqlx::postgres::types::Oid;
 use sqlx::{AssertSqlSafe, PgConnection};
 use tokio::sync::{Mutex, mpsc};
@@ -47,7 +47,7 @@ impl DBFileStoreBinaryRepository for PgFileStoreBinaryRepository {
         tx: &mut PgConnection,
         repository_name: &str,
         file_path: &str,
-    ) -> Result<BinaryContent<'_>, LsError> {
+    ) -> Result<BinaryContent<'_>, LsFileStoreError> {
         let oid = Self::lookup_oid(&mut *tx, self.table_name, repository_name, file_path).await?;
         let fd = Self::lo_open_read(&mut *tx, oid).await?;
 
@@ -71,14 +71,13 @@ impl DBFileStoreBinaryRepository for PgFileStoreBinaryRepository {
         &self,
         repository_name: &str,
         file_path: &str,
-    ) -> Result<BinaryContent<'static>, LsError> {
+    ) -> Result<BinaryContent<'static>, LsFileStoreError> {
         // Acquire an OWNED connection so we can move it into the producer
         // task. We manage BEGIN/COMMIT manually rather than going through
         // sqlx::Transaction because Transaction borrows from the connection
         // and that borrow can't be moved across a tokio::spawn boundary.
-        let mut conn = self.pool.pool().acquire().await.map_err(|err| LsError::BadRequest {
+        let mut conn = self.pool.pool().acquire().await.map_err(|err| LsFileStoreError::OpenDalError {
             message: format!("PgFileStoreBinaryRepository - Cannot acquire connection: {err:?}"),
-            code: "",
         })?;
 
         query("BEGIN").execute(&mut *conn).await?;
@@ -98,7 +97,7 @@ impl DBFileStoreBinaryRepository for PgFileStoreBinaryRepository {
             }
         };
 
-        let (sender, receiver) = mpsc::channel::<Result<Vec<u8>, LsError>>(STREAM_CHANNEL_CAP);
+        let (sender, receiver) = mpsc::channel::<Result<Vec<u8>, LsFileStoreError>>(STREAM_CHANNEL_CAP);
 
         tokio::spawn(async move {
             loop {
@@ -120,7 +119,7 @@ impl DBFileStoreBinaryRepository for PgFileStoreBinaryRepository {
             let _ = query("COMMIT").execute(&mut *conn).await;
         });
 
-        let stream: BoxStream<'static, Result<Vec<u8>, LsError>> =
+        let stream: BoxStream<'static, Result<Vec<u8>, LsFileStoreError>> =
             Box::pin(futures::stream::unfold(receiver, |mut rx| async move { rx.recv().await.map(|item| (item, rx)) }));
         Ok(BinaryContent::Stream { stream: Mutex::new(stream) })
     }
@@ -132,7 +131,7 @@ impl DBFileStoreBinaryRepository for PgFileStoreBinaryRepository {
         repository_name: &str,
         file_path: &str,
         content: &'a BinaryContent<'a>,
-    ) -> Result<u64, LsError> {
+    ) -> Result<u64, LsFileStoreError> {
         let oid: Oid = query("SELECT lo_create(0)").fetch_one(&mut *tx).await?.try_get(0)?;
         let fd: i32 =
             query("SELECT lo_open($1, $2)").bind(oid).bind(LO_INV_WRITE).fetch_one(&mut *tx).await?.try_get(0)?;
@@ -144,19 +143,17 @@ impl DBFileStoreBinaryRepository for PgFileStoreBinaryRepository {
                 }
             }
             BinaryContent::OpenDal { operator, path } => {
-                let reader =
-                    operator.reader_with(path).chunk(LO_CHUNK_SIZE).await.map_err(|err| LsError::BadRequest {
+                let reader = operator.reader_with(path).chunk(LO_CHUNK_SIZE).await.map_err(|err| {
+                    LsFileStoreError::OpenDalError {
                         message: format!("PgFileStoreBinaryRepository - Cannot open reader for [{path}]: {err:?}"),
-                        code: "",
-                    })?;
-                let mut stream = reader.into_bytes_stream(..).await.map_err(|err| LsError::BadRequest {
+                    }
+                })?;
+                let mut stream = reader.into_bytes_stream(..).await.map_err(|err| LsFileStoreError::OpenDalError {
                     message: format!("PgFileStoreBinaryRepository - Cannot stream [{path}]: {err:?}"),
-                    code: "",
                 })?;
                 while let Some(chunk_result) = stream.next().await {
-                    let chunk = chunk_result.map_err(|err| LsError::BadRequest {
+                    let chunk = chunk_result.map_err(|err| LsFileStoreError::OpenDalError {
                         message: format!("PgFileStoreBinaryRepository - Stream error on [{path}]: {err:?}"),
-                        code: "",
                     })?;
                     query("SELECT lowrite($1, $2)").bind(fd).bind(chunk.as_ref()).execute(&mut *tx).await?;
                 }
@@ -179,7 +176,12 @@ impl DBFileStoreBinaryRepository for PgFileStoreBinaryRepository {
     }
 
     /// Deletes the row and unlinks the underlying LO in the same transaction.
-    async fn delete_file(&self, tx: &mut PgConnection, repository_name: &str, file_path: &str) -> Result<u64, LsError> {
+    async fn delete_file(
+        &self,
+        tx: &mut PgConnection,
+        repository_name: &str,
+        file_path: &str,
+    ) -> Result<u64, LsFileStoreError> {
         let delete_sql =
             format!("DELETE FROM {} WHERE repository = $1 AND filepath = $2 RETURNING data", self.table_name);
         let row =
@@ -199,7 +201,7 @@ impl PgFileStoreBinaryRepository {
         table_name: &str,
         repository_name: &str,
         file_path: &str,
-    ) -> Result<Oid, LsError>
+    ) -> Result<Oid, LsFileStoreError>
     where
         E: sqlx::Executor<'c, Database = Postgres>,
     {
@@ -208,7 +210,7 @@ impl PgFileStoreBinaryRepository {
         Ok(row.try_get(0)?)
     }
 
-    async fn lo_open_read<'c, E>(executor: E, oid: Oid) -> Result<i32, LsError>
+    async fn lo_open_read<'c, E>(executor: E, oid: Oid) -> Result<i32, LsFileStoreError>
     where
         E: sqlx::Executor<'c, Database = Postgres>,
     {
@@ -216,7 +218,7 @@ impl PgFileStoreBinaryRepository {
         Ok(row.try_get(0)?)
     }
 
-    async fn loread_chunk<'c, E>(executor: E, fd: i32) -> Result<Vec<u8>, LsError>
+    async fn loread_chunk<'c, E>(executor: E, fd: i32) -> Result<Vec<u8>, LsFileStoreError>
     where
         E: sqlx::Executor<'c, Database = Postgres>,
     {
@@ -224,7 +226,7 @@ impl PgFileStoreBinaryRepository {
         Ok(row.try_get(0)?)
     }
 
-    async fn lo_close<'c, E>(executor: E, fd: i32) -> Result<(), LsError>
+    async fn lo_close<'c, E>(executor: E, fd: i32) -> Result<(), LsFileStoreError>
     where
         E: sqlx::Executor<'c, Database = Postgres>,
     {

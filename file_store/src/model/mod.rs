@@ -1,6 +1,6 @@
+use crate::error::LsFileStoreError;
 use c3p0::*;
 use futures::stream::BoxStream;
-use lightspeed_core::error::LsError;
 use serde::{Deserialize, Serialize};
 use std::{borrow::Cow, sync::Arc};
 use tokio::sync::Mutex;
@@ -11,7 +11,7 @@ pub type FileStoreDataModel = Record<FileStoreDataData>;
 pub enum BinaryContent<'a> {
     InMemory { content: Cow<'a, [u8]> },
     OpenDal { operator: Arc<opendal::Operator>, path: String },
-    Stream { stream: Mutex<BoxStream<'static, Result<Vec<u8>, LsError>>> },
+    Stream { stream: Mutex<BoxStream<'static, Result<Vec<u8>, LsFileStoreError>>> },
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]

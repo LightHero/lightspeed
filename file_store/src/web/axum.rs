@@ -1,10 +1,10 @@
+use crate::error::LsFileStoreError;
 use crate::model::BinaryContent;
 use axum::{
     body::Body,
     http::{Response, header, response::Builder},
 };
 use futures::StreamExt;
-use lightspeed_core::error::LsError;
 use log::*;
 use percent_encoding::{AsciiSet, CONTROLS, utf8_percent_encode};
 use std::borrow::Cow;
@@ -43,7 +43,7 @@ pub async fn into_response(
     content: BinaryContent<'_>,
     file_name: Option<&str>,
     set_content_disposition: bool,
-) -> Result<Response<Body>, LsError> {
+) -> Result<Response<Body>, LsFileStoreError> {
     let (file_name, ct, body) = match content {
         BinaryContent::InMemory { content } => {
             debug!("Create HttpResponse from Memory content of {} bytes", content.len());
@@ -63,18 +63,17 @@ pub async fn into_response(
                 match file_path.file_name().to_owned() {
                     Some(name) => Cow::Owned(name.to_string_lossy().as_ref().to_owned()),
                     None => {
-                        return Err(LsError::BadRequest {
+                        return Err(LsFileStoreError::MissingFilename {
                             message: "Provided path has no filename".to_owned(),
-                            code: "",
-                        })?;
+                        });
                     }
                 }
             };
 
-            let reader = operator.reader(&path).await.map_err(|err| LsError::InternalServerError {
+            let reader = operator.reader(&path).await.map_err(|err| LsFileStoreError::OpenDalError {
                 message: format!("Cannot open reader for [{path}]: {err:?}"),
             })?;
-            let stream = reader.into_bytes_stream(..).await.map_err(|err| LsError::InternalServerError {
+            let stream = reader.into_bytes_stream(..).await.map_err(|err| LsFileStoreError::OpenDalError {
                 message: format!("Cannot open byte stream for [{path}]: {err:?}"),
             })?;
 
@@ -86,7 +85,7 @@ pub async fn into_response(
             let file_name = Cow::Borrowed(file_name.unwrap_or(""));
             let ct = mime_guess::from_path(std::path::Path::new(file_name.as_ref())).first_or_octet_stream();
 
-            // Adapt our `Result<Vec<u8>, LsError>` stream into the byte
+            // Adapt our `Result<Vec<u8>, LsFileStoreError>` stream into the byte
             // stream shape `Body::from_stream` expects.
             let bytes_stream =
                 stream.into_inner().map(|chunk| chunk.map_err(|err| std::io::Error::other(err.to_string())));
@@ -117,9 +116,9 @@ pub async fn into_response(
         debug!("Ignore content disposition");
     };
 
-    response_builder
-        .body(body)
-        .map_err(|err| LsError::InternalServerError { message: format!("Cannot set body request. Err: {err:?}") })
+    response_builder.body(body).map_err(|err| LsFileStoreError::ResponseBuildError {
+        message: format!("Cannot set body request. Err: {err:?}"),
+    })
 }
 
 /// Builds an RFC 6266 / RFC 5987-compliant `Content-Disposition` header value.
@@ -167,7 +166,7 @@ mod test {
     use std::sync::Arc;
     use tower::ServiceExt; // for `app.oneshot()`
 
-    async fn download(Extension(data): Extension<Arc<AppData>>) -> Result<Response<Body>, LsError> {
+    async fn download(Extension(data): Extension<Arc<AppData>>) -> Result<Response<Body>, AppError> {
         // Build a fresh `BinaryContent` per request from the underlying
         // source. `BinaryContent` is intentionally not `Clone` (its `Stream`
         // variant carries a one-shot stream), so the shared `Arc<AppData>`
@@ -178,7 +177,24 @@ mod test {
                 BinaryContent::OpenDal { operator: operator.clone(), path: path.clone() }
             }
         };
-        into_response(content, data.file_name, data.set_content_disposition).await
+        Ok(into_response(content, data.file_name, data.set_content_disposition).await?)
+    }
+
+    /// Test-only wrapper that implements `IntoResponse` so the handler can
+    /// propagate `LsFileStoreError` via `?` without forcing the production
+    /// error type to depend on axum.
+    struct AppError(LsFileStoreError);
+
+    impl From<LsFileStoreError> for AppError {
+        fn from(err: LsFileStoreError) -> Self {
+            AppError(err)
+        }
+    }
+
+    impl axum::response::IntoResponse for AppError {
+        fn into_response(self) -> axum::response::Response {
+            (http::StatusCode::INTERNAL_SERVER_ERROR, self.0.to_string()).into_response()
+        }
     }
 
     pub enum ContentSource {
@@ -366,7 +382,7 @@ mod test {
     /// `into_bytes_stream()` succeed lazily — the actual I/O error surfaces
     /// during stream consumption — so this test only fences in the panic
     /// behaviour. Backends that error eagerly are caught by the new
-    /// `?`-with-`InternalServerError` mapping in the OpenDal arm.)
+    /// `?`-with-`OpenDalError` mapping in the OpenDal arm.)
     #[tokio::test]
     async fn into_response_should_not_panic_on_opendal_open() {
         let operator: Arc<opendal::Operator> =

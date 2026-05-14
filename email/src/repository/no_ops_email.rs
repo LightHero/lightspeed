@@ -1,9 +1,9 @@
 use std::future::Future;
 use std::pin::Pin;
 
+use crate::error::LsEmailError;
 use crate::model::email::EmailMessage;
 use crate::repository::email::EmailClient;
-use lightspeed_core::error::LsError;
 use log::warn;
 
 /// A EmailClient implementation that does nothing.
@@ -17,25 +17,25 @@ impl NoOpsEmailClient {
 }
 
 impl EmailClient for NoOpsEmailClient {
-    fn send(&self, _email_message: EmailMessage) -> Pin<Box<dyn Future<Output = Result<(), LsError>> + Send>> {
+    fn send(&self, _email_message: EmailMessage) -> Pin<Box<dyn Future<Output = Result<(), LsEmailError>> + Send>> {
         Box::pin(async move {
             warn!("NoOpsEmailService.send - Received an email but the email is NOT going to be sent");
             Ok(())
         })
     }
 
-    fn get_emails(&self) -> Result<Vec<EmailMessage>, LsError> {
+    fn get_emails(&self) -> Result<Vec<EmailMessage>, LsEmailError> {
         warn!("NoOpsEmailService.get_emails - This is a no ops");
 
         Ok(vec![])
     }
 
-    fn clear_emails(&self) -> Result<(), LsError> {
+    fn clear_emails(&self) -> Result<(), LsEmailError> {
         warn!("NoOpsEmailService.clear_emails - This is a no ops");
         Ok(())
     }
 
-    fn retain_emails(&self, _: Box<dyn FnMut(&EmailMessage) -> bool>) -> Result<(), LsError> {
+    fn retain_emails(&self, _: Box<dyn FnMut(&EmailMessage) -> bool>) -> Result<(), LsEmailError> {
         warn!("NoOpsEmailService.retain_emails - This is a no ops");
         Ok(())
     }
