@@ -22,7 +22,7 @@ use crate::{
 #[derive(Debug, Error, Clone, PartialEq, Eq)]
 pub enum NoError {}
 
-#[derive(Debug, Error, PartialEq, Eq)]
+#[derive(Debug, Error, Clone, PartialEq, Eq)]
 pub enum ValidationError {
     #[error(transparent)]
     MustBeTrue(#[from] MustBeTrueError),

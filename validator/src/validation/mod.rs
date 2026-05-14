@@ -4,6 +4,7 @@ pub mod boolean;
 pub mod contains;
 #[cfg(feature = "credit_card")]
 pub mod credit_card;
+pub mod custom;
 pub mod email;
 pub mod fields_match;
 pub mod ip;

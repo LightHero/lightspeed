@@ -10,6 +10,7 @@ pub mod boolean;
 pub mod contains;
 #[cfg(feature = "credit_card")]
 pub mod credit_card;
+pub mod custom;
 pub mod email;
 pub mod ip;
 pub mod length;
@@ -24,6 +25,7 @@ use proc_macro2::TokenStream as TokenStream2;
 use syn::{Field, Ident, Type};
 
 use contains::ContainsArgs;
+use custom::CustomArgs;
 use length::LengthArgs;
 use password::PasswordArgs;
 use range::RangeArgs;
@@ -48,6 +50,7 @@ pub enum FieldValidator {
     Length(LengthArgs),
     #[cfg(feature = "credit_card")]
     CreditCard,
+    Custom(CustomArgs),
 }
 
 /// Parses every `#[validate(...)]` attribute on `field`, returning all
@@ -119,6 +122,11 @@ pub fn parse_field_validators(field: &Field) -> syn::Result<Vec<FieldValidator>>
                     credit_card::ensure_string_field(field)?;
                     FieldValidator::CreditCard
                 }
+                // No `ensure_*_field` for `custom` — the user function's
+                // signature pins the accepted field/context/error types,
+                // and a mismatch surfaces as a normal type error at the
+                // call site of the generated `boxed_fn(...)`.
+                "custom" => FieldValidator::Custom(custom::parse_custom_args(&meta)?),
                 other => {
                     return Err(syn::Error::new(keyword.span(), format!("unknown validator `{other}`")));
                 }
@@ -171,6 +179,12 @@ impl FieldValidator {
             FieldValidator::CreditCard => {
                 ("CreditCard", quote::quote! { ::lightspeed_validator::credit_card::CreditCardError })
             }
+            // In `errors(tailored)` mode this surfaces as a
+            // `Custom(ValidationError)` variant on the per-field enum plus
+            // a `From<ValidationError>` impl — which doubles as an escape
+            // hatch for user code that wants to return the wide error type
+            // from a custom function and lift it into the narrow enum.
+            FieldValidator::Custom(_) => ("Custom", quote::quote! { ::lightspeed_validator::ValidationError }),
         }
     }
 }
@@ -197,6 +211,7 @@ pub fn generate_validator_instance(validator: &FieldValidator, field_ty: &Type) 
         FieldValidator::Length(args) => length::length_validator_instance(args),
         #[cfg(feature = "credit_card")]
         FieldValidator::CreditCard => credit_card::credit_card_validator_instance(),
+        FieldValidator::Custom(args) => custom::custom_validator_instance(args),
     }
 }
 

@@ -603,6 +603,134 @@ To use this validator, enable the feature:
 lightspeed_validator = { version = "0.66", features = ["credit_card"] }
 ```
 
+### custom
+
+Plugs a user-supplied function into the validator pipeline. Use it when
+the rule doesn't fit any of the built-in validators — domain-specific
+shape checks, lookups that read the validation context, anything you'd
+otherwise hand-roll.
+
+The function must match
+
+```text
+fn(value: &FieldTy, ctx: &CtxTy) -> Result<(), FieldErrTy>
+```
+
+where `FieldTy` is the field's type, `CtxTy` is the struct's
+`#[validate(context = ...)]` type (or `()` if absent), and `FieldErrTy`
+is the field's error type as picked by the struct-level `errors(...)`
+strategy — `ValidationError` under `errors(shared)` (the default), your
+`<Type>` under `errors(custom = <Type>)`, and the generated per-field
+enum under `errors(tailored)`. The accepted field type is delegated to
+the function's signature: a `&String` parameter on a field typed `i32`
+produces a compile error pointing at the macro-generated wrapper, not at
+a hand-written `ensure_*` check.
+
+The function name is given as either a string literal — matching the
+[`validator`](https://github.com/Keats/validator) crate's convention —
+or a bare path:
+
+```rust,no_run
+use std::collections::HashMap;
+use lightspeed_validator::{Validable, ValidationError};
+
+fn not_reserved(value: &String, _ctx: &()) -> Result<(), ValidationError> {
+    if value == "root" || value == "admin" {
+        Err(ValidationError::Custom {
+            code: "reserved".to_string(),
+            message: "this name is reserved".to_string(),
+            params: HashMap::new(),
+        })
+    } else {
+        Ok(())
+    }
+}
+
+#[derive(Validable)]
+struct Signup {
+    // String literal form
+    #[validate(custom(function = "not_reserved"))]
+    username: String,
+
+    // Bare path form
+    #[validate(custom(function = not_reserved))]
+    handle: String,
+}
+```
+
+Reading the validation context works exactly as for the built-in
+validators — the second parameter is `&CtxTy`:
+
+```rust,no_run
+use lightspeed_validator::{Validable, ValidationError, length::LengthError};
+
+pub struct MinLenContext { pub min: usize }
+
+fn at_least_min(value: &String, ctx: &MinLenContext) -> Result<(), ValidationError> {
+    let actual = value.chars().count();
+    if actual >= ctx.min {
+        Ok(())
+    } else {
+        Err(ValidationError::Length(LengthError {
+            min: Some(ctx.min),
+            max: None,
+            equal: None,
+            actual,
+        }))
+    }
+}
+
+#[derive(Validable)]
+#[validate(context = MinLenContext)]
+struct PolicyUser {
+    #[validate(custom(function = "at_least_min"))]
+    name: String,
+}
+
+let v = PolicyUserValidable::new(PolicyUser { name: "ab".to_string() });
+assert!(v.validate(&MinLenContext { min: 3 }).is_err());
+```
+
+Under `errors(tailored)` the macro-generated per-field enum gains a
+`Custom(ValidationError)` variant plus the usual `From<ValidationError>`
+impl — so a function that returns the wide `ValidationError` is lifted
+into the narrow enum with `.into()`:
+
+```rust,no_run
+use std::collections::HashMap;
+use lightspeed_validator::{Validable, ValidationError};
+
+fn ban_root(value: &String, _ctx: &()) -> Result<(), TailoredUserNameFieldError> {
+    if value == "root" {
+        Err(ValidationError::Custom {
+            code: "banned".to_string(),
+            message: "name is reserved".to_string(),
+            params: HashMap::new(),
+        }
+        .into())
+    } else {
+        Ok(())
+    }
+}
+
+#[derive(Validable)]
+#[validate(errors(tailored))]
+struct TailoredUser {
+    #[validate(custom(function = "ban_root"))]
+    name: String,
+}
+```
+
+Custom validators compose with the built-in keywords on the same field
+and run in declaration order. The function pointer is boxed once inside
+`<Name>Validable::new` and reused on every `validate` call — no
+per-validation allocation.
+
+For *stateful* validators — anything that needs to carry data alongside
+the function — write a type implementing `FieldValidator<T, E, Ctx>` and
+plug it in manually; see [Writing a custom field
+validator](#writing-a-custom-field-validator).
+
 ### Multiple validators on the same field
 
 Field attributes are additive — you can either repeat the attribute or
@@ -699,6 +827,11 @@ pub enum ValidationError {
 `Eq`, and `Display`.
 
 ## Writing a custom field validator
+
+For a plain function with no captured state, the
+[`custom(function = ...)`](#custom) field attribute already plugs it into
+the derive-generated pipeline. This section is for *stateful* validators
+— types that carry data alongside the validation function.
 
 Anything implementing `FieldValidator<T, ValidationError, Ctx>` can be used
 manually, without the derive macro:
