@@ -20,9 +20,6 @@ pub struct AuthConfig {
 
     pub default_roles_on_account_creation: Vec<String>,
 
-    /// Minimum length, in bytes, accepted for any user-supplied password.
-    pub min_password_len: usize,
-
     /// Maximum age, in seconds, of a user's password before login is rejected
     /// and the user is required to set a new password. `None` disables the
     /// check.
@@ -39,7 +36,6 @@ impl Default for AuthConfig {
             argon2_iterations: 2,
             argon2_parallelism: 1,
             default_roles_on_account_creation: vec![],
-            min_password_len: 8,
             password_expiration_seconds: None,
         }
     }

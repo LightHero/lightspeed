@@ -3,7 +3,7 @@ use c3p0::{
     SqliteC3p0Pool,
     sqlx::{migrate::Migrator, *},
 };
-use crate::error::LsAccountManagerError;
+use lightspeed_core::error::LsError;
 use sqlite_auth_account::SqliteAuthAccountRepository;
 use sqlite_token::SqliteTokenRepository;
 
@@ -33,8 +33,8 @@ impl AuthRepositoryManager for SqliteAuthRepositoryManager {
         &self.c3p0
     }
 
-    async fn start(&self) -> Result<(), LsAccountManagerError> {
-        MIGRATOR.run(self.c3p0.pool()).await.map_err(|err| LsAccountManagerError::ModuleStartError {
+    async fn start(&self) -> Result<(), LsError> {
+        MIGRATOR.run(self.c3p0.pool()).await.map_err(|err| LsError::ModuleStartError {
             message: format!("SqliteAuthRepositoryManager - db migration failed: {err:?}"),
         })
     }

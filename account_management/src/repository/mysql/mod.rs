@@ -1,7 +1,7 @@
-use crate::error::LsAccountManagerError;
 use crate::repository::AuthRepositoryManager;
 use c3p0::sqlx::{migrate::Migrator, *};
 use c3p0::*;
+use lightspeed_core::error::LsError;
 use mysql_auth_account::MySqlAuthAccountRepository;
 use mysql_token::MySqlTokenRepository;
 
@@ -31,8 +31,8 @@ impl AuthRepositoryManager for MySqlAuthRepositoryManager {
         &self.c3p0
     }
 
-    async fn start(&self) -> Result<(), LsAccountManagerError> {
-        MIGRATOR.run(self.c3p0.pool()).await.map_err(|err| LsAccountManagerError::ModuleStartError {
+    async fn start(&self) -> Result<(), LsError> {
+        MIGRATOR.run(self.c3p0.pool()).await.map_err(|err| LsError::ModuleStartError {
             message: format!("MySqlAuthRepositoryManager - db migration failed: {err:?}"),
         })
     }

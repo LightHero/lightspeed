@@ -1,8 +1,7 @@
-use crate::error::{LsError, RootErrorDetails, WebErrorDetails};
+use crate::error::LsError;
 use axum::body::Body;
-use axum::http::{HeaderValue, Response, StatusCode, header};
+use axum::http::{Response, StatusCode};
 use axum::response::IntoResponse;
-use log::*;
 
 impl IntoResponse for LsError {
     fn into_response(self) -> Response<Body> {
@@ -14,16 +13,14 @@ impl IntoResponse for LsError {
             | LsError::ParseAuthHeaderError { .. }
             | LsError::UnauthenticatedError => response_with_code(StatusCode::UNAUTHORIZED),
             LsError::ForbiddenError { .. } => response_with_code(StatusCode::FORBIDDEN),
-            LsError::ValidationError { details } => {
-                response_with_error_details(StatusCode::UNPROCESSABLE_ENTITY, details)
+
+            LsError::BadRequest { .. } => {
+                response_with_code(StatusCode::BAD_REQUEST)
             }
-            LsError::BadRequest { code, .. } => {
-                response_with_message(StatusCode::BAD_REQUEST, Some((code).to_string()))
-            }
-            LsError::C3p0Error { .. } => response_with_message(StatusCode::BAD_REQUEST, None),
-            LsError::SqlxError { .. } => response_with_message(StatusCode::BAD_REQUEST, None),
-            LsError::RequestConflict { code, .. } | LsError::ServiceUnavailable { code, .. } => {
-                response_with_message(StatusCode::CONFLICT, Some((code).to_string()))
+            LsError::C3p0Error { .. } => response_with_code(StatusCode::BAD_REQUEST),
+            LsError::SqlxError { .. } => response_with_code(StatusCode::BAD_REQUEST),
+            LsError::RequestConflict { .. } | LsError::ServiceUnavailable { .. } => {
+                response_with_code(StatusCode::CONFLICT)
             }
             LsError::InternalServerError { .. }
             | LsError::ModuleBuilderError { .. }
@@ -40,34 +37,6 @@ fn response_with_code(http_code: StatusCode) -> Response<Body> {
     res
 }
 
-#[inline]
-fn response_with_message(http_code: StatusCode, message: Option<String>) -> Response<Body> {
-    response(http_code, &WebErrorDetails::from_message(http_code.as_u16(), message.as_ref().map(|val| val.into())))
-}
-
-#[inline]
-fn response_with_error_details(http_code: StatusCode, details: RootErrorDetails) -> Response<Body> {
-    response(http_code, &WebErrorDetails::from_error_details(http_code.as_u16(), details))
-}
-
-#[inline]
-fn response(http_code: StatusCode, details: &WebErrorDetails) -> Response<Body> {
-    match serde_json::to_vec(details) {
-        Ok(body) => {
-            let mut res = Response::new(Body::from(body));
-            *res.status_mut() = http_code;
-            res.headers_mut().insert(header::CONTENT_TYPE, HeaderValue::from_static("application/json"));
-            res
-        }
-        Err(err) => {
-            error!("response_with_message - cannot serialize body. Err: {err:?}");
-            let mut res = Response::new(Body::empty());
-            *res.status_mut() = http::StatusCode::INTERNAL_SERVER_ERROR;
-            res
-        }
-    }
-}
-
 #[cfg(test)]
 mod test {
 
@@ -77,9 +46,8 @@ mod test {
     use crate::service::jwt::{JWT, LsJwtService};
     use crate::web::{JWT_TOKEN_HEADER, JWT_TOKEN_HEADER_SUFFIX, WebAuthService};
     use axum::Router;
-    use axum::http::{HeaderMap, Request, header};
+    use axum::http::{HeaderMap, Request};
     use axum::routing::get;
-    use http_body_util::BodyExt;
     use jsonwebtoken::Algorithm;
     use std::sync::Arc;
     use tower::ServiceExt; // for `app.oneshot()`
@@ -200,28 +168,6 @@ mod test {
         assert_eq!(resp.status(), StatusCode::FORBIDDEN);
     }
 
-    #[tokio::test]
-    async fn should_return_json_web_error() {
-        // Arrange
-        let app = Router::new().route("/web_error", get(web_error));
-
-        // Act
-        let resp = app
-            .oneshot(Request::builder().method(http::Method::GET).uri("/web_error").body(Body::empty()).unwrap())
-            .await
-            .unwrap();
-
-        // Assert
-        assert_eq!(resp.status(), StatusCode::UNPROCESSABLE_ENTITY);
-
-        assert_eq!("application/json", resp.headers().get(header::CONTENT_TYPE).unwrap().to_str().unwrap());
-
-        let body = resp.into_body().collect().await.unwrap().to_bytes();
-        let body: WebErrorDetails = serde_json::from_slice(&body).unwrap();
-
-        assert_eq!("error", body.message.unwrap());
-    }
-
     async fn admin(req: HeaderMap) -> Result<String, LsError> {
         let auth_service = new_service();
         let auth_context = auth_service.auth_from_request(&req)?;
@@ -233,12 +179,6 @@ mod test {
         let auth_service = new_service();
         let auth_context = auth_service.auth_from_request(&req)?;
         Ok(auth_context.auth.username)
-    }
-
-    async fn web_error() -> Result<String, LsError> {
-        Err(LsError::ValidationError {
-            details: RootErrorDetails { details: Default::default(), message: Some("error".to_owned()) },
-        })
     }
 
     fn new_service() -> WebAuthService {

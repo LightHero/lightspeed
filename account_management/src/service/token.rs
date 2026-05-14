@@ -62,16 +62,17 @@ impl<RepoManager: AuthRepositoryManager> LsTokenService<RepoManager> {
         &self,
         conn: &mut <RepoManager::DB as Database>::Connection,
         token: &str,
-        validate: bool,
+        fail_if_expired: bool,
     ) -> Result<TokenModel, LsAccountManagerError> {
         debug!("Fetch by token [{token}]");
         let token_model = self.token_repo.fetch_by_token(conn, token).await?;
 
-        if validate {
-            LsAccountManagerError::validate(|error_details| token_model.data.validate(error_details))?;
-        };
+        if fail_if_expired && current_epoch_seconds() > token_model.data.expire_at_epoch_seconds {
+            Err(LsAccountManagerError::TokenExpired)
+        } else {
+            Ok(token_model)
+        }
 
-        Ok(token_model)
     }
 
     pub async fn fetch_all_by_username_with_conn(

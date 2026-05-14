@@ -1,16 +1,12 @@
-use crate::dto::validate_must_be_equals;
-use lightspeed_core::error::ErrorDetails;
+use lightspeed_validator::Validable;
 use serde::{Deserialize, Serialize};
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Validable)]
+#[validate(fields_match(password, password_confirm, attach_to_fields = true))]
 pub struct ResetPasswordDto {
     pub token: String,
+    #[validate(password)]
+    #[validate(length(min = 8))]
     pub password: String,
     pub password_confirm: String,
-}
-
-impl ResetPasswordDto {
-    pub(crate) fn validate(&self, error_details: &mut ErrorDetails) {
-        validate_must_be_equals(error_details, "password", &self.password, "password_confirm", &self.password_confirm);
-    }
 }

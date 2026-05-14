@@ -5,6 +5,7 @@ use crate::model::auth_account::{AuthAccountData, AuthAccountModel, AuthAccountS
 use crate::model::token::{TokenData, TokenModel};
 use c3p0::sqlx::Database;
 use c3p0::*;
+use lightspeed_core::error::LsError;
 
 #[cfg(feature = "mysql")]
 pub mod mysql;
@@ -22,7 +23,7 @@ pub trait AuthRepositoryManager: Clone + Send + Sync {
     type TokenRepo: for<'a> TokenRepository<DB = Self::DB>;
 
     fn c3p0(&self) -> &Self::C3P0;
-    fn start(&self) -> impl Future<Output = Result<(), LsAccountManagerError>> + Send;
+    fn start(&self) -> impl Future<Output = Result<(), LsError>> + Send;
     fn auth_account_repo(&self) -> Self::AuthAccountRepo;
     fn token_repo(&self) -> Self::TokenRepo;
 }

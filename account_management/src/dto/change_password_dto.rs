@@ -1,12 +1,14 @@
-use crate::dto::validate_must_be_equals;
-use lightspeed_core::error::ErrorDetails;
 use lightspeed_core::service::auth::Owned;
+use lightspeed_validator::Validable;
 use serde::{Deserialize, Serialize};
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Validable)]
+#[validate(fields_match(new_password, new_password_confirm, attach_to_fields = true))]
 pub struct ChangePasswordDto {
     pub user_id: i64,
     pub old_password: String,
+    #[validate(password)]
+    #[validate(length(min = 8))]
     pub new_password: String,
     pub new_password_confirm: String,
 }
@@ -14,17 +16,5 @@ pub struct ChangePasswordDto {
 impl Owned for ChangePasswordDto {
     fn get_owner_id(&self) -> i64 {
         self.user_id
-    }
-}
-
-impl ChangePasswordDto {
-    pub(crate) fn validate(&self, error_details: &mut ErrorDetails) {
-        validate_must_be_equals(
-            error_details,
-            "new_password",
-            &self.new_password,
-            "new_password_confirm",
-            &self.new_password_confirm,
-        );
     }
 }

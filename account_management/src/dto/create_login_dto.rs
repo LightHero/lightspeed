@@ -1,24 +1,20 @@
-use crate::dto::{validate_email, validate_is_true, validate_must_be_equals};
-use lightspeed_core::error::ErrorDetails;
 use lightspeed_core::model::language::Language;
+use lightspeed_validator::Validable;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
-#[derive(Clone, Serialize, Deserialize)]
+#[derive(Clone, Serialize, Deserialize, Validable)]
+#[validate(fields_match(password, password_confirm, attach_to_fields = true))]
 pub struct CreateLoginDto {
     pub username: Option<String>,
+    #[validate(email)]
     pub email: String,
+    #[validate(password)]
+    #[validate(length(min = 8))]
     pub password: String,
     pub password_confirm: String,
     pub language: Language,
     pub data: HashMap<String, String>,
+    #[validate(isTrue)]
     pub accept_privacy_policy: bool,
-}
-
-impl CreateLoginDto {
-    pub(crate) fn validate(&self, error_details: &mut ErrorDetails) {
-        validate_must_be_equals(error_details, "password", &self.password, "password_confirm", &self.password_confirm);
-        validate_is_true(error_details, "accept_privacy_policy", self.accept_privacy_policy);
-        validate_email(error_details, "email", &self.email);
-    }
 }

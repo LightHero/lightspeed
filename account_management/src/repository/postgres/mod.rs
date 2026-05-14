@@ -3,7 +3,7 @@ use crate::repository::postgres::pg_auth_account::PgAuthAccountRepository;
 use crate::repository::postgres::pg_token::PgTokenRepository;
 use c3p0::sqlx::{migrate::Migrator, *};
 use c3p0::*;
-use crate::error::LsAccountManagerError;
+use lightspeed_core::error::LsError;
 
 pub mod pg_auth_account;
 pub mod pg_token;
@@ -31,8 +31,8 @@ impl AuthRepositoryManager for PgAuthRepositoryManager {
         &self.c3p0
     }
 
-    async fn start(&self) -> Result<(), LsAccountManagerError> {
-        MIGRATOR.run(self.c3p0.pool()).await.map_err(|err| LsAccountManagerError::ModuleStartError {
+    async fn start(&self) -> Result<(), LsError> {
+        MIGRATOR.run(self.c3p0.pool()).await.map_err(|err| LsError::ModuleStartError {
             message: format!("PgAuthRepositoryManager - db migration failed: {err:?}"),
         })
     }

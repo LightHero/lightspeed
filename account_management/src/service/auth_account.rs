@@ -2,7 +2,6 @@ use crate::config::AuthConfig;
 use crate::dto::change_password_dto::ChangePasswordDto;
 use crate::dto::create_login_dto::CreateLoginDto;
 use crate::dto::reset_password_dto::ResetPasswordDto;
-use crate::dto::{ERR_NOT_UNIQUE, validate_min_password_len};
 use crate::error::LsAccountManagerError;
 use crate::model::auth_account::{AuthAccountData, AuthAccountModel, AuthAccountStatus};
 use crate::model::token::{TokenModel, TokenType};
@@ -129,19 +128,12 @@ impl<RepoManager: AuthRepositoryManager> LsAuthAccountService<RepoManager> {
         }
         .clone();
 
-        let existing_user = self.auth_repo.fetch_by_username_optional(conn, &username).await?;
-        let existing_email = self.auth_repo.fetch_by_email_optional(conn, &create_login_dto.email).await?;
-        let min_password_len = self.auth_config.min_password_len;
-        LsAccountManagerError::validate(|error_details| {
-            create_login_dto.validate(error_details);
-            validate_min_password_len(error_details, "password", &create_login_dto.password, min_password_len);
-            if existing_user.is_some() {
-                error_details.add_detail("username", ERR_NOT_UNIQUE);
-            }
-            if existing_email.is_some() {
-                error_details.add_detail("email", ERR_NOT_UNIQUE);
-            }
-        })?;
+        if let Some(_existing_user) = self.auth_repo.fetch_by_username_optional(conn, &username).await? {
+            return Err(LsAccountManagerError::UsernameAlreadyUsed);
+        }
+        if let Some(_existing_email) = self.auth_repo.fetch_by_email_optional(conn, &create_login_dto.email).await? {
+            return Err(LsAccountManagerError::EmailAlreadyUsed);
+        }
 
         let now = current_epoch_seconds();
         let auth_account_model = self
@@ -254,10 +246,10 @@ impl<RepoManager: AuthRepositoryManager> LsAuthAccountService<RepoManager> {
 
         let token = self.token_service.fetch_by_token_with_conn(conn, activation_token, true).await?;
 
-        LsAccountManagerError::validate(|error_details| match &token.data.token_type {
+        match &token.data.token_type {
             TokenType::AccountActivation => {}
-            _ => error_details.add_detail("token_type", WRONG_TYPE),
-        })?;
+            _ => return Err(LsAccountManagerError::TokenNotValid),
+        };
 
         info!("Activate user [{}]", token.data.username);
 
@@ -325,11 +317,6 @@ impl<RepoManager: AuthRepositoryManager> LsAuthAccountService<RepoManager> {
         reset_password_dto: ResetPasswordDto,
     ) -> Result<AuthAccountModel, LsAccountManagerError> {
         debug!("Reset password called with token [{}]", reset_password_dto.token);
-        let min_password_len = self.auth_config.min_password_len;
-        LsAccountManagerError::validate(|error_details| {
-            reset_password_dto.validate(error_details);
-            validate_min_password_len(error_details, "password", &reset_password_dto.password, min_password_len);
-        })?;
 
         // Validate expiry: an expired reset-password token must not be usable
         // to reset the password.
@@ -337,10 +324,10 @@ impl<RepoManager: AuthRepositoryManager> LsAuthAccountService<RepoManager> {
 
         info!("Reset password of user [{}]", token.data.username);
 
-        LsAccountManagerError::validate(|error_details| match &token.data.token_type {
+        match &token.data.token_type {
             TokenType::ResetPassword => {}
-            _ => error_details.add_detail("token_type", WRONG_TYPE),
-        })?;
+            _ => return Err(LsAccountManagerError::TokenNotValid),
+        };
 
         let mut user = self.auth_repo.fetch_by_username(conn, &token.data.username).await?;
 
@@ -372,12 +359,6 @@ impl<RepoManager: AuthRepositoryManager> LsAuthAccountService<RepoManager> {
         dto: ChangePasswordDto,
     ) -> Result<AuthAccountModel, LsAccountManagerError> {
         info!("Reset password of user_id [{:?}]", dto.user_id);
-
-        let min_password_len = self.auth_config.min_password_len;
-        LsAccountManagerError::validate(|error_details| {
-            dto.validate(error_details);
-            validate_min_password_len(error_details, "new_password", &dto.new_password, min_password_len);
-        })?;
 
         let mut user = self.auth_repo.fetch_by_id(conn, dto.user_id).await?;
         info!("Change password of user [{}]", user.data.username);
