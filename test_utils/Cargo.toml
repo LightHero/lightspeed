@@ -12,7 +12,6 @@ keywords = []
 
 [dependencies]
 c3p0 = { workspace = true }
-maybe-once = { workspace = true }
 testcontainers = { workspace = true, optional = true }
 tokio = { workspace = true, features = ["rt-multi-thread"] }
 

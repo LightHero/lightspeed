@@ -7,7 +7,6 @@ use lightspeed_logger::setup_logger;
 
 mod service;
 
-#[allow(dead_code)]
 async fn init() -> LsHashModule {
     let conf = LoggerConfig::default();
     if let Err(err) = setup_logger(&conf) {
