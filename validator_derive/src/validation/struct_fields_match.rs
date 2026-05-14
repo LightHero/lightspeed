@@ -112,20 +112,16 @@ pub fn generate_validator_impl(
     let err_branch = if args.attach_to_fields {
         quote! {
             ::core::result::Result::Err(::std::vec![
-                ::lightspeed_validator::fields_match::MustMatchField {
-                    field: ::std::string::String::from(#b_str),
-                },
-                ::lightspeed_validator::fields_match::MustMatchField {
-                    field: ::std::string::String::from(#a_str),
-                },
+                ::lightspeed_validator::fields_match::MustMatchField { field: #b_str },
+                ::lightspeed_validator::fields_match::MustMatchField { field: #a_str },
             ])
         }
     } else {
         quote! {
             ::core::result::Result::Err(::std::vec![
                 ::lightspeed_validator::fields_match::FieldsMustMatch {
-                    field_a: ::std::string::String::from(#a_str),
-                    field_b: ::std::string::String::from(#b_str),
+                    field_a: #a_str,
+                    field_b: #b_str,
                 }
             ])
         }

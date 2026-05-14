@@ -2,8 +2,8 @@ use lightspeed_validator::Validable;
 use lightspeed_validator::contains::MustContainError;
 use lightspeed_validator::fields_match::{FieldsMustMatch, MustMatchField};
 
-fn must_contain_err<E: From<MustContainError>>(pattern: &str, case_sensitive: bool) -> E {
-    MustContainError { pattern: pattern.to_string(), case_sensitive }.into()
+fn must_contain_err<E: From<MustContainError>>(pattern: &'static str, case_sensitive: bool) -> E {
+    MustContainError { pattern, case_sensitive }.into()
 }
 
 #[derive(Validable)]
@@ -45,12 +45,12 @@ pub struct WithFieldRules {
     pub password_confirm: String,
 }
 
-fn fields_must_match<E: From<FieldsMustMatch>>(a: &str, b: &str) -> E {
-    FieldsMustMatch { field_a: a.to_string(), field_b: b.to_string() }.into()
+fn fields_must_match<E: From<FieldsMustMatch>>(a: &'static str, b: &'static str) -> E {
+    FieldsMustMatch { field_a: a, field_b: b }.into()
 }
 
-fn must_match_field<E: From<MustMatchField>>(other: &str) -> E {
-    MustMatchField { field: other.to_string() }.into()
+fn must_match_field<E: From<MustMatchField>>(other: &'static str) -> E {
+    MustMatchField { field: other }.into()
 }
 
 #[test]

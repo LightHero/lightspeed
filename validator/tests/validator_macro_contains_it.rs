@@ -3,12 +3,12 @@ use std::borrow::Cow;
 use lightspeed_validator::Validable;
 use lightspeed_validator::contains::{MustContainError, MustNotContainError};
 
-fn must_contain_err<E: From<MustContainError>>(pattern: &str, case_sensitive: bool) -> E {
-    MustContainError { pattern: pattern.to_string(), case_sensitive }.into()
+fn must_contain_err<E: From<MustContainError>>(pattern: &'static str, case_sensitive: bool) -> E {
+    MustContainError { pattern, case_sensitive }.into()
 }
 
-fn must_not_contain_err<E: From<MustNotContainError>>(pattern: &str, case_sensitive: bool) -> E {
-    MustNotContainError { pattern: pattern.to_string(), case_sensitive }.into()
+fn must_not_contain_err<E: From<MustNotContainError>>(pattern: &'static str, case_sensitive: bool) -> E {
+    MustNotContainError { pattern, case_sensitive }.into()
 }
 
 // `case_sensitive_defaults_to_true_when_omitted` matches on

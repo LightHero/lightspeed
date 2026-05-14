@@ -80,7 +80,7 @@ fn tailored_generates_per_field_enums_and_no_error_for_empty_fields() {
     for err in returned.email.errors() {
         match err {
             SignupTailoredEmailFieldError::MustContain(MustContainError { pattern, case_sensitive }) => {
-                assert_eq!(pattern, "@");
+                assert_eq!(*pattern, "@");
                 assert!(*case_sensitive);
             }
         }

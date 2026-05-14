@@ -83,25 +83,25 @@ mod test {
     #[test]
     fn test_error() {
         let error =
-            ValidationError::MustContain(MustContainError { pattern: "hello".to_string(), case_sensitive: true });
+            ValidationError::MustContain(MustContainError { pattern: "hello", case_sensitive: true });
         assert_eq!(error.to_string(), "MustContain [hello] (case_sensitive: true)");
 
         let error = ValidationError::FieldsMustMatch(FieldsMustMatch {
-            field_a: "password".to_string(),
-            field_b: "password_confirm".to_string(),
+            field_a: "password",
+            field_b: "password_confirm",
         });
         assert_eq!(error.to_string(), "FieldsMustMatch [password, password_confirm]");
 
-        let error = ValidationError::MustMatchField(MustMatchField { field: "password".to_string() });
+        let error = ValidationError::MustMatchField(MustMatchField { field: "password" });
         assert_eq!(error.to_string(), "MustMatchField [password]");
     }
 
     #[test]
     fn from_narrow_error_lifts_to_validation_error() {
-        let v: ValidationError = MustContainError { pattern: "x".to_string(), case_sensitive: true }.into();
+        let v: ValidationError = MustContainError { pattern: "x", case_sensitive: true }.into();
         assert!(matches!(v, ValidationError::MustContain(_)));
 
-        let v: ValidationError = MustMatchField { field: "foo".to_string() }.into();
+        let v: ValidationError = MustMatchField { field: "foo" }.into();
         assert!(matches!(v, ValidationError::MustMatchField(_)));
     }
 }

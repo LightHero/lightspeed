@@ -4,8 +4,8 @@ use thiserror::Error;
 
 #[derive(Debug, Clone, Error, PartialEq, Eq)]
 pub struct FieldsMustMatch {
-    pub field_a: String,
-    pub field_b: String,
+    pub field_a: &'static str,
+    pub field_b: &'static str,
 }
 
 impl Display for FieldsMustMatch {
@@ -16,7 +16,8 @@ impl Display for FieldsMustMatch {
 
 #[derive(Debug, Clone, Error, PartialEq, Eq)]
 pub struct MustMatchField {
-    pub field: String,
+    /// See [`FieldsMustMatch::field_a`].
+    pub field: &'static str,
 }
 
 impl Display for MustMatchField {
@@ -31,10 +32,10 @@ mod test {
 
     #[test]
     fn fields_must_match_fmt() {
-        let fields_must_match = FieldsMustMatch { field_a: "a".to_string(), field_b: "b".to_string() };
+        let fields_must_match = FieldsMustMatch { field_a: "a", field_b: "b" };
         assert_eq!("FieldsMustMatch [a, b]", format!("{}", fields_must_match));
 
-        let must_match_field = MustMatchField { field: "a".to_string() };
+        let must_match_field = MustMatchField { field: "a" };
         assert_eq!("MustMatchField [a]", format!("{}", must_match_field));
     }
 }
