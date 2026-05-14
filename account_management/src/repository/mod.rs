@@ -1,10 +1,10 @@
 use std::future::Future;
 
+use crate::error::LsAccountManagerError;
 use crate::model::auth_account::{AuthAccountData, AuthAccountModel, AuthAccountStatus};
 use crate::model::token::{TokenData, TokenModel};
 use c3p0::sqlx::Database;
 use c3p0::*;
-use lightspeed_core::error::LsError;
 
 #[cfg(feature = "mysql")]
 pub mod mysql;
@@ -22,7 +22,7 @@ pub trait AuthRepositoryManager: Clone + Send + Sync {
     type TokenRepo: for<'a> TokenRepository<DB = Self::DB>;
 
     fn c3p0(&self) -> &Self::C3P0;
-    fn start(&self) -> impl Future<Output = Result<(), LsError>> + Send;
+    fn start(&self) -> impl Future<Output = Result<(), LsAccountManagerError>> + Send;
     fn auth_account_repo(&self) -> Self::AuthAccountRepo;
     fn token_repo(&self) -> Self::TokenRepo;
 }
@@ -36,55 +36,55 @@ pub trait AuthAccountRepository: Clone + Send + Sync {
         status: AuthAccountStatus,
         start_user_id: i64,
         limit: u32,
-    ) -> impl Future<Output = Result<Vec<AuthAccountModel>, LsError>> + Send;
+    ) -> impl Future<Output = Result<Vec<AuthAccountModel>, LsAccountManagerError>> + Send;
 
     fn fetch_by_id(
         &self,
         tx: &mut <Self::DB as Database>::Connection,
         user_id: i64,
-    ) -> impl Future<Output = Result<AuthAccountModel, LsError>> + Send;
+    ) -> impl Future<Output = Result<AuthAccountModel, LsAccountManagerError>> + Send;
 
     fn fetch_by_username(
         &self,
         tx: &mut <Self::DB as Database>::Connection,
         username: &str,
-    ) -> impl Future<Output = Result<AuthAccountModel, LsError>> + Send;
+    ) -> impl Future<Output = Result<AuthAccountModel, LsAccountManagerError>> + Send;
 
     fn fetch_by_username_optional(
         &self,
         tx: &mut <Self::DB as Database>::Connection,
         username: &str,
-    ) -> impl Future<Output = Result<Option<AuthAccountModel>, LsError>> + Send;
+    ) -> impl Future<Output = Result<Option<AuthAccountModel>, LsAccountManagerError>> + Send;
 
     fn fetch_by_email_optional(
         &self,
         tx: &mut <Self::DB as Database>::Connection,
         email: &str,
-    ) -> impl Future<Output = Result<Option<AuthAccountModel>, LsError>> + Send;
+    ) -> impl Future<Output = Result<Option<AuthAccountModel>, LsAccountManagerError>> + Send;
 
     fn save(
         &self,
         tx: &mut <Self::DB as Database>::Connection,
         model: NewRecord<AuthAccountData>,
-    ) -> impl Future<Output = Result<AuthAccountModel, LsError>> + Send;
+    ) -> impl Future<Output = Result<AuthAccountModel, LsAccountManagerError>> + Send;
 
     fn update(
         &self,
         tx: &mut <Self::DB as Database>::Connection,
         model: AuthAccountModel,
-    ) -> impl Future<Output = Result<AuthAccountModel, LsError>> + Send;
+    ) -> impl Future<Output = Result<AuthAccountModel, LsAccountManagerError>> + Send;
 
     fn delete(
         &self,
         tx: &mut <Self::DB as Database>::Connection,
         model: AuthAccountModel,
-    ) -> impl Future<Output = Result<AuthAccountModel, LsError>> + Send;
+    ) -> impl Future<Output = Result<AuthAccountModel, LsAccountManagerError>> + Send;
 
     fn delete_by_id(
         &self,
         tx: &mut <Self::DB as Database>::Connection,
         user_id: i64,
-    ) -> impl Future<Output = Result<u64, LsError>> + Send;
+    ) -> impl Future<Output = Result<u64, LsAccountManagerError>> + Send;
 }
 
 pub trait TokenRepository: Clone + Send + Sync {
@@ -94,29 +94,29 @@ pub trait TokenRepository: Clone + Send + Sync {
         &self,
         tx: &mut <Self::DB as Database>::Connection,
         token_string: &str,
-    ) -> impl Future<Output = Result<TokenModel, LsError>> + Send;
+    ) -> impl Future<Output = Result<TokenModel, LsAccountManagerError>> + Send;
 
     fn fetch_by_username(
         &self,
         tx: &mut <Self::DB as Database>::Connection,
         username: &str,
-    ) -> impl Future<Output = Result<Vec<TokenModel>, LsError>> + Send;
+    ) -> impl Future<Output = Result<Vec<TokenModel>, LsAccountManagerError>> + Send;
 
     fn save(
         &self,
         tx: &mut <Self::DB as Database>::Connection,
         model: NewRecord<TokenData>,
-    ) -> impl Future<Output = Result<TokenModel, LsError>> + Send;
+    ) -> impl Future<Output = Result<TokenModel, LsAccountManagerError>> + Send;
 
     fn delete(
         &self,
         tx: &mut <Self::DB as Database>::Connection,
         model: TokenModel,
-    ) -> impl Future<Output = Result<TokenModel, LsError>> + Send;
+    ) -> impl Future<Output = Result<TokenModel, LsAccountManagerError>> + Send;
 
     fn delete_expired(
         &self,
         tx: &mut <Self::DB as Database>::Connection,
         threshold_epoch_seconds: i64,
-    ) -> impl Future<Output = Result<u64, LsError>> + Send;
+    ) -> impl Future<Output = Result<u64, LsAccountManagerError>> + Send;
 }

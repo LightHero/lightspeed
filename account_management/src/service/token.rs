@@ -1,12 +1,10 @@
 use crate::config::AuthConfig;
-use crate::into_ls_error;
+use crate::error::LsAccountManagerError;
 use crate::model::token::{TokenData, TokenModel, TokenType};
 use crate::repository::{AuthRepositoryManager, TokenRepository};
 use c3p0::sqlx::Database;
 use c3p0::*;
-use lightspeed_core::error::LsError;
 use lightspeed_core::utils::*;
-use lightspeed_validator::Validator;
 use log::*;
 
 #[derive(Clone)]
@@ -25,7 +23,7 @@ impl<RepoManager: AuthRepositoryManager> LsTokenService<RepoManager> {
         conn: &mut <RepoManager::DB as Database>::Connection,
         username: S,
         token_type: TokenType,
-    ) -> Result<TokenModel, LsError> {
+    ) -> Result<TokenModel, LsAccountManagerError> {
         let username = username.into();
         info!("Generate and save token of type [{token_type:?}] for username [{username}]");
 

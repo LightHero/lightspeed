@@ -14,7 +14,7 @@ keywords = []
 
 [dependencies]
 c3p0 = { workspace = true, optional = true }
-lightspeed_auth = { workspace = true, optional = true }
+lightspeed_account_management = { workspace = true, optional = true }
 lightspeed_cache = { workspace = true, optional = true }
 lightspeed_core = { workspace = true, optional = true }
 lightspeed_email = { workspace = true, optional = true }
@@ -29,7 +29,7 @@ default = ["core"]
 
 c3p0 = ["dep:c3p0"]
 
-auth = ["dep:lightspeed_auth", "c3p0"]
+account_management = ["dep:lightspeed_account_management", "c3p0"]
 cache = ["dep:lightspeed_cache"]
 core = ["dep:lightspeed_core"]
 email = ["dep:lightspeed_email"]
@@ -42,14 +42,14 @@ validator = ["dep:lightspeed_validator"]
 axum = ["lightspeed_core?/axum", "lightspeed_file_store?/axum"]
 
 postgres = [
-    "lightspeed_auth?/postgres", 
+    "lightspeed_account_management?/postgres", 
     "lightspeed_file_store?/postgres"
 ]
 mysql = [
-    "lightspeed_auth?/mysql",
+    "lightspeed_account_management?/mysql",
     "lightspeed_file_store?/mysql"
 ]
 sqlite = [
-    "lightspeed_auth?/sqlite",
+    "lightspeed_account_management?/sqlite",
     "lightspeed_file_store?/sqlite"
 ]

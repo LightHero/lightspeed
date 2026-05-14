@@ -1,8 +1,8 @@
 #[cfg(feature = "c3p0")]
 pub use c3p0;
 
-#[cfg(feature = "auth")]
-pub use lightspeed_auth as auth;
+#[cfg(feature = "account_management")]
+pub use lightspeed_account_management as account_management;
 
 #[cfg(feature = "cache")]
 pub use lightspeed_cache as cache;

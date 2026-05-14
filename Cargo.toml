@@ -1,7 +1,7 @@
 [workspace]
 resolver = "3"
 members = [
-    "auth",
+    "account_management",
     "cache",
     "core",
     "email",
@@ -22,7 +22,7 @@ edition = "2024"
 rust-version = "1.88"
 
 [workspace.dependencies]
-lightspeed_auth = { version = "0.66.0", path = "./auth" }
+lightspeed_account_management = { version = "0.66.0", path = "./account_management" }
 lightspeed_cache = { version = "0.66.0", path = "./cache" }
 lightspeed_core = { version = "0.66.0", path = "./core" }
 lightspeed_email = { version = "0.66.0", path = "./email" }
