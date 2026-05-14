@@ -28,8 +28,7 @@ impl IntoResponse for LsError {
             LsError::InternalServerError { .. }
             | LsError::ModuleBuilderError { .. }
             | LsError::ModuleStartError { .. }
-            | LsError::ConfigurationError { .. }
-            | LsError::PasswordEncryptionError { .. } => response_with_code(http::StatusCode::INTERNAL_SERVER_ERROR),
+            | LsError::ConfigurationError { .. } => response_with_code(http::StatusCode::INTERNAL_SERVER_ERROR),
         }
     }
 }

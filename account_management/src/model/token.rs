@@ -1,7 +1,6 @@
 use c3p0::*;
+use lightspeed_core::error::ErrorDetails;
 use lightspeed_core::utils::current_epoch_seconds;
-use lightspeed_validator::Validable;
-use lightspeed_validator::error::{ErrorDetails, ValidationError};
 use serde::{Deserialize, Serialize};
 
 pub type TokenModel = Record<TokenData>;
@@ -45,15 +44,11 @@ impl Codec<TokenData> for TokenDataCodec {
     }
 }
 
-impl Validable for TokenData {
-    fn validate(&self, error_details: &mut ErrorDetails) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+impl TokenData {
+    pub(crate) fn validate(&self, error_details: &mut ErrorDetails) {
         if current_epoch_seconds() > self.expire_at_epoch_seconds {
-            error_details.add_detail(
-                "expire_at_epoch",
-                ValidationError::Custom { code: ERR_TOKEN_EXPIRED.into(), params: vec![] },
-            );
+            error_details.add_detail("expire_at_epoch", ERR_TOKEN_EXPIRED);
         }
-        Ok(())
     }
 }
 
@@ -61,8 +56,7 @@ impl Validable for TokenData {
 pub mod test {
 
     use super::*;
-    use lightspeed_validator::Validator;
-    use lightspeed_validator::error::ValidatorError;
+    use lightspeed_core::error::RootErrorDetails;
 
     #[test]
     pub fn token_not_expired_should_be_valid() {
@@ -73,7 +67,9 @@ pub mod test {
             expire_at_epoch_seconds: current_epoch_seconds() + 1000,
         };
 
-        assert!(Validator::validate(&token).is_ok())
+        let mut details = ErrorDetails::Root(RootErrorDetails::default());
+        token.validate(&mut details);
+        assert!(details.details().is_empty());
     }
 
     #[test]
@@ -85,17 +81,8 @@ pub mod test {
             expire_at_epoch_seconds: current_epoch_seconds() - 1000,
         };
 
-        let result = Validator::validate(&token);
-
-        assert!(result.is_err());
-        match result {
-            Err(ValidatorError::ValidationFailed { details }) => {
-                assert_eq!(
-                    ValidationError::Custom { code: ERR_TOKEN_EXPIRED.into(), params: vec![] },
-                    details.details["expire_at_epoch"][0]
-                )
-            }
-            _ => panic!(),
-        }
+        let mut details = ErrorDetails::Root(RootErrorDetails::default());
+        token.validate(&mut details);
+        assert_eq!(ERR_TOKEN_EXPIRED, details.details()["expire_at_epoch"][0]);
     }
 }

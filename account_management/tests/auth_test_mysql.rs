@@ -4,9 +4,9 @@ use std::sync::OnceLock;
 
 use maybe_once::tokio::*;
 
-use lightspeed_auth::LsAuthModule;
-use lightspeed_auth::config::AuthConfig;
-use lightspeed_auth::repository::mysql::MySqlAuthRepositoryManager;
+use lightspeed_account_management::LsAuthModule;
+use lightspeed_account_management::config::AuthConfig;
+use lightspeed_account_management::repository::mysql::MySqlAuthRepositoryManager;
 use lightspeed_core::module::LsModule;
 use lightspeed_test_utils::mysql::new_mysql_db;
 use testcontainers::mysql::Mysql;

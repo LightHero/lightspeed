@@ -45,8 +45,6 @@ pub enum LsError {
     UnauthenticatedError,
     #[error("ForbiddenError: {message}")]
     ForbiddenError { message: String },
-    #[error("PasswordEncryptionError: {message}")]
-    PasswordEncryptionError { message: String },
 
     #[error("InternalServerError: {message}")]
     InternalServerError { message: String },

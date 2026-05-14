@@ -2,8 +2,8 @@ use crate::config::AuthConfig;
 use crate::dto::change_password_dto::ChangePasswordDto;
 use crate::dto::create_login_dto::CreateLoginDto;
 use crate::dto::reset_password_dto::ResetPasswordDto;
-use crate::dto::validate_min_password_len;
-use crate::into_ls_error;
+use crate::dto::{ERR_NOT_UNIQUE, validate_min_password_len};
+use crate::error::LsAccountManagerError;
 use crate::model::auth_account::{AuthAccountData, AuthAccountModel, AuthAccountStatus};
 use crate::model::token::{TokenModel, TokenType};
 use crate::repository::{AuthAccountRepository, AuthRepositoryManager};
@@ -11,11 +11,9 @@ use crate::service::password_codec::LsPasswordCodecService;
 use crate::service::token::LsTokenService;
 use c3p0::sqlx::Database;
 use c3p0::*;
-use lightspeed_core::error::*;
+use lightspeed_core::error::ErrorCodes;
 use lightspeed_core::service::auth::Auth;
 use lightspeed_core::utils::current_epoch_seconds;
-use lightspeed_validator::Validator;
-use lightspeed_validator::error::{ErrorDetails, ValidationError};
 use log::*;
 use std::sync::Arc;
 
@@ -41,7 +39,7 @@ impl<RepoManager: AuthRepositoryManager> LsAuthAccountService<RepoManager> {
         LsAuthAccountService { c3p0, auth_config, auth_repo, password_service, token_service }
     }
 
-    pub async fn login(&self, username: &str, password: &str) -> Result<Auth, LsError> {
+    pub async fn login(&self, username: &str, password: &str) -> Result<Auth, LsAccountManagerError> {
         self.c3p0.transaction(async |conn| self.login_with_conn(conn, username, password).await).await
     }
 
@@ -50,7 +48,7 @@ impl<RepoManager: AuthRepositoryManager> LsAuthAccountService<RepoManager> {
         conn: &mut <RepoManager::DB as Database>::Connection,
         username: &str,
         password: &str,
-    ) -> Result<Auth, LsError> {
+    ) -> Result<Auth, LsAccountManagerError> {
         debug!("login attempt with username [{username}]");
         let model = self.auth_repo.fetch_by_username_optional(conn, username).await?;
 
@@ -60,7 +58,7 @@ impl<RepoManager: AuthRepositoryManager> LsAuthAccountService<RepoManager> {
             match &user.data.status {
                 AuthAccountStatus::Active => {}
                 _ => {
-                    return Err(LsError::BadRequest {
+                    return Err(LsAccountManagerError::BadRequest {
                         message: format!("User [{username}] not in status Active"),
                         code: ErrorCodes::INACTIVE_USER,
                     });
@@ -72,7 +70,7 @@ impl<RepoManager: AuthRepositoryManager> LsAuthAccountService<RepoManager> {
             if let Some(expiration_secs) = self.auth_config.password_expiration_seconds {
                 let password_set_at = user.data.password_updated_date_epoch_seconds;
                 if creation_ts_seconds.saturating_sub(password_set_at) >= expiration_secs as i64 {
-                    return Err(LsError::BadRequest {
+                    return Err(LsAccountManagerError::BadRequest {
                         message: format!("Password for user [{username}] has expired and must be changed"),
                         code: ErrorCodes::EXPIRED_PASSWORD,
                     });
@@ -95,13 +93,16 @@ impl<RepoManager: AuthRepositoryManager> LsAuthAccountService<RepoManager> {
             let _ = self.password_service.verify_match(password, self.password_service.dummy_hash()).await;
         };
 
-        Err(LsError::BadRequest { message: "Wrong credentials".to_string(), code: ErrorCodes::WRONG_CREDENTIALS })
+        Err(LsAccountManagerError::BadRequest {
+            message: "Wrong credentials".to_string(),
+            code: ErrorCodes::WRONG_CREDENTIALS,
+        })
     }
 
     pub async fn create_user(
         &self,
         create_login_dto: CreateLoginDto,
-    ) -> Result<(AuthAccountModel, TokenModel), LsError> {
+    ) -> Result<(AuthAccountModel, TokenModel), LsAccountManagerError> {
         self.c3p0.transaction(async |conn| self.create_user_with_conn(conn, create_login_dto).await).await
     }
 
@@ -109,7 +110,7 @@ impl<RepoManager: AuthRepositoryManager> LsAuthAccountService<RepoManager> {
         &self,
         conn: &mut <RepoManager::DB as Database>::Connection,
         create_login_dto: CreateLoginDto,
-    ) -> Result<(AuthAccountModel, TokenModel), LsError> {
+    ) -> Result<(AuthAccountModel, TokenModel), LsAccountManagerError> {
         info!(
             "Create login attempt with username [{:?}] and email [{}]",
             create_login_dto.username, create_login_dto.email
@@ -131,17 +132,16 @@ impl<RepoManager: AuthRepositoryManager> LsAuthAccountService<RepoManager> {
         let existing_user = self.auth_repo.fetch_by_username_optional(conn, &username).await?;
         let existing_email = self.auth_repo.fetch_by_email_optional(conn, &create_login_dto.email).await?;
         let min_password_len = self.auth_config.min_password_len;
-        Validator::validate(&(&create_login_dto, &|error_details: &mut ErrorDetails| {
+        LsAccountManagerError::validate(|error_details| {
+            create_login_dto.validate(error_details);
             validate_min_password_len(error_details, "password", &create_login_dto.password, min_password_len);
             if existing_user.is_some() {
-                error_details.add_detail("username", ValidationError::NotUnique);
+                error_details.add_detail("username", ERR_NOT_UNIQUE);
             }
             if existing_email.is_some() {
-                error_details.add_detail("email", ValidationError::NotUnique);
+                error_details.add_detail("email", ERR_NOT_UNIQUE);
             }
-            Ok(())
-        }))
-        .map_err(into_ls_error)?;
+        })?;
 
         let now = current_epoch_seconds();
         let auth_account_model = self
@@ -168,7 +168,7 @@ impl<RepoManager: AuthRepositoryManager> LsAuthAccountService<RepoManager> {
         &self,
         conn: &mut <RepoManager::DB as Database>::Connection,
         username: &str,
-    ) -> Result<TokenModel, LsError> {
+    ) -> Result<TokenModel, LsAccountManagerError> {
         debug!("Generate activation token for username [{username}]");
         self.token_service.generate_and_save_token_with_conn(conn, username, TokenType::AccountActivation).await
     }
@@ -177,7 +177,7 @@ impl<RepoManager: AuthRepositoryManager> LsAuthAccountService<RepoManager> {
         &self,
         username: &str,
         email: &str,
-    ) -> Result<(AuthAccountModel, TokenModel), LsError> {
+    ) -> Result<(AuthAccountModel, TokenModel), LsAccountManagerError> {
         self.c3p0
             .transaction(async |conn| {
                 self.generate_new_activation_token_by_username_and_email_with_conn(conn, username, email).await
@@ -190,7 +190,7 @@ impl<RepoManager: AuthRepositoryManager> LsAuthAccountService<RepoManager> {
         conn: &mut <RepoManager::DB as Database>::Connection,
         username: &str,
         email: &str,
-    ) -> Result<(AuthAccountModel, TokenModel), LsError> {
+    ) -> Result<(AuthAccountModel, TokenModel), LsAccountManagerError> {
         debug!("Generate new activation token for username [{username}] and email [{email}]");
 
         // All "this request is not eligible" branches — username unknown,
@@ -205,7 +205,7 @@ impl<RepoManager: AuthRepositoryManager> LsAuthAccountService<RepoManager> {
         // theirs" from "their account is already active". We now log the
         // precise reason at debug level for ops/forensics and surface a
         // single opaque error to the caller.
-        let generic_failure = || LsError::BadRequest {
+        let generic_failure = || LsAccountManagerError::BadRequest {
             message: "Cannot generate a new activation token for the provided username and email".to_owned(),
             code: ErrorCodes::WRONG_CREDENTIALS,
         };
@@ -241,7 +241,7 @@ impl<RepoManager: AuthRepositoryManager> LsAuthAccountService<RepoManager> {
         Ok((user, token))
     }
 
-    pub async fn activate_user(&self, activation_token: &str) -> Result<AuthAccountModel, LsError> {
+    pub async fn activate_user(&self, activation_token: &str) -> Result<AuthAccountModel, LsAccountManagerError> {
         self.c3p0.transaction(async |conn| self.activate_user_with_conn(conn, activation_token).await).await
     }
 
@@ -249,20 +249,15 @@ impl<RepoManager: AuthRepositoryManager> LsAuthAccountService<RepoManager> {
         &self,
         conn: &mut <RepoManager::DB as Database>::Connection,
         activation_token: &str,
-    ) -> Result<AuthAccountModel, LsError> {
+    ) -> Result<AuthAccountModel, LsAccountManagerError> {
         debug!("Activate user called with token [{activation_token}]");
 
         let token = self.token_service.fetch_by_token_with_conn(conn, activation_token, true).await?;
 
-        Validator::validate(&|error_details: &mut ErrorDetails| {
-            match &token.data.token_type {
-                TokenType::AccountActivation => {}
-                _ => error_details
-                    .add_detail("token_type", ValidationError::Custom { code: WRONG_TYPE.into(), params: vec![] }),
-            };
-            Ok(())
-        })
-        .map_err(into_ls_error)?;
+        LsAccountManagerError::validate(|error_details| match &token.data.token_type {
+            TokenType::AccountActivation => {}
+            _ => error_details.add_detail("token_type", WRONG_TYPE),
+        })?;
 
         info!("Activate user [{}]", token.data.username);
 
@@ -271,7 +266,7 @@ impl<RepoManager: AuthRepositoryManager> LsAuthAccountService<RepoManager> {
         match &user.data.status {
             AuthAccountStatus::PendingActivation => {}
             _ => {
-                return Err(LsError::BadRequest {
+                return Err(LsAccountManagerError::BadRequest {
                     message: format!("User [{}] not in status PendingActivation", token.data.username),
                     code: ErrorCodes::NOT_PENDING_USER,
                 });
@@ -288,7 +283,7 @@ impl<RepoManager: AuthRepositoryManager> LsAuthAccountService<RepoManager> {
     pub async fn generate_reset_password_token(
         &self,
         username: &str,
-    ) -> Result<(AuthAccountModel, TokenModel), LsError> {
+    ) -> Result<(AuthAccountModel, TokenModel), LsAccountManagerError> {
         self.c3p0.transaction(async |conn| self.generate_reset_password_token_with_conn(conn, username).await).await
     }
 
@@ -296,7 +291,7 @@ impl<RepoManager: AuthRepositoryManager> LsAuthAccountService<RepoManager> {
         &self,
         conn: &mut <RepoManager::DB as Database>::Connection,
         username: &str,
-    ) -> Result<(AuthAccountModel, TokenModel), LsError> {
+    ) -> Result<(AuthAccountModel, TokenModel), LsAccountManagerError> {
         info!("Generate reset password token for username [{username}]");
 
         let user = self.auth_repo.fetch_by_username(conn, username).await?;
@@ -304,7 +299,7 @@ impl<RepoManager: AuthRepositoryManager> LsAuthAccountService<RepoManager> {
         match &user.data.status {
             AuthAccountStatus::Active => {}
             _ => {
-                return Err(LsError::BadRequest {
+                return Err(LsAccountManagerError::BadRequest {
                     message: format!("User [{username}] not in status Active"),
                     code: ErrorCodes::INACTIVE_USER,
                 });
@@ -320,7 +315,7 @@ impl<RepoManager: AuthRepositoryManager> LsAuthAccountService<RepoManager> {
     pub async fn reset_password_by_token(
         &self,
         reset_password_dto: ResetPasswordDto,
-    ) -> Result<AuthAccountModel, LsError> {
+    ) -> Result<AuthAccountModel, LsAccountManagerError> {
         self.c3p0.transaction(async |conn| self.reset_password_by_token_with_conn(conn, reset_password_dto).await).await
     }
 
@@ -328,14 +323,13 @@ impl<RepoManager: AuthRepositoryManager> LsAuthAccountService<RepoManager> {
         &self,
         conn: &mut <RepoManager::DB as Database>::Connection,
         reset_password_dto: ResetPasswordDto,
-    ) -> Result<AuthAccountModel, LsError> {
+    ) -> Result<AuthAccountModel, LsAccountManagerError> {
         debug!("Reset password called with token [{}]", reset_password_dto.token);
         let min_password_len = self.auth_config.min_password_len;
-        Validator::validate(&(&reset_password_dto, &|error_details: &mut ErrorDetails| {
+        LsAccountManagerError::validate(|error_details| {
+            reset_password_dto.validate(error_details);
             validate_min_password_len(error_details, "password", &reset_password_dto.password, min_password_len);
-            Ok(())
-        }))
-        .map_err(into_ls_error)?;
+        })?;
 
         // Validate expiry: an expired reset-password token must not be usable
         // to reset the password.
@@ -343,22 +337,17 @@ impl<RepoManager: AuthRepositoryManager> LsAuthAccountService<RepoManager> {
 
         info!("Reset password of user [{}]", token.data.username);
 
-        Validator::validate(&|error_details: &mut ErrorDetails| {
-            match &token.data.token_type {
-                TokenType::ResetPassword => {}
-                _ => error_details
-                    .add_detail("token_type", ValidationError::Custom { code: WRONG_TYPE.into(), params: vec![] }),
-            };
-            Ok(())
-        })
-        .map_err(into_ls_error)?;
+        LsAccountManagerError::validate(|error_details| match &token.data.token_type {
+            TokenType::ResetPassword => {}
+            _ => error_details.add_detail("token_type", WRONG_TYPE),
+        })?;
 
         let mut user = self.auth_repo.fetch_by_username(conn, &token.data.username).await?;
 
         match &user.data.status {
             AuthAccountStatus::Active => {}
             _ => {
-                return Err(LsError::BadRequest {
+                return Err(LsAccountManagerError::BadRequest {
                     message: format!("User [{}] not in status Active", token.data.username),
                     code: ErrorCodes::INACTIVE_USER,
                 });
@@ -373,7 +362,7 @@ impl<RepoManager: AuthRepositoryManager> LsAuthAccountService<RepoManager> {
         Ok(user)
     }
 
-    pub async fn change_password(&self, dto: ChangePasswordDto) -> Result<AuthAccountModel, LsError> {
+    pub async fn change_password(&self, dto: ChangePasswordDto) -> Result<AuthAccountModel, LsAccountManagerError> {
         self.c3p0.transaction(async |conn| self.change_password_with_conn(conn, dto).await).await
     }
 
@@ -381,15 +370,14 @@ impl<RepoManager: AuthRepositoryManager> LsAuthAccountService<RepoManager> {
         &self,
         conn: &mut <RepoManager::DB as Database>::Connection,
         dto: ChangePasswordDto,
-    ) -> Result<AuthAccountModel, LsError> {
+    ) -> Result<AuthAccountModel, LsAccountManagerError> {
         info!("Reset password of user_id [{:?}]", dto.user_id);
 
         let min_password_len = self.auth_config.min_password_len;
-        Validator::validate(&(&dto, &|error_details: &mut ErrorDetails| {
+        LsAccountManagerError::validate(|error_details| {
+            dto.validate(error_details);
             validate_min_password_len(error_details, "new_password", &dto.new_password, min_password_len);
-            Ok(())
-        }))
-        .map_err(into_ls_error)?;
+        })?;
 
         let mut user = self.auth_repo.fetch_by_id(conn, dto.user_id).await?;
         info!("Change password of user [{}]", user.data.username);
@@ -397,7 +385,7 @@ impl<RepoManager: AuthRepositoryManager> LsAuthAccountService<RepoManager> {
         match &user.data.status {
             AuthAccountStatus::Active => {}
             _ => {
-                return Err(LsError::BadRequest {
+                return Err(LsAccountManagerError::BadRequest {
                     message: format!("User [{}] not in status Active", user.data.username),
                     code: ErrorCodes::INACTIVE_USER,
                 });
@@ -405,7 +393,7 @@ impl<RepoManager: AuthRepositoryManager> LsAuthAccountService<RepoManager> {
         };
 
         if !self.password_service.verify_match(&dto.old_password, &user.data.password).await? {
-            return Err(LsError::BadRequest {
+            return Err(LsAccountManagerError::BadRequest {
                 message: "Wrong credentials".to_owned(),
                 code: ErrorCodes::WRONG_CREDENTIALS,
             });
@@ -418,7 +406,7 @@ impl<RepoManager: AuthRepositoryManager> LsAuthAccountService<RepoManager> {
         Ok(user)
     }
 
-    pub async fn fetch_by_user_id(&self, user_id: i64) -> Result<AuthAccountModel, LsError> {
+    pub async fn fetch_by_user_id(&self, user_id: i64) -> Result<AuthAccountModel, LsAccountManagerError> {
         self.c3p0.transaction(async |conn| self.fetch_by_user_id_with_conn(conn, user_id).await).await
     }
 
@@ -426,12 +414,12 @@ impl<RepoManager: AuthRepositoryManager> LsAuthAccountService<RepoManager> {
         &self,
         conn: &mut <RepoManager::DB as Database>::Connection,
         user_id: i64,
-    ) -> Result<AuthAccountModel, LsError> {
+    ) -> Result<AuthAccountModel, LsAccountManagerError> {
         debug!("Fetch user with user_id [{user_id:?}]");
         self.auth_repo.fetch_by_id(conn, user_id).await
     }
 
-    pub async fn fetch_by_username(&self, username: &str) -> Result<AuthAccountModel, LsError> {
+    pub async fn fetch_by_username(&self, username: &str) -> Result<AuthAccountModel, LsAccountManagerError> {
         self.c3p0.transaction(async |conn| self.fetch_by_username_with_conn(conn, username).await).await
     }
 
@@ -439,7 +427,7 @@ impl<RepoManager: AuthRepositoryManager> LsAuthAccountService<RepoManager> {
         &self,
         conn: &mut <RepoManager::DB as Database>::Connection,
         username: &str,
-    ) -> Result<AuthAccountModel, LsError> {
+    ) -> Result<AuthAccountModel, LsAccountManagerError> {
         debug!("Fetch user with username [{username}]");
         self.auth_repo.fetch_by_username(conn, username).await
     }
@@ -449,7 +437,7 @@ impl<RepoManager: AuthRepositoryManager> LsAuthAccountService<RepoManager> {
         status: AuthAccountStatus,
         start_user_id: i64,
         limit: u32,
-    ) -> Result<Vec<AuthAccountModel>, LsError> {
+    ) -> Result<Vec<AuthAccountModel>, LsAccountManagerError> {
         self.c3p0
             .transaction(async |conn| self.fetch_all_by_status_with_conn(conn, status, start_user_id, limit).await)
             .await
@@ -461,12 +449,12 @@ impl<RepoManager: AuthRepositoryManager> LsAuthAccountService<RepoManager> {
         status: AuthAccountStatus,
         start_user_id: i64,
         limit: u32,
-    ) -> Result<Vec<AuthAccountModel>, LsError> {
+    ) -> Result<Vec<AuthAccountModel>, LsAccountManagerError> {
         debug!("Fetch all with status [{status}], start_user_id {start_user_id:?}, limit {limit}");
         self.auth_repo.fetch_all_by_status(conn, status, start_user_id, limit).await
     }
 
-    pub async fn add_roles(&self, user_id: i64, roles: &[String]) -> Result<AuthAccountModel, LsError> {
+    pub async fn add_roles(&self, user_id: i64, roles: &[String]) -> Result<AuthAccountModel, LsAccountManagerError> {
         self.c3p0.transaction(async |conn| self.add_roles_with_conn(conn, user_id, roles).await).await
     }
 
@@ -475,7 +463,7 @@ impl<RepoManager: AuthRepositoryManager> LsAuthAccountService<RepoManager> {
         conn: &mut <RepoManager::DB as Database>::Connection,
         user_id: i64,
         roles: &[String],
-    ) -> Result<AuthAccountModel, LsError> {
+    ) -> Result<AuthAccountModel, LsAccountManagerError> {
         info!("Add roles [{roles:?}] to user_id [{user_id:?}]");
 
         let mut account = self.fetch_by_user_id_with_conn(conn, user_id).await?;
@@ -487,7 +475,11 @@ impl<RepoManager: AuthRepositoryManager> LsAuthAccountService<RepoManager> {
         self.auth_repo.update(conn, account).await
     }
 
-    pub async fn delete_roles(&self, user_id: i64, roles: &[String]) -> Result<AuthAccountModel, LsError> {
+    pub async fn delete_roles(
+        &self,
+        user_id: i64,
+        roles: &[String],
+    ) -> Result<AuthAccountModel, LsAccountManagerError> {
         self.c3p0.transaction(async |conn| self.delete_roles_with_conn(conn, user_id, roles).await).await
     }
 
@@ -496,7 +488,7 @@ impl<RepoManager: AuthRepositoryManager> LsAuthAccountService<RepoManager> {
         conn: &mut <RepoManager::DB as Database>::Connection,
         user_id: i64,
         roles: &[String],
-    ) -> Result<AuthAccountModel, LsError> {
+    ) -> Result<AuthAccountModel, LsAccountManagerError> {
         info!("delete roles [{roles:?}] to user_id [{user_id:?}]");
 
         let mut account = self.fetch_by_user_id_with_conn(conn, user_id).await?;
@@ -511,7 +503,7 @@ impl<RepoManager: AuthRepositoryManager> LsAuthAccountService<RepoManager> {
         user_id: i64,
         new_username: Option<String>,
         new_email: Option<String>,
-    ) -> Result<AuthAccountModel, LsError> {
+    ) -> Result<AuthAccountModel, LsAccountManagerError> {
         self.c3p0
             .transaction(async |conn| self.change_user_data_with_conn(conn, user_id, new_username, new_email).await)
             .await
@@ -523,7 +515,7 @@ impl<RepoManager: AuthRepositoryManager> LsAuthAccountService<RepoManager> {
         user_id: i64,
         new_username: Option<String>,
         new_email: Option<String>,
-    ) -> Result<AuthAccountModel, LsError> {
+    ) -> Result<AuthAccountModel, LsAccountManagerError> {
         info!(
             "Change user data of user_id [{user_id:?}]. New username: [{new_username:?}]. New email: [{new_email:?}]"
         );
@@ -549,7 +541,7 @@ impl<RepoManager: AuthRepositoryManager> LsAuthAccountService<RepoManager> {
         self.auth_repo.update(conn, user).await
     }
 
-    pub async fn disable_by_user_id(&self, user_id: i64) -> Result<AuthAccountModel, LsError> {
+    pub async fn disable_by_user_id(&self, user_id: i64) -> Result<AuthAccountModel, LsAccountManagerError> {
         self.c3p0.transaction(async |conn| self.disable_by_user_id_with_conn(conn, user_id).await).await
     }
 
@@ -557,14 +549,14 @@ impl<RepoManager: AuthRepositoryManager> LsAuthAccountService<RepoManager> {
         &self,
         conn: &mut <RepoManager::DB as Database>::Connection,
         user_id: i64,
-    ) -> Result<AuthAccountModel, LsError> {
+    ) -> Result<AuthAccountModel, LsAccountManagerError> {
         debug!("Disable user with user_id [{user_id:?}]");
         let mut user = self.auth_repo.fetch_by_id(conn, user_id).await?;
 
         match &user.data.status {
             AuthAccountStatus::Active => {}
             _ => {
-                return Err(LsError::BadRequest {
+                return Err(LsAccountManagerError::BadRequest {
                     message: format!("User [{user_id:?}] not in status Active"),
                     code: ErrorCodes::INACTIVE_USER,
                 });
@@ -575,7 +567,10 @@ impl<RepoManager: AuthRepositoryManager> LsAuthAccountService<RepoManager> {
         self.auth_repo.update(conn, user).await
     }
 
-    pub async fn reactivate_disabled_user_by_user_id(&self, user_id: i64) -> Result<AuthAccountModel, LsError> {
+    pub async fn reactivate_disabled_user_by_user_id(
+        &self,
+        user_id: i64,
+    ) -> Result<AuthAccountModel, LsAccountManagerError> {
         self.c3p0
             .transaction(async |conn| self.reactivate_disabled_user_by_user_id_with_conn(conn, user_id).await)
             .await
@@ -585,14 +580,14 @@ impl<RepoManager: AuthRepositoryManager> LsAuthAccountService<RepoManager> {
         &self,
         conn: &mut <RepoManager::DB as Database>::Connection,
         user_id: i64,
-    ) -> Result<AuthAccountModel, LsError> {
+    ) -> Result<AuthAccountModel, LsAccountManagerError> {
         debug!("Reactivate disabled user with user_id [{user_id:?}]");
         let mut user = self.auth_repo.fetch_by_id(conn, user_id).await?;
 
         match &user.data.status {
             AuthAccountStatus::Disabled => {}
             _ => {
-                return Err(LsError::BadRequest {
+                return Err(LsAccountManagerError::BadRequest {
                     message: format!("User [{user_id:?}] not in status Disabled"),
                     code: ErrorCodes::ACTIVE_USER,
                 });
@@ -603,7 +598,7 @@ impl<RepoManager: AuthRepositoryManager> LsAuthAccountService<RepoManager> {
         self.auth_repo.update(conn, user).await
     }
 
-    pub async fn delete_by_user_id(&self, user_id: i64) -> Result<u64, LsError> {
+    pub async fn delete_by_user_id(&self, user_id: i64) -> Result<u64, LsAccountManagerError> {
         self.c3p0.transaction(async |conn| self.delete_by_user_id_with_conn(conn, user_id).await).await
     }
 
@@ -611,7 +606,7 @@ impl<RepoManager: AuthRepositoryManager> LsAuthAccountService<RepoManager> {
         &self,
         conn: &mut <RepoManager::DB as Database>::Connection,
         user_id: i64,
-    ) -> Result<u64, LsError> {
+    ) -> Result<u64, LsAccountManagerError> {
         debug!("Delete user with user_id [{user_id:?}]");
         self.auth_repo.delete_by_id(conn, user_id).await
     }

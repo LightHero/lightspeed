@@ -1,8 +1,8 @@
-use lightspeed_auth::LsAuthModule;
-use lightspeed_auth::dto::create_login_dto::CreateLoginDto;
-use lightspeed_auth::model::auth_account::AuthAccountModel;
-use lightspeed_auth::model::token::TokenModel;
-use lightspeed_auth::repository::AuthRepositoryManager;
+use lightspeed_account_management::LsAuthModule;
+use lightspeed_account_management::dto::create_login_dto::CreateLoginDto;
+use lightspeed_account_management::model::auth_account::AuthAccountModel;
+use lightspeed_account_management::model::token::TokenModel;
+use lightspeed_account_management::repository::AuthRepositoryManager;
 use lightspeed_core::error::LsError;
 use lightspeed_core::model::language::Language;
 use lightspeed_core::utils::new_hyphenated_uuid;

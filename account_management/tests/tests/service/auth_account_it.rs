@@ -1,15 +1,16 @@
 use crate::data;
 use crate::tests::util::{create_user, create_user_with_password};
 use c3p0::*;
-use lightspeed_auth::config::AuthConfig;
-use lightspeed_auth::dto::ERR_PASSWORD_TOO_SHORT;
-use lightspeed_auth::dto::change_password_dto::ChangePasswordDto;
-use lightspeed_auth::dto::create_login_dto::CreateLoginDto;
-use lightspeed_auth::dto::reset_password_dto::ResetPasswordDto;
-use lightspeed_auth::model::auth_account::AuthAccountStatus;
-use lightspeed_auth::model::token::TokenType;
-use lightspeed_auth::repository::{AuthAccountRepository, AuthRepositoryManager};
-use lightspeed_auth::service::auth_account::LsAuthAccountService;
+use lightspeed_account_management::config::AuthConfig;
+use lightspeed_account_management::dto::ERR_PASSWORD_TOO_SHORT;
+use lightspeed_account_management::dto::change_password_dto::ChangePasswordDto;
+use lightspeed_account_management::dto::create_login_dto::CreateLoginDto;
+use lightspeed_account_management::dto::reset_password_dto::ResetPasswordDto;
+use lightspeed_account_management::model::auth_account::AuthAccountStatus;
+use lightspeed_account_management::model::token::TokenType;
+use lightspeed_account_management::repository::{AuthAccountRepository, AuthRepositoryManager};
+use lightspeed_account_management::error::LsAccountManagerError;
+use lightspeed_account_management::service::auth_account::LsAuthAccountService;
 use lightspeed_core::error::{ErrorCodes, ErrorDetail, LsError};
 use lightspeed_core::model::language::Language;
 use lightspeed_core::utils::{current_epoch_seconds, new_hyphenated_uuid};
@@ -345,8 +346,8 @@ fn should_regenerate_activation_token_by_email_and_username() -> Result<(), LsEr
 /// `generate_new_activation_token_by_username_and_email` previously
 /// surfaced three distinguishable errors:
 ///   * `LsError::NotFound` — username unknown,
-///   * `LsError::ValidationError` carrying `WRONG_EMAIL` — email mismatch,
-///   * `LsError::BadRequest(NOT_PENDING_USER)` — user already active.
+///   * `LsAccountManagerError::ValidationError` carrying `WRONG_EMAIL` — email mismatch,
+///   * `LsAccountManagerError::BadRequest(NOT_PENDING_USER)` — user already active.
 ///
 /// Each told an attacker something different. After the fix, every
 /// "request not eligible" branch returns the SAME error variant and code.
@@ -383,7 +384,7 @@ fn generate_new_activation_token_should_use_uniform_error_for_all_failure_modes(
             [("unknown_username", unknown), ("wrong_email", wrong_email), ("wrong_status", wrong_status)]
         {
             match result {
-                Err(LsError::BadRequest { code, .. }) => {
+                Err(LsAccountManagerError::BadRequest { code, .. }) => {
                     assert_eq!(
                         ErrorCodes::WRONG_CREDENTIALS,
                         code,
@@ -483,7 +484,7 @@ fn should_not_login_inactive_user() -> Result<(), LsError> {
         let result = auth_module.auth_account_service.login(&user.data.username, password).await;
 
         match result {
-            Err(LsError::BadRequest { code, message }) => {
+            Err(LsAccountManagerError::BadRequest { code, message }) => {
                 assert_eq!(ErrorCodes::INACTIVE_USER, code);
                 assert_eq!(format!("User [{}] not in status Active", &user.data.username), message);
             }
@@ -505,7 +506,7 @@ fn should_return_wrong_credentials_on_login_of_inactive_user_with_wrong_password
         let result = auth_module.auth_account_service.login(&user.data.username, "wrong_password").await;
 
         match result {
-            Err(LsError::BadRequest { code, message }) => {
+            Err(LsAccountManagerError::BadRequest { code, message }) => {
                 assert_eq!(ErrorCodes::WRONG_CREDENTIALS, code);
                 assert_eq!(format!("Wrong credentials"), message);
             }
@@ -568,7 +569,7 @@ fn create_user_should_fail_if_passwords_do_not_match() -> Result<(), LsError> {
         assert!(result.is_err());
 
         match &result {
-            Err(LsError::ValidationError { details }) => {
+            Err(LsAccountManagerError::ValidationError { details }) => {
                 assert!(details.details.contains_key("password"))
             }
             _ => panic!(),
@@ -602,7 +603,7 @@ fn create_user_should_fail_if_password_too_short() -> Result<(), LsError> {
             .await;
 
         match result {
-            Err(LsError::ValidationError { details }) => {
+            Err(LsAccountManagerError::ValidationError { details }) => {
                 let errors = details.details.get("password").expect("expected password error");
                 let expected = ErrorDetail::new(ERR_PASSWORD_TOO_SHORT, vec![min_len.to_string()]);
                 assert!(errors.contains(&expected));
@@ -639,7 +640,7 @@ fn create_user_should_fail_if_not_valid_email() -> Result<(), LsError> {
         assert!(result.is_err());
 
         match &result {
-            Err(LsError::ValidationError { details }) => {
+            Err(LsAccountManagerError::ValidationError { details }) => {
                 assert!(details.details.contains_key("email"))
             }
             _ => panic!(),
@@ -674,7 +675,7 @@ fn create_user_should_fail_if_not_accepted_privacy_policy() -> Result<(), LsErro
         assert!(result.is_err());
 
         match &result {
-            Err(LsError::ValidationError { details }) => {
+            Err(LsAccountManagerError::ValidationError { details }) => {
                 assert!(details.details.contains_key("accept_privacy_policy"))
             }
             _ => panic!(),
@@ -710,7 +711,7 @@ fn create_user_should_fail_if_username_not_unique() -> Result<(), LsError> {
         assert!(result.is_err());
 
         match &result {
-            Err(LsError::ValidationError { details }) => {
+            Err(LsAccountManagerError::ValidationError { details }) => {
                 assert!(details.details.contains_key("username"))
             }
             _ => panic!(),
@@ -745,7 +746,7 @@ fn create_user_should_fail_if_email_not_unique() -> Result<(), LsError> {
         assert!(result.is_err());
 
         match &result {
-            Err(LsError::ValidationError { details }) => {
+            Err(LsAccountManagerError::ValidationError { details }) => {
                 assert!(details.details.contains_key("email"))
             }
             _ => panic!(),
@@ -835,7 +836,7 @@ fn should_fail_resetting_password_if_token_expired() -> Result<(), LsError> {
             .await;
 
         match result {
-            Err(LsError::ValidationError { details }) => {
+            Err(LsAccountManagerError::ValidationError { details }) => {
                 assert_eq!("expired", details.details["expire_at_epoch"][0]);
             }
             _ => panic!("expected ValidationError for expired reset token"),
@@ -956,7 +957,7 @@ fn should_reset_password_only_if_passwords_match() -> Result<(), LsError> {
         assert!(result.is_err());
 
         match &result {
-            Err(LsError::ValidationError { details }) => {
+            Err(LsAccountManagerError::ValidationError { details }) => {
                 assert!(details.details.contains_key("password"))
             }
             _ => panic!(),
@@ -999,7 +1000,7 @@ fn should_fail_resetting_password_if_password_too_short() -> Result<(), LsError>
             .await;
 
         match result {
-            Err(LsError::ValidationError { details }) => {
+            Err(LsAccountManagerError::ValidationError { details }) => {
                 let errors = details.details.get("password").expect("expected password error");
                 let expected = ErrorDetail::new(ERR_PASSWORD_TOO_SHORT, vec![min_len.to_string()]);
                 assert!(errors.contains(&expected));
@@ -1157,7 +1158,7 @@ fn should_not_change_user_password_if_new_passwords_do_not_match() -> Result<(),
         assert!(result.is_err());
 
         match &result {
-            Err(LsError::ValidationError { details }) => {
+            Err(LsAccountManagerError::ValidationError { details }) => {
                 assert!(details.details.contains_key("new_password"))
             }
             _ => panic!(),
@@ -1190,7 +1191,7 @@ fn should_not_change_user_password_if_new_password_too_short() -> Result<(), LsE
             .await;
 
         match result {
-            Err(LsError::ValidationError { details }) => {
+            Err(LsAccountManagerError::ValidationError { details }) => {
                 let errors = details.details.get("new_password").expect("expected new_password error");
                 let expected = ErrorDetail::new(ERR_PASSWORD_TOO_SHORT, vec![min_len.to_string()]);
                 assert!(errors.contains(&expected));
@@ -1638,7 +1639,7 @@ fn should_return_users_by_status_with_offset_and_limit() -> Result<(), LsError> 
 /// uses a customized `AuthConfig`. Used by tests that need to flip
 /// `password_expiration_seconds` without rebuilding the whole module.
 fn auth_account_service_with_config<RepoManager: AuthRepositoryManager>(
-    auth_module: &lightspeed_auth::LsAuthModule<RepoManager>,
+    auth_module: &lightspeed_account_management::LsAuthModule<RepoManager>,
     auth_config: AuthConfig,
 ) -> LsAuthAccountService<RepoManager> {
     LsAuthAccountService::new(
@@ -1653,7 +1654,7 @@ fn auth_account_service_with_config<RepoManager: AuthRepositoryManager>(
 /// Overwrite a user's stored timestamps by going through the repo. Tests use
 /// this to simulate an aged password without actually waiting.
 async fn set_user_timestamps<RepoManager: AuthRepositoryManager>(
-    auth_module: &lightspeed_auth::LsAuthModule<RepoManager>,
+    auth_module: &lightspeed_account_management::LsAuthModule<RepoManager>,
     user_id: i64,
     password_updated: i64,
     created: Option<i64>,
@@ -1710,7 +1711,7 @@ fn should_honor_configured_min_password_len() -> Result<(), LsError> {
             .await;
 
         match result {
-            Err(LsError::ValidationError { details }) => {
+            Err(LsAccountManagerError::ValidationError { details }) => {
                 let errors = details.details.get("password").expect("expected password error");
                 let expected = ErrorDetail::new(ERR_PASSWORD_TOO_SHORT, vec![auth_config.min_password_len.to_string()]);
                 assert!(errors.contains(&expected));
@@ -1758,7 +1759,7 @@ fn should_fail_login_when_password_expired() -> Result<(), LsError> {
         let result = service.login(&user.data.username, &password).await;
 
         match result {
-            Err(LsError::BadRequest { code, .. }) => {
+            Err(LsAccountManagerError::BadRequest { code, .. }) => {
                 assert_eq!(ErrorCodes::EXPIRED_PASSWORD, code);
             }
             _ => panic!("expected BadRequest with EXPIRED_PASSWORD"),
@@ -1809,7 +1810,7 @@ fn change_password_should_reset_password_age() -> Result<(), LsError> {
         auth_config.password_expiration_seconds = Some(60);
         let strict_service = auth_account_service_with_config(auth_module, auth_config.clone());
         match strict_service.login(&user.data.username, &password).await {
-            Err(LsError::BadRequest { code, .. }) => assert_eq!(ErrorCodes::EXPIRED_PASSWORD, code),
+            Err(LsAccountManagerError::BadRequest { code, .. }) => assert_eq!(ErrorCodes::EXPIRED_PASSWORD, code),
             _ => panic!("expected EXPIRED_PASSWORD before change_password"),
         }
 

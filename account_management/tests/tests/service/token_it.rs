@@ -1,7 +1,7 @@
 use crate::data;
 use c3p0::*;
-use lightspeed_auth::model::token::{TokenData, TokenType};
-use lightspeed_auth::repository::AuthRepositoryManager;
+use lightspeed_account_management::model::token::{TokenData, TokenType};
+use lightspeed_account_management::repository::AuthRepositoryManager;
 use lightspeed_core::error::LsError;
 use lightspeed_core::utils::{current_epoch_seconds, new_hyphenated_uuid};
 use lightspeed_test_utils::tokio_test;

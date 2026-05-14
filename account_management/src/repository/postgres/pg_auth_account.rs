@@ -2,7 +2,8 @@ use crate::model::auth_account::{AuthAccountData, AuthAccountModel, AuthAccountS
 use crate::repository::AuthAccountRepository;
 use c3p0::sqlx::*;
 use c3p0::*;
-use lightspeed_core::error::{ErrorCodes, LsError};
+use crate::error::LsAccountManagerError;
+use lightspeed_core::error::ErrorCodes;
 
 #[derive(Clone)]
 pub struct PgAuthAccountRepository {}
@@ -28,7 +29,7 @@ impl AuthAccountRepository for PgAuthAccountRepository {
         status: AuthAccountStatus,
         start_user_id: i64,
         limit: u32,
-    ) -> Result<Vec<AuthAccountModel>, LsError> {
+    ) -> Result<Vec<AuthAccountModel>, LsAccountManagerError> {
         Ok(AuthAccountModel::query_with_tail(
             r#"
             where id >= $1 and DATA ->> 'status' = $2
@@ -43,12 +44,12 @@ impl AuthAccountRepository for PgAuthAccountRepository {
         .await?)
     }
 
-    async fn fetch_by_id(&self, tx: &mut PgConnection, user_id: i64) -> Result<AuthAccountModel, LsError> {
+    async fn fetch_by_id(&self, tx: &mut PgConnection, user_id: i64) -> Result<AuthAccountModel, LsAccountManagerError> {
         Ok(tx.fetch_one_by_id::<AuthAccountData>(user_id).await?)
     }
 
-    async fn fetch_by_username(&self, tx: &mut PgConnection, username: &str) -> Result<AuthAccountModel, LsError> {
-        self.fetch_by_username_optional(tx, username).await?.ok_or_else(|| LsError::BadRequest {
+    async fn fetch_by_username(&self, tx: &mut PgConnection, username: &str) -> Result<AuthAccountModel, LsAccountManagerError> {
+        self.fetch_by_username_optional(tx, username).await?.ok_or_else(|| LsAccountManagerError::BadRequest {
             message: format!("No user found with username [{username}]"),
             code: ErrorCodes::NOT_FOUND,
         })
@@ -58,7 +59,7 @@ impl AuthAccountRepository for PgAuthAccountRepository {
         &self,
         tx: &mut PgConnection,
         username: &str,
-    ) -> Result<Option<AuthAccountModel>, LsError> {
+    ) -> Result<Option<AuthAccountModel>, LsAccountManagerError> {
         Ok(AuthAccountModel::query_with_tail(
             r#"
             where DATA ->> 'username' = $1
@@ -74,7 +75,7 @@ impl AuthAccountRepository for PgAuthAccountRepository {
         &self,
         tx: &mut PgConnection,
         email: &str,
-    ) -> Result<Option<AuthAccountModel>, LsError> {
+    ) -> Result<Option<AuthAccountModel>, LsAccountManagerError> {
         Ok(AuthAccountModel::query_with_tail(
             r#"
             where DATA ->> 'email' = $1
@@ -90,19 +91,19 @@ impl AuthAccountRepository for PgAuthAccountRepository {
         &self,
         tx: &mut PgConnection,
         model: NewRecord<AuthAccountData>,
-    ) -> Result<AuthAccountModel, LsError> {
+    ) -> Result<AuthAccountModel, LsAccountManagerError> {
         Ok(tx.save(model).await?)
     }
 
-    async fn update(&self, tx: &mut PgConnection, model: AuthAccountModel) -> Result<AuthAccountModel, LsError> {
+    async fn update(&self, tx: &mut PgConnection, model: AuthAccountModel) -> Result<AuthAccountModel, LsAccountManagerError> {
         Ok(tx.update(model).await?)
     }
 
-    async fn delete(&self, tx: &mut PgConnection, model: AuthAccountModel) -> Result<AuthAccountModel, LsError> {
+    async fn delete(&self, tx: &mut PgConnection, model: AuthAccountModel) -> Result<AuthAccountModel, LsAccountManagerError> {
         Ok(tx.delete(model).await?)
     }
 
-    async fn delete_by_id(&self, tx: &mut PgConnection, user_id: i64) -> Result<u64, LsError> {
+    async fn delete_by_id(&self, tx: &mut PgConnection, user_id: i64) -> Result<u64, LsAccountManagerError> {
         Ok(tx.delete_by_id::<AuthAccountData>(user_id).await?)
     }
 }

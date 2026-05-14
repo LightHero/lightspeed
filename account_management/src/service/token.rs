@@ -50,7 +50,7 @@ impl<RepoManager: AuthRepositoryManager> LsTokenService<RepoManager> {
         &self,
         conn: &mut <RepoManager::DB as Database>::Connection,
         threshold_epoch_seconds: i64,
-    ) -> Result<u64, LsError> {
+    ) -> Result<u64, LsAccountManagerError> {
         let deleted = self.token_repo.delete_expired(conn, threshold_epoch_seconds).await?;
         if deleted > 0 {
             debug!("Lazy sweep removed [{deleted}] expired token(s)");
@@ -63,12 +63,12 @@ impl<RepoManager: AuthRepositoryManager> LsTokenService<RepoManager> {
         conn: &mut <RepoManager::DB as Database>::Connection,
         token: &str,
         validate: bool,
-    ) -> Result<TokenModel, LsError> {
+    ) -> Result<TokenModel, LsAccountManagerError> {
         debug!("Fetch by token [{token}]");
         let token_model = self.token_repo.fetch_by_token(conn, token).await?;
 
         if validate {
-            Validator::validate(&token_model.data).map_err(into_ls_error)?;
+            LsAccountManagerError::validate(|error_details| token_model.data.validate(error_details))?;
         };
 
         Ok(token_model)
@@ -78,7 +78,7 @@ impl<RepoManager: AuthRepositoryManager> LsTokenService<RepoManager> {
         &self,
         conn: &mut <RepoManager::DB as Database>::Connection,
         username: &str,
-    ) -> Result<Vec<TokenModel>, LsError> {
+    ) -> Result<Vec<TokenModel>, LsAccountManagerError> {
         debug!("Fetch by username [{username}]");
         self.token_repo.fetch_by_username(conn, username).await
     }
@@ -87,7 +87,7 @@ impl<RepoManager: AuthRepositoryManager> LsTokenService<RepoManager> {
         &self,
         conn: &mut <RepoManager::DB as Database>::Connection,
         token_model: TokenModel,
-    ) -> Result<TokenModel, LsError> {
+    ) -> Result<TokenModel, LsAccountManagerError> {
         debug!("Delete token_model with id [{:?}] and token [{}]", token_model.id, token_model.data.token);
         self.token_repo.delete(conn, token_model).await
     }

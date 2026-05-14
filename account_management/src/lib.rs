@@ -2,7 +2,7 @@ use crate::config::AuthConfig;
 use crate::repository::AuthRepositoryManager;
 use crate::service::auth_account::LsAuthAccountService;
 use crate::service::password_codec::LsPasswordCodecService;
-use lightspeed_core::error::{ErrorDetail, LsError, RootErrorDetails};
+use lightspeed_core::error::LsError;
 use log::*;
 use std::sync::Arc;
 
