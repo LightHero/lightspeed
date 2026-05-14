@@ -35,7 +35,9 @@ forces every consumer to acknowledge the shape change at compile time.
 Fields with **no** validators get `NoError`, an uninhabited enum: their
 error vec is always empty, and `match err {}` (no arms) is exhaustive.
 
-```rust,ignore
+```rust,no_run
+use lightspeed_validator::Validable;
+
 #[derive(Validable)]
 #[validate(errors(tailored))]
 pub struct MatchOnValidator {
@@ -94,7 +96,8 @@ the wide type whenever you want it.
 
 ### `errors(custom = MyError)` — plug in your own error type
 
-```rust,ignore
+```rust,no_run
+use lightspeed_validator::Validable;
 use lightspeed_validator::contains::MustContainError;
 use lightspeed_validator::length::LengthError;
 
@@ -135,7 +138,7 @@ lightspeed_validator = "<latest_version>"
 
 ## A short example
 
-```rust,ignore
+```rust,no_run
 use lightspeed_validator::{Validable, ValidationError};
 
 #[derive(Validable)]
@@ -193,13 +196,20 @@ subsequent `validate` call.
 By default every validator receives `&()` as its context. To thread your own
 context through, declare it on the struct and pass it to `validate`:
 
-```rust,ignore
+```rust,no_run
+use lightspeed_validator::Validable;
+
+pub struct MyCtx;
+
 #[derive(Validable)]
 #[validate(context = MyCtx)]
-struct Foo { /* ... */ }
+struct Foo {
+    // ... fields ...
+}
 
-let ctx = MyCtx { /* ... */ };
-let result = FooValidable::new(foo).validate(&ctx);
+let foo = Foo {};
+let ctx = MyCtx;
+let _result = FooValidable::new(foo).validate(&ctx);
 ```
 
 The context type is forwarded to every validator's `validate(value, ctx)`
@@ -231,12 +241,17 @@ The macro then emits, in addition to the usual `<Name>Validable`:
 
 For `bool` fields. Each requires the value be respectively `true` or `false`.
 
-```rust,ignore
-#[validate(isTrue)]
-accepted_tos: bool,
+```rust,no_run
+use lightspeed_validator::Validable;
 
-#[validate(isFalse)]
-banned: bool,
+#[derive(Validable)]
+struct Example {
+    #[validate(isTrue)]
+    accepted_tos: bool,
+
+    #[validate(isFalse)]
+    banned: bool,
+}
 ```
 
 Errors: `ValidationError::MustBeTrue(MustBeTrueError)` /
@@ -250,12 +265,17 @@ string-compatible type — `String`, `&str`, `Cow<'_, str>`, `Box<str>`,
 
 `case_sensitive` is optional; it defaults to `true`.
 
-```rust,ignore
-#[validate(contains(pattern = "@"))]
-email: String,
+```rust,no_run
+use lightspeed_validator::Validable;
 
-#[validate(contains(pattern = "Hello", case_sensitive = false))]
-greeting: String,
+#[derive(Validable)]
+struct Example {
+    #[validate(contains(pattern = "@"))]
+    email: String,
+
+    #[validate(contains(pattern = "Hello", case_sensitive = false))]
+    greeting: String,
+}
 ```
 
 Error: `ValidationError::MustContain(MustContainError { pattern, case_sensitive })`.
@@ -264,12 +284,17 @@ Error: `ValidationError::MustContain(MustContainError { pattern, case_sensitive 
 
 The complement of `contains`. Requires the value to NOT contain the pattern.
 
-```rust,ignore
-#[validate(not_contains(pattern = "spam"))]
-subject: String,
+```rust,no_run
+use lightspeed_validator::Validable;
 
-#[validate(not_contains(pattern = "password", case_sensitive = false))]
-password: String,
+#[derive(Validable)]
+struct Example {
+    #[validate(not_contains(pattern = "spam"))]
+    subject: String,
+
+    #[validate(not_contains(pattern = "password", case_sensitive = false))]
+    password: String,
+}
 ```
 
 Error: `ValidationError::MustNotContain(MustNotContainError { pattern, case_sensitive })`.
@@ -284,15 +309,20 @@ string-compatible types as `contains`. All three keywords map to the same
 - `ipv4` — must parse and be an IPv4 address;
 - `ipv6` — must parse and be an IPv6 address.
 
-```rust,ignore
-#[validate(ip)]
-remote: String,
+```rust,no_run
+use lightspeed_validator::Validable;
 
-#[validate(ipv4)]
-gateway: String,
+#[derive(Validable)]
+struct Example {
+    #[validate(ip)]
+    remote: String,
 
-#[validate(ipv6)]
-link_local: String,
+    #[validate(ipv4)]
+    gateway: String,
+
+    #[validate(ipv6)]
+    link_local: String,
+}
 ```
 
 Error: `ValidationError::Ip(IpError { kind })`, where `kind` mirrors which
@@ -304,9 +334,14 @@ Requires the field's value to parse as an absolute URL via the
 [`url`](https://docs.rs/url) crate. Works on the same string-compatible types
 as `contains`. Relative paths and missing-scheme inputs are rejected.
 
-```rust,ignore
-#[validate(url)]
-homepage: String,
+```rust,no_run
+use lightspeed_validator::Validable;
+
+#[derive(Validable)]
+struct Example {
+    #[validate(url)]
+    homepage: String,
+}
 ```
 
 Error: `ValidationError::Url(UrlError)` (unit-struct payload — failure means
@@ -320,9 +355,14 @@ shape). The check is **syntactic only** — no DNS lookup, no
 mailbox-reachability ping, no accept-list. Works on the same
 string-compatible types as `contains`.
 
-```rust,ignore
-#[validate(email)]
-contact: String,
+```rust,no_run
+use lightspeed_validator::Validable;
+
+#[derive(Validable)]
+struct Example {
+    #[validate(email)]
+    contact: String,
+}
 ```
 
 Error: `ValidationError::Email(EmailError)` (unit-struct payload — failure
@@ -340,25 +380,30 @@ the integer (`i8`…`i128`, `u8`…`u128`, `isize`, `usize`) and float
 named constants, etc. — and their types are checked against the field's
 type by the compiler.
 
-```rust,ignore
+```rust,no_run
+use lightspeed_validator::Validable;
+
 const MIN_AGE: i32 = 18;
 
-#[validate(range(min = 0, max = 120))]
-age: i32,
+#[derive(Validable)]
+struct Example {
+    #[validate(range(min = 0, max = 120))]
+    age: i32,
 
-#[validate(range(min = 0.0, max = 1.0))]
-probability: f64,
+    #[validate(range(min = 0.0, max = 1.0))]
+    probability: f64,
 
-#[validate(range(exclusive_min = 0))]
-positive_count: u32,
+    #[validate(range(exclusive_min = 0))]
+    positive_count: u32,
 
-// Half-open [0, 100)
-#[validate(range(min = 0, exclusive_max = 100))]
-bucket: i32,
+    // Half-open [0, 100)
+    #[validate(range(min = 0, exclusive_max = 100))]
+    bucket: i32,
 
-// Bound from a `const`
-#[validate(range(min = MIN_AGE, max = 99))]
-adult_age: i32,
+    // Bound from a `const`
+    #[validate(range(min = MIN_AGE, max = 99))]
+    adult_age: i32,
+}
 ```
 
 Error: `ValidationError::Range(RangeError { min, max, exclusive_min, exclusive_max })`
@@ -390,20 +435,25 @@ crate provides impls for:
 
 Downstream crates can add impls for their own types.
 
-```rust,ignore
+```rust,no_run
+use lightspeed_validator::Validable;
+
 const MAX_TAGS: usize = 5;
 
-#[validate(length(min = 3, max = 20))]
-username: String,
+#[derive(Validable)]
+struct Example {
+    #[validate(length(min = 3, max = 20))]
+    username: String,
 
-#[validate(length(equal = 6))]
-otp_code: String,
+    #[validate(length(equal = 6))]
+    otp_code: String,
 
-#[validate(length(min = 1, max = MAX_TAGS))]
-tags: Vec<String>,
+    #[validate(length(min = 1, max = MAX_TAGS))]
+    tags: Vec<String>,
 
-#[validate(length(max = 100))]
-settings: std::collections::HashMap<String, String>,
+    #[validate(length(max = 100))]
+    settings: std::collections::HashMap<String, String>,
+}
 ```
 
 **String length is `chars().count()`** — the number of Unicode scalar
@@ -431,9 +481,10 @@ Two forms are supported, exactly one of which must be provided:
   `&'static ::regex::Regex`. The caller controls how the regex is held —
   typically with `LazyLock<Regex>`, `OnceLock<Regex>`, or `lazy_static!`:
 
-  ```rust,ignore
+  ```rust,no_run
   use std::sync::LazyLock;
   use regex::Regex;
+  use lightspeed_validator::Validable;
 
   static EMAIL_RE: LazyLock<Regex> = LazyLock::new(|| {
       Regex::new(r"^[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}$").unwrap()
@@ -452,7 +503,9 @@ Two forms are supported, exactly one of which must be provided:
   `OnceLock` is scoped to the generated `Box::new(...)` block so multiple
   fields don't collide:
 
-  ```rust,ignore
+  ```rust,no_run
+  use lightspeed_validator::Validable;
+
   #[derive(Validable)]
   struct Form {
       #[validate(regex(pattern = r"^\d{3}-\d{4}$"))]
@@ -489,18 +542,23 @@ Options (all may be omitted):
   password must not end in a whitespace character. Set to `true` to allow
   trailing whitespace.
 
-```rust,ignore
-// Default OWASP-style policy
-#[validate(password)]
-strong: String,
+```rust,no_run
+use lightspeed_validator::Validable;
 
-// Relax the rules
-#[validate(password(upper = false, number = false, special_char = false))]
-loose: String,
+#[derive(Validable)]
+struct Example {
+    // Default OWASP-style policy
+    #[validate(password)]
+    strong: String,
 
-// Custom allowed special chars
-#[validate(password(special_char = "*$"))]
-star_or_dollar: String,
+    // Relax the rules
+    #[validate(password(upper = false, number = false, special_char = false))]
+    loose: String,
+
+    // Custom allowed special chars
+    #[validate(password(special_char = "*$"))]
+    star_or_dollar: String,
+}
 ```
 
 All policy violations from a single value are aggregated into one error:
@@ -525,8 +583,15 @@ and dashes are stripped, then the cleaned input is passed to the
 Numbers that pass Luhn but don't match any known issuer prefix are rejected.
 
 ```rust,ignore
-#[validate(credit_card)]
-card_number: String,
+// `rust,ignore` because the `credit_card` validator requires the
+// `credit_card` cargo feature, which is off by default for doctests.
+use lightspeed_validator::Validable;
+
+#[derive(Validable)]
+struct Example {
+    #[validate(credit_card)]
+    card_number: String,
+}
 ```
 
 Error: `ValidationError::CreditCard(CreditCardError)` (unit-struct payload).
@@ -543,13 +608,18 @@ lightspeed_validator = { version = "0.66", features = ["credit_card"] }
 Field attributes are additive — you can either repeat the attribute or
 combine them in a single one:
 
-```rust,ignore
-#[validate(contains(pattern = "@"))]
-#[validate(not_contains(pattern = " "))]
-email: String,
+```rust,no_run
+use lightspeed_validator::Validable;
 
-#[validate(contains(pattern = "@"), not_contains(pattern = " "))]
-email_short_form: String,
+#[derive(Validable)]
+struct Example {
+    #[validate(contains(pattern = "@"))]
+    #[validate(not_contains(pattern = " "))]
+    email: String,
+
+    #[validate(contains(pattern = "@"), not_contains(pattern = " "))]
+    email_short_form: String,
+}
 ```
 
 Each validator runs in declaration order; errors from every failing validator
@@ -573,7 +643,9 @@ controlled by the optional `attach_to_fields` flag:
   the *other* field — so `field_a` gets `MustMatchField { field: "field_b" }`
   and vice-versa.
 
-```rust,ignore
+```rust,no_run
+use lightspeed_validator::Validable;
+
 // Top-level routing (default)
 #[derive(Validable)]
 #[validate(fields_match(password, password_confirm))]
@@ -600,6 +672,9 @@ rules can be declared on the same struct.
 All errors flow through the `ValidationError` enum. The current variants are:
 
 ```rust,ignore
+// `rust,ignore` because this is a copy of the *existing* `ValidationError`
+// type as it ships in `lightspeed_validator::ValidationError`, included
+// for documentation rather than for the user to redefine.
 pub enum ValidationError {
     MustBeTrue(MustBeTrueError),
     MustBeFalse(MustBeFalseError),
@@ -628,7 +703,7 @@ pub enum ValidationError {
 Anything implementing `FieldValidator<T, ValidationError, Ctx>` can be used
 manually, without the derive macro:
 
-```rust,ignore
+```rust,no_run
 use lightspeed_validator::range::RangeError;
 use lightspeed_validator::{FieldValidator, ValidableType, ValidationError};
 
