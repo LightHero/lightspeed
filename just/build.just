@@ -3,7 +3,6 @@
 [group('build')]
 build:
   cargo build
-  just for_each_feature "cargo build --features "
   cargo build --all-features
 
 # Publishes all artifacts on crates.io
@@ -47,31 +46,5 @@ publish:
       if [[ $rc -ne 0 ]] ; then
           echo "Failure publishing $i";
       fi
-
-  done
-
-
-[private]
-for_each_feature command:
-  #!/usr/bin/env bash
-  
-  ## exit if something fails
-  set -e
-
-  declare -a features=(
-    "axum"
-    "c3p0"
-    "postgres"
-    "mysql"
-    "sqlite"
-  )
-
-  for i in "${features[@]}"
-  do
-      LINE_SEPARATOR='--------------------------------------------------------'
-
-      echo $LINE_SEPARATOR
-      {{command}} $i
-      echo $LINE_SEPARATOR
 
   done

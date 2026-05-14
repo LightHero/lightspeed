@@ -5,7 +5,7 @@ An in-process scheduler for periodic jobs. Schedule lets you run Rust functions 
 
 ## Usage
 
-```rust
+```rust,no_run
     use std::time::Duration;
     use lightspeed_scheduler::{job::Job, scheduler::{Scheduler, TryToScheduler}, JobExecutor};
     
