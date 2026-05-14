@@ -139,15 +139,22 @@ pub fn derive_validable(item: TokenStream) -> TokenStream {
     // there's nothing per-field to emit, and the strategy alone is enough to
     // type the validable's fields.
     let field_error_enums: Vec<Option<FieldErrorEnum>> = match struct_attrs.field_errors {
-        FieldErrorStrategy::Tailored => named_fields
-            .named
-            .iter()
-            .zip(field_validators.iter())
-            .map(|(f, (_, vs))| {
-                let ident = f.ident.as_ref().expect("named field has ident");
-                compute_field_error_enum(name, ident, vs, &struct_attrs.validators)
-            })
-            .collect(),
+        FieldErrorStrategy::Tailored => {
+            // Pre-compute "which fields are targeted by an `attach_to_fields = true`
+            // struct rule" exactly once, instead of re-scanning the struct
+            // validators inside `compute_field_error_enum` per field
+            // (was O(fields × rules); now O(fields + rules)).
+            let attached = attached_field_idents(&struct_attrs.validators);
+            named_fields
+                .named
+                .iter()
+                .zip(field_validators.iter())
+                .map(|(f, (_, vs))| {
+                    let ident = f.ident.as_ref().expect("named field has ident");
+                    compute_field_error_enum(name, ident, vs, attached.contains(&ident))
+                })
+                .collect()
+        }
         FieldErrorStrategy::Shared | FieldErrorStrategy::Custom(_) => {
             (0..named_fields.named.len()).map(|_| None).collect()
         }
@@ -194,34 +201,56 @@ struct FieldErrorEnum {
     variants: Vec<(Ident, TokenStream2)>,
 }
 
+/// Collects every field `Ident` targeted by a `fields_match(..., attach_to_fields = true)`
+/// struct rule. The result is a small `Vec` (typically 0–4 entries) — we use
+/// linear `contains` lookups rather than a `HashSet` because the sets are
+/// always tiny and the hashing overhead would dominate.
+fn attached_field_idents(struct_validators: &[StructLevelValidator]) -> Vec<&Ident> {
+    let mut out: Vec<&Ident> = Vec::new();
+    for v in struct_validators {
+        match v {
+            StructLevelValidator::FieldsMatch(args) if args.attach_to_fields => {
+                if !out.contains(&&args.a) {
+                    out.push(&args.a);
+                }
+                if !out.contains(&&args.b) {
+                    out.push(&args.b);
+                }
+            }
+            StructLevelValidator::FieldsMatch(_) => {}
+        }
+    }
+    out
+}
+
 /// Computes the per-field error enum for one field. Returns `None` when
-/// the field has no validators and is not targeted by any
-/// `attach_to_fields = true` struct rule — those fields keep using
-/// `ValidationError` (the `ValidableType` default).
+/// the field has no validators and isn't targeted by an
+/// `attach_to_fields = true` struct rule.
+///
+/// The dedup of variant names uses a `Vec<&'static str>` rather than a
+/// `HashSet<String>`: a typical field has 1–3 variants (cap is around 12
+/// even for the worst possible stack), so the linear scan wins on both
+/// time (no hashing) and memory (no per-key heap allocation).
 fn compute_field_error_enum(
     struct_name: &Ident,
     field_ident: &Ident,
     validators: &[FieldValidator],
-    struct_validators: &[StructLevelValidator],
+    is_attached: bool,
 ) -> Option<FieldErrorEnum> {
-    let is_attached = struct_validators.iter().any(|v| match v {
-        StructLevelValidator::FieldsMatch(args) => {
-            args.attach_to_fields && (&args.a == field_ident || &args.b == field_ident)
-        }
-    });
     if validators.is_empty() && !is_attached {
         return None;
     }
 
     let mut variants: Vec<(Ident, TokenStream2)> = Vec::new();
-    let mut seen: std::collections::HashSet<String> = std::collections::HashSet::new();
+    let mut seen: Vec<&'static str> = Vec::new();
     for v in validators {
         let (name, ty) = v.error_info();
-        if seen.insert(name.to_string()) {
+        if !seen.contains(&name) {
+            seen.push(name);
             variants.push((format_ident!("{}", name), ty));
         }
     }
-    if is_attached && seen.insert("MustMatchField".to_string()) {
+    if is_attached && !seen.contains(&"MustMatchField") {
         variants
             .push((format_ident!("MustMatchField"), quote! { ::lightspeed_validator::fields_match::MustMatchField }));
     }

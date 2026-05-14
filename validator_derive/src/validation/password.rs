@@ -4,7 +4,7 @@
 
 use proc_macro2::TokenStream as TokenStream2;
 use quote::quote;
-use syn::{Field, Lit, LitBool, Type, meta::ParseNestedMeta};
+use syn::{Field, Lit, LitBool, meta::ParseNestedMeta};
 
 /// Parsed arguments for a single `password(...)` invocation. Defaults match
 /// [`PasswordValidator::default()`](::lightspeed_validator::password::PasswordValidator):
@@ -102,33 +102,11 @@ fn check_duplicate(set_keys: &mut Vec<&'static str>, key: &'static str, meta: &P
     Ok(())
 }
 
-/// Returns true when `ty` looks like a string-compatible type (`String`,
-/// `&str`, `Cow<_, str>`, `Box<str>`, `Rc<str>`, `Arc<str>`, etc.).
-fn is_string_like_type(ty: &Type) -> bool {
-    match ty {
-        Type::Path(p) => {
-            if p.qself.is_some() {
-                return false;
-            }
-            let Some(last) = p.path.segments.last() else { return false };
-            matches!(last.ident.to_string().as_str(), "String" | "Cow" | "Box" | "Rc" | "Arc" | "str")
-        }
-        Type::Reference(r) => is_string_like_type(&r.elem),
-        _ => false,
-    }
-}
-
 /// Ensures a field annotated with a `password` validator is a
-/// string-compatible type.
+/// string-compatible type. Thin wrapper around
+/// [`super::string_field::ensure_string_field`].
 pub fn ensure_string_field(field: &Field) -> syn::Result<()> {
-    if !is_string_like_type(&field.ty) {
-        return Err(syn::Error::new_spanned(
-            &field.ty,
-            "`password` validator requires a string-compatible field \
-             (e.g. `String`, `&str`, `Cow<'_, str>`)",
-        ));
-    }
-    Ok(())
+    super::string_field::ensure_string_field(field, "password")
 }
 
 /// Tokens that construct a `Box<dyn FieldValidator<...>>` for

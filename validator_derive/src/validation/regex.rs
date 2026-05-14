@@ -12,7 +12,7 @@
 
 use proc_macro2::TokenStream as TokenStream2;
 use quote::quote;
-use syn::{Expr, Field, LitStr, Type, meta::ParseNestedMeta};
+use syn::{Expr, Field, LitStr, meta::ParseNestedMeta};
 
 pub enum RegexSpec {
     /// User-provided expression that already evaluates to `&'static Regex`.
@@ -46,32 +46,10 @@ pub fn parse_regex_args(meta: &ParseNestedMeta<'_>) -> syn::Result<RegexSpec> {
     spec.ok_or_else(|| meta.error("`regex` requires either `path = <expr>` or `pattern = \"...\"`"))
 }
 
-/// Returns true when `ty` looks like a string-compatible type (`String`,
-/// `&str`, `Cow<_, str>`, `Box<str>`, `Rc<str>`, `Arc<str>`, etc.).
-fn is_string_like_type(ty: &Type) -> bool {
-    match ty {
-        Type::Path(p) => {
-            if p.qself.is_some() {
-                return false;
-            }
-            let Some(last) = p.path.segments.last() else { return false };
-            matches!(last.ident.to_string().as_str(), "String" | "Cow" | "Box" | "Rc" | "Arc" | "str")
-        }
-        Type::Reference(r) => is_string_like_type(&r.elem),
-        _ => false,
-    }
-}
-
-/// Ensures a field annotated with a `regex` validator is a string-compatible type.
+/// Ensures a field annotated with a `regex` validator is a string-compatible
+/// type. Thin wrapper around [`super::string_field::ensure_string_field`].
 pub fn ensure_string_field(field: &Field) -> syn::Result<()> {
-    if !is_string_like_type(&field.ty) {
-        return Err(syn::Error::new_spanned(
-            &field.ty,
-            "`regex` validator requires a string-compatible field \
-             (e.g. `String`, `&str`, `Cow<'_, str>`)",
-        ));
-    }
-    Ok(())
+    super::string_field::ensure_string_field(field, "regex")
 }
 
 /// Tokens that construct a `Box<dyn FieldValidator<...>>` for `RegexValidator`.

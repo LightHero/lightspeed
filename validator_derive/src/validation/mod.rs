@@ -16,6 +16,7 @@ pub mod length;
 pub mod password;
 pub mod range;
 pub mod regex;
+pub mod string_field;
 pub mod struct_fields_match;
 pub mod url;
 
