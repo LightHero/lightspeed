@@ -34,7 +34,6 @@ lightspeed_test_utils = { version = "0.66.0", path = "./test_utils" }
 lightspeed_validator = { version = "0.66.0", path = "./validator" }
 lightspeed_validator_derive = { version = "0.66.0", path = "./validator_derive" }
 
-arc-swap = "1.6"
 argon2 = "0.5"
 axum = { version = "0.8" }
 base64 = "0.22"

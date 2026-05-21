@@ -1,33 +1,48 @@
-use std::error::Error;
-use std::fmt::{Display, Formatter};
+use thiserror::Error;
 
-#[derive(Debug)]
+#[derive(Error, Debug)]
 pub enum SchedulerError {
+    #[error("ScheduleDefinitionError: [{message}]")]
     ScheduleDefinitionError { message: String },
+
+    #[error("JobLockError: [{message}]")]
     JobLockError { message: String },
+
+    #[error("JobExecutionStateError: [{message}]")]
     JobExecutionStateError { message: String },
-    JobExecutionError { source: Box<dyn std::error::Error + Send + Sync> },
+
+    #[error("JobExecutionError")]
+    JobExecutionError {
+        #[source]
+        source: Box<dyn std::error::Error + Send + Sync>,
+    },
+
+    #[cfg(feature = "c3p0")]
+    #[error("MigrateError: {source:?}")]
+    MigrateError {
+        #[from]
+        source: c3p0::sqlx::migrate::MigrateError,
+    },
+
+    #[cfg(feature = "c3p0")]
+    #[error("SqlxError: {source:?}")]
+    SqlxError {
+        #[from]
+        source: c3p0::sqlx::Error,
+    },
 }
 
-impl Display for SchedulerError {
-    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        match self {
-            SchedulerError::ScheduleDefinitionError { message } => write!(f, "ScheduleDefinitionError: [{message}]"),
-            SchedulerError::JobLockError { message } => write!(f, "JobLockError: [{message}]"),
-            SchedulerError::JobExecutionStateError { message } => write!(f, "JobExecutionStateError: [{message}]"),
-            SchedulerError::JobExecutionError { .. } => write!(f, "JobExecutionError"),
-        }
-    }
-}
-
-impl Error for SchedulerError {
-    fn source(&self) -> Option<&(dyn Error + 'static)> {
-        match self {
-            SchedulerError::ScheduleDefinitionError { .. }
-            | SchedulerError::JobLockError { .. }
-            | SchedulerError::JobExecutionStateError { .. } => None,
-
-            SchedulerError::JobExecutionError { source } => Some(source.as_ref()),
+#[cfg(feature = "c3p0")]
+impl From<c3p0::C3p0Error> for SchedulerError {
+    fn from(e: c3p0::C3p0Error) -> Self {
+        match e {
+            c3p0::C3p0Error::SqlxError(e) => SchedulerError::SqlxError { source: e },
+            c3p0::C3p0Error::OptimisticLockError { cause } => {
+                SchedulerError::JobLockError { message: cause }
+            }
+            c3p0::C3p0Error::Other { cause } => {
+                SchedulerError::JobExecutionStateError { message: cause }
+            }
         }
     }
 }

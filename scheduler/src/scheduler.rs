@@ -1,29 +1,75 @@
-use crate::error::SchedulerError;
+use std::str::FromStr;
+use std::time::{Duration, SystemTime};
+
 use chrono::prelude::*;
 use chrono_tz::Tz;
-use std::time::Duration;
 
+use crate::error::SchedulerError;
+
+/// Schedule that can compute its next firing time.
+///
+/// Implementations are held by the [`JobExecutor`](crate::JobExecutor) and
+/// are intentionally not persisted — only coordination state lives in the
+/// repository.
+///
+/// The `&mut self` receiver mirrors the [`Scheduler`] enum's own
+/// `Scheduler::next` method, which mutates state for variants like
+/// [`Scheduler::Interval`] with `execute_at_startup`.
+pub trait Schedule: Send + Sync + 'static {
+    /// Next firing time strictly after `after`, in UTC. `None` means
+    /// "never again". `timezone` is honoured by cron-style schedules.
+    fn next(&mut self, after: &DateTime<Utc>, timezone: Option<Tz>) -> Option<DateTime<Utc>>;
+
+    /// Stable identifier of this schedule's **definition** (not its
+    /// instantaneous mutating state). Persisted next to the schedule row so
+    /// a redeploy with a different schedule definition can detect the
+    /// change and re-anchor `next_run_at`.
+    ///
+    /// Two schedules with the same observable firing behaviour should
+    /// return the same string; two with different behaviour should differ.
+    /// The default returns an empty string, which disables the
+    /// change-detection optimisation (`register` will never re-anchor for
+    /// schedules that don't override this method). Custom [`Schedule`]
+    /// impls should override.
+    fn fingerprint(&self) -> String {
+        String::new()
+    }
+}
+
+/// Built-in schedule kinds.
+///
+/// Variants mirror the old `lightspeed_scheduler` crate so that existing call
+/// sites — including `Scheduler::Interval { interval_duration, execute_at_startup }`
+/// struct literals — keep working.
 pub enum Scheduler {
-    /// Set to execute on set time periods
+    /// Fire on every match of a cron expression.
     Cron(Box<cron::Schedule>),
 
-    /// Set to execute exactly `duration` away from the previous execution.
+    /// Fire exactly `interval_duration` after the previous firing. When
+    /// `execute_at_startup` is `true`, the very first call to
+    /// [`Schedule::next`] returns the reference time itself so the job runs
+    /// immediately on startup.
     Interval { interval_duration: Duration, execute_at_startup: bool },
 
-    /// Multi scheduler: the execution triggers when at least one of the inner schedulers matches.
+    /// Compose multiple schedules. Fires whenever any inner schedule fires
+    /// (the earliest of all inner `next()` results wins).
     Multi(Vec<Scheduler>),
 
-    /// Set to execute to never
+    /// Never fires.
     Never,
 }
 
 impl Scheduler {
+    /// Builds a [`Scheduler`] from a slice of `&dyn TryToScheduler`. Empty
+    /// slice becomes [`Scheduler::Never`]; a single element is unwrapped;
+    /// multiple elements become [`Scheduler::Multi`].
     pub fn from(schedule: &[&dyn TryToScheduler]) -> Result<Scheduler, SchedulerError> {
         schedule.to_scheduler()
     }
+}
 
-    // Determine the next time we should execute (from a reference point)
-    pub fn next(&mut self, after: &DateTime<Utc>, timezone: Option<Tz>) -> Option<DateTime<Utc>> {
+impl Schedule for Scheduler {
+    fn next(&mut self, after: &DateTime<Utc>, timezone: Option<Tz>) -> Option<DateTime<Utc>> {
         match *self {
             Scheduler::Cron(ref cs) => {
                 if let Some(tz) = timezone {
@@ -32,22 +78,15 @@ impl Scheduler {
                     cs.after(after).next()
                 }
             }
-
             Scheduler::Interval { ref interval_duration, ref mut execute_at_startup } => {
                 if *execute_at_startup {
                     *execute_at_startup = false;
                     Some(*after)
                 } else {
-                    let ch_duration = match chrono::Duration::from_std(*interval_duration) {
-                        Ok(value) => value,
-                        Err(_) => {
-                            return None;
-                        }
-                    };
+                    let ch_duration = chrono::Duration::from_std(*interval_duration).ok()?;
                     Some(*after + ch_duration)
                 }
             }
-
             Scheduler::Multi(ref mut schedulers) => {
                 let mut result = None;
                 for scheduler in schedulers {
@@ -66,12 +105,39 @@ impl Scheduler {
                 }
                 result
             }
-
             Scheduler::Never => None,
+        }
+    }
+
+    fn fingerprint(&self) -> String {
+        match self {
+            // Debug of `cron::Schedule` round-trips the parsed expression
+            // deterministically — same expression yields the same string.
+            Scheduler::Cron(s) => format!("cron:{s:?}"),
+            Scheduler::Interval { interval_duration, execute_at_startup } => format!(
+                "interval:{}.{:09}:{}",
+                interval_duration.as_secs(),
+                interval_duration.subsec_nanos(),
+                execute_at_startup,
+            ),
+            Scheduler::Multi(parts) => {
+                let mut out = String::from("multi:[");
+                for (i, p) in parts.iter().enumerate() {
+                    if i > 0 {
+                        out.push(',');
+                    }
+                    out.push_str(&p.fingerprint());
+                }
+                out.push(']');
+                out
+            }
+            Scheduler::Never => "never".to_string(),
         }
     }
 }
 
+/// Converts an ad-hoc input (e.g. a cron string or a [`Duration`]) into a
+/// [`Scheduler`].
 pub trait TryToScheduler {
     fn to_scheduler(&self) -> Result<Scheduler, SchedulerError>;
 }
@@ -123,8 +189,10 @@ impl TryToScheduler for &[&dyn TryToScheduler] {
 
 impl TryToScheduler for &str {
     fn to_scheduler(&self) -> Result<Scheduler, SchedulerError> {
-        Ok(Scheduler::Cron(Box::new(self.parse().map_err(|err| SchedulerError::ScheduleDefinitionError {
-            message: format!("Cannot create schedule for [{self}]. Err: {err:?}"),
+        Ok(Scheduler::Cron(Box::new(cron::Schedule::from_str(self).map_err(|err| {
+            SchedulerError::ScheduleDefinitionError {
+                message: format!("Cannot create schedule for [{self}]. Err: {err:?}"),
+            }
         })?)))
     }
 }
@@ -153,9 +221,13 @@ impl From<Vec<Scheduler>> for Scheduler {
     }
 }
 
-#[cfg(test)]
-pub mod test {
+/// Converts a `DateTime<Utc>` back to [`SystemTime`] for repository writes.
+pub(crate) fn utc_to_system_time(t: DateTime<Utc>) -> SystemTime {
+    SystemTime::from(t)
+}
 
+#[cfg(test)]
+mod tests {
     use super::*;
     use chrono_tz::UTC;
 
