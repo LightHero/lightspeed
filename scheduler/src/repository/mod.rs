@@ -6,12 +6,28 @@ use std::time::{Duration, SystemTime};
 use crate::error::SchedulerError;
 
 mod memory;
+
+#[cfg(feature = "c3p0")]
+pub mod sql;
+#[cfg(feature = "c3p0")]
+pub use sql::{ScheduleData, ScheduleDataCodec, ScheduleModel, ScheduleSqlBackend, SqlScheduleRepository};
+
+#[cfg(feature = "mysql")]
+pub mod mysql;
+#[cfg(feature = "mysql")]
+pub use mysql::{MySqlScheduleBackend, MySqlScheduleRepository};
+
 #[cfg(feature = "postgres")]
 pub mod postgres;
+#[cfg(feature = "postgres")]
+pub use postgres::{PgScheduleBackend, PgScheduleRepository};
+
+#[cfg(feature = "sqlite")]
+pub mod sqlite;
+#[cfg(feature = "sqlite")]
+pub use sqlite::{SqliteScheduleBackend, SqliteScheduleRepository};
 
 pub use memory::MemoryScheduleRepository;
-#[cfg(feature = "postgres")]
-pub use postgres::PgScheduleRepository;
 
 /// A persisted schedule row.
 ///

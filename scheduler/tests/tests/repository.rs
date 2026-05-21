@@ -151,7 +151,12 @@ fn try_claim_due_returns_row_when_due() {
     });
 }
 
+// SQLite has no `FOR UPDATE SKIP LOCKED`, and the test fixture's pool is
+// single-connection by design, so two concurrent `repo.begin()` calls would
+// deadlock waiting for the pool. The scheduler's sqlite backend is single-
+// process by contract — concurrent claim arbitration is out of scope there.
 #[test]
+#[cfg_attr(feature = "sqlite", ignore = "sqlite: single-connection pool, no row locks")]
 fn for_update_skip_locked_serialises_concurrent_claims() {
     tokio_test(async {
         let d = data(false).await;
