@@ -1,10 +1,7 @@
 // No `unsafe` in this crate.
 #![forbid(unsafe_code)]
 // `.unwrap()` and `.expect()` are banned in production code.
-#![cfg_attr(
-    not(test),
-    deny(clippy::unwrap_used, clippy::expect_used)
-)]
+#![cfg_attr(not(test), deny(clippy::unwrap_used, clippy::expect_used))]
 
 use proc_macro::TokenStream;
 use proc_macro2::TokenStream as TokenStream2;
@@ -24,9 +21,7 @@ mod validation;
 /// refactor ever loosens the call-site invariant, the user gets a real
 /// compile error with a useful span instead of a build-time crash.
 fn named_ident(f: &Field) -> syn::Result<&Ident> {
-    f.ident
-        .as_ref()
-        .ok_or_else(|| syn::Error::new_spanned(f, "expected a named field"))
+    f.ident.as_ref().ok_or_else(|| syn::Error::new_spanned(f, "expected a named field"))
 }
 
 use validation::FieldValidator;
@@ -594,8 +589,7 @@ fn generate_validate_fn(
     context: &StructContext,
     struct_validators: &[StructLevelValidator],
 ) -> syn::Result<TokenStream2> {
-    let field_idents: Vec<&Ident> =
-        fields.named.iter().map(named_ident).collect::<syn::Result<Vec<_>>>()?;
+    let field_idents: Vec<&Ident> = fields.named.iter().map(named_ident).collect::<syn::Result<Vec<_>>>()?;
 
     let ctx_ty = &context.ty;
     let (extra_param, ctx_expr) =

@@ -1,10 +1,10 @@
 -- Your SQL goes here
 
 -- ---------------------------
--- Begin - LS_AUTH_ACCOUNT -
+-- Begin - LS_AM_ACCOUNT -
 -- ---------------------------
 
-create table LS_AUTH_ACCOUNT (
+create table LS_AM_ACCOUNT (
     ID integer primary key autoincrement,
     version INTEGER NOT NULL,
     create_time TEXT NOT NULL,
@@ -12,17 +12,17 @@ create table LS_AUTH_ACCOUNT (
     data JSON NOT NULL
 );
 
-CREATE UNIQUE INDEX LS_AUTH_ACCOUNT_UNIQUE_USERNAME ON LS_AUTH_ACCOUNT( (DATA->>'$.username') );
-CREATE UNIQUE INDEX LS_AUTH_ACCOUNT_UNIQUE_EMAIL ON LS_AUTH_ACCOUNT( (DATA->>'$.email') );
+CREATE UNIQUE INDEX LS_AM_ACCOUNT_UNIQUE_USERNAME ON LS_AM_ACCOUNT( (DATA->>'$.username') );
+CREATE UNIQUE INDEX LS_AM_ACCOUNT_UNIQUE_EMAIL ON LS_AM_ACCOUNT( (DATA->>'$.email') );
 
--- End - LS_AUTH_ACCOUNT -
+-- End - LS_AM_ACCOUNT -
 
 
 -- -------------------------
--- Begin - LS_AUTH_TOKEN -
+-- Begin - LS_AM_TOKEN -
 -- -------------------------
 
-create table LS_AUTH_TOKEN (
+create table LS_AM_TOKEN (
     ID integer primary key autoincrement,
     version INTEGER NOT NULL,
     create_time TEXT NOT NULL,
@@ -30,8 +30,8 @@ create table LS_AUTH_TOKEN (
     data JSON NOT NULL
 );
 
-CREATE UNIQUE INDEX LS_AUTH_TOKEN_UNIQUE_TOKEN ON LS_AUTH_TOKEN( (DATA->>'$.token') );
+CREATE UNIQUE INDEX LS_AM_TOKEN_UNIQUE_TOKEN ON LS_AM_TOKEN( (DATA->>'$.token') );
 
-CREATE INDEX LS_AUTH_TOKEN_EXPIRE_AT ON LS_AUTH_TOKEN( CAST(DATA->>'$.expire_at_epoch_seconds' AS INTEGER) );
+CREATE INDEX LS_AM_TOKEN_EXPIRE_AT ON LS_AM_TOKEN( CAST(DATA->>'$.expire_at_epoch_seconds' AS INTEGER) );
 
--- End - LS_AUTH_TOKEN -
+-- End - LS_AM_TOKEN -

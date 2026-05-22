@@ -9,9 +9,7 @@ use std::sync::Arc;
 use std::sync::atomic::{AtomicUsize, Ordering};
 use std::time::Duration;
 
-use lightspeed_scheduler::{
-    Job, JobExecutor, ScheduleRepository, ScheduledTask, Scheduler,
-};
+use lightspeed_scheduler::{Job, JobExecutor, ScheduleRepository, ScheduledTask, Scheduler};
 use lightspeed_test_utils::tokio_test;
 
 use crate::utils::unique_name;
@@ -22,10 +20,7 @@ use crate::*;
 /// `Scheduler::Interval` configured to fire immediately on the first poll
 /// and then every hour after — used by tests that just want "due now".
 fn due_now() -> Scheduler {
-    Scheduler::Interval {
-        interval_duration: Duration::from_secs(3600),
-        execute_at_startup: true,
-    }
+    Scheduler::Interval { interval_duration: Duration::from_secs(3600), execute_at_startup: true }
 }
 
 /// Records the number of times it ran and lets the caller inspect that count.
@@ -35,10 +30,7 @@ struct CountingTask {
 
 impl ScheduledTask<RepoUnderTest> for CountingTask {
     type Error = Infallible;
-    async fn run(
-        &self,
-        _tx: &mut <RepoUnderTest as ScheduleRepository>::Tx,
-    ) -> Result<(), Self::Error> {
+    async fn run(&self, _tx: &mut <RepoUnderTest as ScheduleRepository>::Tx) -> Result<(), Self::Error> {
         self.count.fetch_add(1, Ordering::SeqCst);
         Ok(())
     }
@@ -53,12 +45,7 @@ fn executor_does_not_fire_when_not_due() {
         executor
             .add_job(
                 &Duration::from_secs(3600),
-                Job::new(
-                    unique_name(),
-                    unique_name(),
-                    None,
-                    CountingTask { count: Arc::clone(&count) },
-                ),
+                Job::new(unique_name(), unique_name(), None, CountingTask { count: Arc::clone(&count) }),
             )
             .await
             .unwrap();
@@ -77,12 +64,7 @@ fn executor_fires_and_advances_when_due() {
         executor
             .add_job_with_scheduler(
                 due_now(),
-                Job::new(
-                    unique_name(),
-                    unique_name(),
-                    None,
-                    CountingTask { count: Arc::clone(&count) },
-                ),
+                Job::new(unique_name(), unique_name(), None, CountingTask { count: Arc::clone(&count) }),
             )
             .await
             .unwrap();
@@ -109,24 +91,14 @@ fn executor_fires_multiple_jobs_in_one_tick() {
         executor
             .add_job_with_scheduler(
                 due_now(),
-                Job::new(
-                    group.clone(),
-                    unique_name(),
-                    None,
-                    CountingTask { count: Arc::clone(&count_a) },
-                ),
+                Job::new(group.clone(), unique_name(), None, CountingTask { count: Arc::clone(&count_a) }),
             )
             .await
             .unwrap();
         executor
             .add_job_with_scheduler(
                 due_now(),
-                Job::new(
-                    group.clone(),
-                    unique_name(),
-                    None,
-                    CountingTask { count: Arc::clone(&count_b) },
-                ),
+                Job::new(group.clone(), unique_name(), None, CountingTask { count: Arc::clone(&count_b) }),
             )
             .await
             .unwrap();
@@ -134,12 +106,7 @@ fn executor_fires_multiple_jobs_in_one_tick() {
         executor
             .add_job(
                 &Duration::from_secs(3600),
-                Job::new(
-                    group,
-                    unique_name(),
-                    None,
-                    CountingTask { count: Arc::clone(&count_c) },
-                ),
+                Job::new(group, unique_name(), None, CountingTask { count: Arc::clone(&count_c) }),
             )
             .await
             .unwrap();
@@ -161,10 +128,7 @@ fn two_executors_with_same_group_and_name_fire_only_once() {
     }
     impl ScheduledTask<RepoUnderTest> for SlowTask {
         type Error = Infallible;
-        async fn run(
-            &self,
-            _tx: &mut <RepoUnderTest as ScheduleRepository>::Tx,
-        ) -> Result<(), Self::Error> {
+        async fn run(&self, _tx: &mut <RepoUnderTest as ScheduleRepository>::Tx) -> Result<(), Self::Error> {
             tokio::time::sleep(Duration::from_millis(200)).await;
             self.count.fetch_add(1, Ordering::SeqCst);
             Ok(())
@@ -190,12 +154,7 @@ fn two_executors_with_same_group_and_name_fire_only_once() {
         executor_a
             .add_job_with_scheduler(
                 due_now(),
-                Job::new(
-                    group.clone(),
-                    name.clone(),
-                    None,
-                    SlowTask { count: Arc::clone(&count) },
-                ),
+                Job::new(group.clone(), name.clone(), None, SlowTask { count: Arc::clone(&count) }),
             )
             .await
             .unwrap();
@@ -203,12 +162,7 @@ fn two_executors_with_same_group_and_name_fire_only_once() {
         executor_b
             .add_job_with_scheduler(
                 due_now(),
-                Job::new(
-                    group.clone(),
-                    name.clone(),
-                    None,
-                    SlowTask { count: Arc::clone(&count) },
-                ),
+                Job::new(group.clone(), name.clone(), None, SlowTask { count: Arc::clone(&count) }),
             )
             .await
             .unwrap();
@@ -218,11 +172,7 @@ fn two_executors_with_same_group_and_name_fire_only_once() {
         let (a, b) = tokio::join!(executor_a.tick(), executor_b.tick());
         let fired_a = a.unwrap();
         let fired_b = b.unwrap();
-        assert_eq!(
-            fired_a + fired_b,
-            1,
-            "exactly one executor must fire (a={fired_a}, b={fired_b})",
-        );
+        assert_eq!(fired_a + fired_b, 1, "exactly one executor must fire (a={fired_a}, b={fired_b})",);
         assert_eq!(count.load(Ordering::SeqCst), 1);
     });
 }
@@ -232,10 +182,7 @@ fn failing_job_keeps_schedule_due() {
     struct FailingTask;
     impl ScheduledTask<RepoUnderTest> for FailingTask {
         type Error = std::io::Error;
-        async fn run(
-            &self,
-            _tx: &mut <RepoUnderTest as ScheduleRepository>::Tx,
-        ) -> Result<(), Self::Error> {
+        async fn run(&self, _tx: &mut <RepoUnderTest as ScheduleRepository>::Tx) -> Result<(), Self::Error> {
             Err(std::io::Error::other("boom"))
         }
     }
@@ -247,10 +194,7 @@ fn failing_job_keeps_schedule_due() {
         let name = unique_name();
         let executor = JobExecutor::new_with_utc_tz(repo.clone());
         executor
-            .add_job_with_scheduler(
-                due_now(),
-                Job::new(group.clone(), name.clone(), None, FailingTask),
-            )
+            .add_job_with_scheduler(due_now(), Job::new(group.clone(), name.clone(), None, FailingTask))
             .await
             .unwrap();
 

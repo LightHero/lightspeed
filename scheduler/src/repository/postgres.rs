@@ -15,9 +15,7 @@ use c3p0::sqlx::{AssertSqlSafe, PgConnection, Postgres, Row, migrate::Migrator, 
 use c3p0::*;
 
 use crate::error::SchedulerError;
-use crate::repository::sql::{
-    ScheduleData, ScheduleModel, ScheduleSqlBackend, SqlScheduleRepository,
-};
+use crate::repository::sql::{ScheduleData, ScheduleModel, ScheduleSqlBackend, SqlScheduleRepository};
 
 static MIGRATOR: Migrator = c3p0::sqlx::migrate!("src/resources/postgres/migrations");
 
@@ -46,18 +44,12 @@ impl ScheduleSqlBackend for PgScheduleBackend {
         self.c3p0.pool()
     }
 
-    async fn fetch_record(
-        tx: &mut PgConnection,
-        group: &str,
-        name: &str,
-    ) -> Result<Option<ScheduleModel>, C3p0Error> {
-        Ok(ScheduleModel::query_with_tail(
-            "WHERE data->>'group_name' = $1 AND data->>'name' = $2 LIMIT 1",
-        )
-        .bind(group)
-        .bind(name)
-        .fetch_optional(tx)
-        .await?)
+    async fn fetch_record(tx: &mut PgConnection, group: &str, name: &str) -> Result<Option<ScheduleModel>, C3p0Error> {
+        Ok(ScheduleModel::query_with_tail("WHERE data->>'group_name' = $1 AND data->>'name' = $2 LIMIT 1")
+            .bind(group)
+            .bind(name)
+            .fetch_optional(tx)
+            .await?)
     }
 
     async fn try_claim_record(
@@ -135,11 +127,7 @@ impl ScheduleSqlBackend for PgScheduleBackend {
         // can't drift apart silently.
         const _: () = assert!(matches_table_name(SQL));
 
-        let row = query(AssertSqlSafe(SQL))
-            .bind(&groups)
-            .bind(&names)
-            .fetch_one(pool)
-            .await?;
+        let row = query(AssertSqlSafe(SQL)).bind(&groups).bind(&names).fetch_one(pool).await?;
         Ok(row.try_get("millis_until")?)
     }
 }

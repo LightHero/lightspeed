@@ -1,4 +1,4 @@
-use crate::error::LsAccountManagerError;
+use crate::error::LsAccountManagementError;
 use argon2::password_hash::{PasswordHash, PasswordHasher, PasswordVerifier, SaltString, rand_core::OsRng};
 use argon2::{Algorithm, Argon2, Params, Version};
 
@@ -18,13 +18,9 @@ impl LsPasswordCodecService {
     /// parameters are invalid per RFC 9106 (`memory_kib >= 8 * parallelism`,
     /// `iterations >= 1`, `parallelism >= 1`) or when the dummy-hash used
     /// for timing-safety can't be computed.
-    pub fn new(
-        memory_kib: u32,
-        iterations: u32,
-        parallelism: u32,
-    ) -> Result<Self, LsAccountManagerError> {
+    pub fn new(memory_kib: u32, iterations: u32, parallelism: u32) -> Result<Self, LsAccountManagementError> {
         let params = Params::new(memory_kib, iterations, parallelism, None).map_err(|err| {
-            LsAccountManagerError::PasswordEncryptionError {
+            LsAccountManagementError::PasswordEncryptionError {
                 message: format!(
                     "invalid argon2 parameters \
                      (require memory_kib >= 8 * parallelism, iterations >= 1, parallelism >= 1): {err:?}"
@@ -36,7 +32,7 @@ impl LsPasswordCodecService {
         let salt = SaltString::generate(&mut OsRng);
         let dummy_hash = argon2
             .hash_password(b"lightspeed-dummy-password-for-timing-safety", &salt)
-            .map_err(|err| LsAccountManagerError::PasswordEncryptionError {
+            .map_err(|err| LsAccountManagementError::PasswordEncryptionError {
                 message: format!("failed to compute argon2 dummy hash: {err:?}"),
             })?
             .to_string();
@@ -48,34 +44,34 @@ impl LsPasswordCodecService {
         &self.dummy_hash
     }
 
-    pub async fn verify_match(&self, plain_password: &str, hashed: &str) -> Result<bool, LsAccountManagerError> {
+    pub async fn verify_match(&self, plain_password: &str, hashed: &str) -> Result<bool, LsAccountManagementError> {
         let plain = plain_password.to_owned();
         let hashed = hashed.to_owned();
-        tokio::task::spawn_blocking(move || -> Result<bool, LsAccountManagerError> {
-            let parsed = PasswordHash::new(&hashed).map_err(|err| LsAccountManagerError::PasswordEncryptionError {
-                message: format!("argon2 parse: {err:?}"),
+        tokio::task::spawn_blocking(move || -> Result<bool, LsAccountManagementError> {
+            let parsed = PasswordHash::new(&hashed).map_err(|err| {
+                LsAccountManagementError::PasswordEncryptionError { message: format!("argon2 parse: {err:?}") }
             })?;
             // verify_password uses the algorithm/params encoded in the hash,
             // so it works regardless of the verifier instance's settings.
             Ok(Argon2::default().verify_password(plain.as_bytes(), &parsed).is_ok())
         })
         .await
-        .map_err(|err| LsAccountManagerError::PasswordEncryptionError {
+        .map_err(|err| LsAccountManagementError::PasswordEncryptionError {
             message: format!("argon2 task join error: {err:?}"),
         })?
     }
 
-    pub async fn hash_password(&self, plain_password: &str) -> Result<String, LsAccountManagerError> {
+    pub async fn hash_password(&self, plain_password: &str) -> Result<String, LsAccountManagementError> {
         let plain = plain_password.to_owned();
         let argon2 = self.argon2.clone();
-        tokio::task::spawn_blocking(move || -> Result<String, LsAccountManagerError> {
+        tokio::task::spawn_blocking(move || -> Result<String, LsAccountManagementError> {
             let salt = SaltString::generate(&mut OsRng);
             argon2.hash_password(plain.as_bytes(), &salt).map(|h| h.to_string()).map_err(|err| {
-                LsAccountManagerError::PasswordEncryptionError { message: format!("argon2 hash: {err:?}") }
+                LsAccountManagementError::PasswordEncryptionError { message: format!("argon2 hash: {err:?}") }
             })
         })
         .await
-        .map_err(|err| LsAccountManagerError::PasswordEncryptionError {
+        .map_err(|err| LsAccountManagementError::PasswordEncryptionError {
             message: format!("argon2 task join error: {err:?}"),
         })?
     }
@@ -93,7 +89,7 @@ pub mod test {
     }
 
     #[tokio::test]
-    async fn should_encrypt_and_decrypt() -> Result<(), LsAccountManagerError> {
+    async fn should_encrypt_and_decrypt() -> Result<(), LsAccountManagementError> {
         let codec = fast_codec();
         let plain_pass = "wrwdsdfast346n534dfsg5353";
         let hash = codec.hash_password(plain_pass).await?;
@@ -108,7 +104,7 @@ pub mod test {
     }
 
     #[tokio::test]
-    async fn dummy_hash_should_verify_against_no_password() -> Result<(), LsAccountManagerError> {
+    async fn dummy_hash_should_verify_against_no_password() -> Result<(), LsAccountManagementError> {
         // The dummy hash is unguessable, so verifying any plaintext against it
         // must return false — but it must not error, since it's used in the
         // login timing-safety path.
@@ -118,7 +114,7 @@ pub mod test {
     }
 
     #[tokio::test]
-    async fn each_hash_should_use_a_fresh_salt() -> Result<(), LsAccountManagerError> {
+    async fn each_hash_should_use_a_fresh_salt() -> Result<(), LsAccountManagementError> {
         let codec = fast_codec();
         let plain_pass = "same-password";
         let h1 = codec.hash_password(plain_pass).await?;

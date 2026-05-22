@@ -1,30 +1,30 @@
-use crate::repository::AuthRepositoryManager;
+use crate::repository::AMRepositoryManager;
 use c3p0::sqlx::{migrate::Migrator, *};
 use c3p0::*;
 use lightspeed_core::error::LsError;
-use mysql_auth_account::MySqlAuthAccountRepository;
+use mysql_account::MySqlAccountRepository;
 use mysql_token::MySqlTokenRepository;
 
-pub mod mysql_auth_account;
+pub mod mysql_account;
 pub mod mysql_token;
 
 static MIGRATOR: Migrator = c3p0::sqlx::migrate!("src_resources/db/mysql/migrations");
 
 #[derive(Clone)]
-pub struct MySqlAuthRepositoryManager {
+pub struct MyAMSqlRepositoryManager {
     c3p0: MySqlC3p0Pool,
 }
 
-impl MySqlAuthRepositoryManager {
-    pub fn new(c3p0: MySqlC3p0Pool) -> MySqlAuthRepositoryManager {
-        MySqlAuthRepositoryManager { c3p0 }
+impl MyAMSqlRepositoryManager {
+    pub fn new(c3p0: MySqlC3p0Pool) -> MyAMSqlRepositoryManager {
+        MyAMSqlRepositoryManager { c3p0 }
     }
 }
 
-impl AuthRepositoryManager for MySqlAuthRepositoryManager {
+impl AMRepositoryManager for MyAMSqlRepositoryManager {
     type DB = MySql;
     type C3P0 = MySqlC3p0Pool;
-    type AuthAccountRepo = MySqlAuthAccountRepository;
+    type AccountRepo = MySqlAccountRepository;
     type TokenRepo = MySqlTokenRepository;
 
     fn c3p0(&self) -> &Self::C3P0 {
@@ -37,8 +37,8 @@ impl AuthRepositoryManager for MySqlAuthRepositoryManager {
         })
     }
 
-    fn auth_account_repo(&self) -> Self::AuthAccountRepo {
-        MySqlAuthAccountRepository::new()
+    fn account_repo(&self) -> Self::AccountRepo {
+        MySqlAccountRepository::new()
     }
 
     fn token_repo(&self) -> Self::TokenRepo {

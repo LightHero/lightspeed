@@ -93,11 +93,7 @@ fn many_concurrent_claimers_on_one_due_row() {
             h.await.unwrap();
         }
 
-        assert_eq!(
-            claims.load(Ordering::SeqCst),
-            1,
-            "exactly one of {N} concurrent claimers should have won the row",
-        );
+        assert_eq!(claims.load(Ordering::SeqCst), 1, "exactly one of {N} concurrent claimers should have won the row",);
     });
 }
 
@@ -197,20 +193,12 @@ fn concurrent_claims_on_different_rows_run_in_parallel() {
         const HOLD: Duration = Duration::from_millis(400);
         let barrier = Arc::new(Barrier::new(2));
 
-        async fn claim_and_hold<R: ScheduleRepository>(
-            repo: R,
-            group: String,
-            name: String,
-            barrier: Arc<Barrier>,
-        ) {
+        async fn claim_and_hold<R: ScheduleRepository>(repo: R, group: String, name: String, barrier: Arc<Barrier>) {
             let mut tx = repo.begin().await.expect("begin");
             // Align both workers so the second `try_claim_due` happens
             // strictly while the first one's lock is held.
             barrier.wait().await;
-            let row = repo
-                .try_claim_due(&mut tx, &group, &name)
-                .await
-                .expect("try_claim_due must not error");
+            let row = repo.try_claim_due(&mut tx, &group, &name).await.expect("try_claim_due must not error");
             assert!(row.is_some(), "row {name} should be due and claimable");
             tokio::time::sleep(HOLD).await;
             repo.commit(tx).await.expect("commit");
@@ -218,12 +206,7 @@ fn concurrent_claims_on_different_rows_run_in_parallel() {
 
         let start = Instant::now();
         let (ra, rb) = tokio::join!(
-            tokio::spawn(claim_and_hold(
-                repo.clone(),
-                group.clone(),
-                name_a.clone(),
-                Arc::clone(&barrier),
-            )),
+            tokio::spawn(claim_and_hold(repo.clone(), group.clone(), name_a.clone(), Arc::clone(&barrier),)),
             tokio::spawn(claim_and_hold(repo.clone(), group.clone(), name_b.clone(), barrier)),
         );
         ra.unwrap();
@@ -266,13 +249,7 @@ fn held_claim_does_not_starve_independent_row() {
         let slow_a = slow.clone();
         let a = tokio::spawn(async move {
             let mut tx = repo_a.begin().await.expect("begin");
-            assert!(
-                repo_a
-                    .try_claim_due(&mut tx, &group_a, &slow_a)
-                    .await
-                    .expect("claim slow")
-                    .is_some(),
-            );
+            assert!(repo_a.try_claim_due(&mut tx, &group_a, &slow_a).await.expect("claim slow").is_some(),);
             tokio::time::sleep(HOLD).await;
             repo_a.commit(tx).await.expect("commit slow");
         });
@@ -291,15 +268,9 @@ fn held_claim_does_not_starve_independent_row() {
                 .expect("try_claim_due on independent row must not error while another row is locked");
             if row.is_some() {
                 fast_claimed = true;
-                repo.advance(
-                    &mut tx,
-                    &group,
-                    &fast,
-                    SystemTime::now() + Duration::from_secs(3600),
-                    SystemTime::now(),
-                )
-                .await
-                .expect("advance fast");
+                repo.advance(&mut tx, &group, &fast, SystemTime::now() + Duration::from_secs(3600), SystemTime::now())
+                    .await
+                    .expect("advance fast");
             }
             repo.commit(tx).await.expect("commit fast");
             attempts += 1;

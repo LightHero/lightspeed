@@ -1,32 +1,32 @@
-use crate::repository::AuthRepositoryManager;
+use crate::repository::AMRepositoryManager;
 use c3p0::{
     SqliteC3p0Pool,
     sqlx::{migrate::Migrator, *},
 };
 use lightspeed_core::error::LsError;
-use sqlite_auth_account::SqliteAuthAccountRepository;
+use sqlite_account::SqliteAccountRepository;
 use sqlite_token::SqliteTokenRepository;
 
-pub mod sqlite_auth_account;
+pub mod sqlite_account;
 pub mod sqlite_token;
 
 static MIGRATOR: Migrator = ::sqlx::migrate!("src_resources/db/sqlite/migrations");
 
 #[derive(Clone)]
-pub struct SqliteAuthRepositoryManager {
+pub struct SqliteAMRepositoryManager {
     c3p0: SqliteC3p0Pool,
 }
 
-impl SqliteAuthRepositoryManager {
-    pub fn new(c3p0: SqliteC3p0Pool) -> SqliteAuthRepositoryManager {
-        SqliteAuthRepositoryManager { c3p0 }
+impl SqliteAMRepositoryManager {
+    pub fn new(c3p0: SqliteC3p0Pool) -> SqliteAMRepositoryManager {
+        SqliteAMRepositoryManager { c3p0 }
     }
 }
 
-impl AuthRepositoryManager for SqliteAuthRepositoryManager {
+impl AMRepositoryManager for SqliteAMRepositoryManager {
     type DB = Sqlite;
     type C3P0 = SqliteC3p0Pool;
-    type AuthAccountRepo = SqliteAuthAccountRepository;
+    type AccountRepo = SqliteAccountRepository;
     type TokenRepo = SqliteTokenRepository;
 
     fn c3p0(&self) -> &Self::C3P0 {
@@ -39,8 +39,8 @@ impl AuthRepositoryManager for SqliteAuthRepositoryManager {
         })
     }
 
-    fn auth_account_repo(&self) -> Self::AuthAccountRepo {
-        SqliteAuthAccountRepository::new()
+    fn account_repo(&self) -> Self::AccountRepo {
+        SqliteAccountRepository::new()
     }
 
     fn token_repo(&self) -> Self::TokenRepo {

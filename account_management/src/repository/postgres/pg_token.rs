@@ -1,4 +1,4 @@
-use crate::error::LsAccountManagerError;
+use crate::error::LsAccountManagementError;
 use crate::model::token::{TokenData, TokenModel};
 use crate::repository::TokenRepository;
 use ::sqlx::AssertSqlSafe;
@@ -27,7 +27,7 @@ impl TokenRepository for PgTokenRepository {
         &self,
         tx: &mut PgConnection,
         token_string: &str,
-    ) -> Result<TokenModel, LsAccountManagerError> {
+    ) -> Result<TokenModel, LsAccountManagementError> {
         Ok(TokenModel::query_with_tail(
             r#"
             where data ->> 'token' = $1
@@ -43,7 +43,7 @@ impl TokenRepository for PgTokenRepository {
         &self,
         tx: &mut PgConnection,
         username: &str,
-    ) -> Result<Vec<TokenModel>, LsAccountManagerError> {
+    ) -> Result<Vec<TokenModel>, LsAccountManagementError> {
         Ok(TokenModel::query_with_tail(
             r#"
             where data ->> 'username' = $1
@@ -58,11 +58,11 @@ impl TokenRepository for PgTokenRepository {
         &self,
         tx: &mut PgConnection,
         model: NewRecord<TokenData>,
-    ) -> Result<TokenModel, LsAccountManagerError> {
+    ) -> Result<TokenModel, LsAccountManagementError> {
         Ok(tx.save(model).await?)
     }
 
-    async fn delete(&self, tx: &mut PgConnection, model: TokenModel) -> Result<TokenModel, LsAccountManagerError> {
+    async fn delete(&self, tx: &mut PgConnection, model: TokenModel) -> Result<TokenModel, LsAccountManagementError> {
         Ok(tx.delete(model).await?)
     }
 
@@ -70,7 +70,7 @@ impl TokenRepository for PgTokenRepository {
         &self,
         tx: &mut PgConnection,
         threshold_epoch_seconds: i64,
-    ) -> Result<u64, LsAccountManagerError> {
+    ) -> Result<u64, LsAccountManagementError> {
         let sql = format!(
             "DELETE FROM {} WHERE (data->>'expire_at_epoch_seconds')::bigint < $1",
             <TokenData as DataType>::TABLE_NAME

@@ -1,4 +1,4 @@
-use crate::error::LsAccountManagerError;
+use crate::error::LsAccountManagementError;
 use crate::model::token::{TokenData, TokenModel};
 use crate::repository::TokenRepository;
 use ::sqlx::AssertSqlSafe;
@@ -27,7 +27,7 @@ impl TokenRepository for MySqlTokenRepository {
         &self,
         tx: &mut MySqlConnection,
         token_string: &str,
-    ) -> Result<TokenModel, LsAccountManagerError> {
+    ) -> Result<TokenModel, LsAccountManagementError> {
         Ok(TokenModel::query_with_tail(
             r#"
             where JSON_VALUE(data, '$.token' RETURNING CHAR(255)) = ?
@@ -43,7 +43,7 @@ impl TokenRepository for MySqlTokenRepository {
         &self,
         tx: &mut MySqlConnection,
         username: &str,
-    ) -> Result<Vec<TokenModel>, LsAccountManagerError> {
+    ) -> Result<Vec<TokenModel>, LsAccountManagementError> {
         Ok(TokenModel::query_with_tail(
             r#"
             where JSON_VALUE(data, '$.username' RETURNING CHAR(255)) = ?
@@ -58,11 +58,15 @@ impl TokenRepository for MySqlTokenRepository {
         &self,
         tx: &mut MySqlConnection,
         model: NewRecord<TokenData>,
-    ) -> Result<TokenModel, LsAccountManagerError> {
+    ) -> Result<TokenModel, LsAccountManagementError> {
         Ok(tx.save(model).await?)
     }
 
-    async fn delete(&self, tx: &mut MySqlConnection, model: TokenModel) -> Result<TokenModel, LsAccountManagerError> {
+    async fn delete(
+        &self,
+        tx: &mut MySqlConnection,
+        model: TokenModel,
+    ) -> Result<TokenModel, LsAccountManagementError> {
         Ok(tx.delete(model).await?)
     }
 
@@ -70,9 +74,9 @@ impl TokenRepository for MySqlTokenRepository {
         &self,
         tx: &mut MySqlConnection,
         threshold_epoch_seconds: i64,
-    ) -> Result<u64, LsAccountManagerError> {
+    ) -> Result<u64, LsAccountManagementError> {
         // Two-phase to avoid InnoDB deadlocks. A direct DELETE on the JSON
-        // predicate — even backed by the LS_AUTH_TOKEN_EXPIRE_AT functional
+        // predicate — even backed by the LS_AM_TOKEN_EXPIRE_AT functional
         // index — takes next-key locks during the index range scan; rows
         // sharing an expire_at_epoch_seconds value have no tiebreaker so
         // concurrent sweeps lock them in non-deterministic order and

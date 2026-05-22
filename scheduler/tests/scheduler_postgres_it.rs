@@ -20,18 +20,14 @@ type SharedFixture = (RepoUnderTest, ContainerAsync<Postgres>);
 
 async fn init() -> SharedFixture {
     let (c3p0, node) = new_pg_db().await;
-    let repo = PgScheduleRepository::init(c3p0)
-        .await
-        .expect("constructor must apply migrations");
+    let repo = PgScheduleRepository::init(c3p0).await.expect("constructor must apply migrations");
     (repo, node)
 }
 
 /// Lazily initialises the shared container/pool.
 pub async fn data(serial: bool) -> Data<'static, SharedFixture> {
     static DATA: OnceLock<MaybeOnceAsync<SharedFixture>> = OnceLock::new();
-    DATA.get_or_init(|| MaybeOnceAsync::new(|| Box::pin(init())))
-        .data(serial)
-        .await
+    DATA.get_or_init(|| MaybeOnceAsync::new(|| Box::pin(init()))).data(serial).await
 }
 
 /// Returns a freshly-`init`ed repository pointing at the **same** backing
@@ -40,7 +36,5 @@ pub async fn data(serial: bool) -> Data<'static, SharedFixture> {
 /// migrations.
 pub async fn start_repo() -> RepoUnderTest {
     let c3p0 = data(false).await.0.c3p0().clone();
-    PgScheduleRepository::init(c3p0)
-        .await
-        .expect("init must be idempotent against the same pool")
+    PgScheduleRepository::init(c3p0).await.expect("init must be idempotent against the same pool")
 }

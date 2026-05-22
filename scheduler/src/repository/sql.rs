@@ -275,21 +275,11 @@ where
         // row-level lock makes a `version` check redundant. Halves the
         // round-trips on the fire path compared to the old
         // fetch-then-c3p0-`update` flow.
-        B::advance_claimed(
-            &mut **tx,
-            group,
-            name,
-            to_millis(next_run_at),
-            to_millis(last_run_at),
-        )
-        .await?;
+        B::advance_claimed(&mut **tx, group, name, to_millis(next_run_at), to_millis(last_run_at)).await?;
         Ok(())
     }
 
-    async fn time_until_next_due(
-        &self,
-        keys: &[(&str, &str)],
-    ) -> Result<Option<Duration>, SchedulerError> {
+    async fn time_until_next_due(&self, keys: &[(&str, &str)]) -> Result<Option<Duration>, SchedulerError> {
         if keys.is_empty() {
             return Ok(None);
         }

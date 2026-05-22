@@ -1,12 +1,8 @@
 #![doc = include_str!("../README.md")]
-
 // No `unsafe` in this crate.
 #![forbid(unsafe_code)]
 // `.unwrap()` and `.expect()` are banned in production code.
-#![cfg_attr(
-    not(test),
-    deny(clippy::unwrap_used, clippy::expect_used)
-)]
+#![cfg_attr(not(test), deny(clippy::unwrap_used, clippy::expect_used))]
 
 pub mod error;
 pub mod job;
@@ -139,9 +135,7 @@ impl KeysCell {
 /// Rebuilds the cached `(group, name)` view from the current `jobs` vec.
 /// Called from `add_job` (cold path); the run loop never calls this.
 fn build_keys_view<R: ScheduleRepository>(jobs: &[Entry<R>]) -> KeysView {
-    jobs.iter()
-        .map(|e| (Arc::clone(&e.group), Arc::clone(&e.name)))
-        .collect()
+    jobs.iter().map(|e| (Arc::clone(&e.group), Arc::clone(&e.name))).collect()
 }
 
 /// `SystemTime → i64 millis since Unix epoch`. Used both by the executor
@@ -214,12 +208,7 @@ impl<R: ScheduleRepository> JobExecutor<R> {
     /// shared inner state to hand to the spawned task.
     pub fn run(&self) -> Result<JoinHandle<()>, SchedulerError> {
         let mut state_guard = self.inner.state.lock();
-        if self
-            .inner
-            .running
-            .compare_exchange(false, true, Ordering::SeqCst, Ordering::SeqCst)
-            .is_err()
-        {
+        if self.inner.running.compare_exchange(false, true, Ordering::SeqCst, Ordering::SeqCst).is_err() {
             return Err(SchedulerError::JobExecutionStateError {
                 message: "The JobExecutor is already running.".to_owned(),
             });
@@ -232,8 +221,7 @@ impl<R: ScheduleRepository> JobExecutor<R> {
         // Construct the cleanup OUTSIDE the async block and move it in.
         // Captured outer values are part of the future's initial state and
         // drop even if the task is aborted before its first poll.
-        let cleanup =
-            RunCleanup { me: Arc::clone(&self.inner), finished_tx: Some(finished_tx) };
+        let cleanup = RunCleanup { me: Arc::clone(&self.inner), finished_tx: Some(finished_tx) };
 
         let me = Arc::clone(&self.inner);
         let handle = tokio::spawn(async move {
@@ -260,11 +248,7 @@ impl<R: ScheduleRepository> JobExecutor<R> {
             info!(target: "lightspeed_scheduler", "JobExecutor stopped");
         });
 
-        *state_guard = Some(RunningState {
-            stop_request,
-            finished_rx,
-            abort_handle: handle.abort_handle(),
-        });
+        *state_guard = Some(RunningState { stop_request, finished_rx, abort_handle: handle.abort_handle() });
         drop(state_guard);
 
         Ok(handle)
@@ -276,11 +260,7 @@ impl<R: ScheduleRepository> JobExecutor<R> {
 impl<R: ScheduleRepository> JobExecutor<R> {
     /// Adds a job using any [`TryToScheduler`]-convertible schedule (cron
     /// string, `Duration`, etc.).
-    pub async fn add_job<T>(
-        &self,
-        schedule: &dyn TryToScheduler,
-        job: Job<T>,
-    ) -> Result<(), SchedulerError>
+    pub async fn add_job<T>(&self, schedule: &dyn TryToScheduler, job: Job<T>) -> Result<(), SchedulerError>
     where
         T: ScheduledTask<R>,
     {
@@ -301,11 +281,7 @@ impl<R: ScheduleRepository> JobExecutor<R> {
     }
 
     /// Adds a job with an explicit [`Scheduler`] (or anything `Into<Scheduler>`).
-    pub async fn add_job_with_scheduler<S, T>(
-        &self,
-        schedule: S,
-        job: Job<T>,
-    ) -> Result<(), SchedulerError>
+    pub async fn add_job_with_scheduler<S, T>(&self, schedule: S, job: Job<T>) -> Result<(), SchedulerError>
     where
         S: Into<Scheduler>,
         T: ScheduledTask<R>,
@@ -338,11 +314,7 @@ impl<R: ScheduleRepository> JobExecutor<R> {
 impl<R: ScheduleRepository> JobExecutorInner<R> {
     /// Adds a job using any [`TryToScheduler`]-convertible schedule (cron
     /// string, `Duration`, etc.).
-    async fn add_job<T>(
-        &self,
-        schedule: &dyn TryToScheduler,
-        job: Job<T>,
-    ) -> Result<(), SchedulerError>
+    async fn add_job<T>(&self, schedule: &dyn TryToScheduler, job: Job<T>) -> Result<(), SchedulerError>
     where
         T: ScheduledTask<R>,
     {
@@ -365,11 +337,7 @@ impl<R: ScheduleRepository> JobExecutorInner<R> {
     }
 
     /// Adds a job with an explicit [`Scheduler`] (or anything `Into<Scheduler>`).
-    async fn add_job_with_scheduler<S, T>(
-        &self,
-        schedule: S,
-        job: Job<T>,
-    ) -> Result<(), SchedulerError>
+    async fn add_job_with_scheduler<S, T>(&self, schedule: S, job: Job<T>) -> Result<(), SchedulerError>
     where
         S: Into<Scheduler>,
         T: ScheduledTask<R>,
@@ -422,8 +390,7 @@ impl<R: ScheduleRepository> JobExecutorInner<R> {
         // #3: read the cached key view instead of re-walking `jobs` and
         // re-allocating two `Vec`s of strings on every poll.
         let view = self.cached_keys.load();
-        let refs: Vec<(&str, &str)> =
-            view.iter().map(|(g, n)| (g.as_ref(), n.as_ref())).collect();
+        let refs: Vec<(&str, &str)> = view.iter().map(|(g, n)| (g.as_ref(), n.as_ref())).collect();
         let until = match self.repo.time_until_next_due(&refs).await {
             Ok(d) => d,
             Err(e) => {
@@ -451,18 +418,13 @@ impl<R: ScheduleRepository> JobExecutorInner<R> {
         let now_millis = to_millis(SystemTime::now());
         let snapshot: Vec<Entry<R>> = {
             let jobs = self.jobs.lock();
-            jobs.iter()
-                .filter(|e| e.next_run_at_millis.load(Ordering::Acquire) <= now_millis)
-                .cloned()
-                .collect()
+            jobs.iter().filter(|e| e.next_run_at_millis.load(Ordering::Acquire) <= now_millis).cloned().collect()
         };
         let mut handles = Vec::with_capacity(snapshot.len());
         for entry in snapshot {
             let repo = self.repo.clone();
             let tz = self.timezone;
-            handles.push(tokio::spawn(async move {
-                Self::tick_one(repo, tz, entry).await
-            }));
+            handles.push(tokio::spawn(async move { Self::tick_one(repo, tz, entry).await }));
         }
         let mut fired = 0;
         for h in handles {
@@ -481,11 +443,7 @@ impl<R: ScheduleRepository> JobExecutorInner<R> {
         Ok(fired)
     }
 
-    async fn tick_one(
-        repo: R,
-        tz: Option<Tz>,
-        entry: Entry<R>,
-    ) -> Result<bool, SchedulerError> {
+    async fn tick_one(repo: R, tz: Option<Tz>, entry: Entry<R>) -> Result<bool, SchedulerError> {
         let mut tx = repo.begin().await?;
 
         let claimed = repo.try_claim_due(&mut tx, &entry.group, &entry.name).await?;
@@ -558,10 +516,8 @@ impl<R: ScheduleRepository> JobExecutorInner<R> {
     ///   transaction is rolled back when the connection is returned to the
     ///   pool.
     async fn stop(&self, graceful: bool) -> Result<(), SchedulerError> {
-        let state = self.state.lock().take().ok_or_else(|| {
-            SchedulerError::JobExecutionStateError {
-                message: "The JobExecutor is not running.".to_owned(),
-            }
+        let state = self.state.lock().take().ok_or_else(|| SchedulerError::JobExecutionStateError {
+            message: "The JobExecutor is not running.".to_owned(),
         })?;
 
         if graceful {
@@ -610,10 +566,7 @@ mod tests {
 
     impl ScheduledTask<MemoryScheduleRepository> for CountingTask {
         type Error = Infallible;
-        async fn run(
-            &self,
-            _tx: &mut <MemoryScheduleRepository as ScheduleRepository>::Tx,
-        ) -> Result<(), Self::Error> {
+        async fn run(&self, _tx: &mut <MemoryScheduleRepository as ScheduleRepository>::Tx) -> Result<(), Self::Error> {
             self.count.fetch_add(1, Ordering::SeqCst);
             Ok(())
         }
@@ -674,10 +627,7 @@ mod tests {
             .await
             .unwrap();
         executor
-            .add_job(
-                &Duration::from_secs(3600),
-                Job::new(G, "c", None, CountingTask { count: Arc::clone(&count_c) }),
-            )
+            .add_job(&Duration::from_secs(3600), Job::new(G, "c", None, CountingTask { count: Arc::clone(&count_c) }))
             .await
             .unwrap();
 
@@ -764,13 +714,7 @@ mod tests {
 
         let repo = MemoryScheduleRepository::init();
         let executor = JobExecutor::new_with_utc_tz(repo.clone());
-        executor
-            .add_job(
-                &(Duration::from_millis(0), true),
-                Job::new(G, "fail", None, FailingTask),
-            )
-            .await
-            .unwrap();
+        executor.add_job(&(Duration::from_millis(0), true), Job::new(G, "fail", None, FailingTask)).await.unwrap();
 
         assert_eq!(executor.tick().await.unwrap(), 0);
 
@@ -816,11 +760,7 @@ mod tests {
                 _tx: &mut <MemoryScheduleRepository as ScheduleRepository>::Tx,
             ) -> Result<(), Self::Error> {
                 let prev = self.count.fetch_add(1, Ordering::SeqCst);
-                if prev + 1 >= self.succeed_at {
-                    Ok(())
-                } else {
-                    Err(std::io::Error::other("transient"))
-                }
+                if prev + 1 >= self.succeed_at { Ok(()) } else { Err(std::io::Error::other("transient")) }
             }
         }
 
@@ -829,12 +769,7 @@ mod tests {
         executor
             .add_job(
                 &(Duration::from_millis(0), true),
-                Job::new(
-                    G,
-                    "flaky",
-                    Some(5),
-                    FlakyTask { count: Arc::clone(&count), succeed_at: 3 },
-                ),
+                Job::new(G, "flaky", Some(5), FlakyTask { count: Arc::clone(&count), succeed_at: 3 }),
             )
             .await
             .unwrap();
@@ -865,16 +800,12 @@ mod tests {
         }
 
         let count = Arc::new(AtomicUsize::new(0));
-        let executor =
-            JobExecutor::new_with_utc_tz(MemoryScheduleRepository::init());
+        let executor = JobExecutor::new_with_utc_tz(MemoryScheduleRepository::init());
         // 1h interval + execute_at_startup ⇒ row is due once at registration,
         // then 1h in the future after the first fire commits.
         executor
             .add_job_with_scheduler(
-                Scheduler::Interval {
-                    interval_duration: Duration::from_secs(3600),
-                    execute_at_startup: true,
-                },
+                Scheduler::Interval { interval_duration: Duration::from_secs(3600), execute_at_startup: true },
                 Job::new(G, "slow", None, SlowTask { count: Arc::clone(&count) }),
             )
             .await
@@ -923,16 +854,8 @@ mod tests {
         for i in 0..n {
             executor
                 .add_job_with_scheduler(
-                    Scheduler::Interval {
-                        interval_duration: Duration::from_secs(3600),
-                        execute_at_startup: true,
-                    },
-                    Job::new(
-                        G,
-                        format!("slow-{i}"),
-                        None,
-                        SlowTask { count: Arc::clone(&count) },
-                    ),
+                    Scheduler::Interval { interval_duration: Duration::from_secs(3600), execute_at_startup: true },
+                    Job::new(G, format!("slow-{i}"), None, SlowTask { count: Arc::clone(&count) }),
                 )
                 .await
                 .unwrap();
@@ -946,10 +869,7 @@ mod tests {
         assert_eq!(count.load(Ordering::SeqCst), n);
         // Parallel: total wall time ~one job. Serial would be ~n*300ms = 1500ms;
         // 900ms catches the regression while tolerating CI jitter.
-        assert!(
-            elapsed < Duration::from_millis(900),
-            "expected parallel execution (~300ms), took {elapsed:?}",
-        );
+        assert!(elapsed < Duration::from_millis(900), "expected parallel execution (~300ms), took {elapsed:?}",);
     }
 
     /// Ported from the old `lightspeed_scheduler` test
@@ -974,21 +894,12 @@ mod tests {
 
         let n: usize = 20;
         let count = Arc::new(AtomicUsize::new(0));
-        let executor =
-            JobExecutor::new_with_utc_tz(MemoryScheduleRepository::init());
+        let executor = JobExecutor::new_with_utc_tz(MemoryScheduleRepository::init());
         for i in 0..n {
             executor
                 .add_job_with_scheduler(
-                    Scheduler::Interval {
-                        interval_duration: Duration::from_secs(3600),
-                        execute_at_startup: true,
-                    },
-                    Job::new(
-                        G,
-                        format!("slow-{i}"),
-                        None,
-                        SlowTask { count: Arc::clone(&count) },
-                    ),
+                    Scheduler::Interval { interval_duration: Duration::from_secs(3600), execute_at_startup: true },
+                    Job::new(G, format!("slow-{i}"), None, SlowTask { count: Arc::clone(&count) }),
                 )
                 .await
                 .unwrap();
@@ -1018,16 +929,8 @@ mod tests {
             let executor = JobExecutor::new_with_utc_tz(repo.clone());
             executor
                 .add_job_with_scheduler(
-                    Scheduler::Interval {
-                        interval_duration: Duration::from_secs(3600),
-                        execute_at_startup: false,
-                    },
-                    Job::new(
-                        G,
-                        "schedule-swap",
-                        None,
-                        CountingTask { count: Arc::new(AtomicUsize::new(0)) },
-                    ),
+                    Scheduler::Interval { interval_duration: Duration::from_secs(3600), execute_at_startup: false },
+                    Job::new(G, "schedule-swap", None, CountingTask { count: Arc::new(AtomicUsize::new(0)) }),
                 )
                 .await
                 .unwrap();
@@ -1050,16 +953,8 @@ mod tests {
         let executor = JobExecutor::new_with_utc_tz(repo.clone());
         executor
             .add_job_with_scheduler(
-                Scheduler::Interval {
-                    interval_duration: Duration::from_secs(3600),
-                    execute_at_startup: true,
-                },
-                Job::new(
-                    G,
-                    "schedule-swap",
-                    None,
-                    CountingTask { count: Arc::clone(&count) },
-                ),
+                Scheduler::Interval { interval_duration: Duration::from_secs(3600), execute_at_startup: true },
+                Job::new(G, "schedule-swap", None, CountingTask { count: Arc::clone(&count) }),
             )
             .await
             .unwrap();
@@ -1080,16 +975,8 @@ mod tests {
             let executor = JobExecutor::new_with_utc_tz(repo.clone());
             executor
                 .add_job_with_scheduler(
-                    Scheduler::Interval {
-                        interval_duration: Duration::from_secs(3600),
-                        execute_at_startup: true,
-                    },
-                    Job::new(
-                        G,
-                        "idempotent",
-                        None,
-                        CountingTask { count: Arc::new(AtomicUsize::new(0)) },
-                    ),
+                    Scheduler::Interval { interval_duration: Duration::from_secs(3600), execute_at_startup: true },
+                    Job::new(G, "idempotent", None, CountingTask { count: Arc::new(AtomicUsize::new(0)) }),
                 )
                 .await
                 .unwrap();
@@ -1106,16 +993,8 @@ mod tests {
         let executor = JobExecutor::new_with_utc_tz(repo.clone());
         executor
             .add_job_with_scheduler(
-                Scheduler::Interval {
-                    interval_duration: Duration::from_secs(3600),
-                    execute_at_startup: true,
-                },
-                Job::new(
-                    G,
-                    "idempotent",
-                    None,
-                    CountingTask { count: Arc::clone(&count) },
-                ),
+                Scheduler::Interval { interval_duration: Duration::from_secs(3600), execute_at_startup: true },
+                Job::new(G, "idempotent", None, CountingTask { count: Arc::clone(&count) }),
             )
             .await
             .unwrap();
@@ -1151,12 +1030,7 @@ mod tests {
         executor
             .add_job(
                 &(Duration::from_millis(0), true),
-                Job::new(
-                    G,
-                    "always-fails",
-                    Some(retries),
-                    AlwaysFailTask { count: Arc::clone(&count) },
-                ),
+                Job::new(G, "always-fails", Some(retries), AlwaysFailTask { count: Arc::clone(&count) }),
             )
             .await
             .unwrap();

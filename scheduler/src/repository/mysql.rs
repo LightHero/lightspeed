@@ -14,9 +14,7 @@ use c3p0::sqlx::{AssertSqlSafe, MySql, MySqlConnection, Row, migrate::Migrator, 
 use c3p0::*;
 
 use crate::error::SchedulerError;
-use crate::repository::sql::{
-    ScheduleData, ScheduleModel, ScheduleSqlBackend, SqlScheduleRepository,
-};
+use crate::repository::sql::{ScheduleData, ScheduleModel, ScheduleSqlBackend, SqlScheduleRepository};
 
 static MIGRATOR: Migrator = c3p0::sqlx::migrate!("src/resources/mysql/migrations");
 

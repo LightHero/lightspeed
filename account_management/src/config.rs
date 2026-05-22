@@ -2,7 +2,7 @@ use serde::Deserialize;
 
 #[derive(Debug, Clone, Deserialize)]
 #[serde(default)]
-pub struct AuthConfig {
+pub struct AMConfig {
     /// Determines the activation token validity minutes
     pub activation_token_validity_minutes: u32,
 
@@ -26,7 +26,7 @@ pub struct AuthConfig {
     pub password_expiration_seconds: Option<u32>,
 }
 
-impl Default for AuthConfig {
+impl Default for AMConfig {
     fn default() -> Self {
         Self {
             activation_token_validity_minutes: 120,
@@ -48,7 +48,7 @@ mod test {
 
     #[test]
     fn should_build_config() {
-        let config: AuthConfig = config::Config::builder().build().unwrap().try_deserialize().unwrap();
+        let config: AMConfig = config::Config::builder().build().unwrap().try_deserialize().unwrap();
         assert!(config.default_roles_on_account_creation.is_empty());
     }
 }

@@ -1,10 +1,7 @@
 // No `unsafe` in this crate.
 #![forbid(unsafe_code)]
 // `.unwrap()` and `.expect()` are banned in production code.
-#![cfg_attr(
-    not(test),
-    deny(clippy::unwrap_used, clippy::expect_used)
-)]
+#![cfg_attr(not(test), deny(clippy::unwrap_used, clippy::expect_used))]
 
 use crate::service::hash_service::LsHashService;
 use crate::service::validation_code_service::LsValidationCodeService;

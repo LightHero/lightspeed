@@ -1,34 +1,34 @@
-use crate::error::LsAccountManagerError;
-use crate::model::auth_account::{AuthAccountData, AuthAccountModel, AuthAccountStatus};
-use crate::repository::AuthAccountRepository;
+use crate::error::LsAccountManagementError;
+use crate::model::auth_account::{AccountData, AccountStatus, AuthAccountModel};
+use crate::repository::AccountRepository;
 use c3p0::sqlx::*;
 use c3p0::*;
 
 #[derive(Clone)]
-pub struct SqliteAuthAccountRepository {}
+pub struct SqliteAccountRepository {}
 
-impl Default for SqliteAuthAccountRepository {
+impl Default for SqliteAccountRepository {
     fn default() -> Self {
         Self::new()
     }
 }
 
-impl SqliteAuthAccountRepository {
+impl SqliteAccountRepository {
     pub fn new() -> Self {
         Self {}
     }
 }
 
-impl AuthAccountRepository for SqliteAuthAccountRepository {
+impl AccountRepository for SqliteAccountRepository {
     type DB = Sqlite;
 
     async fn fetch_all_by_status(
         &self,
         tx: &mut SqliteConnection,
-        status: AuthAccountStatus,
+        status: AccountStatus,
         start_user_id: i64,
         limit: u32,
-    ) -> Result<Vec<AuthAccountModel>, LsAccountManagerError> {
+    ) -> Result<Vec<AuthAccountModel>, LsAccountManagementError> {
         Ok(AuthAccountModel::query_with_tail(
             r#"
             where id >= ? and DATA ->> '$.status' = ?
@@ -47,16 +47,16 @@ impl AuthAccountRepository for SqliteAuthAccountRepository {
         &self,
         tx: &mut SqliteConnection,
         user_id: i64,
-    ) -> Result<AuthAccountModel, LsAccountManagerError> {
-        Ok(tx.fetch_one_by_id::<AuthAccountData>(user_id).await?)
+    ) -> Result<AuthAccountModel, LsAccountManagementError> {
+        Ok(tx.fetch_one_by_id::<AccountData>(user_id).await?)
     }
 
     async fn fetch_by_username(
         &self,
         tx: &mut SqliteConnection,
         username: &str,
-    ) -> Result<AuthAccountModel, LsAccountManagerError> {
-        self.fetch_by_username_optional(tx, username).await?.ok_or_else(|| LsAccountManagerError::BadRequest {
+    ) -> Result<AuthAccountModel, LsAccountManagementError> {
+        self.fetch_by_username_optional(tx, username).await?.ok_or_else(|| LsAccountManagementError::BadRequest {
             message: format!("No user found with username [{username}]"),
             code: "",
         })
@@ -66,7 +66,7 @@ impl AuthAccountRepository for SqliteAuthAccountRepository {
         &self,
         tx: &mut SqliteConnection,
         username: &str,
-    ) -> Result<Option<AuthAccountModel>, LsAccountManagerError> {
+    ) -> Result<Option<AuthAccountModel>, LsAccountManagementError> {
         Ok(AuthAccountModel::query_with_tail(
             r#"
             where DATA ->> '$.username' = ?
@@ -82,7 +82,7 @@ impl AuthAccountRepository for SqliteAuthAccountRepository {
         &self,
         tx: &mut SqliteConnection,
         email: &str,
-    ) -> Result<Option<AuthAccountModel>, LsAccountManagerError> {
+    ) -> Result<Option<AuthAccountModel>, LsAccountManagementError> {
         Ok(AuthAccountModel::query_with_tail(
             r#"
             where DATA ->> '$.email' = ?
@@ -97,8 +97,8 @@ impl AuthAccountRepository for SqliteAuthAccountRepository {
     async fn save(
         &self,
         tx: &mut SqliteConnection,
-        model: NewRecord<AuthAccountData>,
-    ) -> Result<AuthAccountModel, LsAccountManagerError> {
+        model: NewRecord<AccountData>,
+    ) -> Result<AuthAccountModel, LsAccountManagementError> {
         Ok(tx.save(model).await?)
     }
 
@@ -106,7 +106,7 @@ impl AuthAccountRepository for SqliteAuthAccountRepository {
         &self,
         tx: &mut SqliteConnection,
         model: AuthAccountModel,
-    ) -> Result<AuthAccountModel, LsAccountManagerError> {
+    ) -> Result<AuthAccountModel, LsAccountManagementError> {
         Ok(tx.update(model).await?)
     }
 
@@ -114,11 +114,11 @@ impl AuthAccountRepository for SqliteAuthAccountRepository {
         &self,
         tx: &mut SqliteConnection,
         model: AuthAccountModel,
-    ) -> Result<AuthAccountModel, LsAccountManagerError> {
+    ) -> Result<AuthAccountModel, LsAccountManagementError> {
         Ok(tx.delete(model).await?)
     }
 
-    async fn delete_by_id(&self, tx: &mut SqliteConnection, user_id: i64) -> Result<u64, LsAccountManagerError> {
-        Ok(tx.delete_by_id::<AuthAccountData>(user_id).await?)
+    async fn delete_by_id(&self, tx: &mut SqliteConnection, user_id: i64) -> Result<u64, LsAccountManagementError> {
+        Ok(tx.delete_by_id::<AccountData>(user_id).await?)
     }
 }

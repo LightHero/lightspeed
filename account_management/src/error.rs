@@ -1,7 +1,7 @@
 use thiserror::Error;
 
 #[derive(Debug, Error)]
-pub enum LsAccountManagerError {
+pub enum LsAccountManagementError {
     #[error("PasswordEncryptionError: {message}")]
     PasswordEncryptionError { message: String },
 

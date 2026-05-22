@@ -19,9 +19,7 @@ use c3p0::sqlx::{AssertSqlSafe, Row, Sqlite, SqliteConnection, migrate::Migrator
 use c3p0::*;
 
 use crate::error::SchedulerError;
-use crate::repository::sql::{
-    ScheduleData, ScheduleModel, ScheduleSqlBackend, SqlScheduleRepository,
-};
+use crate::repository::sql::{ScheduleData, ScheduleModel, ScheduleSqlBackend, SqlScheduleRepository};
 
 static MIGRATOR: Migrator = c3p0::sqlx::migrate!("src/resources/sqlite/migrations");
 
@@ -64,13 +62,11 @@ impl ScheduleSqlBackend for SqliteScheduleBackend {
         group: &str,
         name: &str,
     ) -> Result<Option<ScheduleModel>, C3p0Error> {
-        Ok(ScheduleModel::query_with_tail(
-            "WHERE data->>'$.group_name' = ? AND data->>'$.name' = ? LIMIT 1",
-        )
-        .bind(group)
-        .bind(name)
-        .fetch_optional(tx)
-        .await?)
+        Ok(ScheduleModel::query_with_tail("WHERE data->>'$.group_name' = ? AND data->>'$.name' = ? LIMIT 1")
+            .bind(group)
+            .bind(name)
+            .fetch_optional(tx)
+            .await?)
     }
 
     async fn try_claim_record(
@@ -88,11 +84,7 @@ impl ScheduleSqlBackend for SqliteScheduleBackend {
                AND CAST(data->>'$.next_run_at_millis' AS INTEGER) <= {NOW_MILLIS_EXPR} \
              LIMIT 1",
         );
-        Ok(ScheduleModel::query_with_tail(&sql)
-            .bind(group)
-            .bind(name)
-            .fetch_optional(tx)
-            .await?)
+        Ok(ScheduleModel::query_with_tail(&sql).bind(group).bind(name).fetch_optional(tx).await?)
     }
 
     async fn advance_claimed(

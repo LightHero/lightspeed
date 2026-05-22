@@ -2,10 +2,10 @@ use c3p0::{Codec, DataType, Record};
 use serde::{Deserialize, Serialize};
 use strum::{AsRefStr, Display};
 
-pub type AuthAccountModel = Record<AuthAccountData>;
+pub type AuthAccountModel = Record<AccountData>;
 
 #[derive(Clone, Serialize, Deserialize)]
-pub struct AuthAccountData {
+pub struct AccountData {
     pub username: String,
     pub email: String,
     pub password: String,
@@ -13,16 +13,16 @@ pub struct AuthAccountData {
     pub created_date_epoch_seconds: i64,
     /// Epoch seconds at which `password` was last set
     pub password_updated_date_epoch_seconds: i64,
-    pub status: AuthAccountStatus,
+    pub status: AccountStatus,
 }
 
-impl DataType for AuthAccountData {
-    const TABLE_NAME: &'static str = "LS_AUTH_ACCOUNT";
-    type CODEC = AuthAccountDataToken;
+impl DataType for AccountData {
+    const TABLE_NAME: &'static str = "LS_AM_ACCOUNT";
+    type CODEC = AccountDataToken;
 }
 
 #[derive(Debug, PartialEq, Clone, Serialize, Deserialize, AsRefStr, Display)]
-pub enum AuthAccountStatus {
+pub enum AccountStatus {
     Active,
     PendingActivation,
     Disabled,
@@ -30,18 +30,18 @@ pub enum AuthAccountStatus {
 
 #[derive(Clone, Serialize, Deserialize)]
 #[serde(tag = "_codec_tag")]
-pub enum AuthAccountDataToken {
-    V1(AuthAccountData),
+pub enum AccountDataToken {
+    V1(AccountData),
 }
 
-impl Codec<AuthAccountData> for AuthAccountDataToken {
-    fn encode(data: AuthAccountData) -> Self {
-        AuthAccountDataToken::V1(data)
+impl Codec<AccountData> for AccountDataToken {
+    fn encode(data: AccountData) -> Self {
+        AccountDataToken::V1(data)
     }
 
-    fn decode(data: Self) -> AuthAccountData {
+    fn decode(data: Self) -> AccountData {
         match data {
-            AuthAccountDataToken::V1(data) => data,
+            AccountDataToken::V1(data) => data,
         }
     }
 }

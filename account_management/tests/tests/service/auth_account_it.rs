@@ -1,22 +1,22 @@
 use crate::data;
 use crate::tests::util::{create_user, create_user_with_password};
 use c3p0::*;
-use lightspeed_account_management::config::AuthConfig;
+use lightspeed_account_management::config::AMConfig;
 use lightspeed_account_management::dto::change_password_dto::ChangePasswordDto;
 use lightspeed_account_management::dto::create_login_dto::CreateLoginDto;
 use lightspeed_account_management::dto::reset_password_dto::ResetPasswordDto;
-use lightspeed_account_management::error::LsAccountManagerError;
-use lightspeed_account_management::model::auth_account::AuthAccountStatus;
+use lightspeed_account_management::error::LsAccountManagementError;
+use lightspeed_account_management::model::auth_account::AccountStatus;
 use lightspeed_account_management::model::token::TokenType;
-use lightspeed_account_management::repository::{AuthAccountRepository, AuthRepositoryManager};
-use lightspeed_account_management::service::auth_account::LsAuthAccountService;
+use lightspeed_account_management::repository::{AMRepositoryManager, AccountRepository};
+use lightspeed_account_management::service::account::LsAMAccountService;
 use lightspeed_core::model::language::Language;
 use lightspeed_core::utils::{current_epoch_seconds, new_hyphenated_uuid};
 use lightspeed_test_utils::tokio_test;
 use std::collections::HashMap;
 
 #[test]
-fn should_create_pending_user() -> Result<(), LsAccountManagerError> {
+fn should_create_pending_user() -> Result<(), LsAccountManagementError> {
     tokio_test(async {
         let data = data(false).await;
         let auth_module = &data.0;
@@ -44,7 +44,7 @@ fn should_create_pending_user() -> Result<(), LsAccountManagerError> {
 
         assert!(user.data.roles.is_empty());
 
-        assert_eq!(AuthAccountStatus::PendingActivation, user.data.status);
+        assert_eq!(AccountStatus::PendingActivation, user.data.status);
         assert_eq!(username, token.data.username);
 
         assert_eq!(TokenType::AccountActivation, token.data.token_type);
@@ -54,7 +54,7 @@ fn should_create_pending_user() -> Result<(), LsAccountManagerError> {
 }
 
 #[test]
-fn should_assign_default_roles_at_account_creation() -> Result<(), LsAccountManagerError> {
+fn should_assign_default_roles_at_account_creation() -> Result<(), LsAccountManagementError> {
     tokio_test(async {
         let data = data(false).await;
         let auth_module = &data.0;
@@ -66,12 +66,12 @@ fn should_assign_default_roles_at_account_creation() -> Result<(), LsAccountMana
         let mut auth_config = auth_module.auth_config.clone();
         auth_config.default_roles_on_account_creation = vec![new_hyphenated_uuid()];
 
-        let auth_account_service = LsAuthAccountService::new(
+        let auth_account_service = LsAMAccountService::new(
             auth_module.repo_manager.c3p0().clone(),
             auth_config.clone(),
             auth_module.token_service.clone(),
             auth_module.password_codec.clone(),
-            auth_module.repo_manager.auth_account_repo(),
+            auth_module.repo_manager.account_repo(),
         );
 
         let (user, _) = auth_account_service
@@ -94,7 +94,7 @@ fn should_assign_default_roles_at_account_creation() -> Result<(), LsAccountMana
 }
 
 #[test]
-fn should_return_user_by_id() -> Result<(), LsAccountManagerError> {
+fn should_return_user_by_id() -> Result<(), LsAccountManagementError> {
     tokio_test(async {
         let data = data(false).await;
         let auth_module = &data.0;
@@ -116,7 +116,7 @@ fn should_return_user_by_id() -> Result<(), LsAccountManagerError> {
 }
 
 #[test]
-fn should_return_user_by_username() -> Result<(), LsAccountManagerError> {
+fn should_return_user_by_username() -> Result<(), LsAccountManagementError> {
     tokio_test(async {
         let data = data(false).await;
         let auth_module = &data.0;
@@ -139,7 +139,7 @@ fn should_return_user_by_username() -> Result<(), LsAccountManagerError> {
 }
 
 #[test]
-fn should_use_the_email_as_username_if_not_provided() -> Result<(), LsAccountManagerError> {
+fn should_use_the_email_as_username_if_not_provided() -> Result<(), LsAccountManagementError> {
     tokio_test(async {
         let data = data(false).await;
         let auth_module = &data.0;
@@ -170,7 +170,7 @@ fn should_use_the_email_as_username_if_not_provided() -> Result<(), LsAccountMan
 }
 
 #[test]
-fn should_use_the_email_as_username_if_username_is_empty() -> Result<(), LsAccountManagerError> {
+fn should_use_the_email_as_username_if_username_is_empty() -> Result<(), LsAccountManagementError> {
     tokio_test(async {
         let data = data(false).await;
         let auth_module = &data.0;
@@ -201,19 +201,19 @@ fn should_use_the_email_as_username_if_username_is_empty() -> Result<(), LsAccou
 }
 
 #[test]
-fn should_activate_user() -> Result<(), LsAccountManagerError> {
+fn should_activate_user() -> Result<(), LsAccountManagementError> {
     tokio_test(async {
         let data = data(false).await;
         let auth_module = &data.0;
 
         let (user, token) = create_user(auth_module, false).await?;
 
-        assert_eq!(AuthAccountStatus::PendingActivation, user.data.status);
+        assert_eq!(AccountStatus::PendingActivation, user.data.status);
         assert_eq!(TokenType::AccountActivation, token.data.token_type);
 
         let activated_user = auth_module.auth_account_service.activate_user(&token.data.token).await?;
 
-        assert_eq!(AuthAccountStatus::Active, activated_user.data.status);
+        assert_eq!(AccountStatus::Active, activated_user.data.status);
 
         assert_eq!(user.data.username, activated_user.data.username);
 
@@ -235,13 +235,13 @@ fn should_activate_user() -> Result<(), LsAccountManagerError> {
 }
 
 #[test]
-fn should_activate_user_only_if_activation_token_type() -> Result<(), LsAccountManagerError> {
+fn should_activate_user_only_if_activation_token_type() -> Result<(), LsAccountManagementError> {
     tokio_test(async {
         let data = data(false).await;
         let auth_module = &data.0;
 
         let (user, _) = create_user(auth_module, false).await?;
-        assert_eq!(AuthAccountStatus::PendingActivation, user.data.status);
+        assert_eq!(AccountStatus::PendingActivation, user.data.status);
 
         auth_module
             .repo_manager
@@ -264,18 +264,18 @@ fn should_activate_user_only_if_activation_token_type() -> Result<(), LsAccountM
 }
 
 #[test]
-fn should_activate_user_only_if_pending_activation() -> Result<(), LsAccountManagerError> {
+fn should_activate_user_only_if_pending_activation() -> Result<(), LsAccountManagementError> {
     tokio_test(async {
         let data = data(false).await;
         let auth_module = &data.0;
 
         let (user, _) = create_user(auth_module, true).await?;
-        assert_eq!(AuthAccountStatus::Active, user.data.status);
+        assert_eq!(AccountStatus::Active, user.data.status);
 
         auth_module
             .repo_manager
             .c3p0()
-            .transaction::<_, LsAccountManagerError, _>(async |conn| {
+            .transaction::<_, LsAccountManagementError, _>(async |conn| {
                 let token = auth_module
                     .token_service
                     .generate_and_save_token_with_conn(conn, &user.data.username, TokenType::AccountActivation)
@@ -295,7 +295,7 @@ fn should_activate_user_only_if_pending_activation() -> Result<(), LsAccountMana
 }
 
 #[test]
-fn should_regenerate_activation_token_by_email_and_username() -> Result<(), LsAccountManagerError> {
+fn should_regenerate_activation_token_by_email_and_username() -> Result<(), LsAccountManagementError> {
     tokio_test(async {
         let data = data(false).await;
         let auth_module = &data.0;
@@ -332,7 +332,7 @@ fn should_regenerate_activation_token_by_email_and_username() -> Result<(), LsAc
 
         let activated_user = auth_module.auth_account_service.activate_user(&new_token.data.token).await?;
 
-        assert_eq!(AuthAccountStatus::Active, activated_user.data.status);
+        assert_eq!(AccountStatus::Active, activated_user.data.status);
         assert_eq!(user.id, activated_user.id);
 
         Ok(())
@@ -351,7 +351,8 @@ fn should_regenerate_activation_token_by_email_and_username() -> Result<(), LsAc
 /// "request not eligible" branch returns the SAME error variant and code.
 /// This test pins that contract.
 #[test]
-fn generate_new_activation_token_should_use_uniform_error_for_all_failure_modes() -> Result<(), LsAccountManagerError> {
+fn generate_new_activation_token_should_use_uniform_error_for_all_failure_modes() -> Result<(), LsAccountManagementError>
+{
     tokio_test(async {
         let data = data(false).await;
         let auth_module = &data.0;
@@ -382,7 +383,7 @@ fn generate_new_activation_token_should_use_uniform_error_for_all_failure_modes(
             [("unknown_username", unknown), ("wrong_email", wrong_email), ("wrong_status", wrong_status)]
         {
             match result {
-                Err(LsAccountManagerError::WrongCredentials) => {}
+                Err(LsAccountManagementError::WrongCredentials) => {}
                 Err(other) => panic!("case [{label}] expected WrongCredentials, got {other:?}"),
                 Ok(_) => panic!("case [{label}] expected WrongCredentials, got Ok"),
             }
@@ -393,8 +394,8 @@ fn generate_new_activation_token_should_use_uniform_error_for_all_failure_modes(
 }
 
 #[test]
-fn should_regenerate_activation_token_by_email_and_username_even_if_token_expired() -> Result<(), LsAccountManagerError>
-{
+fn should_regenerate_activation_token_by_email_and_username_even_if_token_expired()
+-> Result<(), LsAccountManagementError> {
     tokio_test(async {
         // Run serially: this test installs an expired token row and then
         // observes its effect across multiple transactions. A concurrent
@@ -440,7 +441,7 @@ fn should_regenerate_activation_token_by_email_and_username_even_if_token_expire
 }
 
 #[test]
-fn should_login_active_user() -> Result<(), LsAccountManagerError> {
+fn should_login_active_user() -> Result<(), LsAccountManagementError> {
     tokio_test(async {
         let data = data(false).await;
         let auth_module = &data.0;
@@ -467,7 +468,7 @@ fn should_login_active_user() -> Result<(), LsAccountManagerError> {
 }
 
 #[test]
-fn should_not_login_inactive_user() -> Result<(), LsAccountManagerError> {
+fn should_not_login_inactive_user() -> Result<(), LsAccountManagementError> {
     tokio_test(async {
         let data = data(false).await;
         let auth_module = &data.0;
@@ -477,7 +478,7 @@ fn should_not_login_inactive_user() -> Result<(), LsAccountManagerError> {
         let result = auth_module.auth_account_service.login(&user.data.username, password).await;
 
         match result {
-            Err(LsAccountManagerError::InactiveUser(username)) => {
+            Err(LsAccountManagementError::InactiveUser(username)) => {
                 assert_eq!(user.data.username, username);
             }
             _ => panic!(),
@@ -488,8 +489,8 @@ fn should_not_login_inactive_user() -> Result<(), LsAccountManagerError> {
 }
 
 #[test]
-fn should_return_wrong_credentials_on_login_of_inactive_user_with_wrong_password() -> Result<(), LsAccountManagerError>
-{
+fn should_return_wrong_credentials_on_login_of_inactive_user_with_wrong_password()
+-> Result<(), LsAccountManagementError> {
     tokio_test(async {
         let data = data(false).await;
         let auth_module = &data.0;
@@ -499,7 +500,7 @@ fn should_return_wrong_credentials_on_login_of_inactive_user_with_wrong_password
         let result = auth_module.auth_account_service.login(&user.data.username, "wrong_password").await;
 
         match result {
-            Err(LsAccountManagerError::WrongCredentials) => {}
+            Err(LsAccountManagementError::WrongCredentials) => {}
             _ => panic!(),
         }
 
@@ -508,7 +509,7 @@ fn should_return_wrong_credentials_on_login_of_inactive_user_with_wrong_password
 }
 
 #[test]
-fn should_not_login_with_wrong_username() -> Result<(), LsAccountManagerError> {
+fn should_not_login_with_wrong_username() -> Result<(), LsAccountManagementError> {
     tokio_test(async {
         let data = data(false).await;
         let auth_module = &data.0;
@@ -522,7 +523,7 @@ fn should_not_login_with_wrong_username() -> Result<(), LsAccountManagerError> {
 }
 
 #[test]
-fn should_not_login_with_wrong_password() -> Result<(), LsAccountManagerError> {
+fn should_not_login_with_wrong_password() -> Result<(), LsAccountManagementError> {
     tokio_test(async {
         let data = data(false).await;
         let auth_module = &data.0;
@@ -536,7 +537,7 @@ fn should_not_login_with_wrong_password() -> Result<(), LsAccountManagerError> {
 }
 
 #[test]
-fn create_user_should_fail_if_username_not_unique() -> Result<(), LsAccountManagerError> {
+fn create_user_should_fail_if_username_not_unique() -> Result<(), LsAccountManagementError> {
     tokio_test(async {
         let data = data(false).await;
         let auth_module = &data.0;
@@ -561,7 +562,7 @@ fn create_user_should_fail_if_username_not_unique() -> Result<(), LsAccountManag
         assert!(result.is_err());
 
         match &result {
-            Err(LsAccountManagerError::UsernameAlreadyUsed) => {}
+            Err(LsAccountManagementError::UsernameAlreadyUsed) => {}
             _ => panic!(),
         };
 
@@ -570,7 +571,7 @@ fn create_user_should_fail_if_username_not_unique() -> Result<(), LsAccountManag
 }
 
 #[test]
-fn create_user_should_fail_if_email_not_unique() -> Result<(), LsAccountManagerError> {
+fn create_user_should_fail_if_email_not_unique() -> Result<(), LsAccountManagementError> {
     tokio_test(async {
         let data = data(false).await;
         let auth_module = &data.0;
@@ -594,7 +595,7 @@ fn create_user_should_fail_if_email_not_unique() -> Result<(), LsAccountManagerE
         assert!(result.is_err());
 
         match &result {
-            Err(LsAccountManagerError::EmailAlreadyUsed) => {}
+            Err(LsAccountManagementError::EmailAlreadyUsed) => {}
             _ => panic!(),
         }
 
@@ -603,7 +604,7 @@ fn create_user_should_fail_if_email_not_unique() -> Result<(), LsAccountManagerE
 }
 
 #[test]
-fn should_reset_password_by_token() -> Result<(), LsAccountManagerError> {
+fn should_reset_password_by_token() -> Result<(), LsAccountManagementError> {
     tokio_test(async {
         let data = data(false).await;
         let auth_module = &data.0;
@@ -644,7 +645,7 @@ fn should_reset_password_by_token() -> Result<(), LsAccountManagerError> {
 }
 
 #[test]
-fn should_fail_resetting_password_if_token_expired() -> Result<(), LsAccountManagerError> {
+fn should_fail_resetting_password_if_token_expired() -> Result<(), LsAccountManagementError> {
     tokio_test(async {
         // Run serially: a concurrent test minting a new token would trigger
         // the lazy sweep and delete this test's expired row before the reset
@@ -682,7 +683,7 @@ fn should_fail_resetting_password_if_token_expired() -> Result<(), LsAccountMana
             .await;
 
         match result {
-            Err(LsAccountManagerError::TokenExpired) => {}
+            Err(LsAccountManagementError::TokenExpired) => {}
             _ => panic!("expected TokenExpired for expired reset token"),
         }
 
@@ -695,7 +696,7 @@ fn should_fail_resetting_password_if_token_expired() -> Result<(), LsAccountMana
 }
 
 #[test]
-fn should_reset_password_only_if_correct_token_type() -> Result<(), LsAccountManagerError> {
+fn should_reset_password_only_if_correct_token_type() -> Result<(), LsAccountManagementError> {
     tokio_test(async {
         let data = data(false).await;
         let auth_module = &data.0;
@@ -732,7 +733,7 @@ fn should_reset_password_only_if_correct_token_type() -> Result<(), LsAccountMan
 }
 
 #[test]
-fn should_reset_password_only_if_user_is_active() -> Result<(), LsAccountManagerError> {
+fn should_reset_password_only_if_user_is_active() -> Result<(), LsAccountManagementError> {
     tokio_test(async {
         let data = data(false).await;
         let auth_module = &data.0;
@@ -768,7 +769,7 @@ fn should_reset_password_only_if_user_is_active() -> Result<(), LsAccountManager
 }
 
 #[test]
-fn should_generate_reset_password_token() -> Result<(), LsAccountManagerError> {
+fn should_generate_reset_password_token() -> Result<(), LsAccountManagementError> {
     tokio_test(async {
         let data = data(false).await;
         let auth_module = &data.0;
@@ -784,7 +785,7 @@ fn should_generate_reset_password_token() -> Result<(), LsAccountManagerError> {
 }
 
 #[test]
-fn should_not_generate_reset_password_token_if_user_not_active() -> Result<(), LsAccountManagerError> {
+fn should_not_generate_reset_password_token_if_user_not_active() -> Result<(), LsAccountManagementError> {
     tokio_test(async {
         let data = data(false).await;
         let auth_module = &data.0;
@@ -798,7 +799,7 @@ fn should_not_generate_reset_password_token_if_user_not_active() -> Result<(), L
 }
 
 #[test]
-fn should_change_user_password() -> Result<(), LsAccountManagerError> {
+fn should_change_user_password() -> Result<(), LsAccountManagementError> {
     tokio_test(async {
         let data = data(false).await;
         let auth_module = &data.0;
@@ -829,7 +830,7 @@ fn should_change_user_password() -> Result<(), LsAccountManagerError> {
 }
 
 #[test]
-fn should_not_change_user_password_if_wrong_old_password() -> Result<(), LsAccountManagerError> {
+fn should_not_change_user_password_if_wrong_old_password() -> Result<(), LsAccountManagementError> {
     tokio_test(async {
         let data = data(false).await;
         let auth_module = &data.0;
@@ -860,7 +861,7 @@ fn should_not_change_user_password_if_wrong_old_password() -> Result<(), LsAccou
 }
 
 #[test]
-fn should_not_change_user_password_if_inactive_user() -> Result<(), LsAccountManagerError> {
+fn should_not_change_user_password_if_inactive_user() -> Result<(), LsAccountManagementError> {
     tokio_test(async {
         let data = data(false).await;
         let auth_module = &data.0;
@@ -887,7 +888,7 @@ fn should_not_change_user_password_if_inactive_user() -> Result<(), LsAccountMan
 }
 
 #[test]
-fn should_add_and_remove_roles() -> Result<(), LsAccountManagerError> {
+fn should_add_and_remove_roles() -> Result<(), LsAccountManagementError> {
     tokio_test(async {
         let data = data(false).await;
         let auth_module = &data.0;
@@ -936,7 +937,7 @@ fn should_add_and_remove_roles() -> Result<(), LsAccountManagerError> {
 }
 
 #[test]
-fn should_change_username() -> Result<(), LsAccountManagerError> {
+fn should_change_username() -> Result<(), LsAccountManagementError> {
     tokio_test(async {
         // Arrange
         let data = data(false).await;
@@ -969,7 +970,7 @@ fn should_change_username() -> Result<(), LsAccountManagerError> {
 }
 
 #[test]
-fn should_change_email() -> Result<(), LsAccountManagerError> {
+fn should_change_email() -> Result<(), LsAccountManagementError> {
     tokio_test(async {
         // Arrange
         let data = data(false).await;
@@ -999,7 +1000,7 @@ fn should_change_email() -> Result<(), LsAccountManagerError> {
 }
 
 #[test]
-fn should_change_username_and_email() -> Result<(), LsAccountManagerError> {
+fn should_change_username_and_email() -> Result<(), LsAccountManagementError> {
     tokio_test(async {
         // Arrange
         let data = data(false).await;
@@ -1035,7 +1036,7 @@ fn should_change_username_and_email() -> Result<(), LsAccountManagerError> {
 }
 
 #[test]
-fn should_disable_an_active_user() -> Result<(), LsAccountManagerError> {
+fn should_disable_an_active_user() -> Result<(), LsAccountManagementError> {
     tokio_test(async {
         // Arrange
         let data = data(false).await;
@@ -1049,20 +1050,20 @@ fn should_disable_an_active_user() -> Result<(), LsAccountManagerError> {
         let updated_user = auth_module.auth_account_service.disable_by_user_id(user.id).await.unwrap();
 
         // Assert
-        assert_eq!(AuthAccountStatus::Disabled, updated_user.data.status);
+        assert_eq!(AccountStatus::Disabled, updated_user.data.status);
 
         assert!(auth_module.auth_account_service.login(&user.data.username, password).await.is_err());
 
         let loaded_user = auth_module.auth_account_service.fetch_by_user_id(user.id).await.unwrap();
 
-        assert_eq!(AuthAccountStatus::Disabled, loaded_user.data.status);
+        assert_eq!(AccountStatus::Disabled, loaded_user.data.status);
 
         Ok(())
     })
 }
 
 #[test]
-fn should_fail_disabling_a_pending_user() -> Result<(), LsAccountManagerError> {
+fn should_fail_disabling_a_pending_user() -> Result<(), LsAccountManagementError> {
     tokio_test(async {
         // Arrange
         let data = data(false).await;
@@ -1083,7 +1084,7 @@ fn should_fail_disabling_a_pending_user() -> Result<(), LsAccountManagerError> {
 }
 
 #[test]
-fn should_fail_disabling_a_disabled_user() -> Result<(), LsAccountManagerError> {
+fn should_fail_disabling_a_disabled_user() -> Result<(), LsAccountManagementError> {
     tokio_test(async {
         // Arrange
         let data = data(false).await;
@@ -1106,7 +1107,7 @@ fn should_fail_disabling_a_disabled_user() -> Result<(), LsAccountManagerError> 
 }
 
 #[test]
-fn should_activate_a_disabled_user() -> Result<(), LsAccountManagerError> {
+fn should_activate_a_disabled_user() -> Result<(), LsAccountManagementError> {
     tokio_test(async {
         // Arrange
         let data = data(false).await;
@@ -1120,20 +1121,20 @@ fn should_activate_a_disabled_user() -> Result<(), LsAccountManagerError> {
         let updated_user = auth_module.auth_account_service.reactivate_disabled_user_by_user_id(user.id).await.unwrap();
 
         // Assert
-        assert_eq!(AuthAccountStatus::Active, updated_user.data.status);
+        assert_eq!(AccountStatus::Active, updated_user.data.status);
 
         assert!(auth_module.auth_account_service.login(&user.data.username, password).await.is_ok());
 
         let loaded_user = auth_module.auth_account_service.fetch_by_user_id(user.id).await.unwrap();
 
-        assert_eq!(AuthAccountStatus::Active, loaded_user.data.status);
+        assert_eq!(AccountStatus::Active, loaded_user.data.status);
 
         Ok(())
     })
 }
 
 #[test]
-fn should_fail_reactivating_a_pending_user() -> Result<(), LsAccountManagerError> {
+fn should_fail_reactivating_a_pending_user() -> Result<(), LsAccountManagementError> {
     tokio_test(async {
         // Arrange
         let data = data(false).await;
@@ -1154,7 +1155,7 @@ fn should_fail_reactivating_a_pending_user() -> Result<(), LsAccountManagerError
 }
 
 #[test]
-fn should_fail_reactivating_an_active_user() -> Result<(), LsAccountManagerError> {
+fn should_fail_reactivating_an_active_user() -> Result<(), LsAccountManagementError> {
     tokio_test(async {
         // Arrange
         let data = data(false).await;
@@ -1175,7 +1176,7 @@ fn should_fail_reactivating_an_active_user() -> Result<(), LsAccountManagerError
 }
 
 #[test]
-fn should_delete_a_user() -> Result<(), LsAccountManagerError> {
+fn should_delete_a_user() -> Result<(), LsAccountManagementError> {
     tokio_test(async {
         // Arrange
         let data = data(false).await;
@@ -1198,7 +1199,7 @@ fn should_delete_a_user() -> Result<(), LsAccountManagerError> {
 }
 
 #[test]
-fn should_not_fail_deleting_a_deleted_user() -> Result<(), LsAccountManagerError> {
+fn should_not_fail_deleting_a_deleted_user() -> Result<(), LsAccountManagementError> {
     tokio_test(async {
         // Arrange
         let data = data(false).await;
@@ -1219,7 +1220,7 @@ fn should_not_fail_deleting_a_deleted_user() -> Result<(), LsAccountManagerError
 }
 
 #[test]
-fn should_return_users_by_status() -> Result<(), LsAccountManagerError> {
+fn should_return_users_by_status() -> Result<(), LsAccountManagementError> {
     tokio_test(async {
         // Arrange
         let data = data(false).await;
@@ -1235,19 +1236,16 @@ fn should_return_users_by_status() -> Result<(), LsAccountManagerError> {
 
         // Act
         let all_active_users =
-            auth_module.auth_account_service.fetch_all_by_status(AuthAccountStatus::Active, 0, u32::MAX).await.unwrap();
+            auth_module.auth_account_service.fetch_all_by_status(AccountStatus::Active, 0, u32::MAX).await.unwrap();
 
         let all_pending_users = auth_module
             .auth_account_service
-            .fetch_all_by_status(AuthAccountStatus::PendingActivation, 0, u32::MAX)
+            .fetch_all_by_status(AccountStatus::PendingActivation, 0, u32::MAX)
             .await
             .unwrap();
 
-        let all_disabled_users = auth_module
-            .auth_account_service
-            .fetch_all_by_status(AuthAccountStatus::Disabled, 0, u32::MAX)
-            .await
-            .unwrap();
+        let all_disabled_users =
+            auth_module.auth_account_service.fetch_all_by_status(AccountStatus::Disabled, 0, u32::MAX).await.unwrap();
 
         // Assert
         assert!(!all_active_users.is_empty());
@@ -1276,7 +1274,7 @@ fn should_return_users_by_status() -> Result<(), LsAccountManagerError> {
 }
 
 #[test]
-fn should_return_users_by_status_with_offset_and_limit() -> Result<(), LsAccountManagerError> {
+fn should_return_users_by_status_with_offset_and_limit() -> Result<(), LsAccountManagementError> {
     tokio_test(async {
         // Arrange
         let data = data(true).await;
@@ -1289,21 +1287,18 @@ fn should_return_users_by_status_with_offset_and_limit() -> Result<(), LsAccount
         // Act
         let all_users = auth_module
             .auth_account_service
-            .fetch_all_by_status(AuthAccountStatus::Active, user_1.id, u32::MAX)
+            .fetch_all_by_status(AccountStatus::Active, user_1.id, u32::MAX)
             .await
             .unwrap();
 
         let offset_one_users = auth_module
             .auth_account_service
-            .fetch_all_by_status(AuthAccountStatus::Active, user_2.id, u32::MAX)
+            .fetch_all_by_status(AccountStatus::Active, user_2.id, u32::MAX)
             .await
             .unwrap();
 
-        let limit_two_users = auth_module
-            .auth_account_service
-            .fetch_all_by_status(AuthAccountStatus::Active, user_2.id, 2)
-            .await
-            .unwrap();
+        let limit_two_users =
+            auth_module.auth_account_service.fetch_all_by_status(AccountStatus::Active, user_2.id, 2).await.unwrap();
 
         // Assert
         assert_eq!(all_users[1].id, offset_one_users[0].id);
@@ -1315,31 +1310,31 @@ fn should_return_users_by_status_with_offset_and_limit() -> Result<(), LsAccount
     })
 }
 
-/// Build an `LsAuthAccountService` that shares state with `auth_module` but
+/// Build an `LsAMAccountService` that shares state with `auth_module` but
 /// uses a customized `AuthConfig`. Used by tests that need to flip
 /// `password_expiration_seconds` without rebuilding the whole module.
-fn auth_account_service_with_config<RepoManager: AuthRepositoryManager>(
-    auth_module: &lightspeed_account_management::LsAuthModule<RepoManager>,
-    auth_config: AuthConfig,
-) -> LsAuthAccountService<RepoManager> {
-    LsAuthAccountService::new(
+fn auth_account_service_with_config<RepoManager: AMRepositoryManager>(
+    auth_module: &lightspeed_account_management::LsAMModule<RepoManager>,
+    auth_config: AMConfig,
+) -> LsAMAccountService<RepoManager> {
+    LsAMAccountService::new(
         auth_module.repo_manager.c3p0().clone(),
         auth_config,
         auth_module.token_service.clone(),
         auth_module.password_codec.clone(),
-        auth_module.repo_manager.auth_account_repo(),
+        auth_module.repo_manager.account_repo(),
     )
 }
 
 /// Overwrite a user's stored timestamps by going through the repo. Tests use
 /// this to simulate an aged password without actually waiting.
-async fn set_user_timestamps<RepoManager: AuthRepositoryManager>(
-    auth_module: &lightspeed_account_management::LsAuthModule<RepoManager>,
+async fn set_user_timestamps<RepoManager: AMRepositoryManager>(
+    auth_module: &lightspeed_account_management::LsAMModule<RepoManager>,
     user_id: i64,
     password_updated: i64,
     created: Option<i64>,
-) -> Result<(), LsAccountManagerError> {
-    let repo = auth_module.repo_manager.auth_account_repo();
+) -> Result<(), LsAccountManagementError> {
+    let repo = auth_module.repo_manager.account_repo();
     auth_module
         .repo_manager
         .c3p0()
@@ -1350,13 +1345,13 @@ async fn set_user_timestamps<RepoManager: AuthRepositoryManager>(
                 row.data.created_date_epoch_seconds = created;
             }
             repo.update(conn, row).await?;
-            Ok::<_, LsAccountManagerError>(())
+            Ok::<_, LsAccountManagementError>(())
         })
         .await
 }
 
 #[test]
-fn should_fail_login_when_password_expired() -> Result<(), LsAccountManagerError> {
+fn should_fail_login_when_password_expired() -> Result<(), LsAccountManagementError> {
     tokio_test(async {
         let data = data(false).await;
         let auth_module = &data.0;
@@ -1376,7 +1371,7 @@ fn should_fail_login_when_password_expired() -> Result<(), LsAccountManagerError
         let result = service.login(&user.data.username, &password).await;
 
         match result {
-            Err(LsAccountManagerError::ExpiredPassword(username)) => {
+            Err(LsAccountManagementError::ExpiredPassword(username)) => {
                 assert_eq!(user.data.username, username);
             }
             _ => panic!("expected ExpiredPassword"),
@@ -1390,7 +1385,7 @@ fn should_fail_login_when_password_expired() -> Result<(), LsAccountManagerError
 }
 
 #[test]
-fn should_login_when_password_within_expiration_window() -> Result<(), LsAccountManagerError> {
+fn should_login_when_password_within_expiration_window() -> Result<(), LsAccountManagementError> {
     tokio_test(async {
         let data = data(false).await;
         let auth_module = &data.0;
@@ -1410,7 +1405,7 @@ fn should_login_when_password_within_expiration_window() -> Result<(), LsAccount
 }
 
 #[test]
-fn change_password_should_reset_password_age() -> Result<(), LsAccountManagerError> {
+fn change_password_should_reset_password_age() -> Result<(), LsAccountManagementError> {
     tokio_test(async {
         let data = data(false).await;
         let auth_module = &data.0;
@@ -1427,7 +1422,7 @@ fn change_password_should_reset_password_age() -> Result<(), LsAccountManagerErr
         auth_config.password_expiration_seconds = Some(60);
         let strict_service = auth_account_service_with_config(auth_module, auth_config.clone());
         match strict_service.login(&user.data.username, &password).await {
-            Err(LsAccountManagerError::ExpiredPassword(_)) => {}
+            Err(LsAccountManagementError::ExpiredPassword(_)) => {}
             _ => panic!("expected ExpiredPassword before change_password"),
         }
 
@@ -1451,7 +1446,7 @@ fn change_password_should_reset_password_age() -> Result<(), LsAccountManagerErr
 }
 
 #[test]
-fn reset_password_should_reset_password_age() -> Result<(), LsAccountManagerError> {
+fn reset_password_should_reset_password_age() -> Result<(), LsAccountManagementError> {
     tokio_test(async {
         let data = data(false).await;
         let auth_module = &data.0;

@@ -56,12 +56,7 @@ pub struct Job<T> {
 }
 
 impl<T> Job<T> {
-    pub fn new(
-        group: impl Into<String>,
-        name: impl Into<String>,
-        retries_after_failure: Option<u64>,
-        task: T,
-    ) -> Self {
+    pub fn new(group: impl Into<String>, name: impl Into<String>, retries_after_failure: Option<u64>, task: T) -> Self {
         Self { group: group.into(), name: name.into(), retries_after_failure, task }
     }
 
@@ -96,11 +91,6 @@ where
         retries_after_failure: Option<u64>,
         f: F,
     ) -> Self {
-        Self {
-            group: group.into(),
-            name: name.into(),
-            retries_after_failure,
-            task: FnTask { f, _marker: PhantomData },
-        }
+        Self { group: group.into(), name: name.into(), retries_after_failure, task: FnTask { f, _marker: PhantomData } }
     }
 }

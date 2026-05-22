@@ -4,8 +4,8 @@
 
 use std::sync::OnceLock;
 
-use maybe_once::tokio::{Data, MaybeOnceAsync};
 use lightspeed_scheduler::MemoryScheduleRepository;
+use maybe_once::tokio::{Data, MaybeOnceAsync};
 
 mod tests;
 mod utils;
@@ -25,9 +25,7 @@ async fn init() -> SharedFixture {
 /// Lazily initialises the shared in-memory fixture.
 pub async fn data(serial: bool) -> Data<'static, SharedFixture> {
     static DATA: OnceLock<MaybeOnceAsync<SharedFixture>> = OnceLock::new();
-    DATA.get_or_init(|| MaybeOnceAsync::new(|| Box::pin(init())))
-        .data(serial)
-        .await
+    DATA.get_or_init(|| MaybeOnceAsync::new(|| Box::pin(init()))).data(serial).await
 }
 
 /// Returns a freshly-`init`ed repository. For the in-memory backend there

@@ -19,18 +19,14 @@ type SharedFixture = (RepoUnderTest,);
 
 async fn init() -> SharedFixture {
     let c3p0 = new_sqlite_db().await;
-    let repo = SqliteScheduleRepository::init(c3p0)
-        .await
-        .expect("constructor must apply migrations");
+    let repo = SqliteScheduleRepository::init(c3p0).await.expect("constructor must apply migrations");
     (repo,)
 }
 
 /// Lazily initialises the shared in-memory pool.
 pub async fn data(serial: bool) -> Data<'static, SharedFixture> {
     static DATA: OnceLock<MaybeOnceAsync<SharedFixture>> = OnceLock::new();
-    DATA.get_or_init(|| MaybeOnceAsync::new(|| Box::pin(init())))
-        .data(serial)
-        .await
+    DATA.get_or_init(|| MaybeOnceAsync::new(|| Box::pin(init()))).data(serial).await
 }
 
 /// Returns a freshly-`init`ed repository pointing at the **same** backing
@@ -38,7 +34,5 @@ pub async fn data(serial: bool) -> Data<'static, SharedFixture> {
 /// must succeed because sqlx tracks applied migrations.
 pub async fn start_repo() -> RepoUnderTest {
     let c3p0 = data(false).await.0.c3p0().clone();
-    SqliteScheduleRepository::init(c3p0)
-        .await
-        .expect("init must be idempotent against the same pool")
+    SqliteScheduleRepository::init(c3p0).await.expect("init must be idempotent against the same pool")
 }

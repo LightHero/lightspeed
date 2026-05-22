@@ -33,11 +33,7 @@ fn repository_can_be_initialised_twice() {
 
         let mut tx = second.begin().await.unwrap();
         assert!(
-            second
-                .try_claim_due(&mut tx, &group, &name)
-                .await
-                .unwrap()
-                .is_some(),
+            second.try_claim_due(&mut tx, &group, &name).await.unwrap().is_some(),
             "second init's handle must be fully usable",
         );
         second.commit(tx).await.unwrap();
@@ -57,9 +53,7 @@ fn register_inserts_row_then_no_ops() {
         repo.register(&group, &name, first, "").await.unwrap();
 
         // Second register with a far-future time must leave the row unchanged.
-        repo.register(&group, &name, SystemTime::now() + Duration::from_secs(3600), "")
-            .await
-            .unwrap();
+        repo.register(&group, &name, SystemTime::now() + Duration::from_secs(3600), "").await.unwrap();
 
         let mut tx = repo.begin().await.unwrap();
         let row = repo
@@ -88,23 +82,15 @@ fn same_name_in_different_groups_are_isolated() {
         let name = unique_name();
 
         repo.register(&group_a, &name, due_in_past(), "").await.unwrap();
-        repo.register(&group_b, &name, SystemTime::now() + Duration::from_secs(60), "")
-            .await
-            .unwrap();
+        repo.register(&group_b, &name, SystemTime::now() + Duration::from_secs(60), "").await.unwrap();
 
         let mut tx = repo.begin().await.unwrap();
         assert!(
-            repo.try_claim_due(&mut tx, &group_a, &name)
-                .await
-                .unwrap()
-                .is_some(),
+            repo.try_claim_due(&mut tx, &group_a, &name).await.unwrap().is_some(),
             "{group_a}/{name} is due in the past",
         );
         assert!(
-            repo.try_claim_due(&mut tx, &group_b, &name)
-                .await
-                .unwrap()
-                .is_none(),
+            repo.try_claim_due(&mut tx, &group_b, &name).await.unwrap().is_none(),
             "{group_b}/{name} must NOT have been collapsed onto group_a's row",
         );
         repo.commit(tx).await.unwrap();
@@ -118,9 +104,7 @@ fn try_claim_due_returns_none_when_not_due() {
         let repo = &d.0;
         let group = unique_name();
         let name = unique_name();
-        repo.register(&group, &name, SystemTime::now() + Duration::from_secs(60), "")
-            .await
-            .unwrap();
+        repo.register(&group, &name, SystemTime::now() + Duration::from_secs(60), "").await.unwrap();
 
         let mut tx = repo.begin().await.unwrap();
         let row = repo.try_claim_due(&mut tx, &group, &name).await.unwrap();
@@ -139,11 +123,7 @@ fn try_claim_due_returns_row_when_due() {
         repo.register(&group, &name, due_in_past(), "").await.unwrap();
 
         let mut tx = repo.begin().await.unwrap();
-        let row = repo
-            .try_claim_due(&mut tx, &group, &name)
-            .await
-            .unwrap()
-            .expect("schedule should be due");
+        let row = repo.try_claim_due(&mut tx, &group, &name).await.unwrap().expect("schedule should be due");
         assert_eq!(row.group, group);
         assert_eq!(row.name, name);
         assert!(row.last_run_at.is_none());
@@ -195,37 +175,23 @@ fn advance_updates_next_and_last_run() {
         repo.register(&group, &name, due_in_past(), "").await.unwrap();
 
         let mut tx = repo.begin().await.unwrap();
-        let _ = repo
-            .try_claim_due(&mut tx, &group, &name)
-            .await
-            .unwrap()
-            .expect("schedule should be due");
+        let _ = repo.try_claim_due(&mut tx, &group, &name).await.unwrap().expect("schedule should be due");
         // Advance to a future time so the row stops being due.
         let future = SystemTime::now() + Duration::from_secs(60);
-        repo.advance(&mut tx, &group, &name, future, SystemTime::now())
-            .await
-            .unwrap();
+        repo.advance(&mut tx, &group, &name, future, SystemTime::now()).await.unwrap();
         repo.commit(tx).await.unwrap();
 
         // Not yet due.
         let mut tx2 = repo.begin().await.unwrap();
         assert!(
-            repo.try_claim_due(&mut tx2, &group, &name)
-                .await
-                .unwrap()
-                .is_none(),
+            repo.try_claim_due(&mut tx2, &group, &name).await.unwrap().is_none(),
             "must not be due before advanced next_run_at",
         );
         // Move next_run_at back into the past — now claimable again, and
         // last_run_at must be populated from the previous advance.
-        repo.advance(&mut tx2, &group, &name, due_in_past(), SystemTime::now())
-            .await
-            .unwrap();
-        let row = repo
-            .try_claim_due(&mut tx2, &group, &name)
-            .await
-            .unwrap()
-            .expect("after backdating, row must be due");
+        repo.advance(&mut tx2, &group, &name, due_in_past(), SystemTime::now()).await.unwrap();
+        let row =
+            repo.try_claim_due(&mut tx2, &group, &name).await.unwrap().expect("after backdating, row must be due");
         assert!(row.last_run_at.is_some());
         repo.commit(tx2).await.unwrap();
     });
@@ -265,15 +231,9 @@ fn time_until_next_due_uses_db_clock_and_respects_groups() {
         let b = unique_name();
         let c = unique_name();
 
-        repo.register(&group, &a, SystemTime::now() + Duration::from_secs(60), "")
-            .await
-            .unwrap();
-        repo.register(&group, &b, SystemTime::now() + Duration::from_secs(10), "")
-            .await
-            .unwrap();
-        repo.register(&group, &c, SystemTime::now() + Duration::from_secs(30), "")
-            .await
-            .unwrap();
+        repo.register(&group, &a, SystemTime::now() + Duration::from_secs(60), "").await.unwrap();
+        repo.register(&group, &b, SystemTime::now() + Duration::from_secs(10), "").await.unwrap();
+        repo.register(&group, &c, SystemTime::now() + Duration::from_secs(30), "").await.unwrap();
         // A row in another group must be ignored by a query scoped to `group`.
         repo.register(&other, &b, due_in_past(), "").await.unwrap();
 
@@ -292,9 +252,7 @@ fn time_until_next_due_uses_db_clock_and_respects_groups() {
 
         // Past-due rows clamp to ZERO rather than going negative.
         let overdue = unique_name();
-        repo.register(&group, &overdue, due_in_past(), "")
-            .await
-            .unwrap();
+        repo.register(&group, &overdue, due_in_past(), "").await.unwrap();
         let d_until = repo
             .time_until_next_due(&[(group.as_str(), overdue.as_str())])
             .await
@@ -303,21 +261,13 @@ fn time_until_next_due_uses_db_clock_and_respects_groups() {
         assert_eq!(d_until, Duration::ZERO);
 
         // Unknown pair + empty slice both return None.
-        assert!(
-            repo.time_until_next_due(&[(group.as_str(), "__definitely_missing__")])
-                .await
-                .unwrap()
-                .is_none(),
-        );
+        assert!(repo.time_until_next_due(&[(group.as_str(), "__definitely_missing__")]).await.unwrap().is_none(),);
         assert!(repo.time_until_next_due(&[]).await.unwrap().is_none());
 
         // A name that exists in another group must NOT match a query scoped
         // to `group`. This is the key guarantee of the compound key.
         assert!(
-            repo.time_until_next_due(&[("__missing_group__", b.as_str())])
-                .await
-                .unwrap()
-                .is_none(),
+            repo.time_until_next_due(&[("__missing_group__", b.as_str())]).await.unwrap().is_none(),
             "wrong group must not see `b`",
         );
     });

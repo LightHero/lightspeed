@@ -1,25 +1,25 @@
-use lightspeed_account_management::LsAuthModule;
+use lightspeed_account_management::LsAMModule;
 use lightspeed_account_management::dto::create_login_dto::CreateLoginDto;
-use lightspeed_account_management::error::LsAccountManagerError;
+use lightspeed_account_management::error::LsAccountManagementError;
 use lightspeed_account_management::model::auth_account::AuthAccountModel;
 use lightspeed_account_management::model::token::TokenModel;
-use lightspeed_account_management::repository::AuthRepositoryManager;
+use lightspeed_account_management::repository::AMRepositoryManager;
 use lightspeed_core::model::language::Language;
 use lightspeed_core::utils::new_hyphenated_uuid;
 use std::collections::HashMap;
 
-pub async fn create_user<RepoManager: AuthRepositoryManager>(
-    auth_module: &LsAuthModule<RepoManager>,
+pub async fn create_user<RepoManager: AMRepositoryManager>(
+    auth_module: &LsAMModule<RepoManager>,
     activate: bool,
-) -> Result<(AuthAccountModel, TokenModel), LsAccountManagerError> {
+) -> Result<(AuthAccountModel, TokenModel), LsAccountManagementError> {
     create_user_with_password(auth_module, &new_hyphenated_uuid(), activate).await
 }
 
-pub async fn create_user_with_password<RepoManager: AuthRepositoryManager>(
-    auth_module: &LsAuthModule<RepoManager>,
+pub async fn create_user_with_password<RepoManager: AMRepositoryManager>(
+    auth_module: &LsAMModule<RepoManager>,
     password: &str,
     activate: bool,
-) -> Result<(AuthAccountModel, TokenModel), LsAccountManagerError> {
+) -> Result<(AuthAccountModel, TokenModel), LsAccountManagementError> {
     let username = new_hyphenated_uuid();
     let email = format!("{username}@email.fake");
 

@@ -14,7 +14,7 @@ pub struct TokenData {
 }
 
 impl DataType for TokenData {
-    const TABLE_NAME: &'static str = "LS_AUTH_TOKEN";
+    const TABLE_NAME: &'static str = "LS_AM_TOKEN";
     type CODEC = TokenDataCodec;
 }
 

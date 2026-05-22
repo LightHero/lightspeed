@@ -37,12 +37,8 @@ impl From<c3p0::C3p0Error> for SchedulerError {
     fn from(e: c3p0::C3p0Error) -> Self {
         match e {
             c3p0::C3p0Error::SqlxError(e) => SchedulerError::SqlxError { source: e },
-            c3p0::C3p0Error::OptimisticLockError { cause } => {
-                SchedulerError::JobLockError { message: cause }
-            }
-            c3p0::C3p0Error::Other { cause } => {
-                SchedulerError::JobExecutionStateError { message: cause }
-            }
+            c3p0::C3p0Error::OptimisticLockError { cause } => SchedulerError::JobLockError { message: cause },
+            c3p0::C3p0Error::Other { cause } => SchedulerError::JobExecutionStateError { message: cause },
         }
     }
 }
