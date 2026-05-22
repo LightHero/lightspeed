@@ -7,7 +7,7 @@
 use std::convert::Infallible;
 use std::sync::Arc;
 use std::sync::atomic::{AtomicUsize, Ordering};
-use std::time::{Duration, SystemTime};
+use std::time::Duration;
 
 use lightspeed_scheduler::{
     Job, JobExecutor, ScheduleRepository, ScheduledTask, Scheduler,
@@ -177,13 +177,19 @@ fn two_executors_with_same_group_and_name_fire_only_once() {
         let name = unique_name();
         let count = Arc::new(AtomicUsize::new(0));
 
-        // 1h interval — after the first tick fires, next_run_at advances
-        // to 1h in the future, so the contender (and any later poll) sees
-        // no due row.
+        // Register with `execute_at_startup: true` + 1h interval — the row
+        // is due immediately (so the contending ticks below actually have a
+        // due row to race for), but after the winner fires, `next_run_at`
+        // advances 1h into the future and the loser's poll sees nothing.
+        // Both executors register the same `(group, name)`; the second
+        // register is a no-op against the persisted row (matching
+        // fingerprint) but it still seeds executor_b's local
+        // `next_run_at` mirror to "now", which is what `tick`'s local
+        // due-check requires before it'll spawn a `tick_one`.
         let executor_a = JobExecutor::new_with_utc_tz(d.0.clone());
         executor_a
-            .add_job(
-                &Duration::from_secs(3600),
+            .add_job_with_scheduler(
+                due_now(),
                 Job::new(
                     group.clone(),
                     name.clone(),
@@ -195,8 +201,8 @@ fn two_executors_with_same_group_and_name_fire_only_once() {
             .unwrap();
         let executor_b = JobExecutor::new_with_utc_tz(d.0.clone());
         executor_b
-            .add_job(
-                &Duration::from_secs(3600),
+            .add_job_with_scheduler(
+                due_now(),
                 Job::new(
                     group.clone(),
                     name.clone(),
@@ -206,14 +212,6 @@ fn two_executors_with_same_group_and_name_fire_only_once() {
             )
             .await
             .unwrap();
-
-        // Backdate next_run_at so the row is due now (otherwise it would be
-        // due only an hour after registration).
-        let mut tx = d.0.begin().await.unwrap();
-        d.0.advance(&mut tx, &group, &name, SystemTime::now(), SystemTime::now())
-            .await
-            .unwrap();
-        d.0.commit(tx).await.unwrap();
 
         // Run both ticks concurrently. The FOR UPDATE SKIP LOCKED lock means
         // exactly one of them should fire; the other should see no due row.

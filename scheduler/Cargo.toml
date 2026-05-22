@@ -4,7 +4,7 @@ license = "MIT"
 version.workspace = true
 edition.workspace = true
 authors = ["Francesco Cina <ufoscout@gmail.com>"]
-description = "An in-process scheduler for periodic jobs. Schedule lets you run Rust functions on a cron-like schedule."
+description = "A scheduler for periodic jobs in Rust. In-process by default and optionally distributed via Postgres, MySQL, or SQLite — exactly one process fires each scheduled tick of a given job, no matter how many replicas are running."
 readme = "README.md"
 homepage = "https://github.com/LightHero/lightspeed"
 repository = "https://github.com/LightHero/lightspeed"
@@ -15,6 +15,7 @@ cron = { workspace = true }
 chrono = { workspace = true }
 chrono-tz = { workspace = true }
 log = { workspace = true }
+parking_lot = { workspace = true }
 thiserror = { workspace = true }
 tokio = { workspace = true, features = ["macros", "rt", "sync", "time"] }
 

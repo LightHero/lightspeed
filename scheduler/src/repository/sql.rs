@@ -12,7 +12,7 @@
 //! implements the full [`ScheduleRepository`] contract on top of it.
 
 use std::future::Future;
-use std::time::{Duration, SystemTime, UNIX_EPOCH};
+use std::time::{Duration, SystemTime};
 
 use c3p0::sqlx::{Database, Transaction};
 use c3p0::*;
@@ -20,6 +20,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::error::SchedulerError;
 use crate::repository::{ScheduleRepository, ScheduleRow};
+use crate::{from_millis, to_millis};
 
 /// Convenience alias for `Record<ScheduleData>` — the c3p0 record carrying
 /// the scheduler payload.
@@ -123,6 +124,21 @@ pub trait ScheduleSqlBackend: Clone + Send + Sync + 'static {
         pool: &c3p0::sqlx::Pool<Self::DB>,
         keys: &[(&str, &str)],
     ) -> impl Future<Output = Result<Option<i64>, C3p0Error>> + Send;
+
+    /// Rewrites `next_run_at_millis` / `last_run_at_millis` on the row the
+    /// transaction already holds (from a prior successful
+    /// [`try_claim_record`](Self::try_claim_record)). A single raw UPDATE —
+    /// no preceding SELECT — so the fire path costs one round-trip for the
+    /// advance instead of two (fetch + update). The tx-held row lock makes
+    /// optimistic-locking (a `version` re-check) unnecessary; concurrent
+    /// writers are blocked at the row level.
+    fn advance_claimed(
+        tx: &mut <Self::DB as Database>::Connection,
+        group: &str,
+        name: &str,
+        next_run_at_millis: i64,
+        last_run_at_millis: i64,
+    ) -> impl Future<Output = Result<(), C3p0Error>> + Send;
 }
 
 /// Generic [`ScheduleRepository`] over any [`ScheduleSqlBackend`].
@@ -254,18 +270,19 @@ where
         next_run_at: SystemTime,
         last_run_at: SystemTime,
     ) -> Result<(), SchedulerError> {
-        // The tx already holds the claim lock (from try_claim_due), so the
-        // refetch is contention-free. Going through c3p0's update gives us
-        // version bumping, `update_time` bookkeeping, and JSON encoding for
-        // free.
-        let mut record = B::fetch_record(&mut **tx, group, name).await?.ok_or_else(|| {
-            C3p0Error::Other {
-                cause: format!("schedule row not found for advance: {group}/{name}"),
-            }
-        })?;
-        record.data.next_run_at_millis = to_millis(next_run_at);
-        record.data.last_run_at_millis = Some(to_millis(last_run_at));
-        record.update(&mut **tx).await?;
+        // The tx already holds the claim lock (from try_claim_due), so a
+        // single UPDATE is sufficient — no preceding SELECT needed, and the
+        // row-level lock makes a `version` check redundant. Halves the
+        // round-trips on the fire path compared to the old
+        // fetch-then-c3p0-`update` flow.
+        B::advance_claimed(
+            &mut **tx,
+            group,
+            name,
+            to_millis(next_run_at),
+            to_millis(last_run_at),
+        )
+        .await?;
         Ok(())
     }
 
@@ -284,19 +301,10 @@ where
 /// True for any sqlx error that came from a database unique-index violation,
 /// across all three SQL backends. `sqlx::DatabaseError::is_unique_violation`
 /// already normalises the per-engine error codes for us.
+#[inline]
 pub(crate) fn is_unique_violation(e: &c3p0::sqlx::Error) -> bool {
     if let c3p0::sqlx::Error::Database(db_err) = e {
         return db_err.is_unique_violation();
     }
     false
-}
-
-pub(crate) fn to_millis(t: SystemTime) -> i64 {
-    t.duration_since(UNIX_EPOCH)
-        .expect("system time before unix epoch")
-        .as_millis() as i64
-}
-
-pub(crate) fn from_millis(ms: i64) -> SystemTime {
-    UNIX_EPOCH + Duration::from_millis(ms as u64)
 }

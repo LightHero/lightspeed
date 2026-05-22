@@ -1,5 +1,13 @@
 #![doc = include_str!("../README.md")]
 
+// No `unsafe` in this crate.
+#![forbid(unsafe_code)]
+// `.unwrap()` and `.expect()` are banned in production code.
+#![cfg_attr(
+    not(test),
+    deny(clippy::unwrap_used, clippy::expect_used)
+)]
+
 pub mod error;
 pub mod job;
 pub mod repository;
@@ -12,28 +20,29 @@ pub use scheduler::{Schedule, Scheduler, TryToScheduler};
 
 use std::future::Future;
 use std::pin::Pin;
-use std::sync::atomic::{AtomicBool, Ordering};
-use std::sync::{Arc, Mutex as StdMutex};
+use std::sync::Arc;
+use std::sync::atomic::{AtomicBool, AtomicI64, Ordering};
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
 use chrono::Utc;
 use chrono_tz::{Tz, UTC};
+use log::{debug, info, warn};
+use parking_lot::Mutex;
 use tokio::sync::Notify;
 use tokio::sync::oneshot;
 use tokio::task::{AbortHandle, JoinHandle};
-use log::{debug, info, warn};
 
 use crate::scheduler::utc_to_system_time;
 
 type BoxedError = Box<dyn std::error::Error + Send + Sync>;
 type BoxedFuture<'a, T> = Pin<Box<dyn Future<Output = T> + Send + 'a>>;
 
-/// Type-erased view of a [`ScheduledTask`] so tasks with different `Error`
-/// types can live in the same `Vec`.
+/// Type-erased view of a [`ScheduledTask`].
 trait ErasedTask<R: ScheduleRepository>: Send + Sync + 'static {
     fn run<'a>(&'a self, tx: &'a mut R::Tx) -> BoxedFuture<'a, Result<(), BoxedError>>;
 }
 
+/// Adapter to convert a [`ScheduledTask`] into an [`ErasedTask`].
 struct TaskAdapter<T>(T);
 
 impl<R, T> ErasedTask<R> for TaskAdapter<T>
@@ -46,64 +55,121 @@ where
     }
 }
 
+/// Internal representation of a scheduled task.
+///
+/// `group` / `name` are `Arc<str>` so cloning an `Entry` (which happens on
+/// every poll for every registered job, via [`JobExecutorInner::tick`]) is
+/// just refcount bumps — no `String` allocations on the hot path.
+///
+/// `next_run_at_millis` is a process-local mirror of the persisted
+/// `next_run_at`. It lets the run loop decide *locally* whether a job is due
+/// before spending a DB round-trip on `try_claim_due`. In distributed
+/// deployments the mirror can be stale (another process advanced the row),
+/// but stale always means "we'll try to claim and get `None`" — never a
+/// missed firing.
+#[derive(Clone)]
 struct Entry<R: ScheduleRepository> {
-    group: String,
-    name: String,
-    schedule: Arc<StdMutex<Box<dyn Schedule>>>,
+    group: Arc<str>,
+    name: Arc<str>,
+    schedule: Arc<Mutex<Box<dyn Schedule>>>,
     task: Arc<dyn ErasedTask<R>>,
     retries_after_failure: Option<u64>,
+    next_run_at_millis: Arc<AtomicI64>,
 }
 
-impl<R: ScheduleRepository> Clone for Entry<R> {
-    fn clone(&self) -> Self {
-        Self {
-            group: self.group.clone(),
-            name: self.name.clone(),
-            schedule: Arc::clone(&self.schedule),
-            task: Arc::clone(&self.task),
-            retries_after_failure: self.retries_after_failure,
-        }
-    }
-}
-
+/// Internal state for [`JobExecutor::run`].
 struct RunningState {
     stop_request: Arc<Notify>,
     finished_rx: oneshot::Receiver<()>,
     abort_handle: AbortHandle,
 }
 
-/// Distributed executor for one or more named jobs.
+/// Distributed executor for named jobs.
 ///
 /// Register jobs with [`add_job`](Self::add_job) (or
 /// [`add_job_with_scheduler`](Self::add_job_with_scheduler) /
 /// [`add_job_with_multi_schedule`](Self::add_job_with_multi_schedule)), then
-/// call [`run`](Self::run) to spawn the polling loop as a tokio task; `run`
-/// returns a `JoinHandle` you can `await` or `abort`. Stop the loop with
-/// [`stop`](Self::stop).
-///
-/// Multiple processes running the same set of jobs against a shared
-/// [`ScheduleRepository`] cooperate via row-level locking — exactly one
-/// process fires each scheduled tick of a given job.
+/// call [`run`](Self::run) to spawn the polling loop as a tokio task.
+#[derive(Clone)]
 pub struct JobExecutor<R: ScheduleRepository> {
+    inner: Arc<JobExecutorInner<R>>,
+}
+
+/// Internal state for [`JobExecutor`].
+/// This is shared across all `JobExecutor` cloned instances.
+struct JobExecutorInner<R: ScheduleRepository> {
     repo: R,
     timezone: Option<Tz>,
-    jobs: StdMutex<Vec<Entry<R>>>,
+    jobs: Mutex<Vec<Entry<R>>>,
+    /// `(group, name)` view of `jobs`, kept in sync by `add_job_with_scheduler`.
+    /// `next_sleep_duration` borrows from this directly so it doesn't need to
+    /// re-walk `jobs` (and re-allocate two `Vec`s of strings) on every poll
+    /// cycle. The `Arc` lets readers snapshot lock-free.
+    cached_keys: KeysCell,
     running: AtomicBool,
-    state: StdMutex<Option<RunningState>>,
+    state: Mutex<Option<RunningState>>,
     /// Signalled by `add_job` so a sleeping run loop wakes up promptly when a
     /// new job might be due sooner than its current sleep target.
     wake: Notify,
 }
 
-/// Upper bound on a single sleep interval — caps the wait when no schedule
-/// has an imminent firing (or no jobs are registered yet). The `wake`
-/// notification will usually break the sleep early; this is just a safety
-/// net so the loop reconsiders state at least this often.
+/// Lock-light snapshot of the `(group, name)` pairs of every registered
+/// job. Wraps the `Arc` so reading from the run loop is one mutex lock + one
+/// `Arc::clone` (refcount bump) — no allocations.
+struct KeysCell {
+    inner: Mutex<Arc<KeysView>>,
+}
+
+type KeysView = Vec<(Arc<str>, Arc<str>)>;
+
+impl KeysCell {
+    fn new() -> Self {
+        Self { inner: Mutex::new(Arc::new(Vec::new())) }
+    }
+
+    fn load(&self) -> Arc<KeysView> {
+        Arc::clone(&self.inner.lock())
+    }
+
+    fn store(&self, view: Arc<KeysView>) {
+        *self.inner.lock() = view;
+    }
+}
+
+/// Rebuilds the cached `(group, name)` view from the current `jobs` vec.
+/// Called from `add_job` (cold path); the run loop never calls this.
+fn build_keys_view<R: ScheduleRepository>(jobs: &[Entry<R>]) -> KeysView {
+    jobs.iter()
+        .map(|e| (Arc::clone(&e.group), Arc::clone(&e.name)))
+        .collect()
+}
+
+/// `SystemTime → i64 millis since Unix epoch`. Used both by the executor
+/// (for the local "is this entry due?" check that avoids a DB round-trip)
+/// and by the SQL backends.
+///
+/// A `SystemTime` strictly before `UNIX_EPOCH` would be a clock set decades
+/// in the past — impossible on any sane host. We treat that case as zero
+/// rather than panicking, which keeps the function `.unwrap()`-free and
+/// causes any such row to look "always due" (so the next claim either fires
+/// or harmlessly re-anchors via `advance`).
+#[inline]
+pub(crate) fn to_millis(t: SystemTime) -> i64 {
+    t.duration_since(UNIX_EPOCH).unwrap_or_default().as_millis() as i64
+}
+
+#[inline]
+pub(crate) fn from_millis(ms: i64) -> SystemTime {
+    UNIX_EPOCH + Duration::from_millis(ms as u64)
+}
+
+/// Upper bound on a single sleep interval.
 const MAX_SLEEP: Duration = Duration::from_secs(3600);
 
 /// Far-future sentinel (year 9999) used for [`Scheduler::Never`] schedules
 /// whose `next()` returns `None` — the row is registered but will never
 /// become due.
+#[inline]
 fn never_sentinel() -> SystemTime {
     UNIX_EPOCH + Duration::from_secs(253_402_300_799)
 }
@@ -124,18 +190,155 @@ impl<R: ScheduleRepository> JobExecutor<R> {
     /// Creates a new executor with an explicit time zone.
     pub fn new_with_tz(repo: R, timezone: Option<Tz>) -> Self {
         Self {
-            repo,
-            timezone,
-            jobs: StdMutex::new(Vec::new()),
-            running: AtomicBool::new(false),
-            state: StdMutex::new(None),
-            wake: Notify::new(),
+            inner: Arc::new(JobExecutorInner {
+                repo,
+                timezone,
+                jobs: Mutex::new(Vec::new()),
+                cached_keys: KeysCell::new(),
+                running: AtomicBool::new(false),
+                state: Mutex::new(None),
+                wake: Notify::new(),
+            }),
         }
     }
 
+    /// Spawns a tokio task that drives the executor and returns its
+    /// `JoinHandle`. The loop computes the time until the earliest next
+    /// firing across all registered schedules and sleeps until then.
+    /// `add_job` wakes the loop early so newly-added jobs fire on time.
+    ///
+    /// Only one `run` can be active at a time per executor; concurrent calls
+    /// return [`SchedulerError::JobExecutionStateError`]. The state is
+    /// released when the loop exits. Lives on the outer `JobExecutor` (not
+    /// `JobExecutorInner`) because it needs to bump the refcount of the
+    /// shared inner state to hand to the spawned task.
+    pub fn run(&self) -> Result<JoinHandle<()>, SchedulerError> {
+        let mut state_guard = self.inner.state.lock();
+        if self
+            .inner
+            .running
+            .compare_exchange(false, true, Ordering::SeqCst, Ordering::SeqCst)
+            .is_err()
+        {
+            return Err(SchedulerError::JobExecutionStateError {
+                message: "The JobExecutor is already running.".to_owned(),
+            });
+        }
+
+        let stop_request = Arc::new(Notify::new());
+        let (finished_tx, finished_rx) = oneshot::channel();
+        let me_stop = Arc::clone(&stop_request);
+
+        // Construct the cleanup OUTSIDE the async block and move it in.
+        // Captured outer values are part of the future's initial state and
+        // drop even if the task is aborted before its first poll.
+        let cleanup =
+            RunCleanup { me: Arc::clone(&self.inner), finished_tx: Some(finished_tx) };
+
+        let me = Arc::clone(&self.inner);
+        let handle = tokio::spawn(async move {
+            let _cleanup = cleanup;
+
+            let job_count = me.jobs.lock().len();
+            info!(
+                target: "lightspeed_scheduler",
+                "JobExecutor started. jobs: {job_count}",
+            );
+            loop {
+                if let Err(e) = me.tick().await {
+                    warn!(target: "lightspeed_scheduler", "tick failed. error: {e}");
+                }
+
+                let sleep_for = me.next_sleep_duration().await;
+                tokio::select! {
+                    _ = me_stop.notified() => break,
+                    // `add_job` rang the bell — re-tick and recompute the sleep.
+                    _ = me.wake.notified() => {}
+                    _ = tokio::time::sleep(sleep_for) => {}
+                }
+            }
+            info!(target: "lightspeed_scheduler", "JobExecutor stopped");
+        });
+
+        *state_guard = Some(RunningState {
+            stop_request,
+            finished_rx,
+            abort_handle: handle.abort_handle(),
+        });
+        drop(state_guard);
+
+        Ok(handle)
+    }
+}
+
+// Thin pass-through delegation to the shared inner state. Keeps
+// `JobExecutorInner` private — callers only ever see the `JobExecutor` handle.
+impl<R: ScheduleRepository> JobExecutor<R> {
     /// Adds a job using any [`TryToScheduler`]-convertible schedule (cron
     /// string, `Duration`, etc.).
     pub async fn add_job<T>(
+        &self,
+        schedule: &dyn TryToScheduler,
+        job: Job<T>,
+    ) -> Result<(), SchedulerError>
+    where
+        T: ScheduledTask<R>,
+    {
+        self.inner.add_job(schedule, job).await
+    }
+
+    /// Adds a job whose schedule fires whenever any of the given expressions
+    /// fires.
+    pub async fn add_job_with_multi_schedule<T>(
+        &self,
+        schedule: &[&dyn TryToScheduler],
+        job: Job<T>,
+    ) -> Result<(), SchedulerError>
+    where
+        T: ScheduledTask<R>,
+    {
+        self.inner.add_job_with_multi_schedule(schedule, job).await
+    }
+
+    /// Adds a job with an explicit [`Scheduler`] (or anything `Into<Scheduler>`).
+    pub async fn add_job_with_scheduler<S, T>(
+        &self,
+        schedule: S,
+        job: Job<T>,
+    ) -> Result<(), SchedulerError>
+    where
+        S: Into<Scheduler>,
+        T: ScheduledTask<R>,
+    {
+        self.inner.add_job_with_scheduler(schedule, job).await
+    }
+
+    /// Walks every registered job once, firing those that are due in
+    /// parallel. Each job runs in its own spawned tokio task so a slow job
+    /// can't block other due jobs from firing within the same tick cycle.
+    /// Returns the number of jobs that fired successfully this cycle.
+    pub async fn tick(&self) -> Result<usize, SchedulerError> {
+        self.inner.tick().await
+    }
+
+    /// Stops the running loop and waits for it to exit. Returns
+    /// [`SchedulerError::JobExecutionStateError`] when no `run` is active.
+    ///
+    /// - `graceful = true`: signals the loop to break at its next select!
+    ///   boundary, so the in-flight tick (if any) runs to completion.
+    /// - `graceful = false`: aborts the spawned task immediately. The
+    ///   in-flight tick is cancelled at its next await point; any open
+    ///   transaction is rolled back when the connection is returned to the
+    ///   pool.
+    pub async fn stop(&self, graceful: bool) -> Result<(), SchedulerError> {
+        self.inner.stop(graceful).await
+    }
+}
+
+impl<R: ScheduleRepository> JobExecutorInner<R> {
+    /// Adds a job using any [`TryToScheduler`]-convertible schedule (cron
+    /// string, `Duration`, etc.).
+    async fn add_job<T>(
         &self,
         schedule: &dyn TryToScheduler,
         job: Job<T>,
@@ -149,7 +352,7 @@ impl<R: ScheduleRepository> JobExecutor<R> {
 
     /// Adds a job whose schedule fires whenever any of the given expressions
     /// fires.
-    pub async fn add_job_with_multi_schedule<T>(
+    async fn add_job_with_multi_schedule<T>(
         &self,
         schedule: &[&dyn TryToScheduler],
         job: Job<T>,
@@ -162,7 +365,7 @@ impl<R: ScheduleRepository> JobExecutor<R> {
     }
 
     /// Adds a job with an explicit [`Scheduler`] (or anything `Into<Scheduler>`).
-    pub async fn add_job_with_scheduler<S, T>(
+    async fn add_job_with_scheduler<S, T>(
         &self,
         schedule: S,
         job: Job<T>,
@@ -173,6 +376,8 @@ impl<R: ScheduleRepository> JobExecutor<R> {
     {
         let mut scheduler: Scheduler = schedule.into();
         let Job { group, name, retries_after_failure, task } = job;
+        let group: Arc<str> = Arc::from(group);
+        let name: Arc<str> = Arc::from(name);
 
         // Capture the fingerprint BEFORE `next()` mutates internal state
         // (specifically, `Interval { execute_at_startup }` flips to false on
@@ -191,13 +396,22 @@ impl<R: ScheduleRepository> JobExecutor<R> {
 
         info!(target: "lightspeed_scheduler", "add job to executor. group: {group}, name: {name}");
         let boxed: Box<dyn Schedule> = Box::new(scheduler);
-        self.jobs.lock().unwrap().push(Entry {
+        let entry = Entry {
             group,
             name,
-            schedule: Arc::new(StdMutex::new(boxed)),
+            schedule: Arc::new(Mutex::new(boxed)),
             task: Arc::new(TaskAdapter(task)),
             retries_after_failure,
-        });
+            next_run_at_millis: Arc::new(AtomicI64::new(to_millis(next_system))),
+        };
+        {
+            let mut jobs = self.jobs.lock();
+            jobs.push(entry);
+            // #3: refresh the cached `(group, name)` view used by
+            // `next_sleep_duration`. Built here once on every add_job (cold
+            // path) so the run loop never has to (hot path).
+            self.cached_keys.store(Arc::new(build_keys_view(&jobs)));
+        }
         self.wake.notify_one();
         Ok(())
     }
@@ -205,14 +419,11 @@ impl<R: ScheduleRepository> JobExecutor<R> {
     /// Time to sleep before the next iteration, derived from the persisted
     /// `next_run_at` of every registered job. Capped at [`MAX_SLEEP`].
     async fn next_sleep_duration(&self) -> Duration {
-        let owned: Vec<(String, String)> = self
-            .jobs
-            .lock()
-            .unwrap()
-            .iter()
-            .map(|e| (e.group.clone(), e.name.clone()))
-            .collect();
-        let refs: Vec<(&str, &str)> = owned.iter().map(|(g, n)| (g.as_str(), n.as_str())).collect();
+        // #3: read the cached key view instead of re-walking `jobs` and
+        // re-allocating two `Vec`s of strings on every poll.
+        let view = self.cached_keys.load();
+        let refs: Vec<(&str, &str)> =
+            view.iter().map(|(g, n)| (g.as_ref(), n.as_ref())).collect();
         let until = match self.repo.time_until_next_due(&refs).await {
             Ok(d) => d,
             Err(e) => {
@@ -230,8 +441,21 @@ impl<R: ScheduleRepository> JobExecutor<R> {
     /// parallel. Each job runs in its own spawned tokio task so a slow job
     /// can't block other due jobs from firing within the same tick cycle.
     /// Returns the number of jobs that fired successfully this cycle.
-    pub async fn tick(&self) -> Result<usize, SchedulerError> {
-        let snapshot = self.jobs.lock().unwrap().clone();
+    async fn tick(&self) -> Result<usize, SchedulerError> {
+        // #6: skip the spawn + DB round-trip for jobs whose locally-tracked
+        // `next_run_at` is still in the future. The local mirror can be
+        // stale in distributed deployments (another process advanced the
+        // row), but stale always means "we'd find nothing to claim anyway",
+        // never "we miss a firing". The non-due fast path is therefore
+        // allocation- and round-trip-free.
+        let now_millis = to_millis(SystemTime::now());
+        let snapshot: Vec<Entry<R>> = {
+            let jobs = self.jobs.lock();
+            jobs.iter()
+                .filter(|e| e.next_run_at_millis.load(Ordering::Acquire) <= now_millis)
+                .cloned()
+                .collect()
+        };
         let mut handles = Vec::with_capacity(snapshot.len());
         for entry in snapshot {
             let repo = self.repo.clone();
@@ -304,7 +528,7 @@ impl<R: ScheduleRepository> JobExecutor<R> {
 
         let now_utc = Utc::now();
         let next_system = {
-            let mut guard = entry.schedule.lock().unwrap();
+            let mut guard = entry.schedule.lock();
             match guard.next(&now_utc, tz) {
                 Some(next_utc) => utc_to_system_time(next_utc),
                 None => never_sentinel(),
@@ -313,72 +537,15 @@ impl<R: ScheduleRepository> JobExecutor<R> {
         let now_system = utc_to_system_time(now_utc);
         repo.advance(&mut tx, &entry.group, &entry.name, next_system, now_system).await?;
         repo.commit(tx).await?;
+        // #6: refresh the local mirror so the next tick can skip us without
+        // a DB round-trip (until `next_system` actually comes around).
+        entry.next_run_at_millis.store(to_millis(next_system), Ordering::Release);
         debug!(
             target: "lightspeed_scheduler",
             "schedule fired. group: {}, name: {}",
             entry.group, entry.name,
         );
         Ok(true)
-    }
-
-    /// Spawns a tokio task that drives the executor and returns its
-    /// `JoinHandle`. The loop computes the time until the earliest next
-    /// firing across all registered schedules and sleeps until then.
-    /// `add_job` wakes the loop early so newly-added jobs fire on time.
-    ///
-    /// Only one `run` can be active at a time per executor; concurrent calls
-    /// return [`SchedulerError::JobExecutionStateError`]. The state is
-    /// released when the loop exits.
-    pub fn run(self: &Arc<Self>) -> Result<JoinHandle<()>, SchedulerError> {
-        let mut state_guard = self.state.lock().unwrap();
-        if self.running.compare_exchange(false, true, Ordering::SeqCst, Ordering::SeqCst).is_err() {
-            return Err(SchedulerError::JobExecutionStateError {
-                message: "The JobExecutor is already running.".to_owned(),
-            });
-        }
-
-        let stop_request = Arc::new(Notify::new());
-        let (finished_tx, finished_rx) = oneshot::channel();
-        let me_stop = Arc::clone(&stop_request);
-
-        // Construct the cleanup OUTSIDE the async block and move it in.
-        // Captured outer values are part of the future's initial state and
-        // drop even if the task is aborted before its first poll.
-        let cleanup = RunCleanup { me: Arc::clone(self), finished_tx: Some(finished_tx) };
-
-        let me = Arc::clone(self);
-        let handle = tokio::spawn(async move {
-            let _cleanup = cleanup;
-
-            let job_count = me.jobs.lock().unwrap().len();
-            info!(
-                target: "lightspeed_scheduler",
-                "JobExecutor started. jobs: {job_count}",
-            );
-            loop {
-                if let Err(e) = me.tick().await {
-                    warn!(target: "lightspeed_scheduler", "tick failed. error: {e}");
-                }
-
-                let sleep_for = me.next_sleep_duration().await;
-                tokio::select! {
-                    _ = me_stop.notified() => break,
-                    // `add_job` rang the bell — re-tick and recompute the sleep.
-                    _ = me.wake.notified() => {}
-                    _ = tokio::time::sleep(sleep_for) => {}
-                }
-            }
-            info!(target: "lightspeed_scheduler", "JobExecutor stopped");
-        });
-
-        *state_guard = Some(RunningState {
-            stop_request,
-            finished_rx,
-            abort_handle: handle.abort_handle(),
-        });
-        drop(state_guard);
-
-        Ok(handle)
     }
 
     /// Stops the running loop and waits for it to exit. Returns
@@ -390,8 +557,8 @@ impl<R: ScheduleRepository> JobExecutor<R> {
     ///   in-flight tick is cancelled at its next await point; any open
     ///   transaction is rolled back when the connection is returned to the
     ///   pool.
-    pub async fn stop(&self, graceful: bool) -> Result<(), SchedulerError> {
-        let state = self.state.lock().unwrap().take().ok_or_else(|| {
+    async fn stop(&self, graceful: bool) -> Result<(), SchedulerError> {
+        let state = self.state.lock().take().ok_or_else(|| {
             SchedulerError::JobExecutionStateError {
                 message: "The JobExecutor is not running.".to_owned(),
             }
@@ -415,13 +582,13 @@ impl<R: ScheduleRepository> JobExecutor<R> {
 /// `stop` callers wake up. Runs on normal exit, on `stop`'s abort, and even
 /// if the task is dropped before its first poll.
 struct RunCleanup<R: ScheduleRepository> {
-    me: Arc<JobExecutor<R>>,
+    me: Arc<JobExecutorInner<R>>,
     finished_tx: Option<oneshot::Sender<()>>,
 }
 
 impl<R: ScheduleRepository> Drop for RunCleanup<R> {
     fn drop(&mut self) {
-        *self.me.state.lock().unwrap() = None;
+        *self.me.state.lock() = None;
         self.me.running.store(false, Ordering::SeqCst);
         if let Some(tx) = self.finished_tx.take() {
             let _ = tx.send(());
@@ -522,26 +689,26 @@ mod tests {
 
     #[tokio::test]
     async fn run_returns_already_running_when_called_twice() {
-        let executor = Arc::new(JobExecutor::new_with_utc_tz(MemoryScheduleRepository::init()));
+        let executor = JobExecutor::new_with_utc_tz(MemoryScheduleRepository::init());
         let handle = executor.run().unwrap();
-        assert!(executor.running.load(Ordering::SeqCst));
+        assert!(executor.inner.running.load(Ordering::SeqCst));
 
         assert!(executor.run().is_err());
 
         executor.stop(false).await.unwrap();
         let _ = handle.await;
-        assert!(!executor.running.load(Ordering::SeqCst));
+        assert!(!executor.inner.running.load(Ordering::SeqCst));
     }
 
     #[tokio::test]
     async fn stop_returns_not_running_when_not_running() {
-        let executor = Arc::new(JobExecutor::new_with_utc_tz(MemoryScheduleRepository::init()));
+        let executor = JobExecutor::new_with_utc_tz(MemoryScheduleRepository::init());
         assert!(executor.stop(true).await.is_err());
     }
 
     #[tokio::test]
     async fn executor_can_be_restarted_after_stop() {
-        let executor = Arc::new(JobExecutor::new_with_utc_tz(MemoryScheduleRepository::init()));
+        let executor = JobExecutor::new_with_utc_tz(MemoryScheduleRepository::init());
         let handle = executor.run().unwrap();
         executor.stop(true).await.unwrap();
         let _ = handle.await;
@@ -699,7 +866,7 @@ mod tests {
 
         let count = Arc::new(AtomicUsize::new(0));
         let executor =
-            Arc::new(JobExecutor::new_with_utc_tz(MemoryScheduleRepository::init()));
+            JobExecutor::new_with_utc_tz(MemoryScheduleRepository::init());
         // 1h interval + execute_at_startup ⇒ row is due once at registration,
         // then 1h in the future after the first fire commits.
         executor
@@ -717,7 +884,7 @@ mod tests {
         // SKIP LOCKED on postgres) must let only one tick_one claim the row.
         let mut handles = Vec::with_capacity(50);
         for _ in 0..50 {
-            let e = Arc::clone(&executor);
+            let e = executor.clone();
             handles.push(tokio::spawn(async move { e.tick().await.unwrap() }));
         }
         let mut total = 0;
@@ -808,7 +975,7 @@ mod tests {
         let n: usize = 20;
         let count = Arc::new(AtomicUsize::new(0));
         let executor =
-            Arc::new(JobExecutor::new_with_utc_tz(MemoryScheduleRepository::init()));
+            JobExecutor::new_with_utc_tz(MemoryScheduleRepository::init());
         for i in 0..n {
             executor
                 .add_job_with_scheduler(

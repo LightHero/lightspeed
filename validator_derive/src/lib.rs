@@ -1,9 +1,33 @@
+// No `unsafe` in this crate.
+#![forbid(unsafe_code)]
+// `.unwrap()` and `.expect()` are banned in production code.
+#![cfg_attr(
+    not(test),
+    deny(clippy::unwrap_used, clippy::expect_used)
+)]
+
 use proc_macro::TokenStream;
 use proc_macro2::TokenStream as TokenStream2;
 use quote::{format_ident, quote};
 use syn::{Field, Fields, FieldsNamed, Ident, ItemStruct, Type, parse_macro_input, parse_quote};
 
 mod validation;
+
+/// Reads `Field::ident` as `&Ident`, returning a span-pointed `syn::Error`
+/// instead of panicking when it's `None`.
+///
+/// In this crate the caller has already narrowed `f` to a member of a
+/// [`FieldsNamed`], whose contract guarantees every field is named — so
+/// the `None` arm is *statically* unreachable. We still surface it as a
+/// proper proc-macro compile error rather than a panic: it keeps
+/// `clippy::expect_used` / `clippy::unwrap_used` clean and, if a future
+/// refactor ever loosens the call-site invariant, the user gets a real
+/// compile error with a useful span instead of a build-time crash.
+fn named_ident(f: &Field) -> syn::Result<&Ident> {
+    f.ident
+        .as_ref()
+        .ok_or_else(|| syn::Error::new_spanned(f, "expected a named field"))
+}
 
 use validation::FieldValidator;
 use validation::struct_fields_match::{self, FieldsMatchArgs};
@@ -145,32 +169,50 @@ pub fn derive_validable(item: TokenStream) -> TokenStream {
             // validators inside `compute_field_error_enum` per field
             // (was O(fields × rules); now O(fields + rules)).
             let attached = attached_field_idents(&struct_attrs.validators);
-            named_fields
+            let collected: syn::Result<Vec<Option<FieldErrorEnum>>> = named_fields
                 .named
                 .iter()
                 .zip(field_validators.iter())
                 .map(|(f, (_, vs))| {
-                    let ident = f.ident.as_ref().expect("named field has ident");
-                    compute_field_error_enum(name, ident, vs, attached.contains(&ident))
+                    let ident = named_ident(f)?;
+                    Ok(compute_field_error_enum(name, ident, vs, attached.contains(&ident)))
                 })
-                .collect()
+                .collect();
+            match collected {
+                Ok(v) => v,
+                Err(e) => return e.to_compile_error().into(),
+            }
         }
         FieldErrorStrategy::Shared | FieldErrorStrategy::Custom(_) => {
             (0..named_fields.named.len()).map(|_| None).collect()
         }
     };
 
-    let validable_struct = generate_validable_struct(
+    let validable_struct = match generate_validable_struct(
         vis,
         &validable_name,
         named_fields,
         &struct_attrs.context,
         &struct_attrs.field_errors,
         &field_error_enums,
-    );
-    let new_fn = generate_new_fn(name, &validable_name, named_fields, &field_validators);
-    let validate_fn =
-        generate_validate_fn(name, &validable_name, named_fields, &struct_attrs.context, &struct_attrs.validators);
+    ) {
+        Ok(v) => v,
+        Err(e) => return e.to_compile_error().into(),
+    };
+    let new_fn = match generate_new_fn(name, &validable_name, named_fields, &field_validators) {
+        Ok(v) => v,
+        Err(e) => return e.to_compile_error().into(),
+    };
+    let validate_fn = match generate_validate_fn(
+        name,
+        &validable_name,
+        named_fields,
+        &struct_attrs.context,
+        &struct_attrs.validators,
+    ) {
+        Ok(v) => v,
+        Err(e) => return e.to_compile_error().into(),
+    };
     let struct_validator_impls =
         generate_struct_validator_impls(&validable_name, &struct_attrs.context, &struct_attrs.validators);
     let field_enum_defs = match struct_attrs.field_errors {
@@ -442,7 +484,7 @@ fn collect_field_validators(fields: &FieldsNamed) -> syn::Result<Vec<(Ident, Vec
         .named
         .iter()
         .map(|f| {
-            let ident = f.ident.clone().expect("named field has ident");
+            let ident = named_ident(f)?.clone();
             let vs = validation::parse_field_validators(f)?;
             Ok((ident, vs))
         })
@@ -464,37 +506,42 @@ fn generate_validable_struct(
     context: &StructContext,
     strategy: &FieldErrorStrategy,
     field_error_enums: &[Option<FieldErrorEnum>],
-) -> TokenStream2 {
+) -> syn::Result<TokenStream2> {
     let ctx_ty = &context.ty;
-    let validable_fields = fields.named.iter().zip(field_error_enums.iter()).map(|(f, fe)| {
-        let field_vis = &f.vis;
-        let field_name = f.ident.as_ref().expect("named field has ident");
-        let field_ty = &f.ty;
-        let err_ty: TokenStream2 = match strategy {
-            FieldErrorStrategy::Shared => quote! { ::lightspeed_validator::ValidationError },
-            FieldErrorStrategy::Custom(t) => {
-                let t = &**t;
-                quote! { #t }
-            }
-            FieldErrorStrategy::Tailored => match fe {
-                Some(e) => {
-                    let n = &e.name;
-                    quote! { #n }
+    let validable_fields: Vec<TokenStream2> = fields
+        .named
+        .iter()
+        .zip(field_error_enums.iter())
+        .map(|(f, fe)| -> syn::Result<TokenStream2> {
+            let field_vis = &f.vis;
+            let field_name = named_ident(f)?;
+            let field_ty = &f.ty;
+            let err_ty: TokenStream2 = match strategy {
+                FieldErrorStrategy::Shared => quote! { ::lightspeed_validator::ValidationError },
+                FieldErrorStrategy::Custom(t) => {
+                    let t = &**t;
+                    quote! { #t }
                 }
-                None => quote! { ::lightspeed_validator::NoError },
-            },
-        };
-        quote! {
-            #field_vis #field_name: ::lightspeed_validator::ValidableType<#field_ty, #err_ty, #ctx_ty>
-        }
-    });
+                FieldErrorStrategy::Tailored => match fe {
+                    Some(e) => {
+                        let n = &e.name;
+                        quote! { #n }
+                    }
+                    None => quote! { ::lightspeed_validator::NoError },
+                },
+            };
+            Ok(quote! {
+                #field_vis #field_name: ::lightspeed_validator::ValidableType<#field_ty, #err_ty, #ctx_ty>
+            })
+        })
+        .collect::<syn::Result<Vec<_>>>()?;
 
-    quote! {
+    Ok(quote! {
         #vis struct #validable_name {
             #(#validable_fields,)*
             top_level_errors: ::std::vec::Vec<::lightspeed_validator::ValidationError>,
         }
-    }
+    })
 }
 
 /// Emits `impl <Name>Validable { pub fn new(value: <Name>) -> Self }`.
@@ -505,16 +552,21 @@ fn generate_new_fn(
     validable_name: &Ident,
     fields: &FieldsNamed,
     field_validators: &[(Ident, Vec<FieldValidator>)],
-) -> TokenStream2 {
-    let field_inits = fields.named.iter().zip(field_validators.iter()).map(|(f, (_, vs))| {
-        let field_ident = f.ident.as_ref().expect("named field has ident");
-        let validators_vec = validation::generate_validators_vec(field_ident, &f.ty, vs);
-        quote! {
-            #field_ident: ::lightspeed_validator::ValidableType::new(value.#field_ident, #validators_vec)
-        }
-    });
+) -> syn::Result<TokenStream2> {
+    let field_inits: Vec<TokenStream2> = fields
+        .named
+        .iter()
+        .zip(field_validators.iter())
+        .map(|(f, (_, vs))| -> syn::Result<TokenStream2> {
+            let field_ident = named_ident(f)?;
+            let validators_vec = validation::generate_validators_vec(field_ident, &f.ty, vs);
+            Ok(quote! {
+                #field_ident: ::lightspeed_validator::ValidableType::new(value.#field_ident, #validators_vec)
+            })
+        })
+        .collect::<syn::Result<Vec<_>>>()?;
 
-    quote! {
+    Ok(quote! {
         impl #validable_name {
             pub fn new(value: #name) -> Self {
                 Self {
@@ -523,7 +575,7 @@ fn generate_new_fn(
                 }
             }
         }
-    }
+    })
 }
 
 /// Emits the `validate` method on `<Name>Validable` plus the
@@ -541,9 +593,9 @@ fn generate_validate_fn(
     fields: &FieldsNamed,
     context: &StructContext,
     struct_validators: &[StructLevelValidator],
-) -> TokenStream2 {
+) -> syn::Result<TokenStream2> {
     let field_idents: Vec<&Ident> =
-        fields.named.iter().map(|f: &Field| f.ident.as_ref().expect("named field has ident")).collect();
+        fields.named.iter().map(named_ident).collect::<syn::Result<Vec<_>>>()?;
 
     let ctx_ty = &context.ty;
     let (extra_param, ctx_expr) =
@@ -558,7 +610,7 @@ fn generate_validate_fn(
         }
     });
 
-    quote! {
+    Ok(quote! {
         impl #validable_name {
             pub fn validate(mut self #extra_param) -> ::core::result::Result<#name, Self> {
                 #( self.#field_idents.validate(#ctx_expr); )*
@@ -577,7 +629,7 @@ fn generate_validate_fn(
                 &self.top_level_errors
             }
         }
-    }
+    })
 }
 
 /// Emits one unit struct + `StructValidator` impl per struct-level rule.

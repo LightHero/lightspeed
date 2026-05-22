@@ -13,21 +13,35 @@ pub struct LsPasswordCodecService {
 }
 
 impl LsPasswordCodecService {
-    /// Panics if the Argon2 parameters are invalid (per RFC 9106:
-    /// `memory_kib >= 8 * parallelism`, `iterations >= 1`, `parallelism >= 1`).
-    pub fn new(memory_kib: u32, iterations: u32, parallelism: u32) -> Self {
-        let params = Params::new(memory_kib, iterations, parallelism, None).expect(
-            "invalid argon2 parameters: require memory_kib >= 8 * parallelism, iterations >= 1, parallelism >= 1",
-        );
+    /// Builds an Argon2id codec. Returns
+    /// [`LsAccountManagerError::PasswordEncryptionError`] when the supplied
+    /// parameters are invalid per RFC 9106 (`memory_kib >= 8 * parallelism`,
+    /// `iterations >= 1`, `parallelism >= 1`) or when the dummy-hash used
+    /// for timing-safety can't be computed.
+    pub fn new(
+        memory_kib: u32,
+        iterations: u32,
+        parallelism: u32,
+    ) -> Result<Self, LsAccountManagerError> {
+        let params = Params::new(memory_kib, iterations, parallelism, None).map_err(|err| {
+            LsAccountManagerError::PasswordEncryptionError {
+                message: format!(
+                    "invalid argon2 parameters \
+                     (require memory_kib >= 8 * parallelism, iterations >= 1, parallelism >= 1): {err:?}"
+                ),
+            }
+        })?;
         let argon2 = Argon2::new(Algorithm::Argon2id, Version::V0x13, params);
 
         let salt = SaltString::generate(&mut OsRng);
         let dummy_hash = argon2
             .hash_password(b"lightspeed-dummy-password-for-timing-safety", &salt)
-            .expect("failed to compute argon2 dummy hash")
+            .map_err(|err| LsAccountManagerError::PasswordEncryptionError {
+                message: format!("failed to compute argon2 dummy hash: {err:?}"),
+            })?
             .to_string();
 
-        LsPasswordCodecService { argon2, dummy_hash }
+        Ok(LsPasswordCodecService { argon2, dummy_hash })
     }
 
     pub fn dummy_hash(&self) -> &str {
@@ -75,7 +89,7 @@ pub mod test {
     /// Spec-minimum parameters: `m=8` KiB, `t=1`, `p=1`. Used by tests so the
     /// Argon2 work factor doesn't dominate test time.
     fn fast_codec() -> LsPasswordCodecService {
-        LsPasswordCodecService::new(8, 1, 1)
+        LsPasswordCodecService::new(8, 1, 1).expect("spec-minimum argon2 params are always valid")
     }
 
     #[tokio::test]

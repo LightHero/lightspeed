@@ -37,10 +37,6 @@ pub trait Schedule: Send + Sync + 'static {
 }
 
 /// Built-in schedule kinds.
-///
-/// Variants mirror the old `lightspeed_scheduler` crate so that existing call
-/// sites — including `Scheduler::Interval { interval_duration, execute_at_startup }`
-/// struct literals — keep working.
 pub enum Scheduler {
     /// Fire on every match of a cron expression.
     Cron(Box<cron::Schedule>),

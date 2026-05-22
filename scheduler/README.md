@@ -1,12 +1,14 @@
 # lightspeed-scheduler
 
-An in-process scheduler for periodic jobs. Schedule lets you run Rust functions on a cron-like schedule.
+A Rust scheduler for periodic jobs on a cron-like schedule. In-process by
+default and **optionally distributed** with a Postgres, MySQL, or SQLite
+backend: **exactly one process fires each scheduled tick of a given job**
+across all replicas.
 
 
 ## Usage
 
 ```rust,no_run
-use std::sync::Arc;
 use std::time::Duration;
 use lightspeed_scheduler::{
     Job, JobExecutor, MemoryScheduleRepository, Scheduler, TryToScheduler,
@@ -14,9 +16,15 @@ use lightspeed_scheduler::{
 
 #[tokio::main]
 async fn main() {
-    // `MemoryScheduleRepository` is the in-process backend. Swap in
-    // `PgScheduleRepository::init(pool).await?` for the Postgres backend.
-    let executor = Arc::new(JobExecutor::new_with_utc_tz(MemoryScheduleRepository::init()));
+    // `MemoryScheduleRepository` is the in-process backend. For a
+    // distributed deployment, swap in `PgScheduleRepository::init(c3p0).await?`
+    // (or the `MySqlScheduleRepository` / `SqliteScheduleRepository`
+    // equivalent) so every process in the cluster shares the same
+    // coordination state.
+    //
+    // `JobExecutor` is a cheap `Arc`-shared handle internally — clone it
+    // freely to hand a copy to other tasks; no outer `Arc::new` wrap needed.
+    let executor = JobExecutor::new_with_utc_tz(MemoryScheduleRepository::init());
 
     // Run every 10 seconds with no retries in case of failure
     let retries = None;
@@ -36,8 +44,8 @@ async fn main() {
         .await
         .unwrap();
 
-    // Run every day at 2:00 am with two retries in case of failure
-    let retries = Some(2);
+    // Run every day at 2:00 am with three retries in case of failure
+    let retries = Some(3);
     executor
         .add_job_with_scheduler(
             "0 0 2 * * *".to_scheduler().unwrap(),
@@ -68,37 +76,38 @@ schedule advance, and a returned `Err` rolls back so the schedule remains
 due for the next poll. If you don't need the transaction, ignore the `_tx`
 argument as above.
 
+In case of database repositories, the transaction is the one that holds the
+lock on the schedule row.
+
 For more elaborate jobs, implement the [`ScheduledTask`] trait directly and
 pass it to [`Job::new`] instead of [`Job::from_fn`].
 
 ## Storage backends
 
-The executor takes a `ScheduleRepository` so that multiple processes running
-the same set of jobs against a shared backing store can cooperate — exactly
-one process fires each scheduled tick of a given job.
+The executor takes a `ScheduleRepository`. The choice of backend is what
+determines whether the scheduler runs in-process only or coordinates across
+multiple processes:
 
-- `MemoryScheduleRepository` — in-process, for tests or a single-process
-  deployment. Coordination is a `tokio::sync::Mutex`.
-- `PgScheduleRepository` — Postgres-backed, for distributed deployments.
-  Distributed safety relies on `FOR UPDATE SKIP LOCKED`: when one process
-  claims a schedule row inside a transaction, concurrent claimers see the
-  row as locked and skip it. The "is it due?" predicate and the next-due
-  sleep both use the database's `NOW()`, so clock skew between scheduler
-  processes can't cause early or duplicate firings.
+- `MemoryScheduleRepository` — in-process only, non distributed. For tests or a
+  single-process deployment.
+- `PgScheduleRepository` / `MySqlScheduleRepository` /
+  `SqliteScheduleRepository` — SQL-backed. **The Postgres and MySQL
+  backends support distributed deployments**: every process in the cluster
+  registers the same jobs against the same database; row-level locking
+  picks exactly one process to fire each tick. SQLite is single-process by
+  design.
 
-`PgScheduleRepository::init(pool)` applies the bundled migrations and is
-safe to call from every process on startup (sqlx's migration tracker makes
-it idempotent). Only coordination state — `next_run_at` and `last_run_at`
-keyed by `(group, name)` — is persisted; the schedule *definition* (cron
-expression, interval, etc.) lives in the running process, so a redeploy
-with a different schedule simply takes effect from the next firing onward.
+Distributed safety on Postgres/MySQL relies on `FOR UPDATE SKIP LOCKED`:
+when one process claims a schedule row inside a transaction, concurrent
+claimers see the row as locked and skip it. To avoid local time differences, 
+the DB time is used to determine the next Task execution time.
+
 
 ```rust,no_run
 // Compiled only when the `postgres` feature is enabled; the rest of the
 // block is gated out so this doctest compiles regardless.
 #[cfg(feature = "postgres")]
 mod postgres_example {
-    use std::sync::Arc;
     use c3p0::PgC3p0Pool;
     use c3p0::sqlx::PgPool;
     use lightspeed_scheduler::{JobExecutor, PgScheduleRepository};
@@ -107,7 +116,12 @@ mod postgres_example {
         let pool: PgPool = unimplemented!("your application's sqlx pool");
         let c3p0 = PgC3p0Pool::new(pool);
         let repo = PgScheduleRepository::init(c3p0).await?;
-        let _executor = Arc::new(JobExecutor::new_with_utc_tz(repo));
+        let executor = JobExecutor::new_with_utc_tz(repo);
+
+        // ...Register the jobs with the executor here...
+
+        let _handle = executor.run().expect("The job executor should run!");
+
         Ok(())
     }
 }

@@ -58,13 +58,12 @@ pub fn parse_fields_match(meta: &ParseNestedMeta<'_>) -> syn::Result<FieldsMatch
         }
     })?;
 
-    if field_idents.len() != 2 {
-        return Err(meta.error(format!("`fields_match` requires exactly 2 field names, got {}", field_idents.len())));
-    }
-
-    let mut iter = field_idents.into_iter();
-    let a = iter.next().unwrap();
-    let b = iter.next().unwrap();
+    // Destructure into a length-2 array directly; folds the arity check and
+    // the extraction into one step, removing the two follow-up `iter.next().unwrap()`s
+    // (proven correct, but easier to spell as a `try_into` over `Vec → [T; 2]`).
+    let [a, b]: [Ident; 2] = field_idents.try_into().map_err(|v: Vec<Ident>| {
+        meta.error(format!("`fields_match` requires exactly 2 field names, got {}", v.len()))
+    })?;
 
     Ok(FieldsMatchArgs { a, b, attach_to_fields: attach_to_fields.unwrap_or(false) })
 }

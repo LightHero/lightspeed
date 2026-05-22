@@ -4,7 +4,7 @@ use std::collections::HashMap;
 use std::sync::Arc;
 use std::time::{Duration, SystemTime};
 
-use tokio::sync::Mutex;
+use parking_lot::Mutex;
 
 use crate::error::SchedulerError;
 use crate::repository::{ScheduleRepository, ScheduleRow};
@@ -46,7 +46,7 @@ impl MemoryTx {
         if self.claimed.is_empty() {
             return;
         }
-        let mut guard = self.inner.lock().await;
+        let mut guard = self.inner.lock();
         for key in self.claimed.drain(..) {
             if let Some(row) = guard.get_mut(&key) {
                 row.claimed = false;
@@ -83,7 +83,7 @@ impl ScheduleRepository for MemoryScheduleRepository {
         next_run_at: SystemTime,
         schedule_fingerprint: &str,
     ) -> Result<(), SchedulerError> {
-        let mut guard = self.inner.lock().await;
+        let mut guard = self.inner.lock();
         match guard.get_mut(&(group.to_string(), name.to_string())) {
             Some(stored) => {
                 if stored.schedule_fingerprint != schedule_fingerprint {
@@ -122,7 +122,7 @@ impl ScheduleRepository for MemoryScheduleRepository {
     ) -> Result<Option<ScheduleRow>, SchedulerError> {
         let now = SystemTime::now();
         let key = (group.to_string(), name.to_string());
-        let mut guard = self.inner.lock().await;
+        let mut guard = self.inner.lock();
         let row = match guard.get_mut(&key) {
             Some(r) => r,
             None => return Ok(None),
@@ -150,7 +150,7 @@ impl ScheduleRepository for MemoryScheduleRepository {
         last_run_at: SystemTime,
     ) -> Result<(), SchedulerError> {
         let key = (group.to_string(), name.to_string());
-        let mut guard = self.inner.lock().await;
+        let mut guard = self.inner.lock();
         if let Some(row) = guard.get_mut(&key) {
             row.next_run_at = next_run_at;
             row.last_run_at = Some(last_run_at);
@@ -162,7 +162,7 @@ impl ScheduleRepository for MemoryScheduleRepository {
         &self,
         keys: &[(&str, &str)],
     ) -> Result<Option<Duration>, SchedulerError> {
-        let guard = self.inner.lock().await;
+        let guard = self.inner.lock();
         let now = SystemTime::now();
         let mut min: Option<SystemTime> = None;
         for (group, name) in keys {

@@ -80,6 +80,35 @@ impl ScheduleSqlBackend for MySqlScheduleBackend {
         .await?)
     }
 
+    async fn advance_claimed(
+        tx: &mut MySqlConnection,
+        group: &str,
+        name: &str,
+        next_run_at_millis: i64,
+        last_run_at_millis: i64,
+    ) -> Result<(), C3p0Error> {
+        // Single round-trip: `JSON_SET` rewrites both fields in one call,
+        // version is bumped, `update_time` is refreshed. The tx already
+        // holds the row lock from `try_claim_record`, so no version re-check
+        // is needed.
+        const SQL: &str = "UPDATE LS_SCHEDULE \
+             SET version = version + 1, \
+                 update_time = CURRENT_TIMESTAMP(3), \
+                 data = JSON_SET(data, \
+                     '$.next_run_at_millis', ?, \
+                     '$.last_run_at_millis', ?) \
+             WHERE JSON_VALUE(data, '$.group_name' RETURNING CHAR(255)) = ? \
+               AND JSON_VALUE(data, '$.name' RETURNING CHAR(255)) = ?";
+        query(AssertSqlSafe(SQL))
+            .bind(next_run_at_millis)
+            .bind(last_run_at_millis)
+            .bind(group)
+            .bind(name)
+            .execute(tx)
+            .await?;
+        Ok(())
+    }
+
     async fn time_until_next_due_millis(
         pool: &c3p0::sqlx::Pool<MySql>,
         keys: &[(&str, &str)],

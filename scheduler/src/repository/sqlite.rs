@@ -95,6 +95,36 @@ impl ScheduleSqlBackend for SqliteScheduleBackend {
             .await?)
     }
 
+    async fn advance_claimed(
+        tx: &mut SqliteConnection,
+        group: &str,
+        name: &str,
+        next_run_at_millis: i64,
+        last_run_at_millis: i64,
+    ) -> Result<(), C3p0Error> {
+        // Single round-trip: `json_set` rewrites both fields in one call,
+        // version is bumped, `update_time` is refreshed (same ISO-8601
+        // format c3p0's sqlite update uses). The tx already holds the row
+        // claim from `try_claim_record` and SQLite serialises writes anyway,
+        // so no version re-check is needed.
+        const SQL: &str = "UPDATE LS_SCHEDULE \
+             SET version = version + 1, \
+                 update_time = strftime('%Y-%m-%dT%H:%M:%fZ', 'now'), \
+                 data = json_set(data, \
+                     '$.next_run_at_millis', ?, \
+                     '$.last_run_at_millis', ?) \
+             WHERE data->>'$.group_name' = ? \
+               AND data->>'$.name' = ?";
+        query(AssertSqlSafe(SQL))
+            .bind(next_run_at_millis)
+            .bind(last_run_at_millis)
+            .bind(group)
+            .bind(name)
+            .execute(tx)
+            .await?;
+        Ok(())
+    }
+
     async fn time_until_next_due_millis(
         pool: &c3p0::sqlx::Pool<Sqlite>,
         keys: &[(&str, &str)],

@@ -27,7 +27,7 @@ async fn init() -> MaybeType {
     let auth_config =
         AuthConfig { argon2_memory_kib: 8, argon2_iterations: 1, argon2_parallelism: 1, ..Default::default() };
 
-    let mut auth_module = LsAuthModule::new(repo_manager, auth_config);
+    let mut auth_module = LsAuthModule::new(repo_manager, auth_config).unwrap();
     {
         auth_module.start().await.unwrap();
     }

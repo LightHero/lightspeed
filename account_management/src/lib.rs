@@ -1,3 +1,11 @@
+// No `unsafe` in this crate.
+#![forbid(unsafe_code)]
+// `.unwrap()` and `.expect()` are banned in production code.
+#![cfg_attr(
+    not(test),
+    deny(clippy::unwrap_used, clippy::expect_used)
+)]
+
 use crate::config::AuthConfig;
 use crate::repository::AuthRepositoryManager;
 use crate::service::auth_account::LsAuthAccountService;
@@ -25,7 +33,14 @@ pub struct LsAuthModule<RepoManager: AuthRepositoryManager> {
 }
 
 impl<RepoManager: AuthRepositoryManager> LsAuthModule<RepoManager> {
-    pub fn new(repo_manager: RepoManager, auth_config: AuthConfig) -> Self {
+    /// Builds the module. Returns
+    /// [`LsAccountManagerError::PasswordEncryptionError`] if the
+    /// [`AuthConfig`]'s Argon2 parameters are invalid (the only fallible
+    /// step inside; everything else is infallible construction).
+    pub fn new(
+        repo_manager: RepoManager,
+        auth_config: AuthConfig,
+    ) -> Result<Self, error::LsAccountManagerError> {
         println!("Creating LsAuthModule");
         info!("Creating LsAuthModule");
 
@@ -33,7 +48,7 @@ impl<RepoManager: AuthRepositoryManager> LsAuthModule<RepoManager> {
             auth_config.argon2_memory_kib,
             auth_config.argon2_iterations,
             auth_config.argon2_parallelism,
-        ));
+        )?);
 
         let token_service =
             Arc::new(service::token::LsTokenService::new(auth_config.clone(), repo_manager.token_repo()));
@@ -46,7 +61,7 @@ impl<RepoManager: AuthRepositoryManager> LsAuthModule<RepoManager> {
             repo_manager.auth_account_repo(),
         ));
 
-        LsAuthModule { auth_config, repo_manager, password_codec, auth_account_service, token_service }
+        Ok(LsAuthModule { auth_config, repo_manager, password_codec, auth_account_service, token_service })
     }
 }
 
