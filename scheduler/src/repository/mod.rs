@@ -30,12 +30,6 @@ pub use sqlite::{SqliteScheduleBackend, SqliteScheduleRepository};
 pub use memory::MemoryScheduleRepository;
 
 /// A persisted schedule row.
-///
-/// The row only holds coordination state (when the schedule should next fire
-/// and when it last fired) and its identity `(group, name)`. The schedule
-/// *definition* — cron expression, interval, etc. — lives in the running
-/// process and is not persisted, so a redeploy with a different schedule
-/// simply takes effect from the next firing onward.
 #[derive(Debug, Clone)]
 pub struct ScheduleRow {
     pub group: String,
@@ -45,14 +39,6 @@ pub struct ScheduleRow {
 }
 
 /// Pluggable storage for distributed schedules.
-///
-/// The contract is intentionally minimal: each implementation must provide
-/// "claim exactly one due row, advance it, and don't let two processes pick
-/// up the same row at the same time".
-///
-/// Each task is identified by a `(group, name)` pair. `group` lets one
-/// database hold schedules for multiple applications or business domains
-/// without name collisions and supports indexed group-scoped queries.
 pub trait ScheduleRepository: Send + Sync + Clone + 'static {
     /// Transaction handle scoped to a single tick.
     type Tx: Send;
@@ -64,12 +50,7 @@ pub trait ScheduleRepository: Send + Sync + Clone + 'static {
     fn rollback(&self, tx: Self::Tx) -> impl Future<Output = Result<(), SchedulerError>> + Send;
 
     /// Inserts the schedule row if `(group, name)` doesn't exist yet. Safe to
-    /// call on every process startup — only one INSERT wins; concurrent
-    /// callers no-op. The schedule *definition* itself is held by the caller
-    /// (in-memory) and is intentionally not persisted; what *is* persisted
-    /// is a `schedule_fingerprint` — an opaque string the caller computes
-    /// from the definition (see [`Schedule::fingerprint`](crate::Schedule::fingerprint)).
-    ///
+    /// call on every process startup — only one INSERT wins.
     /// **Change detection.** If the row already exists and the stored
     /// fingerprint differs from `schedule_fingerprint`, the schedule
     /// definition has changed across the redeploy: the backend updates the

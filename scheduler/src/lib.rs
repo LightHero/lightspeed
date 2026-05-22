@@ -197,15 +197,7 @@ impl<R: ScheduleRepository> JobExecutor<R> {
     }
 
     /// Spawns a tokio task that drives the executor and returns its
-    /// `JoinHandle`. The loop computes the time until the earliest next
-    /// firing across all registered schedules and sleeps until then.
-    /// `add_job` wakes the loop early so newly-added jobs fire on time.
-    ///
-    /// Only one `run` can be active at a time per executor; concurrent calls
-    /// return [`SchedulerError::JobExecutionStateError`]. The state is
-    /// released when the loop exits. Lives on the outer `JobExecutor` (not
-    /// `JobExecutorInner`) because it needs to bump the refcount of the
-    /// shared inner state to hand to the spawned task.
+    /// `JoinHandle`.
     pub fn run(&self) -> Result<JoinHandle<()>, SchedulerError> {
         let mut state_guard = self.inner.state.lock();
         if self.inner.running.compare_exchange(false, true, Ordering::SeqCst, Ordering::SeqCst).is_err() {
@@ -218,9 +210,6 @@ impl<R: ScheduleRepository> JobExecutor<R> {
         let (finished_tx, finished_rx) = oneshot::channel();
         let me_stop = Arc::clone(&stop_request);
 
-        // Construct the cleanup OUTSIDE the async block and move it in.
-        // Captured outer values are part of the future's initial state and
-        // drop even if the task is aborted before its first poll.
         let cleanup = RunCleanup { me: Arc::clone(&self.inner), finished_tx: Some(finished_tx) };
 
         let me = Arc::clone(&self.inner);
@@ -290,8 +279,7 @@ impl<R: ScheduleRepository> JobExecutor<R> {
     }
 
     /// Walks every registered job once, firing those that are due in
-    /// parallel. Each job runs in its own spawned tokio task so a slow job
-    /// can't block other due jobs from firing within the same tick cycle.
+    /// parallel.
     /// Returns the number of jobs that fired successfully this cycle.
     pub async fn tick(&self) -> Result<usize, SchedulerError> {
         self.inner.tick().await
@@ -347,17 +335,11 @@ impl<R: ScheduleRepository> JobExecutorInner<R> {
         let group: Arc<str> = Arc::from(group);
         let name: Arc<str> = Arc::from(name);
 
-        // Capture the fingerprint BEFORE `next()` mutates internal state
-        // (specifically, `Interval { execute_at_startup }` flips to false on
-        // first call). This way the fingerprint reflects the as-constructed
-        // schedule and stays stable across restarts.
         let fingerprint = scheduler.fingerprint();
 
         let now_utc = Utc::now();
         let next_system = match scheduler.next(&now_utc, self.timezone) {
             Some(next_utc) => utc_to_system_time(next_utc),
-            // Never-firing schedule (`Scheduler::Never`): register with a
-            // far-future sentinel so the row is persisted but never claimed.
             None => never_sentinel(),
         };
         self.repo.register(&group, &name, next_system, &fingerprint).await?;
@@ -375,9 +357,6 @@ impl<R: ScheduleRepository> JobExecutorInner<R> {
         {
             let mut jobs = self.jobs.lock();
             jobs.push(entry);
-            // #3: refresh the cached `(group, name)` view used by
-            // `next_sleep_duration`. Built here once on every add_job (cold
-            // path) so the run loop never has to (hot path).
             self.cached_keys.store(Arc::new(build_keys_view(&jobs)));
         }
         self.wake.notify_one();
@@ -387,8 +366,6 @@ impl<R: ScheduleRepository> JobExecutorInner<R> {
     /// Time to sleep before the next iteration, derived from the persisted
     /// `next_run_at` of every registered job. Capped at [`MAX_SLEEP`].
     async fn next_sleep_duration(&self) -> Duration {
-        // #3: read the cached key view instead of re-walking `jobs` and
-        // re-allocating two `Vec`s of strings on every poll.
         let view = self.cached_keys.load();
         let refs: Vec<(&str, &str)> = view.iter().map(|(g, n)| (g.as_ref(), n.as_ref())).collect();
         let until = match self.repo.time_until_next_due(&refs).await {
@@ -405,16 +382,8 @@ impl<R: ScheduleRepository> JobExecutorInner<R> {
     }
 
     /// Walks every registered job once, firing those that are due in
-    /// parallel. Each job runs in its own spawned tokio task so a slow job
-    /// can't block other due jobs from firing within the same tick cycle.
-    /// Returns the number of jobs that fired successfully this cycle.
+    /// parallel.
     async fn tick(&self) -> Result<usize, SchedulerError> {
-        // #6: skip the spawn + DB round-trip for jobs whose locally-tracked
-        // `next_run_at` is still in the future. The local mirror can be
-        // stale in distributed deployments (another process advanced the
-        // row), but stale always means "we'd find nothing to claim anyway",
-        // never "we miss a firing". The non-due fast path is therefore
-        // allocation- and round-trip-free.
         let now_millis = to_millis(SystemTime::now());
         let snapshot: Vec<Entry<R>> = {
             let jobs = self.jobs.lock();
@@ -495,8 +464,7 @@ impl<R: ScheduleRepository> JobExecutorInner<R> {
         let now_system = utc_to_system_time(now_utc);
         repo.advance(&mut tx, &entry.group, &entry.name, next_system, now_system).await?;
         repo.commit(tx).await?;
-        // #6: refresh the local mirror so the next tick can skip us without
-        // a DB round-trip (until `next_system` actually comes around).
+
         entry.next_run_at_millis.store(to_millis(next_system), Ordering::Release);
         debug!(
             target: "lightspeed_scheduler",
