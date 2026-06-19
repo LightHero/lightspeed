@@ -19,7 +19,7 @@ members = [
 [workspace.package]
 version = "0.66.0"
 edition = "2024"
-rust-version = "1.88"
+rust-version = "1.94"
 
 [workspace.dependencies]
 lightspeed_account_management = { version = "0.66.0", path = "./account_management" }
@@ -38,25 +38,24 @@ argon2 = "0.5"
 axum = { version = "0.8" }
 base64 = "0.22"
 card-validate = "2"
-c3p0 = { version = "0.83.1" }
+c3p0 = { version = "0.83" }
 #c3p0 = { git = "https://github.com/ufoscout/c3p0", branch = "master", features = ["postgres"] }
 chrono = { version = "0.4", default-features = false, features = ["clock"] }
 chrono-tz = "0.10"
 config = "0.15"
-cron = "0.16"
+cron = "0.17"
 email_address = "0.2"
 http = { version = "1" }
 http-body-util = "0.1"
 futures = { version = "0.3", default-features = false }
-# Should use aws_lc_rs instead of rust_crypto in jsonwebtoken?
-jsonwebtoken = { version = "10.0", default-features = false, features = ["rust_crypto"] }
+jsonwebtoken = { version = "10.0", default-features = false, features = ["aws_lc_rs"] }
 lettre = { version = "0.11", default-features = false }
 log = "0.4"
 maybe-once = { version = "0.17", features =["tokio"] }
 mime = { version = "0.3" }
 mime_guess = { version = "2.0" }
 moka = { version = "0.12", default-features = false, features = ["future"] }
-opendal = { version = "0.56", default-features = false }
+opendal = { version = "0.57", default-features = false }
 parking_lot = "0.12"
 percent-encoding = "2"
 proc-macro2 = "1"
