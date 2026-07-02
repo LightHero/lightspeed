@@ -51,7 +51,7 @@ futures = { version = "0.3", default-features = false }
 jsonwebtoken = { version = "10.0", default-features = false, features = ["aws_lc_rs"] }
 lettre = { version = "0.11", default-features = false }
 log = "0.4"
-maybe-once = { version = "0.17", features =["tokio"] }
+maybe-once = { version = "0.18", features =["tokio"] }
 mime = { version = "0.3" }
 mime_guess = { version = "2.0" }
 moka = { version = "0.12", default-features = false, features = ["future"] }

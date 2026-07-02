@@ -3,112 +3,104 @@ use c3p0::*;
 use lightspeed_file_store::error::LsFileStoreError;
 use lightspeed_file_store::model::BinaryContent;
 use lightspeed_file_store::repository::db::{DBFileStoreBinaryRepository, DBFileStoreRepositoryManager};
-use lightspeed_test_utils::tokio_test;
+use maybe_once::tokio_shared;
 use opendal::Operator;
 use opendal::services::Fs;
 use std::borrow::Cow;
 
 const SOURCE_FILE: &str = "./Cargo.toml";
 
-#[test]
-fn should_save_file_from_fs() -> Result<(), LsFileStoreError> {
-    tokio_test(async {
-        let data = data(false).await;
-        let repo_manager = &data.0.repo_manager;
-        let file_store = repo_manager.file_store_binary_repo();
-        let operator = Operator::new(Fs::default().root("./")).unwrap().finish().into();
-        let binary_content = BinaryContent::OpenDal { operator, path: SOURCE_FILE.to_owned() };
-        let repository_name = &format!("repository_{}", rand::random::<u32>());
-        let file_path = &format!("file_path_{}", rand::random::<u32>());
+#[tokio_shared::test]
+async fn should_save_file_from_fs() -> Result<(), LsFileStoreError> {
+    let data = data(false).await;
+    let repo_manager = &data.0.repo_manager;
+    let file_store = repo_manager.file_store_binary_repo();
+    let operator = Operator::new(Fs::default().root("./")).unwrap().finish().into();
+    let binary_content = BinaryContent::OpenDal { operator, path: SOURCE_FILE.to_owned() };
+    let repository_name = &format!("repository_{}", rand::random::<u32>());
+    let file_path = &format!("file_path_{}", rand::random::<u32>());
 
-        repo_manager
-            .c3p0()
-            .transaction(async |conn| {
-                file_store.save_file(conn, repository_name, file_path, &binary_content).await?;
+    repo_manager
+        .c3p0()
+        .transaction(async |conn| {
+            file_store.save_file(conn, repository_name, file_path, &binary_content).await?;
 
-                match file_store.read_file(conn, repository_name, file_path).await {
-                    Ok(BinaryContent::InMemory { content }) => {
-                        let file_content = std::str::from_utf8(&content).unwrap();
-                        assert_eq!(&std::fs::read_to_string(SOURCE_FILE).unwrap(), file_content);
-                    }
-                    _ => panic!(),
+            match file_store.read_file(conn, repository_name, file_path).await {
+                Ok(BinaryContent::InMemory { content }) => {
+                    let file_content = std::str::from_utf8(&content).unwrap();
+                    assert_eq!(&std::fs::read_to_string(SOURCE_FILE).unwrap(), file_content);
                 }
+                _ => panic!(),
+            }
 
-                Ok(())
-            })
-            .await
-    })
+            Ok(())
+        })
+        .await
 }
 
-#[test]
-fn should_save_file_from_memory() -> Result<(), LsFileStoreError> {
-    tokio_test(async {
-        let data = data(false).await;
-        let repo_manager = &data.0.repo_manager;
-        let file_store = repo_manager.file_store_binary_repo();
-        let binary_content = BinaryContent::InMemory { content: Cow::Borrowed("Hello world!".as_bytes()) };
-        let repository_name = &format!("repository_{}", rand::random::<u32>());
-        let file_path = &format!("file_path_{}", rand::random::<u32>());
+#[tokio_shared::test]
+async fn should_save_file_from_memory() -> Result<(), LsFileStoreError> {
+    let data = data(false).await;
+    let repo_manager = &data.0.repo_manager;
+    let file_store = repo_manager.file_store_binary_repo();
+    let binary_content = BinaryContent::InMemory { content: Cow::Borrowed("Hello world!".as_bytes()) };
+    let repository_name = &format!("repository_{}", rand::random::<u32>());
+    let file_path = &format!("file_path_{}", rand::random::<u32>());
 
-        repo_manager
-            .c3p0()
-            .transaction(async |conn| {
-                file_store.save_file(conn, repository_name, file_path, &binary_content).await?;
+    repo_manager
+        .c3p0()
+        .transaction(async |conn| {
+            file_store.save_file(conn, repository_name, file_path, &binary_content).await?;
 
-                match file_store.read_file(conn, repository_name, file_path).await {
-                    Ok(BinaryContent::InMemory { content }) => {
-                        assert_eq!("Hello world!", String::from_utf8(content.into_owned()).unwrap());
-                    }
-                    _ => panic!(),
+            match file_store.read_file(conn, repository_name, file_path).await {
+                Ok(BinaryContent::InMemory { content }) => {
+                    assert_eq!("Hello world!", String::from_utf8(content.into_owned()).unwrap());
                 }
+                _ => panic!(),
+            }
 
-                Ok(())
-            })
-            .await
-    })
+            Ok(())
+        })
+        .await
 }
 
-#[test]
-fn save_file_should_fail_if_file_exists_in_same_repository() -> Result<(), LsFileStoreError> {
-    tokio_test(async {
-        let data = data(false).await;
-        let repo_manager = &data.0.repo_manager;
-        let file_store = repo_manager.file_store_binary_repo();
-        let operator = Operator::new(Fs::default().root("./")).unwrap().finish().into();
-        let binary_content = BinaryContent::OpenDal { operator, path: SOURCE_FILE.to_owned() };
-        let repository_name = &format!("repository_{}", rand::random::<u32>());
-        let file_path = &format!("file_path_{}", rand::random::<u32>());
+#[tokio_shared::test]
+async fn save_file_should_fail_if_file_exists_in_same_repository() -> Result<(), LsFileStoreError> {
+    let data = data(false).await;
+    let repo_manager = &data.0.repo_manager;
+    let file_store = repo_manager.file_store_binary_repo();
+    let operator = Operator::new(Fs::default().root("./")).unwrap().finish().into();
+    let binary_content = BinaryContent::OpenDal { operator, path: SOURCE_FILE.to_owned() };
+    let repository_name = &format!("repository_{}", rand::random::<u32>());
+    let file_path = &format!("file_path_{}", rand::random::<u32>());
 
-        repo_manager
-            .c3p0()
-            .transaction(async |conn| {
-                file_store.save_file(conn, repository_name, file_path, &binary_content).await?;
-                assert!(file_store.save_file(conn, repository_name, file_path, &binary_content).await.is_err());
-                Ok(())
-            })
-            .await
-    })
+    repo_manager
+        .c3p0()
+        .transaction(async |conn| {
+            file_store.save_file(conn, repository_name, file_path, &binary_content).await?;
+            assert!(file_store.save_file(conn, repository_name, file_path, &binary_content).await.is_err());
+            Ok(())
+        })
+        .await
 }
 
-#[test]
-fn save_file_not_should_fail_if_file_exists_in_different_repository() -> Result<(), LsFileStoreError> {
-    tokio_test(async {
-        let data = data(false).await;
-        let repo_manager = &data.0.repo_manager;
-        let file_store = repo_manager.file_store_binary_repo();
-        let operator = Operator::new(Fs::default().root("./")).unwrap().finish().into();
-        let binary_content = BinaryContent::OpenDal { operator, path: SOURCE_FILE.to_owned() };
-        let repository_name_1 = &format!("repository_{}", rand::random::<u32>());
-        let repository_name_2 = &format!("repository_{}", rand::random::<u32>());
-        let file_path = &format!("file_path_{}", rand::random::<u32>());
+#[tokio_shared::test]
+async fn save_file_not_should_fail_if_file_exists_in_different_repository() -> Result<(), LsFileStoreError> {
+    let data = data(false).await;
+    let repo_manager = &data.0.repo_manager;
+    let file_store = repo_manager.file_store_binary_repo();
+    let operator = Operator::new(Fs::default().root("./")).unwrap().finish().into();
+    let binary_content = BinaryContent::OpenDal { operator, path: SOURCE_FILE.to_owned() };
+    let repository_name_1 = &format!("repository_{}", rand::random::<u32>());
+    let repository_name_2 = &format!("repository_{}", rand::random::<u32>());
+    let file_path = &format!("file_path_{}", rand::random::<u32>());
 
-        repo_manager
-            .c3p0()
-            .transaction(async |conn| {
-                file_store.save_file(conn, repository_name_1, file_path, &binary_content).await?;
-                assert!(file_store.save_file(conn, repository_name_2, file_path, &binary_content).await.is_ok());
-                Ok(())
-            })
-            .await
-    })
+    repo_manager
+        .c3p0()
+        .transaction(async |conn| {
+            file_store.save_file(conn, repository_name_1, file_path, &binary_content).await?;
+            assert!(file_store.save_file(conn, repository_name_2, file_path, &binary_content).await.is_ok());
+            Ok(())
+        })
+        .await
 }
