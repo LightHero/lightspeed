@@ -204,7 +204,7 @@ mod test {
             Ok(r) => println!("Ok: {r:?}"),
             Err(e) => match e {
                 super::LsError::InvalidTokenError { message: mes } => {
-                    println!("Error message: {:?}", &mes);
+                    println!("Error message: {mes:?}");
                     is_invalid = true;
                 }
                 _ => println!("Other kind of error: {e:?}"),
@@ -232,7 +232,7 @@ mod test {
             Ok(r) => println!("Ok: {r:?}"),
             Err(e) => match e {
                 super::LsError::ExpiredTokenError { message: mes } => {
-                    println!("Expired: {:?}", &mes);
+                    println!("Expired: {mes:?}");
                     is_expired = true;
                 }
                 _ => println!("Other kind of error: {e:?}"),

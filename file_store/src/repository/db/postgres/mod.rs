@@ -1,4 +1,7 @@
+use std::sync::LazyLock;
+
 use crate::repository::db::DBFileStoreRepositoryManager;
+use crate::repository::db::MIGRATIONS_TABLE;
 use crate::repository::db::postgres::pg_file_store_binary::PgFileStoreBinaryRepository;
 use crate::repository::db::postgres::pg_file_store_data::PgFileStoreDataRepository;
 use c3p0::sqlx::{migrate::Migrator, *};
@@ -8,7 +11,11 @@ use lightspeed_core::error::LsError;
 pub mod pg_file_store_binary;
 pub mod pg_file_store_data;
 
-static MIGRATOR: Migrator = migrate!("src_resources/db/postgres/migrations");
+static MIGRATOR: LazyLock<Migrator> = LazyLock::new(|| {
+    let mut migrator = migrate!("src_resources/db/postgres/migrations");
+    migrator.dangerous_set_table_name(MIGRATIONS_TABLE);
+    migrator
+});
 
 #[derive(Clone)]
 pub struct PgFileStoreRepositoryManager {

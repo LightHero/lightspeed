@@ -1,4 +1,7 @@
+use std::sync::LazyLock;
+
 use crate::repository::db::DBFileStoreRepositoryManager;
+use crate::repository::db::MIGRATIONS_TABLE;
 use crate::repository::db::mysql::mysql_file_store_binary::MySqlFileStoreBinaryRepository;
 use crate::repository::db::mysql::mysql_file_store_data::MySqlFileStoreDataRepository;
 use ::sqlx::migrate::Migrator;
@@ -9,7 +12,11 @@ use lightspeed_core::error::LsError;
 pub mod mysql_file_store_binary;
 pub mod mysql_file_store_data;
 
-static MIGRATOR: Migrator = migrate!("src_resources/db/mysql/migrations");
+static MIGRATOR: LazyLock<Migrator> = LazyLock::new(|| {
+    let mut migrator = migrate!("src_resources/db/mysql/migrations");
+    migrator.dangerous_set_table_name(MIGRATIONS_TABLE);
+    migrator
+});
 
 #[derive(Clone)]
 pub struct MySqlFileStoreRepositoryManager {

@@ -15,13 +15,20 @@
 //! to a future time is honoured even if the writing process's wall clock
 //! drifts.
 
+use std::sync::LazyLock;
+
 use c3p0::sqlx::{AssertSqlSafe, Row, Sqlite, SqliteConnection, migrate::Migrator, query};
 use c3p0::*;
 
 use crate::error::SchedulerError;
+use crate::repository::MIGRATIONS_TABLE;
 use crate::repository::sql::{ScheduleData, ScheduleModel, ScheduleSqlBackend, SqlScheduleRepository};
 
-static MIGRATOR: Migrator = c3p0::sqlx::migrate!("src/resources/sqlite/migrations");
+static MIGRATOR: LazyLock<Migrator> = LazyLock::new(|| {
+    let mut migrator = c3p0::sqlx::migrate!("src/resources/sqlite/migrations");
+    migrator.dangerous_set_table_name(MIGRATIONS_TABLE);
+    migrator
+});
 
 /// SQLite [`ScheduleSqlBackend`]. Holds a [`SqliteC3p0Pool`] so the rest of
 /// the workspace can hand the same pool to other lightspeed modules.

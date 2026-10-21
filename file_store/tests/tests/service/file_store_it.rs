@@ -20,7 +20,7 @@ async fn should_save_file_to_db() -> Result<(), LsFileStoreError> {
 
     let random: u32 = rand::random();
     let file_name = format!("file_{random}");
-    let operator = Operator::new(Fs::default().root("./")).unwrap().finish().into();
+    let operator = Operator::new(Fs::default().root("./")).unwrap().into();
     let binary_content = BinaryContent::OpenDal { operator, path: SOURCE_FILE.to_owned() };
     let content_type = "application/text".to_owned();
     let save_repository = "DB_ONE";
@@ -49,7 +49,7 @@ async fn should_save_file_to_fs() -> Result<(), LsFileStoreError> {
 
     let random: u32 = rand::random();
     let file_name = format!("file_{random}");
-    let operator = Operator::new(Fs::default().root("./")).unwrap().finish().into();
+    let operator = Operator::new(Fs::default().root("./")).unwrap().into();
     let binary_content = BinaryContent::OpenDal { operator, path: SOURCE_FILE.to_owned() };
     let content_type = "application/text".to_owned();
     let save_repository = "FS_TWO";
@@ -79,7 +79,7 @@ async fn should_save_file_to_db_with_specific_repo() -> Result<(), LsFileStoreEr
     let file_store = &data.0.file_store_service;
 
     let random: u32 = rand::random();
-    let operator = Operator::new(Fs::default().root("./")).unwrap().finish().into();
+    let operator = Operator::new(Fs::default().root("./")).unwrap().into();
     let binary_content = BinaryContent::OpenDal { operator, path: SOURCE_FILE.to_owned() };
     let content_type = "application/text".to_owned();
     let file_name_1 = format!("file_2_{random}");
@@ -135,7 +135,7 @@ async fn should_save_file_to_fs_with_specific_repo() -> Result<(), LsFileStoreEr
     let file_store = &data.0.file_store_service;
 
     let random: u32 = rand::random();
-    let operator = Operator::new(Fs::default().root("./")).unwrap().finish().into();
+    let operator = Operator::new(Fs::default().root("./")).unwrap().into();
     let binary_content = BinaryContent::OpenDal { operator, path: SOURCE_FILE.to_owned() };
     let content_type = "application/text".to_owned();
     let file_name_1 = format!("file_2_{random}");
@@ -196,7 +196,7 @@ async fn save_should_fails_if_fs_repo_does_not_exist() -> Result<(), LsFileStore
     let file_store = &data.0.file_store_service;
 
     let random: u32 = rand::random();
-    let operator = Operator::new(Fs::default().root("./")).unwrap().finish().into();
+    let operator = Operator::new(Fs::default().root("./")).unwrap().into();
     let binary_content = BinaryContent::OpenDal { operator, path: SOURCE_FILE.to_owned() };
     let content_type = "application/text".to_owned();
     let file_name_1 = format!("file_2_{random}");
@@ -225,7 +225,7 @@ async fn should_save_file_to_db_with_relative_folder() -> Result<(), LsFileStore
 
     let random: u32 = rand::random();
     let file_name = format!("relative/folder/file_{random}");
-    let operator = Operator::new(Fs::default().root("./")).unwrap().finish().into();
+    let operator = Operator::new(Fs::default().root("./")).unwrap().into();
     let binary_content = BinaryContent::OpenDal { operator, path: SOURCE_FILE.to_owned() };
     let content_type = "application/text".to_owned();
     let save_repository = "DB_ONE";
@@ -253,7 +253,7 @@ async fn should_save_file_to_fs_with_relative_folder() -> Result<(), LsFileStore
 
     let random: u32 = rand::random();
     let file_name = format!("relative/folder/file_{random}");
-    let operator = Operator::new(Fs::default().root("./")).unwrap().finish().into();
+    let operator = Operator::new(Fs::default().root("./")).unwrap().into();
     let binary_content = BinaryContent::OpenDal { operator, path: SOURCE_FILE.to_owned() };
     let content_type = "application/text".to_owned();
     let save_repository = "FS_ONE";
@@ -285,7 +285,7 @@ async fn should_save_file_to_db_with_relative_folder_in_repository() -> Result<(
 
     let random: u32 = rand::random();
     let file_name = format!("folder/file_{random}");
-    let operator = Operator::new(Fs::default().root("./")).unwrap().finish().into();
+    let operator = Operator::new(Fs::default().root("./")).unwrap().into();
     let binary_content = BinaryContent::OpenDal { operator, path: SOURCE_FILE.to_owned() };
     let content_type = "application/text".to_owned();
     let save_repository = "DB_ONE";
@@ -314,7 +314,7 @@ async fn should_save_file_to_fs_with_relative_folder_in_repository() -> Result<(
 
     let random: u32 = rand::random();
     let file_name = format!("folder/file_{random}");
-    let operator = Operator::new(Fs::default().root("./")).unwrap().finish().into();
+    let operator = Operator::new(Fs::default().root("./")).unwrap().into();
     let binary_content = BinaryContent::OpenDal { operator, path: SOURCE_FILE.to_owned() };
     let content_type = "application/text".to_owned();
     let save_repository = "FS_ONE";
@@ -349,7 +349,7 @@ async fn should_delete_file_from_db() -> Result<(), LsFileStoreError> {
 
     let random: u32 = rand::random();
     let file_name = format!("file_{random}");
-    let operator = Operator::new(Fs::default().root("./")).unwrap().finish().into();
+    let operator = Operator::new(Fs::default().root("./")).unwrap().into();
     let binary_content = BinaryContent::OpenDal { operator, path: SOURCE_FILE.to_owned() };
     let content_type = "application/text".to_owned();
     let save_repository = "DB_ONE";
@@ -392,7 +392,7 @@ async fn should_delete_file_from_fs() -> Result<(), LsFileStoreError> {
 
     let random: u32 = rand::random();
     let file_name = format!("file_{random}");
-    let operator = Operator::new(Fs::default().root("./")).unwrap().finish().into();
+    let operator = Operator::new(Fs::default().root("./")).unwrap().into();
     let binary_content = BinaryContent::OpenDal { operator, path: SOURCE_FILE.to_owned() };
     let content_type = "application/text".to_owned();
     let save_repository = "FS_ONE";
@@ -422,7 +422,7 @@ async fn should_allow_files_with_same_path_but_different_repository() -> Result<
     // Arrange
     let random: u32 = rand::random();
     let same_file_name = format!("folder/file_{random}");
-    let operator = Operator::new(Fs::default().root("./")).unwrap().finish().into();
+    let operator = Operator::new(Fs::default().root("./")).unwrap().into();
     let binary_content = BinaryContent::OpenDal { operator, path: SOURCE_FILE.to_owned() };
 
     let content_type = "application/text".to_owned();
@@ -492,7 +492,7 @@ async fn should_fail_if_file_already_exists_in_db() -> Result<(), LsFileStoreErr
     let same_file_name = format!("folder/file_{random}");
     let same_file_path = format!("path_{random}");
     let same_repository_name = "DB_ONE";
-    let operator = Operator::new(Fs::default().root("./")).unwrap().finish().into();
+    let operator = Operator::new(Fs::default().root("./")).unwrap().into();
     let binary_content = BinaryContent::OpenDal { operator, path: SOURCE_FILE.to_owned() };
 
     let content_type = "application/text".to_owned();
@@ -567,7 +567,7 @@ async fn should_fail_if_file_already_exists_in_fs() -> Result<(), LsFileStoreErr
     let same_file_path = format!("path_{random}");
     let same_repository_name = "FS_ONE";
 
-    let operator = Operator::new(Fs::default().root("./")).unwrap().finish().into();
+    let operator = Operator::new(Fs::default().root("./")).unwrap().into();
     let binary_content = BinaryContent::OpenDal { operator, path: SOURCE_FILE.to_owned() };
 
     let content_type = "application/text".to_owned();
@@ -637,7 +637,7 @@ async fn should_read_all_file_data_by_repository() -> Result<(), LsFileStoreErro
     let file_store = &data.0.file_store_service;
 
     let random: u32 = rand::random();
-    let operator = Operator::new(Fs::default().root("./")).unwrap().finish().into();
+    let operator = Operator::new(Fs::default().root("./")).unwrap().into();
     let binary_content = BinaryContent::OpenDal { operator, path: SOURCE_FILE.to_owned() };
     let content_type = "application/text".to_owned();
     let file_name_1 = format!("file_1_{random}");
@@ -701,7 +701,7 @@ async fn should_return_if_file_exists_by_repository() -> Result<(), LsFileStoreE
     // Arrange
     let random: u32 = rand::random();
     let file_name = format!("file_{random}");
-    let operator = Operator::new(Fs::default().root("./")).unwrap().finish().into();
+    let operator = Operator::new(Fs::default().root("./")).unwrap().into();
     let binary_content = BinaryContent::OpenDal { operator, path: SOURCE_FILE.to_owned() };
     let content_type = "application/text".to_owned();
     let save_repository = "FS_ONE";
@@ -733,7 +733,7 @@ async fn save_file_should_reject_payload_above_save_max_size_bytes() -> Result<(
 
     let oversize_payload = vec![b'x'; 32];
     let oversize_inmem = BinaryContent::InMemory { content: Cow::Owned(oversize_payload) };
-    let oversize_operator = Operator::new(Fs::default().root("./")).unwrap().finish().into();
+    let oversize_operator = Operator::new(Fs::default().root("./")).unwrap().into();
     let oversize_opendal = BinaryContent::OpenDal { operator: oversize_operator, path: SOURCE_FILE.to_owned() };
 
     // 4 cases: {InMemory, OpenDal} × {DB destination, FS destination}.

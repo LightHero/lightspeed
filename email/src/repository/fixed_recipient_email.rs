@@ -102,9 +102,9 @@ pub mod test {
     #[tokio::test]
     async fn should_build_data_from_recipients() {
         // Arrange
-        let to = vec![format!("to@email.com"), "two@email.com".to_owned()];
-        let cc = vec![format!("cc@email.com"), "two@email.com".to_owned()];
-        let bcc = vec![format!("bcc@email.com")];
+        let to = vec!["to@email.com".to_owned(), "two@email.com".to_owned()];
+        let cc = vec!["cc@email.com".to_owned(), "two@email.com".to_owned()];
+        let bcc = vec!["bcc@email.com".to_owned()];
 
         // Act
         let info_1 = to_text(&to, &cc, &bcc);
@@ -125,7 +125,7 @@ BCC: bcc@email.com
     #[tokio::test]
     async fn should_build_subject_from_recipients() {
         // Arrange
-        let to = vec![format!("to@email.com"), "two@email.com".to_owned()];
+        let to = vec!["to@email.com".to_owned(), "two@email.com".to_owned()];
         let subject = new_hyphenated_uuid();
         // Act
         let info_1 = to_subject(&subject, &to);

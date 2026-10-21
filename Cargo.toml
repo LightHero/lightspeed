@@ -34,9 +34,9 @@ lightspeed_test_utils = { version = "0.66.0", path = "./test_utils" }
 lightspeed_validator = { version = "0.66.0", path = "./validator" }
 lightspeed_validator_derive = { version = "0.66.0", path = "./validator_derive" }
 
-argon2 = "0.5"
+argon2 = "0.6"
 axum = { version = "0.8" }
-base64 = "0.22"
+base64 = "0.23"
 card-validate = "2"
 c3p0 = { version = "0.83" }
 #c3p0 = { git = "https://github.com/ufoscout/c3p0", branch = "master", features = ["postgres"] }
@@ -55,8 +55,8 @@ maybe-once = { version = "0.18", features =["tokio"] }
 mime = { version = "0.3" }
 mime_guess = { version = "2.0" }
 moka = { version = "0.12", default-features = false, features = ["future"] }
-opendal = { version = "0.57", default-features = false }
-parking_lot = "0.12"
+opendal = { version = "0.59", default-features = false }
+parking_lot = "0.13"
 percent-encoding = "2"
 proc-macro2 = "1"
 quote = "1"
@@ -70,7 +70,7 @@ sha2 = "0.11"
 sqlx = "0.9"
 strum = { version = "0.28", features = ["derive"] }
 subtle = "2"
-syn = { version = "2", features = ["full"] }
+syn = { version = "3", features = ["full"] }
 tempfile = "3"
 testcontainers = { package = "testcontainers-modules", version = "0.15", features = ["mysql", "postgres"] }
 thiserror = { version = "2" }

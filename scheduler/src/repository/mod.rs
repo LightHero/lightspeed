@@ -27,6 +27,12 @@ pub mod sqlite;
 #[cfg(feature = "sqlite")]
 pub use sqlite::{SqliteScheduleBackend, SqliteScheduleRepository};
 
+/// The module's migrations are tracked in their own table instead of sqlx's default
+/// `_sqlx_migrations`: sqlx expects a single set of migrations per table, so sharing it with the
+/// other modules, or with the application, makes them fail with `VersionMismatch`/`VersionMissing`.
+#[cfg(any(feature = "mysql", feature = "postgres", feature = "sqlite"))]
+pub(crate) const MIGRATIONS_TABLE: &str = "LS_SCHEDULER_MIGRATIONS";
+
 pub use memory::MemoryScheduleRepository;
 
 /// A persisted schedule row.
