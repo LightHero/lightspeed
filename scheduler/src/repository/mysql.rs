@@ -10,13 +10,20 @@
 //! (MySQL 8.0+). The due predicate uses `CURRENT_TIMESTAMP(3)` so clock skew
 //! between scheduler processes cannot cause early or duplicate firings.
 
+use std::sync::LazyLock;
+
 use c3p0::sqlx::{AssertSqlSafe, MySql, MySqlConnection, Row, migrate::Migrator, query};
 use c3p0::*;
 
 use crate::error::SchedulerError;
+use crate::repository::MIGRATIONS_TABLE;
 use crate::repository::sql::{ScheduleData, ScheduleModel, ScheduleSqlBackend, SqlScheduleRepository};
 
-static MIGRATOR: Migrator = c3p0::sqlx::migrate!("src/resources/mysql/migrations");
+static MIGRATOR: LazyLock<Migrator> = LazyLock::new(|| {
+    let mut migrator = c3p0::sqlx::migrate!("src/resources/mysql/migrations");
+    migrator.dangerous_set_table_name(MIGRATIONS_TABLE);
+    migrator
+});
 
 /// MySQL [`ScheduleSqlBackend`]. Holds a [`MySqlC3p0Pool`] so the rest of the
 /// workspace can hand the same pool to other lightspeed modules.

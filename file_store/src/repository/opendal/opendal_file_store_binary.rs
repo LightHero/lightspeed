@@ -114,7 +114,7 @@ mod test {
 
     fn new_operator(path: &str) -> Arc<Operator> {
         let builder = services::Fs::default().root(path);
-        Operator::new(builder).unwrap().finish().into()
+        Operator::new(builder).unwrap().into()
     }
 
     #[tokio::test]

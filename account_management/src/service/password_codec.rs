@@ -1,6 +1,5 @@
 use crate::error::LsAccountManagementError;
-use argon2::password_hash::{PasswordHash, PasswordHasher, PasswordVerifier, SaltString, rand_core::OsRng};
-use argon2::{Algorithm, Argon2, Params, Version};
+use argon2::{Algorithm, Argon2, Params, PasswordHash, PasswordHasher, PasswordVerifier, Version};
 
 #[derive(Clone)]
 pub struct LsPasswordCodecService {
@@ -29,9 +28,8 @@ impl LsPasswordCodecService {
         })?;
         let argon2 = Argon2::new(Algorithm::Argon2id, Version::V0x13, params);
 
-        let salt = SaltString::generate(&mut OsRng);
         let dummy_hash = argon2
-            .hash_password(b"lightspeed-dummy-password-for-timing-safety", &salt)
+            .hash_password(b"lightspeed-dummy-password-for-timing-safety")
             .map_err(|err| LsAccountManagementError::PasswordEncryptionError {
                 message: format!("failed to compute argon2 dummy hash: {err:?}"),
             })?
@@ -65,8 +63,7 @@ impl LsPasswordCodecService {
         let plain = plain_password.to_owned();
         let argon2 = self.argon2.clone();
         tokio::task::spawn_blocking(move || -> Result<String, LsAccountManagementError> {
-            let salt = SaltString::generate(&mut OsRng);
-            argon2.hash_password(plain.as_bytes(), &salt).map(|h| h.to_string()).map_err(|err| {
+            argon2.hash_password(plain.as_bytes()).map(|h| h.to_string()).map_err(|err| {
                 LsAccountManagementError::PasswordEncryptionError { message: format!("argon2 hash: {err:?}") }
             })
         })

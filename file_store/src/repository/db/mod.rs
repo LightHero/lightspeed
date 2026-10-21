@@ -13,6 +13,12 @@ pub mod postgres;
 #[cfg(feature = "sqlite")]
 pub mod sqlite;
 
+/// The module's migrations are tracked in their own table instead of sqlx's default
+/// `_sqlx_migrations`: sqlx expects a single set of migrations per table, so sharing it with the
+/// other modules, or with the application, makes them fail with `VersionMismatch`/`VersionMissing`.
+#[cfg(any(feature = "mysql", feature = "postgres", feature = "sqlite"))]
+pub(crate) const MIGRATIONS_TABLE: &str = "LS_FILE_STORE_MIGRATIONS";
+
 pub trait DBFileStoreRepositoryManager: Clone + Send + Sync {
     type DB: Database;
     type C3P0: C3p0Pool<DB = Self::DB>;

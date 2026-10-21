@@ -272,7 +272,7 @@ mod test {
         let file_path = "./Cargo.toml";
         let content = std::fs::read(file_path).unwrap();
 
-        let operator = Operator::new(services::Fs::default().root("./")).unwrap().finish().into();
+        let operator = Operator::new(services::Fs::default().root("./")).unwrap().into();
 
         let data = Arc::new(AppData {
             source: ContentSource::OpenDal { operator, path: file_path.to_owned() },
@@ -302,7 +302,7 @@ mod test {
         let file_path = "./Cargo.toml";
         let content = std::fs::read(file_path).unwrap();
 
-        let operator = Operator::new(services::Fs::default().root("./")).unwrap().finish().into();
+        let operator = Operator::new(services::Fs::default().root("./")).unwrap().into();
 
         let data = Arc::new(AppData {
             source: ContentSource::OpenDal { operator, path: file_path.to_owned() },
@@ -385,8 +385,7 @@ mod test {
     /// `?`-with-`OpenDalError` mapping in the OpenDal arm.)
     #[tokio::test]
     async fn into_response_should_not_panic_on_opendal_open() {
-        let operator: Arc<opendal::Operator> =
-            Operator::new(services::Fs::default().root("./")).unwrap().finish().into();
+        let operator: Arc<opendal::Operator> = Operator::new(services::Fs::default().root("./")).unwrap().into();
         let content = BinaryContent::OpenDal { operator, path: "this/file/definitely/does/not/exist.bin".to_owned() };
 
         // Either Ok (lazy backend) or Err — both are acceptable; what we

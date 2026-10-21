@@ -42,14 +42,24 @@ validator = ["dep:lightspeed_validator"]
 axum = ["lightspeed_core?/axum", "lightspeed_file_store?/axum"]
 
 postgres = [
-    "lightspeed_account_management?/postgres", 
-    "lightspeed_file_store?/postgres"
+    "lightspeed_account_management?/postgres",
+    "lightspeed_file_store?/postgres",
+    "lightspeed_scheduler?/postgres",
+    "lightspeed_test_utils/postgres",
 ]
 mysql = [
     "lightspeed_account_management?/mysql",
-    "lightspeed_file_store?/mysql"
+    "lightspeed_file_store?/mysql",
+    "lightspeed_scheduler?/mysql",
+    "lightspeed_test_utils/mysql",
 ]
 sqlite = [
     "lightspeed_account_management?/sqlite",
-    "lightspeed_file_store?/sqlite"
+    "lightspeed_file_store?/sqlite",
+    "lightspeed_scheduler?/sqlite",
+    "lightspeed_test_utils/sqlite",
 ]
+
+[dev-dependencies]
+lightspeed_test_utils = { workspace = true }
+tokio = { workspace = true, features = ["rt-multi-thread", "macros"] }

@@ -15,7 +15,7 @@ async fn should_save_file_from_fs() -> Result<(), LsFileStoreError> {
     let data = data(false).await;
     let repo_manager = &data.0.repo_manager;
     let file_store = repo_manager.file_store_binary_repo();
-    let operator = Operator::new(Fs::default().root("./")).unwrap().finish().into();
+    let operator = Operator::new(Fs::default().root("./")).unwrap().into();
     let binary_content = BinaryContent::OpenDal { operator, path: SOURCE_FILE.to_owned() };
     let repository_name = &format!("repository_{}", rand::random::<u32>());
     let file_path = &format!("file_path_{}", rand::random::<u32>());
@@ -69,7 +69,7 @@ async fn save_file_should_fail_if_file_exists_in_same_repository() -> Result<(),
     let data = data(false).await;
     let repo_manager = &data.0.repo_manager;
     let file_store = repo_manager.file_store_binary_repo();
-    let operator = Operator::new(Fs::default().root("./")).unwrap().finish().into();
+    let operator = Operator::new(Fs::default().root("./")).unwrap().into();
     let binary_content = BinaryContent::OpenDal { operator, path: SOURCE_FILE.to_owned() };
     let repository_name = &format!("repository_{}", rand::random::<u32>());
     let file_path = &format!("file_path_{}", rand::random::<u32>());
@@ -89,7 +89,7 @@ async fn save_file_not_should_fail_if_file_exists_in_different_repository() -> R
     let data = data(false).await;
     let repo_manager = &data.0.repo_manager;
     let file_store = repo_manager.file_store_binary_repo();
-    let operator = Operator::new(Fs::default().root("./")).unwrap().finish().into();
+    let operator = Operator::new(Fs::default().root("./")).unwrap().into();
     let binary_content = BinaryContent::OpenDal { operator, path: SOURCE_FILE.to_owned() };
     let repository_name_1 = &format!("repository_{}", rand::random::<u32>());
     let repository_name_2 = &format!("repository_{}", rand::random::<u32>());

@@ -1,4 +1,7 @@
+use std::sync::LazyLock;
+
 use crate::repository::AMRepositoryManager;
+use crate::repository::MIGRATIONS_TABLE;
 use c3p0::{
     SqliteC3p0Pool,
     sqlx::{migrate::Migrator, *},
@@ -10,7 +13,11 @@ use sqlite_token::SqliteTokenRepository;
 pub mod sqlite_account;
 pub mod sqlite_token;
 
-static MIGRATOR: Migrator = ::sqlx::migrate!("src_resources/db/sqlite/migrations");
+static MIGRATOR: LazyLock<Migrator> = LazyLock::new(|| {
+    let mut migrator = ::sqlx::migrate!("src_resources/db/sqlite/migrations");
+    migrator.dangerous_set_table_name(MIGRATIONS_TABLE);
+    migrator
+});
 
 #[derive(Clone)]
 pub struct SqliteAMRepositoryManager {

@@ -1,4 +1,7 @@
+use std::sync::LazyLock;
+
 use crate::repository::AMRepositoryManager;
+use crate::repository::MIGRATIONS_TABLE;
 use c3p0::sqlx::{migrate::Migrator, *};
 use c3p0::*;
 use lightspeed_core::error::LsError;
@@ -8,7 +11,11 @@ use mysql_token::MySqlTokenRepository;
 pub mod mysql_account;
 pub mod mysql_token;
 
-static MIGRATOR: Migrator = c3p0::sqlx::migrate!("src_resources/db/mysql/migrations");
+static MIGRATOR: LazyLock<Migrator> = LazyLock::new(|| {
+    let mut migrator = c3p0::sqlx::migrate!("src_resources/db/mysql/migrations");
+    migrator.dangerous_set_table_name(MIGRATIONS_TABLE);
+    migrator
+});
 
 #[derive(Clone)]
 pub struct MyAMSqlRepositoryManager {
