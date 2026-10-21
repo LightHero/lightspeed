@@ -70,7 +70,7 @@ sha2 = "0.11"
 sqlx = "0.9"
 strum = { version = "0.28", features = ["derive"] }
 subtle = "2"
-syn = { version = "2", features = ["full"] }
+syn = { version = "3", features = ["full"] }
 tempfile = "3"
 testcontainers = { package = "testcontainers-modules", version = "0.15", features = ["mysql", "postgres"] }
 thiserror = { version = "2" }
