@@ -59,7 +59,8 @@ async fn main() {
         .await
         .unwrap();
 
-    // Start the job executor
+    // Start the job executor. It runs until `stop` is called or the last
+    // handle to the executor is dropped.
     let _executor_handle = executor.run().expect("The job executor should run!");
 
     // In a real app, await a shutdown signal here.

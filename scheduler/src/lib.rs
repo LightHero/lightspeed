@@ -16,8 +16,8 @@ pub use scheduler::{Schedule, Scheduler, TryToScheduler};
 
 use std::future::Future;
 use std::pin::Pin;
-use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, AtomicI64, Ordering};
+use std::sync::{Arc, Weak};
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
 use chrono::Utc;
@@ -85,7 +85,10 @@ struct RunningState {
 /// Register jobs with [`add_job`](Self::add_job) (or
 /// [`add_job_with_scheduler`](Self::add_job_with_scheduler) /
 /// [`add_job_with_multi_schedule`](Self::add_job_with_multi_schedule)), then
-/// call [`run`](Self::run) to spawn the polling loop as a tokio task.
+/// call [`run`](Self::run) to spawn the polling loop as a tokio task. The loop
+/// stops with [`stop`](Self::stop), or when the last `JobExecutor` handle is
+/// dropped: it doesn't count as a handle itself, so it never keeps the
+/// executor, or its repository, alive on its own.
 #[derive(Clone)]
 pub struct JobExecutor<R: ScheduleRepository> {
     inner: Arc<JobExecutorInner<R>>,
@@ -105,8 +108,19 @@ struct JobExecutorInner<R: ScheduleRepository> {
     running: AtomicBool,
     state: Mutex<Option<RunningState>>,
     /// Signalled by `add_job` so a sleeping run loop wakes up promptly when a
-    /// new job might be due sooner than its current sleep target.
-    wake: Notify,
+    /// new job might be due sooner than its current sleep target. Shared with
+    /// the loop, which waits on it without holding the executor.
+    wake: Arc<Notify>,
+}
+
+impl<R: ScheduleRepository> Drop for JobExecutorInner<R> {
+    fn drop(&mut self) {
+        // The last handle is gone: wake a running loop so it notices and exits
+        // instead of sleeping until its next firing.
+        if let Some(state) = self.state.get_mut().take() {
+            state.stop_request.notify_one();
+        }
+    }
 }
 
 /// Lock-light snapshot of the `(group, name)` pairs of every registered
@@ -191,13 +205,15 @@ impl<R: ScheduleRepository> JobExecutor<R> {
                 cached_keys: KeysCell::new(),
                 running: AtomicBool::new(false),
                 state: Mutex::new(None),
-                wake: Notify::new(),
+                wake: Arc::new(Notify::new()),
             }),
         }
     }
 
     /// Spawns a tokio task that drives the executor and returns its
-    /// `JoinHandle`.
+    /// `JoinHandle`. Besides [`stop`](Self::stop), the loop exits when the last
+    /// `JobExecutor` handle is dropped, after finishing the tick in progress,
+    /// if any.
     pub fn run(&self) -> Result<JoinHandle<()>, SchedulerError> {
         let mut state_guard = self.inner.state.lock();
         if self.inner.running.compare_exchange(false, true, Ordering::SeqCst, Ordering::SeqCst).is_err() {
@@ -210,27 +226,31 @@ impl<R: ScheduleRepository> JobExecutor<R> {
         let (finished_tx, finished_rx) = oneshot::channel();
         let me_stop = Arc::clone(&stop_request);
 
-        let cleanup = RunCleanup { me: Arc::clone(&self.inner), finished_tx: Some(finished_tx) };
+        let cleanup = RunCleanup { me: Arc::downgrade(&self.inner), finished_tx: Some(finished_tx) };
 
-        let me = Arc::clone(&self.inner);
+        let me = Arc::downgrade(&self.inner);
+        let wake = Arc::clone(&self.inner.wake);
+        let job_count = self.inner.jobs.lock().len();
         let handle = tokio::spawn(async move {
             let _cleanup = cleanup;
 
-            let job_count = me.jobs.lock().len();
             info!(
                 target: "lightspeed_scheduler",
                 "JobExecutor started. jobs: {job_count}",
             );
-            loop {
-                if let Err(e) = me.tick().await {
+            // The executor is only held while an iteration runs, so dropping
+            // its last handle ends the loop instead of being kept alive by it.
+            while let Some(inner) = me.upgrade() {
+                if let Err(e) = inner.tick().await {
                     warn!(target: "lightspeed_scheduler", "tick failed. error: {e}");
                 }
 
-                let sleep_for = me.next_sleep_duration().await;
+                let sleep_for = inner.next_sleep_duration().await;
+                drop(inner);
                 tokio::select! {
                     _ = me_stop.notified() => break,
                     // `add_job` rang the bell — re-tick and recompute the sleep.
-                    _ = me.wake.notified() => {}
+                    _ = wake.notified() => {}
                     _ = tokio::time::sleep(sleep_for) => {}
                 }
             }
@@ -506,14 +526,17 @@ impl<R: ScheduleRepository> JobExecutorInner<R> {
 /// `stop` callers wake up. Runs on normal exit, on `stop`'s abort, and even
 /// if the task is dropped before its first poll.
 struct RunCleanup<R: ScheduleRepository> {
-    me: Arc<JobExecutorInner<R>>,
+    me: Weak<JobExecutorInner<R>>,
     finished_tx: Option<oneshot::Sender<()>>,
 }
 
 impl<R: ScheduleRepository> Drop for RunCleanup<R> {
     fn drop(&mut self) {
-        *self.me.state.lock() = None;
-        self.me.running.store(false, Ordering::SeqCst);
+        // There is nothing to clear if the loop exited because the executor is gone.
+        if let Some(inner) = self.me.upgrade() {
+            *inner.state.lock() = None;
+            inner.running.store(false, Ordering::SeqCst);
+        }
         if let Some(tx) = self.finished_tx.take() {
             let _ = tx.send(());
         }
@@ -535,6 +558,19 @@ mod tests {
     impl ScheduledTask<MemoryScheduleRepository> for CountingTask {
         type Error = Infallible;
         async fn run(&self, _tx: &mut <MemoryScheduleRepository as ScheduleRepository>::Tx) -> Result<(), Self::Error> {
+            self.count.fetch_add(1, Ordering::SeqCst);
+            Ok(())
+        }
+    }
+
+    struct SlowTask {
+        count: Arc<AtomicUsize>,
+    }
+
+    impl ScheduledTask<MemoryScheduleRepository> for SlowTask {
+        type Error = Infallible;
+        async fn run(&self, _tx: &mut <MemoryScheduleRepository as ScheduleRepository>::Tx) -> Result<(), Self::Error> {
+            tokio::time::sleep(Duration::from_millis(200)).await;
             self.count.fetch_add(1, Ordering::SeqCst);
             Ok(())
         }
@@ -634,6 +670,58 @@ mod tests {
         let handle = executor.run().unwrap();
         executor.stop(true).await.unwrap();
         let _ = handle.await;
+    }
+
+    #[tokio::test]
+    async fn dropping_the_executor_stops_the_loop() {
+        let executor = JobExecutor::new_with_utc_tz(MemoryScheduleRepository::init());
+        let handle = executor.run().unwrap();
+
+        drop(executor);
+
+        tokio::time::timeout(Duration::from_secs(5), handle)
+            .await
+            .expect("the loop must stop once the executor is dropped")
+            .unwrap();
+    }
+
+    #[tokio::test]
+    async fn dropping_a_clone_keeps_the_loop_running() {
+        let executor = JobExecutor::new_with_utc_tz(MemoryScheduleRepository::init());
+        let handle = executor.run().unwrap();
+
+        drop(executor.clone());
+        tokio::time::sleep(Duration::from_millis(50)).await;
+
+        assert!(executor.inner.running.load(Ordering::SeqCst));
+        executor.stop(true).await.unwrap();
+        let _ = handle.await;
+    }
+
+    #[tokio::test]
+    async fn dropping_the_executor_lets_the_in_flight_tick_finish() {
+        let count = Arc::new(AtomicUsize::new(0));
+        let executor = JobExecutor::new_with_utc_tz(MemoryScheduleRepository::init());
+        executor
+            // Always due: if the loop kept running it would fire again.
+            .add_job(
+                &(Duration::from_millis(0), true),
+                Job::new(G, "slow", None, SlowTask { count: Arc::clone(&count) }),
+            )
+            .await
+            .unwrap();
+
+        let handle = executor.run().unwrap();
+        // Wait long enough for the loop to enter the slow job.
+        tokio::time::sleep(Duration::from_millis(50)).await;
+
+        drop(executor);
+
+        tokio::time::timeout(Duration::from_secs(5), handle)
+            .await
+            .expect("the loop must stop once the executor is dropped")
+            .unwrap();
+        assert_eq!(count.load(Ordering::SeqCst), 1);
     }
 
     #[tokio::test]
