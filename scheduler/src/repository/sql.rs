@@ -12,7 +12,7 @@
 //! implements the full [`ScheduleRepository`] contract on top of it.
 
 use std::future::Future;
-use std::time::{Duration, SystemTime};
+use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
 use c3p0::sqlx::{Database, Transaction};
 use c3p0::*;
@@ -20,7 +20,6 @@ use serde::{Deserialize, Serialize};
 
 use crate::error::SchedulerError;
 use crate::repository::{ScheduleRepository, ScheduleRow};
-use crate::{from_millis, to_millis};
 
 /// Convenience alias for `Record<ScheduleData>` — the c3p0 record carrying
 /// the scheduler payload.
@@ -82,8 +81,9 @@ impl Codec<ScheduleData> for ScheduleDataCodec {
 /// 2. how to atomically *claim* a due schedule row — `FOR UPDATE SKIP LOCKED`
 ///    against the DB clock on Postgres/MySQL, plain SELECT against the DB
 ///    clock on SQLite (which has no row locking);
-/// 3. how to compute the milliseconds-until-next-due across a set of
-///    `(group, name)` pairs, again against the DB clock.
+/// 3. how to tell which of a set of `(group, name)` pairs are due, and how
+///    many milliseconds until the earliest of them is, again against the DB
+///    clock.
 pub trait ScheduleSqlBackend: Clone + Send + Sync + 'static {
     type DB: Database;
     type C3p0Pool: C3p0Pool<DB = Self::DB> + Clone + Send + Sync + 'static;
@@ -114,6 +114,14 @@ pub trait ScheduleSqlBackend: Clone + Send + Sync + 'static {
         group: &str,
         name: &str,
     ) -> impl Future<Output = Result<Option<ScheduleModel>, C3p0Error>> + Send;
+
+    /// The `(group, name)` pairs among `keys` whose `next_run_at_millis` is
+    /// `<=` the **database's** current time, read without locking. `keys` is
+    /// never empty.
+    fn due_keys(
+        pool: &c3p0::sqlx::Pool<Self::DB>,
+        keys: &[(&str, &str)],
+    ) -> impl Future<Output = Result<Vec<(String, String)>, C3p0Error>> + Send;
 
     /// Duration (in milliseconds) from the **database's** current time until
     /// the earliest `next_run_at_millis` across the rows identified by the
@@ -262,6 +270,13 @@ where
         }))
     }
 
+    async fn due_keys(&self, keys: &[(&str, &str)]) -> Result<Vec<(String, String)>, SchedulerError> {
+        if keys.is_empty() {
+            return Ok(Vec::new());
+        }
+        Ok(B::due_keys(self.backend.pool(), keys).await?)
+    }
+
     async fn advance(
         &self,
         tx: &mut Self::Tx,
@@ -297,4 +312,22 @@ pub(crate) fn is_unique_violation(e: &c3p0::sqlx::Error) -> bool {
         return db_err.is_unique_violation();
     }
     false
+}
+
+/// `SystemTime → i64 millis since Unix epoch`, the form timestamps are stored
+/// in.
+///
+/// A `SystemTime` strictly before `UNIX_EPOCH` would be a clock set decades
+/// in the past — impossible on any sane host. We treat that case as zero
+/// rather than panicking, which keeps the function `.unwrap()`-free and
+/// causes any such row to look "always due" (so the next claim either fires
+/// or harmlessly re-anchors via `advance`).
+#[inline]
+fn to_millis(t: SystemTime) -> i64 {
+    t.duration_since(UNIX_EPOCH).unwrap_or_default().as_millis() as i64
+}
+
+#[inline]
+fn from_millis(ms: i64) -> SystemTime {
+    UNIX_EPOCH + Duration::from_millis(ms as u64)
 }

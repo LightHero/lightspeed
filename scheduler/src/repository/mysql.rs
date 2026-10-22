@@ -85,6 +85,33 @@ impl ScheduleSqlBackend for MySqlScheduleBackend {
         .await?)
     }
 
+    async fn due_keys(
+        pool: &c3p0::sqlx::Pool<MySql>,
+        keys: &[(&str, &str)],
+    ) -> Result<Vec<(String, String)>, C3p0Error> {
+        // Same row-value IN list and DB clock as `time_until_next_due_millis`.
+        let placeholders = vec!["(?, ?)"; keys.len()].join(", ");
+        let sql = format!(
+            "SELECT JSON_VALUE(data, '$.group_name' RETURNING CHAR(255)) AS group_name, \
+                    JSON_VALUE(data, '$.name' RETURNING CHAR(255)) AS name \
+             FROM {} \
+             WHERE ( \
+                 JSON_VALUE(data, '$.group_name' RETURNING CHAR(255)), \
+                 JSON_VALUE(data, '$.name' RETURNING CHAR(255)) \
+             ) IN ({}) \
+             AND JSON_VALUE(data, '$.next_run_at_millis' RETURNING SIGNED) \
+                 <= CAST(UNIX_TIMESTAMP(CURRENT_TIMESTAMP(3)) * 1000 AS SIGNED)",
+            ScheduleData::TABLE_NAME,
+            placeholders,
+        );
+        let mut q = query(AssertSqlSafe(sql));
+        for (g, n) in keys {
+            q = q.bind(*g).bind(*n);
+        }
+        let rows = q.fetch_all(pool).await?;
+        rows.into_iter().map(|row| Ok((row.try_get("group_name")?, row.try_get("name")?))).collect()
+    }
+
     async fn advance_claimed(
         tx: &mut MySqlConnection,
         group: &str,

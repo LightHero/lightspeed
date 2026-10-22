@@ -77,6 +77,25 @@ impl ScheduleSqlBackend for PgScheduleBackend {
         .await?)
     }
 
+    async fn due_keys(
+        pool: &c3p0::sqlx::Pool<Postgres>,
+        keys: &[(&str, &str)],
+    ) -> Result<Vec<(String, String)>, C3p0Error> {
+        // Same pair binding and DB clock as `time_until_next_due_millis`.
+        let groups: Vec<&str> = keys.iter().map(|(g, _)| *g).collect();
+        let names: Vec<&str> = keys.iter().map(|(_, n)| *n).collect();
+        const SQL: &str = "SELECT data->>'group_name' AS group_name, data->>'name' AS name \
+             FROM LS_SCHEDULE \
+             WHERE (data->>'group_name', data->>'name') IN ( \
+                 SELECT g, n FROM UNNEST($1::TEXT[], $2::TEXT[]) AS t(g, n) \
+             ) \
+             AND (data->>'next_run_at_millis')::bigint <= (EXTRACT(EPOCH FROM NOW()) * 1000)::BIGINT";
+        const _: () = assert!(matches_table_name(SQL));
+
+        let rows = query(AssertSqlSafe(SQL)).bind(&groups).bind(&names).fetch_all(pool).await?;
+        rows.into_iter().map(|row| Ok((row.try_get("group_name")?, row.try_get("name")?))).collect()
+    }
+
     async fn advance_claimed(
         tx: &mut PgConnection,
         group: &str,
