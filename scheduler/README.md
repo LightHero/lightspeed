@@ -74,8 +74,8 @@ async fn main() {
 The closure receives `&mut R::Tx` so user work runs in the same transaction
 that holds the schedule row's lock — work commits atomically with the
 schedule advance, and a returned `Err` rolls back so the schedule remains
-due for the next poll. If you don't need the transaction, ignore the `_tx`
-argument as above.
+due, and the job is retried a second later. If you don't need the
+transaction, ignore the `_tx` argument as above.
 
 In case of database repositories, the transaction is the one that holds the
 lock on the schedule row.
@@ -100,8 +100,9 @@ multiple processes:
 
 Distributed safety on Postgres/MySQL relies on `FOR UPDATE SKIP LOCKED`:
 when one process claims a schedule row inside a transaction, concurrent
-claimers see the row as locked and skip it. To avoid local time differences, 
-the DB time is used to determine the next Task execution time.
+claimers see the row as locked, skip it and poll again a second later. To
+avoid local time differences, the DB time is used to determine the next Task
+execution time.
 
 
 ```rust,no_run

@@ -88,6 +88,18 @@ pub trait ScheduleRepository: Send + Sync + Clone + 'static {
         name: &str,
     ) -> impl Future<Output = Result<Option<ScheduleRow>, SchedulerError>> + Send;
 
+    /// Returns the subset of `keys` whose `next_run_at` is less than or equal
+    /// to the **repository's** current time, so that a tick only opens claim
+    /// transactions for the schedules that are actually due.
+    ///
+    /// No locking: a row returned here may be claimed by another process
+    /// before the caller reaches [`try_claim_due`](Self::try_claim_due),
+    /// which then returns `None`.
+    fn due_keys(
+        &self,
+        keys: &[(&str, &str)],
+    ) -> impl Future<Output = Result<Vec<(String, String)>, SchedulerError>> + Send;
+
     /// Within `tx`, updates `next_run_at` and `last_run_at` for `(group, name)`.
     fn advance(
         &self,

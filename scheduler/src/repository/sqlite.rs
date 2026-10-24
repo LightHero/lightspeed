@@ -94,6 +94,28 @@ impl ScheduleSqlBackend for SqliteScheduleBackend {
         Ok(ScheduleModel::query_with_tail(&sql).bind(group).bind(name).fetch_optional(tx).await?)
     }
 
+    async fn due_keys(
+        pool: &c3p0::sqlx::Pool<Sqlite>,
+        keys: &[(&str, &str)],
+    ) -> Result<Vec<(String, String)>, C3p0Error> {
+        // Same row-value IN list and DB clock as `time_until_next_due_millis`.
+        let placeholders = vec!["(?, ?)"; keys.len()].join(", ");
+        let sql = format!(
+            "SELECT data->>'$.group_name' AS group_name, data->>'$.name' AS name \
+             FROM {} \
+             WHERE (data->>'$.group_name', data->>'$.name') IN ({}) \
+               AND CAST(data->>'$.next_run_at_millis' AS INTEGER) <= {NOW_MILLIS_EXPR}",
+            ScheduleData::TABLE_NAME,
+            placeholders,
+        );
+        let mut q = query(AssertSqlSafe(sql));
+        for (g, n) in keys {
+            q = q.bind(*g).bind(*n);
+        }
+        let rows = q.fetch_all(pool).await?;
+        rows.into_iter().map(|row| Ok((row.try_get("group_name")?, row.try_get("name")?))).collect()
+    }
+
     async fn advance_claimed(
         tx: &mut SqliteConnection,
         group: &str,

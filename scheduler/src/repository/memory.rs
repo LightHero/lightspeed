@@ -42,7 +42,7 @@ pub struct MemoryTx {
 }
 
 impl MemoryTx {
-    async fn release_claims(&mut self) {
+    fn release_claims(&mut self) {
         if self.claimed.is_empty() {
             return;
         }
@@ -55,6 +55,14 @@ impl MemoryTx {
     }
 }
 
+impl Drop for MemoryTx {
+    /// A transaction dropped without commit or rollback, e.g. because its
+    /// tick was aborted, gives its rows back like a database rolling it back.
+    fn drop(&mut self) {
+        self.release_claims();
+    }
+}
+
 impl ScheduleRepository for MemoryScheduleRepository {
     type Tx = MemoryTx;
 
@@ -64,12 +72,12 @@ impl ScheduleRepository for MemoryScheduleRepository {
 
     async fn commit(&self, mut tx: Self::Tx) -> Result<(), SchedulerError> {
         // Release claims so the rows are pickable again on the next tick.
-        tx.release_claims().await;
+        tx.release_claims();
         Ok(())
     }
 
     async fn rollback(&self, mut tx: Self::Tx) -> Result<(), SchedulerError> {
-        tx.release_claims().await;
+        tx.release_claims();
         Ok(())
     }
 
@@ -136,6 +144,16 @@ impl ScheduleRepository for MemoryScheduleRepository {
         };
         tx.claimed.push(key);
         Ok(Some(claimed))
+    }
+
+    async fn due_keys(&self, keys: &[(&str, &str)]) -> Result<Vec<(String, String)>, SchedulerError> {
+        let now = SystemTime::now();
+        let guard = self.inner.lock();
+        Ok(keys
+            .iter()
+            .map(|(group, name)| (group.to_string(), name.to_string()))
+            .filter(|key| guard.get(key).is_some_and(|row| row.next_run_at <= now))
+            .collect())
     }
 
     async fn advance(
@@ -254,6 +272,20 @@ mod tests {
         assert!(claim3.is_some());
         repo.commit(tx3).await.unwrap();
         repo.commit(tx2).await.unwrap();
+    }
+
+    #[tokio::test]
+    async fn dropping_a_transaction_releases_its_claims() {
+        let repo = MemoryScheduleRepository::init();
+        repo.register(GRP, "a", due_in_past(), "").await.unwrap();
+
+        let mut tx = repo.begin().await.unwrap();
+        assert!(repo.try_claim_due(&mut tx, GRP, "a").await.unwrap().is_some());
+        drop(tx);
+
+        let mut tx = repo.begin().await.unwrap();
+        assert!(repo.try_claim_due(&mut tx, GRP, "a").await.unwrap().is_some(), "the dropped claim must be released");
+        repo.commit(tx).await.unwrap();
     }
 
     #[tokio::test]

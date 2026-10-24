@@ -203,6 +203,39 @@ async fn rollback_releases_lock_without_advance() {
 }
 
 #[tokio_shared::test]
+async fn due_keys_returns_only_currently_due() {
+    let d = data(false).await;
+    let repo = &d.0;
+    let group = unique_name();
+    let other = unique_name();
+    let past1 = unique_name();
+    let past2 = unique_name();
+    let future = unique_name();
+
+    repo.register(&group, &past1, due_in_past(), "").await.unwrap();
+    repo.register(&group, &past2, due_in_past(), "").await.unwrap();
+    repo.register(&group, &future, SystemTime::now() + Duration::from_secs(60), "").await.unwrap();
+    // A due row in another group must be ignored by a query scoped to `group`.
+    repo.register(&other, &future, due_in_past(), "").await.unwrap();
+
+    let mut due = repo
+        .due_keys(&[
+            (group.as_str(), past1.as_str()),
+            (group.as_str(), past2.as_str()),
+            (group.as_str(), future.as_str()),
+            (group.as_str(), "__definitely_missing__"),
+        ])
+        .await
+        .unwrap();
+    due.sort();
+    let mut expected = vec![(group.clone(), past1.clone()), (group.clone(), past2.clone())];
+    expected.sort();
+    assert_eq!(due, expected);
+
+    assert!(repo.due_keys(&[]).await.unwrap().is_empty());
+}
+
+#[tokio_shared::test]
 async fn time_until_next_due_uses_db_clock_and_respects_groups() {
     let d = data(false).await;
     let repo = &d.0;
